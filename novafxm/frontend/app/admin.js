@@ -1487,7 +1487,7 @@ function MarginCategoryCard({ id, label, count, background, color, colors, darkM
   );
 }
 
-export default function AdminScreen() {
+export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const { width } = useWindowDimensions();
   const { user: adminUser, isAdmin, logout, refreshUser } = useAuth();
   const { darkMode, colors, toggleTheme } = useAppTheme();
@@ -1516,7 +1516,7 @@ export default function AdminScreen() {
     }
   }, [adminUser?.role, pathname]);
 
-  const [section, setSection] = useState('overview');
+  const [section, setSection] = useState(initialSection || 'overview');
   const [addUserTrigger, setAddUserTrigger] = useState(0);
   const [overviewTab, setOverviewTab] = useState('users'); // 'users', 'deposits', 'withdrawals'
   const [analyticsTimeframe, setAnalyticsTimeframe] = useState('7d'); // '7d', '30d', '90d'
@@ -5976,33 +5976,35 @@ export default function AdminScreen() {
 
   return (
     <View className={mobile ? 'flex-1' : 'flex-1 flex-row'} style={{ backgroundColor: colors.background }}>
-      <AdminSidebar
-        section={section}
-        onChange={handleSectionChange}
-        userManagementSubpage={userManagementSubpage}
-        onUserManagementSubpageChange={setUserManagementSubpage}
-        depositSubpage={depositSubpage}
-        onDepositSubpageChange={setDepositSubpage}
-        withdrawalSubpage={withdrawalSubpage}
-        onWithdrawalSubpageChange={setWithdrawalSubpage}
-        pendingCount={{ deposits: depositPendingCount, withdrawals: withdrawalPendingCount, referrals: referralPendingCount }}
-        bankPendingCount={bankPendingCount}
-        newUserCount={newUserCount}
-        verificationPendingCount={verificationPendingCount}
-        lowMarginCount={lowMarginUsers.length}
-        adminUser={adminUser}
-        onSignOut={signOut}
-        onRefresh={load}
-        refreshing={loading}
-        onOpenSettings={() => {
-          setAdminProfileError('');
-          setAdminProfileOpen(true);
-        }}
-        onToggleTheme={toggleTheme}
-        adminNotificationCount={adminNotificationCount}
-        onToggleNotifications={() => setNotificationsOpen((current) => !current)}
-        onReturnToMaster={() => router.replace('/master')}
-      />
+      {!hideSidebar && (
+        <AdminSidebar
+          section={section}
+          onChange={handleSectionChange}
+          userManagementSubpage={userManagementSubpage}
+          onUserManagementSubpageChange={setUserManagementSubpage}
+          depositSubpage={depositSubpage}
+          onDepositSubpageChange={setDepositSubpage}
+          withdrawalSubpage={withdrawalSubpage}
+          onWithdrawalSubpageChange={setWithdrawalSubpage}
+          pendingCount={{ deposits: depositPendingCount, withdrawals: withdrawalPendingCount, referrals: referralPendingCount }}
+          bankPendingCount={bankPendingCount}
+          newUserCount={newUserCount}
+          verificationPendingCount={verificationPendingCount}
+          lowMarginCount={lowMarginUsers.length}
+          adminUser={adminUser}
+          onSignOut={signOut}
+          onRefresh={load}
+          refreshing={loading}
+          onOpenSettings={() => {
+            setAdminProfileError('');
+            setAdminProfileOpen(true);
+          }}
+          onToggleTheme={toggleTheme}
+          adminNotificationCount={adminNotificationCount}
+          onToggleNotifications={() => setNotificationsOpen((current) => !current)}
+          onReturnToMaster={() => router.replace('/master')}
+        />
+      )}
       <Modal visible={notificationsOpen} transparent animationType="fade" onRequestClose={() => setNotificationsOpen(false)}>
         <Pressable className="flex-1" style={{ backgroundColor: 'rgba(0,0,0,0.12)' }} onPress={() => setNotificationsOpen(false)}>
           <View className="absolute right-4 top-16">

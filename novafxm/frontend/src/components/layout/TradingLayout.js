@@ -155,7 +155,7 @@ export default function TradingLayout() {
               <View className="flex-1 min-h-[340px] min-w-0">
                 <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
               </View>
-              {!chartFullscreen && !isAdmin && !sidePanel ? (
+              {!chartFullscreen && !sidePanel ? (
                 <View className="w-full shrink-0">
                   <OrderPanel />
                 </View>
@@ -260,7 +260,7 @@ export default function TradingLayout() {
           {desktop ? (
             <>
               <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              {!chartFullscreen && !isAdmin && (
+              {!chartFullscreen && (
                 <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} />
               )}
             </>
@@ -269,15 +269,15 @@ export default function TradingLayout() {
               <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
               {!chartFullscreen && (
                 <View className={tablet ? 'flex-row gap-3' : 'gap-1.5'}>
-                  {!mobile && !isAdmin ? <OrderRail summary={summary} user={user} /> : null}
+                  {!mobile ? <OrderRail summary={summary} user={user} /> : null}
                 </View>
               )}
             </>
           )}
         </View>
-        {!chartFullscreen && !isAdmin ? <OpenPositions /> : null}
+        {!chartFullscreen ? <OpenPositions /> : null}
       </ScrollView>
-      {mobile && !chartFullscreen && !isAdmin && !sidePanel ? <OrderPanel /> : null}
+      {mobile && !chartFullscreen && !sidePanel ? <OrderPanel /> : null}
       <InsufficientFundsModal
         visible={insufficientFundsVisible}
         onClose={() => setInsufficientFundsVisible(false)}

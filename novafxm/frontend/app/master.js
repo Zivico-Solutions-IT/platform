@@ -9,6 +9,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { storage } from '../src/utils/storage';
 import SymbolSettings from '../src/components/admin/SymbolSettings';
 import AgentManagement from '../src/components/admin/AgentManagement';
+import RequireAuth from '../src/components/auth/RequireAuth';
+import LoadingSpinner from '../src/components/common/LoadingSpinner';
+import { Redirect } from 'expo-router';
+import AdminScreen from './admin';
 
 const permissionGroups = [
   { title: 'Workspace Access', items: [
@@ -39,7 +43,7 @@ const hiddenParentPermissions = ['assignUsers', 'userManagementUsers', 'depositA
 
 const normalizePermissions = (permissions) => Array.isArray(permissions) ? permissions : [];
 
-export default function MasterDashboard() {
+function MasterDashboard() {
   const { user } = useAuth();
   const { colors } = useAppTheme();
   const router = useRouter();
@@ -47,7 +51,7 @@ export default function MasterDashboard() {
   const mobile = width < 860;
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
-  const [tab, setTab] = useState('panel');
+  const [tab, setTab] = useState('overview');
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
   const [expandedAdminId, setExpandedAdminId] = useState(null);
   const [selectedAdminId, setSelectedAdminId] = useState(null);
@@ -162,6 +166,19 @@ export default function MasterDashboard() {
     finally { setSaving(false); }
   };
 
+  const selectProjectAndSection = async (sectionName) => {
+    if (selectedProject) {
+      await storage.set('x-project-id', String(selectedProject.id));
+      await storage.set('x-project-name', selectedProject.name);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('x-project-id', String(selectedProject.id));
+        localStorage.setItem('x-project-name', selectedProject.name);
+      }
+      api.defaults.headers.common['x-project-id'] = selectedProject.id;
+    }
+    setTab(sectionName);
+  };
+
   const selectProject = async () => {
     if (!selectedProject) return;
     await storage.set('x-project-id', String(selectedProject.id));
@@ -190,7 +207,8 @@ export default function MasterDashboard() {
     finally { setSaving(false); }
   };
 
-  if (!user || user.role !== 'master') return null;
+  if (loading) return <LoadingSpinner />;
+  if (!user || user.role !== 'master') return <Redirect href="/login" />;
   const companyPermissions = normalizePermissions(selectedProject?.permissions);
   const adminPermissions = normalizePermissions(selectedAdmin?.permissions);
   const visibleCompanyPermissions = companyPermissions.filter((permission) => allPermissionIds.includes(permission));
@@ -205,24 +223,56 @@ export default function MasterDashboard() {
         </Pressable>
         {companyMenuOpen ? <View className="mt-2 rounded-xl border p-1" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
           {projects.map((project) => <Pressable key={project.id} onPress={() => { setSelectedProjectId(project.id); setCompanyMenuOpen(false); }} className="rounded-lg px-3 py-2.5" style={{ backgroundColor: project.id === selectedProject?.id ? `${colors.primary}18` : 'transparent' }}><Text className="text-sm font-medium" style={{ color: project.id === selectedProject?.id ? colors.primary : colors.text }}>{project.name}</Text><Text className="mt-0.5 text-[10px]" style={{ color: colors.muted }}>{project.identifier}</Text></Pressable>)}
-          <Pressable onPress={() => { setCompanyMenuOpen(false); setModalVisible(true); }} className="mt-1 flex-row items-center gap-2 rounded-lg px-3 py-3" style={{ backgroundColor: `${colors.primary}14` }}><Plus size={16} color={colors.primary} /><Text className="text-sm font-bold" style={{ color: colors.primary }}>Create New Company</Text></Pressable>
         </View> : null}
-        {!companyMenuOpen ? <Pressable onPress={() => setModalVisible(true)} className="mt-3 flex-row items-center gap-2 rounded-xl border px-3 py-3" style={{ borderColor: colors.border }}><Plus size={16} color={colors.text} /><Text className="text-sm font-semibold" style={{ color: colors.text }}>Create New Company</Text></Pressable> : null}
         {!mobile ? (
-          <View className="mt-8 gap-2">
-            <Pressable onPress={() => setTab('panel')} className="rounded-xl px-4 py-3" style={{ backgroundColor: tab === 'panel' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold" style={{ color: tab === 'panel' ? '#0B0B0B' : colors.text }}>Overview</Text>
+          <ScrollView className="mt-6 flex-1 gap-1" showsVerticalScrollIndicator={false}>
+            <Pressable onPress={() => selectProjectAndSection('overview')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'overview' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'overview' ? '#0B0B0B' : colors.text }}>Overview</Text>
             </Pressable>
-            <Pressable onPress={() => setTab('staff')} className="rounded-xl px-4 py-3" style={{ backgroundColor: tab === 'staff' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold" style={{ color: tab === 'staff' ? '#0B0B0B' : colors.text }}>Staff & Permissions</Text>
+            <Pressable onPress={() => selectProjectAndSection('userManagement')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'userManagement' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'userManagement' ? '#0B0B0B' : colors.text }}>User Management</Text>
             </Pressable>
-            <Pressable onPress={() => setTab('symbols')} className="rounded-xl px-4 py-3" style={{ backgroundColor: tab === 'symbols' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold" style={{ color: tab === 'symbols' ? '#0B0B0B' : colors.text }}>Symbol Settings</Text>
+            <Pressable onPress={() => selectProjectAndSection('users')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'users' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'users' ? '#0B0B0B' : colors.text }}>User Wallets</Text>
             </Pressable>
-            <Pressable onPress={() => setTab('permissions')} className="rounded-xl px-4 py-3" style={{ backgroundColor: tab === 'permissions' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold" style={{ color: tab === 'permissions' ? '#0B0B0B' : colors.text }}>Permissions</Text>
+            <Pressable onPress={() => selectProjectAndSection('verifications')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'verifications' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'verifications' ? '#0B0B0B' : colors.text }}>Verifications</Text>
             </Pressable>
-          </View>
+            <Pressable onPress={() => selectProjectAndSection('userLevels')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'userLevels' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'userLevels' ? '#0B0B0B' : colors.text }}>User Levels</Text>
+            </Pressable>
+            <Pressable onPress={() => selectProjectAndSection('deposits')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'deposits' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'deposits' ? '#0B0B0B' : colors.text }}>Deposits</Text>
+            </Pressable>
+            <Pressable onPress={() => selectProjectAndSection('withdrawals')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'withdrawals' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'withdrawals' ? '#0B0B0B' : colors.text }}>Withdrawals</Text>
+            </Pressable>
+            <Pressable onPress={() => selectProjectAndSection('referrals')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'referrals' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'referrals' ? '#0B0B0B' : colors.text }}>Referral Rewards</Text>
+            </Pressable>
+            <Pressable onPress={() => selectProjectAndSection('trades')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'trades' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'trades' ? '#0B0B0B' : colors.text }}>All Trades</Text>
+            </Pressable>
+            <Pressable onPress={() => selectProjectAndSection('addTrading')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'addTrading' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'addTrading' ? '#0B0B0B' : colors.text }}>Add Trading</Text>
+            </Pressable>
+            <Pressable onPress={() => selectProjectAndSection('marginAlerts')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'marginAlerts' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'marginAlerts' ? '#0B0B0B' : colors.text }}>Margin Alerts</Text>
+            </Pressable>
+            <View className="my-2 h-[1px] w-full" style={{ backgroundColor: colors.border }} />
+            <Pressable onPress={() => setTab('staff')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'staff' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'staff' ? '#0B0B0B' : colors.text }}>Staff & Permissions</Text>
+            </Pressable>
+            <Pressable onPress={() => setTab('symbols')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'symbols' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'symbols' ? '#0B0B0B' : colors.text }}>Symbol Settings</Text>
+            </Pressable>
+            <Pressable onPress={() => setTab('permissions')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'permissions' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'permissions' ? '#0B0B0B' : colors.text }}>Company Permissions</Text>
+            </Pressable>
+            <Pressable onPress={() => setTab('panel')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'panel' ? colors.primary : 'transparent' }}>
+              <Text className="font-semibold text-sm" style={{ color: tab === 'panel' ? '#0B0B0B' : colors.text }}>Company Status & Admins</Text>
+            </Pressable>
+          </ScrollView>
         ) : null}
       </View>
       <ScrollView className="flex-1" contentContainerStyle={{ padding: mobile ? 16 : 30 }}>
@@ -246,6 +296,8 @@ export default function MasterDashboard() {
           <Text style={{ color: colors.muted }}>Loading companies...</Text>
         ) : !selectedProject ? (
           <Text style={{ color: colors.muted }}>Create a company to begin.</Text>
+        ) : ['overview', 'userManagement', 'users', 'verifications', 'userLevels', 'deposits', 'withdrawals', 'referrals', 'trades', 'addTrading', 'marginAlerts'].includes(tab) ? (
+          <AdminScreen key={`${selectedProject?.id}-${tab}`} initialSection={tab} hideSidebar={true} />
         ) : tab === 'staff' ? (
           <AgentManagement key={selectedProject?.id} />
         ) : tab === 'symbols' ? (
@@ -278,7 +330,7 @@ export default function MasterDashboard() {
             </View>
             <View className="mb-6 flex-row flex-wrap gap-3">
               <View className="min-w-[170px] flex-1 rounded-2xl border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-                <Text className="text-xs uppercase" style={{ color: colors.muted }}>Administrators</Text>
+                <Text className="text-xs uppercase" style={{ color: colors.muted }}>Managers</Text>
                 <Text className="mt-2 text-2xl font-bold" style={{ color: colors.text }}>{selectedProject.admins?.length || 0}</Text>
               </View>
               <View className="min-w-[170px] flex-1 rounded-2xl border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
@@ -293,7 +345,7 @@ export default function MasterDashboard() {
             <View className="rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
               <View className="mb-4 flex-row items-center gap-2">
                 <Users size={19} color={colors.primary} />
-                <Text className="text-lg font-bold" style={{ color: colors.text }}>Company Administrators</Text>
+                <Text className="text-lg font-bold" style={{ color: colors.text }}>Company Managers</Text>
               </View>
               {selectedProject.admins?.length ? selectedProject.admins.map((admin) => {
                 const expanded = expandedAdminId === admin.id;
@@ -317,16 +369,24 @@ export default function MasterDashboard() {
                     ) : null}
                   </View>
                 );
-              }) : <Text style={{ color: colors.muted }}>No administrators are assigned to this company.</Text>}
+              }) : <Text style={{ color: colors.muted }}>No managers are assigned to this company.</Text>}
             </View>
           </>
         ) : <>
-          <Text className="text-3xl font-bold" style={{ color: colors.text }}>Permissions</Text><Text className="mb-6 mt-1 text-sm" style={{ color: colors.muted }}>Choose what this company can use, then assign only those permissions to each administrator.</Text>
+          <Text className="text-3xl font-bold" style={{ color: colors.text }}>Permissions</Text><Text className="mb-6 mt-1 text-sm" style={{ color: colors.muted }}>Choose what this company can use, then assign only those permissions to each manager.</Text>
           <Text className="mb-3 text-lg font-bold" style={{ color: colors.text }}>Company access</Text><View className="flex-row flex-wrap gap-4">{permissionGroups.map((group) => { const groupSelected = group.items.every(([id]) => companyPermissions.includes(id)); return <View key={group.title} className="min-w-[260px] flex-1 rounded-2xl border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><View className="flex-row items-center justify-between gap-2"><Text className="text-base font-bold" style={{ color: colors.text }}>{group.title}</Text><Pressable disabled={saving} onPress={() => toggleCompanyPermissionGroup(group.items)} className="rounded-lg px-2.5 py-1.5" style={{ backgroundColor: `${colors.primary}18` }}><Text className="text-[11px] font-bold" style={{ color: colors.primary }}>{groupSelected ? 'Clear all' : 'Select all'}</Text></Pressable></View><Text className="mb-3 mt-1 text-xs" style={{ color: colors.muted }}>Enable the dashboard tabs available to this company.</Text>{group.items.map(([id, label, description]) => { const checked = companyPermissions.includes(id); return <Pressable key={id} disabled={saving} onPress={() => toggleCompanyPermission(id)} className="mb-2 flex-row rounded-xl border p-3" style={{ borderColor: checked ? colors.primary : colors.border, backgroundColor: checked ? `${colors.primary}12` : colors.surface }}><View className="mr-3 mt-0.5 h-5 w-5 items-center justify-center rounded border" style={{ borderColor: checked ? colors.primary : colors.muted, backgroundColor: checked ? colors.primary : 'transparent' }}>{checked ? <Check size={14} color="#fff" /> : null}</View><View className="min-w-0 flex-1"><Text className="text-sm font-bold" style={{ color: colors.text }}>{label}</Text><Text className="mt-1 text-xs" style={{ color: colors.muted }}>{description}</Text></View></Pressable>; })}</View>; })}</View>
-          <View className="mt-7 rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><View className="mb-4 flex-row flex-wrap items-center justify-between gap-3"><View><Text className="text-lg font-bold" style={{ color: colors.text }}>Administrator access</Text><Text className="mt-1 text-xs" style={{ color: colors.muted }}>An admin can only receive dashboard tabs enabled for this company.</Text></View><View className="flex-row flex-wrap gap-2">{selectedProject.admins?.map((admin) => <Pressable key={admin.id} onPress={() => setSelectedAdminId(admin.id)} className="rounded-lg px-3 py-2" style={{ backgroundColor: admin.id === selectedAdmin?.id ? colors.primary : colors.surface, borderColor: colors.border, borderWidth: 1 }}><Text className="text-xs font-bold" style={{ color: admin.id === selectedAdmin?.id ? '#0B0B0B' : colors.text }}>{admin.name}</Text></Pressable>)}</View></View>{selectedAdmin ? <View className="flex-row flex-wrap gap-2">{visibleCompanyPermissions.length ? visibleCompanyPermissions.map((id) => { const checked = adminPermissions.includes(id); return <Pressable key={id} disabled={saving} onPress={() => toggleAdminPermission(id)} className="flex-row items-center rounded-lg border px-3 py-2" style={{ borderColor: checked ? colors.primary : colors.border, backgroundColor: checked ? `${colors.primary}12` : colors.surface }}><View className="mr-2 h-4 w-4 items-center justify-center rounded border" style={{ borderColor: checked ? colors.primary : colors.muted, backgroundColor: checked ? colors.primary : 'transparent' }}>{checked ? <Check size={11} color="#fff" /> : null}</View><Text className="text-xs font-semibold" style={{ color: colors.text }}>{permissionName(id)}</Text></Pressable>; }) : <Text style={{ color: colors.muted }}>Enable company permissions above first.</Text>}</View> : <Text style={{ color: colors.muted }}>No administrator selected.</Text>}</View>
+          <View className="mt-7 rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><View className="mb-4 flex-row flex-wrap items-center justify-between gap-3"><View><Text className="text-lg font-bold" style={{ color: colors.text }}>Manager access</Text><Text className="mt-1 text-xs" style={{ color: colors.muted }}>A manager can only receive dashboard tabs enabled for this company.</Text></View><View className="flex-row flex-wrap gap-2">{selectedProject.admins?.map((admin) => <Pressable key={admin.id} onPress={() => setSelectedAdminId(admin.id)} className="rounded-lg px-3 py-2" style={{ backgroundColor: admin.id === selectedAdmin?.id ? colors.primary : colors.surface, borderColor: colors.border, borderWidth: 1 }}><Text className="text-xs font-bold" style={{ color: admin.id === selectedAdmin?.id ? '#0B0B0B' : colors.text }}>{admin.name}</Text></Pressable>)}</View></View>{selectedAdmin ? <View className="flex-row flex-wrap gap-2">{visibleCompanyPermissions.length ? visibleCompanyPermissions.map((id) => { const checked = adminPermissions.includes(id); return <Pressable key={id} disabled={saving} onPress={() => toggleAdminPermission(id)} className="flex-row items-center rounded-lg border px-3 py-2" style={{ borderColor: checked ? colors.primary : colors.border, backgroundColor: checked ? `${colors.primary}12` : colors.surface }}><View className="mr-2 h-4 w-4 items-center justify-center rounded border" style={{ borderColor: checked ? colors.primary : colors.muted, backgroundColor: checked ? colors.primary : 'transparent' }}>{checked ? <Check size={11} color="#fff" /> : null}</View><Text className="text-xs font-semibold" style={{ color: colors.text }}>{permissionName(id)}</Text></Pressable>; }) : <Text style={{ color: colors.muted }}>Enable company permissions above first.</Text>}</View> : <Text style={{ color: colors.muted }}>No manager selected.</Text>}</View>
         </>}
       </ScrollView>
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}><View className="flex-1 items-center justify-center bg-black/50 p-5"><View className="w-full max-w-[430px] rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><View className="mb-5 flex-row items-center justify-between"><Text className="text-xl font-bold" style={{ color: colors.text }}>Create New Company</Text><Pressable onPress={() => setModalVisible(false)}><X size={21} color={colors.muted} /></Pressable></View><Text className="mb-2 text-xs font-semibold" style={{ color: colors.muted }}>COMPANY NAME</Text><TextInput value={form.name} onChangeText={(name) => setForm((current) => ({ ...current, name }))} placeholder="Enter company name" placeholderTextColor={colors.muted} className="mb-4 rounded-xl border px-3 py-3" style={{ color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }} /><Text className="mb-2 text-xs font-semibold" style={{ color: colors.muted }}>IDENTIFIER / SUBDOMAIN</Text><TextInput value={form.identifier} onChangeText={(identifier) => setForm((current) => ({ ...current, identifier: identifier.toLowerCase().replace(/[^a-z0-9]/g, '') }))} placeholder="companyname" placeholderTextColor={colors.muted} className="mb-5 rounded-xl border px-3 py-3" style={{ color: colors.text, backgroundColor: colors.surface, borderColor: colors.border }} /><Pressable onPress={handleCreate} className="items-center rounded-xl py-3" style={{ backgroundColor: colors.primary }}><Text className="font-bold" style={{ color: '#0B0B0B' }}>Create Company</Text></Pressable></View></View></Modal>
     </View>
+  );
+}
+
+export default function MasterScreen() {
+  return (
+    <RequireAuth>
+      <MasterDashboard />
+    </RequireAuth>
   );
 }

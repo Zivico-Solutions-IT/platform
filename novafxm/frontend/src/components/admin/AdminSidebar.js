@@ -18,8 +18,8 @@ const navigation = [
   { id: 'trades', label: 'All Trades', shortLabel: 'Trades', icon: BarChart3 },
   { id: 'addTrading', label: 'Add Trading', shortLabel: 'Add', icon: TrendingUp },
   { id: 'marginAlerts', label: 'Margin Alerts', shortLabel: 'Margin', icon: AlertTriangle },
-  { id: 'symbols', label: 'Symbol Settings', shortLabel: 'Symbols', icon: Coins },
-  { id: 'agents', label: 'Staff & Permissions', shortLabel: 'Staff', icon: ShieldCheck, adminOnly: true },
+  { id: 'agents', label: 'Staff & Permissions', shortLabel: 'Staff', icon: ShieldCheck, masterOnly: true },
+  { id: 'symbols', label: 'Symbol Settings', shortLabel: 'Symbols', icon: Coins, masterOnly: true },
 ];
 
 const subNavigation = {
@@ -83,7 +83,7 @@ export default function AdminSidebar({
   }, [mobileTabsOpen]);
 
   const visibleNavigation = navigation.filter((tab) => {
-    if (tab.id === 'agents') return adminUser?.role === 'master';
+    if (tab.masterOnly) return adminUser?.role === 'master';
     if (adminUser?.role === 'master') return true;
     if (tab.adminOnly) return false;
     return Array.isArray(adminUser?.permissions) && adminUser.permissions.includes(tab.id);
@@ -194,10 +194,10 @@ export default function AdminSidebar({
           <View className="min-w-0 flex-1 pr-3">
             <NovaLogo dark={darkMode} width={compact ? 132 : 136} height={34} />
             <Text className="mt-2 text-lg font-medium" style={{ color: colors.text }}>
-              {isVeltrium ? 'VeltriumFX Console' : (adminUser?.role === 'master' ? 'Master Console' : adminUser?.role === 'agent' ? 'Agent Console' : adminUser?.role === 'manager' ? 'Manager Console' : 'Admin Console')}
+              {isVeltrium ? 'VeltriumFX Console' : (adminUser?.role === 'master' ? 'Master Console' : adminUser?.role === 'agent' ? 'Agent Console' : 'Manager Console')}
             </Text>
             <Text className="mt-0.5 text-xs" style={{ color: colors.muted }}>
-              {isVeltrium ? 'Operations control center' : (adminUser?.role === 'master' ? 'Master control center' : adminUser?.role === 'agent' ? 'Agent operations panel' : adminUser?.role === 'manager' ? 'Manager operations panel' : 'Operations control center')}
+              {isVeltrium ? 'Operations control center' : (adminUser?.role === 'master' ? 'Master control center' : adminUser?.role === 'agent' ? 'Agent operations panel' : 'Manager control center')}
             </Text>
           </View>
         <View className="flex-row items-center gap-3">

@@ -111,8 +111,6 @@ export default function AgentManagement() {
     { value: 'newest', label: 'Newest First' },
     { value: 'name_asc', label: 'Name (A-Z)' },
     { value: 'name_desc', label: 'Name (Z-A)' },
-    { value: 'managers', label: 'Managers' },
-    { value: 'agents', label: 'Agents' },
   ];
 
   const filteredAgents = agents
@@ -614,35 +612,8 @@ export default function AgentManagement() {
                   </Pressable>
                 </View>
                 
-                <View className="mt-2">
-                  <Text className="text-sm font-bold mb-3" style={{ color: colors.text }}>Role</Text>
-                  <View className="flex-row gap-3">
-                    <Pressable
-                      onPress={() => {
-                        setForm({...form, role: 'agent'});
-                      }}
-                      className="flex-1 flex-row items-center justify-center rounded-xl border px-3 py-3"
-                      style={{ borderColor: form.role === 'agent' ? colors.primary : colors.border, backgroundColor: form.role === 'agent' ? `${colors.primary}15` : colors.surface }}
-                    >
-                      <Text className="text-sm font-medium" style={{ color: form.role === 'agent' ? colors.primary : colors.text }}>Agent</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={() => setForm((current) => (
-                        current.role === 'manager'
-                          ? current
-                          : { ...current, role: 'manager', permissions: allowedPermissionIds }
-                      ))}
-                      className="flex-1 flex-row items-center justify-center rounded-xl border px-3 py-3"
-                      style={{ borderColor: form.role === 'manager' ? colors.primary : colors.border, backgroundColor: form.role === 'manager' ? `${colors.primary}15` : colors.surface }}
-                    >
-                      <Text className="text-sm font-medium" style={{ color: form.role === 'manager' ? colors.primary : colors.text }}>Manager</Text>
-                    </Pressable>
-                  </View>
-                </View>
-                
                 <View className="mt-2 pb-4">
-                  <Text className="text-sm font-bold mb-3" style={{ color: colors.text }}>Permissions</Text>
-                  {form.role === 'manager' ? <Text className="mb-3 text-xs" style={{ color: colors.muted }}>All permissions are selected by default. You can remove any permission as needed.</Text> : null}
+                  <Text className="text-sm font-bold mb-3" style={{ color: colors.text }}>Agent Permissions</Text>
                   <View className="gap-4">
                     {permissionCategories.map((category) => {
                       const tabs = category.ids
