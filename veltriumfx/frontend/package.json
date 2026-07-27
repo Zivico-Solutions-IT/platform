@@ -1,0 +1,41 @@
+{
+  "name": "veltriumfx-frontend",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-picker/picker": "2.11.4",
+    "axios": "^1.16.1",
+    "babel-preset-expo": "~56.0.0",
+    "expo": "~56.0.4",
+    "expo-constants": "~56.0.15",
+    "expo-linking": "~56.0.11",
+    "expo-router": "~56.2.6",
+    "expo-status-bar": "~56.0.4",
+    "libphonenumber-js": "^1.13.7",
+    "lucide-react-native": "^1.16.0",
+    "nativewind": "^4.2.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-reanimated": "4.3.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "4.25.2",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "^0.21.2",
+    "react-native-webview": "13.16.1",
+    "react-native-worklets": "0.8.3",
+    "socket.io-client": "^4.8.3"
+  },
+  "scripts": {
+    "start": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli start",
+    "android": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli start --android",
+    "ios": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli start --ios",
+    "web": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli start --web",
+    "export:web": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli export --platform web --output-dir web_build"
+  },
+  "private": true,
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

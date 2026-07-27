@@ -1,0 +1,44 @@
+{
+  "name": "novafxm-backend",
+  "version": "1.0.0",
+  "private": true,
+  "main": "app.js",
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon src/server.js",
+    "db:prepare": "node src/scripts/prepareDatabase.js",
+    "seed:admin": "node src/seed/seedAdmin.js",
+    "import:binance": "node src/scripts/importBinanceCandles.js",
+    "import:coinbase": "node src/scripts/importCoinbaseCandles.js",
+    "import:dukascopy": "node src/scripts/importDukascopyCandles.js",
+    "import:dukascopy:cfd": "node src/scripts/importDukascopyCandles.js app-cfd",
+    "import:yahoo": "node src/scripts/importYahooCandles.js",
+    "import:stooq": "node src/scripts/importStooqCandles.js",
+    "catchup:candles": "node src/scripts/catchupCandles.js",
+    "migrate:candles": "node src/scripts/alterCandleVolume.js",
+    "check": "node --check app.js && node --check src/config/env.js && node --check src/server.js",
+    "list:users": "node list_users.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.17",
+    "axios": "^1.16.1",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "expo": "^57.0.4",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
+    "lzma-native": "^8.0.6",
+    "mysql2": "^3.22.3",
+    "nodemailer": "^9.0.1",
+    "sequelize": "^6.37.8",
+    "socket.io": "^4.8.3",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

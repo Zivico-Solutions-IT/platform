@@ -1,0 +1,47 @@
+const User = require('./User');
+const Wallet = require('./Wallet');
+const AdminNotification = require('./AdminNotification');
+const Deposit = require('./Deposit');
+const Withdrawal = require('./Withdrawal');
+const Transaction = require('./Transaction');
+const Trade = require('./Trade');
+const Candle = require('./Candle');
+const TradingAccount = require('./TradingAccount');
+const BankAccount = require('./BankAccount');
+const DepositMethodAddress = require('./DepositMethodAddress');
+const SymbolVisibility = require('./SymbolVisibility');
+const ReferralReward = require('./ReferralReward');
+const Project = require('./Project');
+
+User.hasOne(Wallet, { foreignKey: 'userId', as: 'wallet' });
+Wallet.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Deposit, { foreignKey: 'userId' });
+Deposit.belongsTo(User, { foreignKey: 'userId' });
+TradingAccount.hasMany(Deposit, { foreignKey: 'tradingAccountId', as: 'deposits' });
+Deposit.belongsTo(TradingAccount, { foreignKey: 'tradingAccountId', as: 'tradingAccount' });
+DepositMethodAddress.hasMany(Deposit, { foreignKey: 'depositAddressId', as: 'deposits' });
+Deposit.belongsTo(DepositMethodAddress, { foreignKey: 'depositAddressId', as: 'methodAddress' });
+User.hasMany(Withdrawal, { foreignKey: 'userId' });
+Withdrawal.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Transaction, { foreignKey: 'userId' });
+Transaction.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Trade, { foreignKey: 'userId' });
+Trade.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(TradingAccount, { foreignKey: 'userId', as: 'tradingAccounts' });
+TradingAccount.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(BankAccount, { foreignKey: 'userId', as: 'bankAccounts' });
+BankAccount.belongsTo(User, { foreignKey: 'userId' });
+TradingAccount.hasMany(Trade, { foreignKey: 'tradingAccountId', as: 'trades' });
+Trade.belongsTo(TradingAccount, { foreignKey: 'tradingAccountId', as: 'tradingAccount' });
+User.hasMany(User, { foreignKey: 'referredById', as: 'referrals' });
+User.belongsTo(User, { foreignKey: 'referredById', as: 'referrer' });
+User.belongsTo(User, { foreignKey: 'assignedAgentId', as: 'assignedAgent' });
+User.belongsTo(User, { foreignKey: 'assignedById', as: 'assignedBy' });
+
+User.hasMany(ReferralReward, { foreignKey: 'referrerId', as: 'referralRewards' });
+ReferralReward.belongsTo(User, { foreignKey: 'referrerId', as: 'referrer' });
+ReferralReward.belongsTo(User, { foreignKey: 'refereeId', as: 'referee' });
+ReferralReward.belongsTo(Deposit, { foreignKey: 'depositId', as: 'deposit' });
+
+module.exports = { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification };
+

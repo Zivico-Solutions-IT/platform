@@ -1,0 +1,341 @@
+import { useEffect, useMemo, useState } from 'react';
+import { router } from 'expo-router';
+import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import CustomButton from '../common/CustomButton';
+import CustomInput from '../common/CustomInput';
+import { dateTime, money } from '../../utils/formatters';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../hooks/useAuth';
+import { authService } from '../../services/authService';
+
+function Option({ active, label, onPress, colors }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="min-h-[42px] flex-1 items-center justify-center rounded-xl border px-3"
+      style={{ backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }}
+    >
+      <Text className="text-sm font-medium" style={{ color: active ? '#05130d' : colors.text }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function DetailOption({ active, detail, onPress, colors }) {
+  const isTrc20 = detail.payoutType === 'TRC20';
+  return (
+    <Pressable
+      onPress={onPress}
+      className="rounded-2xl border p-5"
+      style={{ backgroundColor: active ? colors.panel : colors.surface, borderColor: active ? colors.primary : colors.border }}
+    >
+      <View className="flex-row flex-wrap items-center justify-between gap-3">
+        <Text className="min-w-0 flex-1 text-sm font-medium" numberOfLines={1} style={{ color: colors.text }}>
+          {isTrc20 ? 'USDT TRC20' : detail.bankName}
+        </Text>
+        <Text className="rounded-full px-3 py-1 text-[11px] font-bold tracking-wider uppercase" style={{ backgroundColor: colors.panel, color: colors.muted }}>
+          {detail.status}
+        </Text>
+      </View>
+      <Text className="mt-2 text-sm" selectable style={{ color: colors.muted }}>
+        {isTrc20 ? 'Wallet address' : 'Account number'}: {detail.bankAccountNumber}
+      </Text>
+      <Text className="mt-1 text-sm" style={{ color: colors.muted }}>
+        {isTrc20 ? 'Wallet holder' : 'Account holder'}: {detail.bankAccountHolder}
+      </Text>
+    </Pressable>
+  );
+}
+
+function InfoTile({ label, value, tone, colors, mobile }) {
+  return (
+    <View
+      className={`${mobile ? 'p-3 rounded-xl' : 'p-4 rounded-2xl'} flex-1 border`}
+      style={{
+        minWidth: mobile ? 110 : 145,
+        backgroundColor: colors.surface,
+        borderColor: colors.border
+      }}
+    >
+      <Text className="text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }} numberOfLines={1}>
+        {label}
+      </Text>
+      <Text className={`${mobile ? 'mt-1 text-sm' : 'mt-2 text-base'} font-medium`} style={{ color: tone || colors.text }} numberOfLines={1} adjustsFontSizeToFit>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function WithdrawalHistory({ withdrawals, colors, mobile }) {
+  return (
+    <View className="mt-5 rounded-3xl border p-5 shadow-sm" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+      <Text className="mb-3 text-base font-medium" style={{ color: colors.text }}>Withdrawal History</Text>
+      {withdrawals.length ? (
+        mobile ? (
+          <View className="gap-3">
+            {withdrawals.map((item) => (
+              <View key={item.id} className="rounded-2xl border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+                <View className="flex-row items-start justify-between gap-3">
+                  <View className="min-w-0 flex-1">
+                    <Text className="text-xs" style={{ color: colors.muted }}>{dateTime(item.createdAt)}</Text>
+                    <Text className="mt-1 text-sm font-medium" style={{ color: colors.text }}>{item.withdrawalMethod || (item.description?.toLowerCase().includes('crypto') ? 'Crypto' : 'Bank')}</Text>
+                  </View>
+                  <Text className="text-sm font-semimedium" style={{ color: colors.text }}>{money(item.amount)} USD</Text>
+                </View>
+                <Text className="mt-2 self-start rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider" style={{ backgroundColor: colors.surface, color: ['approved', 'completed'].includes(item.status) ? colors.success : item.status === 'rejected' ? colors.danger : colors.primary }}>
+                  {item.status}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+        <View className="overflow-hidden rounded-2xl border" style={{ borderColor: colors.border }}>
+          <View className="flex-row px-4 py-3" style={{ backgroundColor: colors.panel }}>
+            <Text className="flex-[1.4] text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Date</Text>
+            <Text className="flex-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Method</Text>
+            <Text className="flex-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Amount</Text>
+            <Text className="flex-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Status</Text>
+          </View>
+          {withdrawals.map((item) => (
+            <View key={item.id} className="flex-row border-t px-4 py-4" style={{ borderColor: colors.border }}>
+              <Text className="flex-[1.4] text-xs" style={{ color: colors.muted }}>{dateTime(item.createdAt)}</Text>
+              <Text className="flex-1 text-xs" style={{ color: colors.text }}>{item.withdrawalMethod || (item.description?.toLowerCase().includes('crypto') ? 'Crypto' : 'Bank')}</Text>
+              <Text className="flex-1 text-xs font-semimedium" style={{ color: colors.text }}>{money(item.amount)} USD</Text>
+              <Text className="flex-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: ['approved', 'completed'].includes(item.status) ? colors.success : item.status === 'rejected' ? colors.danger : colors.primary }}>
+                {item.status}
+              </Text>
+            </View>
+          ))}
+        </View>
+        )
+      ) : <Text style={{ color: colors.muted }}>No withdrawal requests yet.</Text>}
+    </View>
+  );
+}
+
+export default function WithdrawForm({
+  onSubmit,
+  loading,
+  disabled,
+  disabledMessage,
+  summary = {},
+  transactions = [],
+  onMissingDetailsPress,
+  selectedAccount,
+}) {
+  const { width } = useWindowDimensions();
+  const { colors } = useAppTheme();
+  const { user } = useAuth();
+  const [form, setForm] = useState({
+    amount: '',
+    withdrawalMethod: 'Bank',
+    savedDetailId: '',
+  });
+  const [cryptoNetwork, setCryptoNetwork] = useState('TRC20');
+  const [walletId, setWalletId] = useState('');
+  const [message, setMessage] = useState('');
+  const [savedDetails, setSavedDetails] = useState([]);
+  const accountType = selectedAccount?.type || user?.accountType || 'Demo';
+  const liveAccountSelected = String(accountType).toLowerCase() === 'live';
+  const mobile = width < 640;
+  const withdrawals = useMemo(() => transactions.filter((item) => item.type === 'withdrawal'), [transactions]);
+  const pendingWithdrawals = withdrawals
+    .filter((item) => item.status === 'pending')
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const availableBalance = Number(summary.balance || 0);
+  const withdrawableBalance = Math.max(availableBalance - pendingWithdrawals, 0);
+  const methodDetails = useMemo(() => (
+    savedDetails.filter((item) => (
+      form.withdrawalMethod === 'Crypto'
+        ? item.payoutType === 'TRC20'
+        : item.payoutType === 'Bank'
+    ))
+  ), [form.withdrawalMethod, savedDetails]);
+  const approvedMethodDetails = useMemo(() => (
+    methodDetails.filter((item) => item.status === 'approved')
+  ), [methodDetails]);
+  const selectedSavedDetail = useMemo(() => (
+    approvedMethodDetails.find((item) => String(item.id) === String(form.savedDetailId)) || null
+  ), [approvedMethodDetails, form.savedDetailId]);
+  const update = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
+  const setMethod = (withdrawalMethod) => {
+    const matching = savedDetails.filter((item) => (
+      withdrawalMethod === 'Crypto'
+        ? item.payoutType === 'TRC20'
+        : item.payoutType === 'Bank'
+    ));
+    const detail = matching.find((item) => item.status === 'approved') || null;
+    setForm((current) => ({
+      ...current,
+      withdrawalMethod,
+      savedDetailId: detail?.id || '',
+    }));
+  };
+
+  useEffect(() => {
+    let active = true;
+    if (!user) {
+      setSavedDetails([]);
+      return undefined;
+    }
+    authService.listBankAccounts()
+      .then((result) => {
+        if (!active) return;
+        setSavedDetails((result.accounts || []).map((account) => ({
+          id: account.id,
+          bankAccountHolder: account.bankAccountHolder || account.accountHolderName || '',
+          bankName: account.bankName || '',
+          bankBranch: account.bankBranch || account.branchName || '',
+          bankAccountNumber: account.bankAccountNumber || account.accountNumber || '',
+          status: account.status || 'pending',
+          payoutType: String(`${account.bankName || ''} ${account.bankBranch || account.branchName || ''}`).toLowerCase().includes('trc20') ? 'TRC20' : 'Bank',
+        })));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    setForm((current) => {
+      if (approvedMethodDetails.some((item) => String(item.id) === String(current.savedDetailId))) return current;
+      return { ...current, savedDetailId: approvedMethodDetails[0]?.id || '' };
+    });
+  }, [approvedMethodDetails]);
+
+  useEffect(() => {
+    if (form.withdrawalMethod === 'Crypto') {
+      const trc20Addresses = [
+        'TRC456328N',
+        'TRC982341M',
+        'TRC710293K'
+      ];
+      const bep20Addresses = [
+        'BEP234567p',
+        'BEP891234q',
+        'BEP567890r'
+      ];
+      const pool = cryptoNetwork === 'TRC20' ? trc20Addresses : bep20Addresses;
+      const randomAddress = pool[Math.floor(Math.random() * pool.length)];
+      setWalletId(randomAddress);
+    }
+  }, [cryptoNetwork, form.withdrawalMethod]);
+
+  const submit = async () => {
+    try {
+      if (!liveAccountSelected) throw new Error('Withdrawals are available only from Live accounts. Demo accounts cannot withdraw.');
+      if (disabled) throw new Error(disabledMessage || 'Withdrawals are unavailable.');
+      const amount = Number(form.amount);
+      if (!amount) throw new Error('Enter a valid withdrawal amount.');
+      if (amount > withdrawableBalance) throw new Error('Withdrawal amount exceeds withdrawable balance.');
+      let finalSubmitData = {};
+      if (form.withdrawalMethod === 'Crypto') {
+        if (!walletId) throw new Error('Wallet ID is missing.');
+        finalSubmitData = {
+          amount,
+          withdrawalMethod: 'Crypto',
+          tradingAccountId: selectedAccount?.id,
+          bankAccountId: null,
+          bankName: `USDT ${cryptoNetwork}`,
+          accountNumber: walletId,
+          accountHolderName: user?.name || 'Self',
+        };
+      } else {
+        if (!selectedSavedDetail) throw new Error('Select an approved bank withdrawal detail from Settings.');
+        finalSubmitData = {
+          amount,
+          withdrawalMethod: 'Bank',
+          tradingAccountId: selectedAccount?.id,
+          bankAccountId: selectedSavedDetail.id,
+          bankName: selectedSavedDetail.bankName,
+          accountNumber: selectedSavedDetail.bankAccountNumber,
+          accountHolderName: selectedSavedDetail.bankAccountHolder,
+        };
+      }
+      await onSubmit(finalSubmitData);
+      setMessage('Success: withdrawal request submitted. Status is Pending until admin approval.');
+      setForm((current) => ({ ...current, amount: '' }));
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+    }
+  };
+  const openPaymentDetails = () => {
+    const payoutType = form.withdrawalMethod === 'Crypto' ? 'TRC20' : 'Bank';
+    if (onMissingDetailsPress) {
+      onMissingDetailsPress(payoutType);
+      return;
+    }
+    router.push({ pathname: '/settings', params: { section: 'payments', returnTo: 'withdraw', payoutType } });
+  };
+
+  return (
+    <View className={`${mobile ? 'p-5' : 'p-6'} flex-1 rounded-3xl border shadow-lg`} style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <Text className="mb-5 text-lg font-medium" style={{ color: colors.text }}>Withdraw Funds</Text>
+      {!liveAccountSelected ? (
+        <Text className="mb-4 rounded-2xl border p-4 text-sm" style={{ borderColor: colors.danger, backgroundColor: `${colors.danger}12`, color: colors.danger }}>
+          Withdrawals are available only from Live accounts. Demo accounts cannot withdraw.
+        </Text>
+      ) : null}
+
+      <View className="mb-5 flex-row flex-wrap gap-3">
+        <InfoTile label="Available Balance" value={`${money(availableBalance)} USD`} colors={colors} mobile={mobile} />
+        <InfoTile label="Withdrawable Balance" value={`${money(withdrawableBalance)} USD`} colors={colors} mobile={mobile} />
+      </View>
+
+      <Text className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Withdrawal Method</Text>
+      <View className="mb-4 flex-row gap-3">
+        <Option active={form.withdrawalMethod === 'Bank'} label="Bank" onPress={() => setMethod('Bank')} colors={colors} />
+        <Option active={form.withdrawalMethod === 'Crypto'} label="Crypto" onPress={() => setMethod('Crypto')} colors={colors} />
+      </View>
+
+      <CustomInput label="Amount (USD)" keyboardType="decimal-pad" value={form.amount} onChangeText={update('amount')} />
+      {form.withdrawalMethod === 'Crypto' ? (
+        <View className="mb-4 mt-2">
+          <Text className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Crypto Network</Text>
+          <View className="mb-4 flex-row gap-3">
+            <Option active={cryptoNetwork === 'TRC20'} label="TRC20" onPress={() => setCryptoNetwork('TRC20')} colors={colors} />
+            <Option active={cryptoNetwork === 'BEP20'} label="BEP20" onPress={() => setCryptoNetwork('BEP20')} colors={colors} />
+          </View>
+          <CustomInput label="Wallet ID" value={walletId} onChangeText={setWalletId} />
+        </View>
+      ) : null}
+
+      <Text className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
+        Select saved {form.withdrawalMethod === 'Crypto' ? 'crypto wallet' : 'bank'} details
+      </Text>
+      <View className="mb-4 gap-3">
+        {approvedMethodDetails.map((detail) => (
+          <DetailOption
+            key={detail.id}
+            active={String(form.savedDetailId) === String(detail.id)}
+            detail={detail}
+            onPress={() => update('savedDetailId')(detail.id)}
+            colors={colors}
+          />
+        ))}
+        {!approvedMethodDetails.length ? (
+          <Pressable
+            onPress={openPaymentDetails}
+            className="rounded-2xl border p-4"
+            style={{ borderColor: colors.primary, backgroundColor: colors.surface }}
+          >
+            <Text className="text-sm" style={{ color: colors.text }}>
+              Add and get approval for {form.withdrawalMethod === 'Crypto' ? 'crypto wallet' : 'bank account'} details in Settings before requesting a withdrawal.
+            </Text>
+            <Text className="mt-2 text-xs font-medium" style={{ color: colors.primary }}>Open payment details</Text>
+          </Pressable>
+        ) : null}
+        {methodDetails.some((detail) => detail.status !== 'approved') ? (
+          <Text className="text-xs" style={{ color: colors.muted }}>
+            Pending or rejected details stay in Settings until admin approval.
+          </Text>
+        ) : null}
+      </View>
+      <CustomButton title="Request Withdrawal" onPress={submit} loading={loading} disabled={disabled} variant="primary" />
+      {disabled && disabledMessage ? <Text className="mt-3 text-sm text-danger">{disabledMessage}</Text> : null}
+      {message ? <Text className={`mt-3 text-sm ${message.startsWith('Success') ? 'text-success' : 'text-danger'}`}>{message}</Text> : null}
+      <WithdrawalHistory withdrawals={withdrawals} colors={colors} mobile={mobile} />
+    </View>
+  );
+}

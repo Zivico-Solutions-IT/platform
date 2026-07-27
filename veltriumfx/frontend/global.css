@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+[role='button'],
+input,
+textarea {
+  outline: none;
+}
+
+[role='button']:focus,
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
+.deep-green-scrollbar {
+  scrollbar-color: #8c8c8c #f0f7f5;
+  scrollbar-width: thin;
+}
+
+.deep-green-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.deep-green-scrollbar::-webkit-scrollbar-track {
+  background: #f0f7f5;
+  border-left: 1px solid rgba(0, 103, 79, .14);
+}
+
+.deep-green-scrollbar::-webkit-scrollbar-thumb {
+  background: #8c8c8c;
+  border: 2px solid #f0f7f5;
+  border-radius: 999px;
+}
+
+.deep-green-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #00674F;
+}
+
+/* Dark mode overrides */
+.dark .deep-green-scrollbar {
+  scrollbar-color: rgba(0, 103, 79, .72) #080f0c;
+}
+
+.dark .deep-green-scrollbar::-webkit-scrollbar-track {
+  background: #080f0c;
+}
+
+.dark .deep-green-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 103, 79, .72);
+  border: 2px solid #080f0c;
+}
+
+.dark .deep-green-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #00674F;
+}
+
+#admin-sidebar-backdrop {
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+select option {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
