@@ -86,7 +86,21 @@ export default function AdminSidebar({
     if (tab.masterOnly) return adminUser?.role === 'master';
     if (adminUser?.role === 'master') return true;
     if (tab.adminOnly) return false;
-    return Array.isArray(adminUser?.permissions) && adminUser.permissions.includes(tab.id);
+
+    if (adminUser?.role === 'agent') {
+      return Array.isArray(adminUser?.permissions) && adminUser.permissions.includes(tab.id);
+    }
+
+    if (adminUser?.role === 'admin' || adminUser?.role === 'manager') {
+      const companyPerms = Array.isArray(adminUser?.companyPermissions) ? adminUser.companyPermissions : adminUser?.permissions;
+      if (Array.isArray(companyPerms)) {
+        if (companyPerms.length === 0) return false;
+        return companyPerms.includes(tab.id);
+      }
+      return true;
+    }
+
+    return true;
   });
 
   useEffect(() => {

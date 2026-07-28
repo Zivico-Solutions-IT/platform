@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
-import { Building2, Check, ChevronDown, ChevronRight, Plus, Settings, ShieldCheck, Users, X } from 'lucide-react-native';
+import { Activity, AlertTriangle, Award, BanknoteArrowDown, BanknoteArrowUp, BarChart3, Building2, Check, ChevronDown, ChevronRight, Coins, LayoutDashboard, Menu, Plus, Settings, ShieldCheck, TrendingUp, UserRound, Users, UsersRound, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
@@ -13,6 +13,7 @@ import RequireAuth from '../src/components/auth/RequireAuth';
 import LoadingSpinner from '../src/components/common/LoadingSpinner';
 import { Redirect } from 'expo-router';
 import AdminScreen from './admin';
+import NovaLogo from '../src/components/brand/NovaLogo';
 
 const permissionGroups = [
   { title: 'Workspace Access', items: [
@@ -53,6 +54,7 @@ function MasterDashboard() {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [tab, setTab] = useState('overview');
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [expandedAdminId, setExpandedAdminId] = useState(null);
   const [selectedAdminId, setSelectedAdminId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -212,86 +214,60 @@ function MasterDashboard() {
   const companyPermissions = normalizePermissions(selectedProject?.permissions);
   const adminPermissions = normalizePermissions(selectedAdmin?.permissions);
   const visibleCompanyPermissions = companyPermissions.filter((permission) => allPermissionIds.includes(permission));
+  const masterNavigation = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard, dashboard: true },
+    { id: 'userManagement', label: 'User Management', icon: UsersRound, dashboard: true },
+    { id: 'users', label: 'User Wallets', icon: UsersRound, dashboard: true },
+    { id: 'verifications', label: 'Verifications', icon: ShieldCheck, dashboard: true },
+    { id: 'userLevels', label: 'User Levels', icon: Award, dashboard: true },
+    { id: 'deposits', label: 'Deposits', icon: BanknoteArrowDown, dashboard: true },
+    { id: 'withdrawals', label: 'Withdrawals', icon: BanknoteArrowUp, dashboard: true },
+    { id: 'referrals', label: 'Referral Rewards', icon: UsersRound, dashboard: true },
+    { id: 'trades', label: 'All Trades', icon: BarChart3, dashboard: true },
+    { id: 'addTrading', label: 'Add Trading', icon: TrendingUp, dashboard: true },
+    { id: 'marginAlerts', label: 'Margin Alerts', icon: AlertTriangle, dashboard: true },
+    { divider: true },
+    { id: 'staff', label: 'Staff & Permissions', icon: Users },
+    { id: 'symbols', label: 'Symbol Settings', icon: Coins },
+    { id: 'permissions', label: 'Company Permissions', icon: ShieldCheck },
+    { id: 'panel', label: 'Company Status & Admins', icon: Activity },
+  ];
+  const selectNavigation = (item) => {
+    if (item.dashboard) selectProjectAndSection(item.id);
+    else setTab(item.id);
+    setMobileNavOpen(false);
+  };
+  const renderNavigation = (compact = false) => masterNavigation.map((item, index) => {
+    if (item.divider) return <View key={`divider-${index}`} className="my-2 h-px" style={{ backgroundColor: colors.border }} />;
+    const Icon = item.icon;
+    const active = tab === item.id;
+    return <Pressable key={item.id} onPress={() => selectNavigation(item)} className={`mb-1 flex-row items-center rounded-2xl ${compact ? 'px-4 py-3' : 'px-4 py-3'}`} style={{ backgroundColor: active ? colors.primary : 'transparent' }}>
+      <Icon size={18} color={active ? '#0B0B0B' : colors.muted} />
+      <Text className="ml-3 flex-1 text-sm font-semibold" style={{ color: active ? '#0B0B0B' : colors.muted }}>{item.label}</Text>
+    </Pressable>;
+  });
 
   return (
     <View className={mobile ? 'flex-1' : 'flex-1 flex-row'} style={{ backgroundColor: colors.background }}>
-      <View className={mobile ? 'border-b p-4' : 'w-[280px] border-r p-4'} style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-        <View className="mb-7 flex-row items-center gap-3"><View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${colors.primary}20` }}><Building2 size={20} color={colors.primary} /></View><View><Text className="text-lg font-bold" style={{ color: colors.text }}>Master Panel</Text><Text className="text-xs" style={{ color: colors.muted }}>Company administration</Text></View></View>
-        <Text className="mb-2 text-[11px] font-bold uppercase" style={{ color: colors.muted }}>Selected company</Text>
-        <Pressable onPress={() => setCompanyMenuOpen((open) => !open)} className="flex-row items-center justify-between rounded-xl border px-3 py-3" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-          <Text numberOfLines={1} className="flex-1 text-sm font-semibold" style={{ color: colors.text }}>{selectedProject?.name || 'Choose a company'}</Text><ChevronDown size={17} color={colors.muted} />
-        </Pressable>
-        {companyMenuOpen ? <View className="mt-2 rounded-xl border p-1" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-          {projects.map((project) => <Pressable key={project.id} onPress={() => { setSelectedProjectId(project.id); setCompanyMenuOpen(false); }} className="rounded-lg px-3 py-2.5" style={{ backgroundColor: project.id === selectedProject?.id ? `${colors.primary}18` : 'transparent' }}><Text className="text-sm font-medium" style={{ color: project.id === selectedProject?.id ? colors.primary : colors.text }}>{project.name}</Text><Text className="mt-0.5 text-[10px]" style={{ color: colors.muted }}>{project.identifier}</Text></Pressable>)}
-        </View> : null}
-        {!mobile ? (
-          <ScrollView className="mt-6 flex-1 gap-1" showsVerticalScrollIndicator={false}>
-            <Pressable onPress={() => selectProjectAndSection('overview')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'overview' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'overview' ? '#0B0B0B' : colors.text }}>Overview</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('userManagement')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'userManagement' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'userManagement' ? '#0B0B0B' : colors.text }}>User Management</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('users')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'users' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'users' ? '#0B0B0B' : colors.text }}>User Wallets</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('verifications')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'verifications' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'verifications' ? '#0B0B0B' : colors.text }}>Verifications</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('userLevels')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'userLevels' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'userLevels' ? '#0B0B0B' : colors.text }}>User Levels</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('deposits')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'deposits' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'deposits' ? '#0B0B0B' : colors.text }}>Deposits</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('withdrawals')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'withdrawals' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'withdrawals' ? '#0B0B0B' : colors.text }}>Withdrawals</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('referrals')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'referrals' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'referrals' ? '#0B0B0B' : colors.text }}>Referral Rewards</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('trades')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'trades' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'trades' ? '#0B0B0B' : colors.text }}>All Trades</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('addTrading')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'addTrading' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'addTrading' ? '#0B0B0B' : colors.text }}>Add Trading</Text>
-            </Pressable>
-            <Pressable onPress={() => selectProjectAndSection('marginAlerts')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'marginAlerts' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'marginAlerts' ? '#0B0B0B' : colors.text }}>Margin Alerts</Text>
-            </Pressable>
-            <View className="my-2 h-[1px] w-full" style={{ backgroundColor: colors.border }} />
-            <Pressable onPress={() => setTab('staff')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'staff' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'staff' ? '#0B0B0B' : colors.text }}>Staff & Permissions</Text>
-            </Pressable>
-            <Pressable onPress={() => setTab('symbols')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'symbols' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'symbols' ? '#0B0B0B' : colors.text }}>Symbol Settings</Text>
-            </Pressable>
-            <Pressable onPress={() => setTab('permissions')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'permissions' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'permissions' ? '#0B0B0B' : colors.text }}>Company Permissions</Text>
-            </Pressable>
-            <Pressable onPress={() => setTab('panel')} className="rounded-xl px-4 py-2.5" style={{ backgroundColor: tab === 'panel' ? colors.primary : 'transparent' }}>
-              <Text className="font-semibold text-sm" style={{ color: tab === 'panel' ? '#0B0B0B' : colors.text }}>Company Status & Admins</Text>
-            </Pressable>
-          </ScrollView>
-        ) : null}
-      </View>
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: mobile ? 16 : 30 }}>
-        {mobile ? (
-          <View className="mb-5 flex-row gap-2">
-            <Pressable onPress={() => setTab('panel')} className="flex-1 rounded-xl py-3" style={{ backgroundColor: tab === 'panel' ? colors.primary : colors.surface }}>
-              <Text className="text-center font-semibold" style={{ color: tab === 'panel' ? '#0B0B0B' : colors.text }}>Overview</Text>
-            </Pressable>
-            <Pressable onPress={() => setTab('staff')} className="flex-1 rounded-xl py-3" style={{ backgroundColor: tab === 'staff' ? colors.primary : colors.surface }}>
-              <Text className="text-center font-semibold" style={{ color: tab === 'staff' ? '#0B0B0B' : colors.text }}>Staff</Text>
-            </Pressable>
-            <Pressable onPress={() => setTab('symbols')} className="flex-1 rounded-xl py-3" style={{ backgroundColor: tab === 'symbols' ? colors.primary : colors.surface }}>
-              <Text className="text-center font-semibold" style={{ color: tab === 'symbols' ? '#0B0B0B' : colors.text }}>Symbols</Text>
-            </Pressable>
-            <Pressable onPress={() => setTab('permissions')} className="flex-1 rounded-xl py-3" style={{ backgroundColor: tab === 'permissions' ? colors.primary : colors.surface }}>
-              <Text className="text-center font-semibold" style={{ color: tab === 'permissions' ? '#0B0B0B' : colors.text }}>Permissions</Text>
-            </Pressable>
+      {mobile ? <View className="flex-row items-center justify-between border-b px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><Pressable onPress={() => setMobileNavOpen(true)} className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: colors.surface }} accessibilityLabel="Open master navigation"><Menu size={22} color={colors.text} /></Pressable><View className="items-center"><Text className="text-base font-bold" style={{ color: colors.text }}>Master Console</Text><Text className="text-[11px]" style={{ color: colors.muted }}>{selectedProject?.name || 'Choose a company'}</Text></View><View className="h-10 w-10 items-center justify-center rounded-full border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}><UserRound size={19} color={colors.muted} /></View></View> : null}
+      {!mobile ? <View className="w-[360px] border-r" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><View className="border-b px-7 py-6" style={{ borderColor: colors.border }}><NovaLogo width={152} height={38} /><Text className="mt-3 text-xl font-medium" style={{ color: colors.text }}>Master Console</Text><Text className="mt-1 text-xs" style={{ color: colors.muted }}>Company control center</Text></View><View className="px-5 pt-5"><Text className="mb-2 text-[11px] font-bold uppercase" style={{ color: colors.muted }}>Selected company</Text><Pressable onPress={() => setCompanyMenuOpen((open) => !open)} className="flex-row items-center justify-between rounded-xl border px-3 py-3" style={{ backgroundColor: colors.surface, borderColor: colors.border }}><Building2 size={17} color={colors.primary} /><Text numberOfLines={1} className="ml-2 flex-1 text-sm font-semibold" style={{ color: colors.text }}>{selectedProject?.name || 'Choose a company'}</Text><ChevronDown size={17} color={colors.muted} /></Pressable>{companyMenuOpen ? <View className="mt-2 rounded-xl border p-1" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>{projects.map((project) => <Pressable key={project.id} onPress={() => { setSelectedProjectId(project.id); setCompanyMenuOpen(false); }} className="rounded-lg px-3 py-2.5" style={{ backgroundColor: project.id === selectedProject?.id ? `${colors.primary}18` : 'transparent' }}><Text className="text-sm font-medium" style={{ color: project.id === selectedProject?.id ? colors.primary : colors.text }}>{project.name}</Text><Text className="mt-0.5 text-[10px]" style={{ color: colors.muted }}>{project.identifier}</Text></Pressable>)}</View> : null}</View><ScrollView className="mt-5 flex-1 px-5" contentContainerStyle={{ paddingBottom: 28 }} showsVerticalScrollIndicator>{renderNavigation()}</ScrollView></View> : null}
+      <Modal visible={mobile && mobileNavOpen} transparent animationType="fade" onRequestClose={() => setMobileNavOpen(false)}>
+        <View className="flex-1 flex-row bg-black/50">
+          <View className="h-full w-[86%] max-w-[340px] border-r" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+            <View className="flex-row items-center justify-between border-b px-5 py-5" style={{ borderColor: colors.border }}>
+              <View><NovaLogo width={132} height={33} /><Text className="mt-2 text-lg font-medium" style={{ color: colors.text }}>Master Console</Text><Text className="text-xs" style={{ color: colors.muted }}>Company control center</Text></View>
+              <Pressable onPress={() => setMobileNavOpen(false)} className="h-10 w-10 items-center justify-center rounded-xl border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}><X size={20} color={colors.primary} /></Pressable>
+            </View>
+            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 42 }}>
+              <Text className="mb-2 text-[11px] font-bold uppercase" style={{ color: colors.muted }}>Selected company</Text>
+              <View className="mb-5 rounded-xl border p-1" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>{projects.map((project) => <Pressable key={project.id} onPress={() => { setSelectedProjectId(project.id); setMobileNavOpen(false); }} className="rounded-lg px-3 py-3" style={{ backgroundColor: project.id === selectedProject?.id ? `${colors.primary}18` : 'transparent' }}><Text className="text-sm font-semibold" style={{ color: project.id === selectedProject?.id ? colors.primary : colors.text }}>{project.name}</Text><Text className="mt-0.5 text-[10px]" style={{ color: colors.muted }}>{project.identifier}</Text></Pressable>)}</View>
+              {renderNavigation(true)}
+            </ScrollView>
           </View>
-        ) : null}
+          <Pressable className="flex-1" onPress={() => setMobileNavOpen(false)} />
+        </View>
+      </Modal>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: mobile ? 16 : 30 }}>
         {loading ? (
           <Text style={{ color: colors.muted }}>Loading companies...</Text>
         ) : !selectedProject ? (

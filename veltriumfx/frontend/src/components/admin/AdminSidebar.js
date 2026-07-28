@@ -86,7 +86,21 @@ export default function AdminSidebar({
     if (tab.masterOnly) return adminUser?.role === 'master';
     if (adminUser?.role === 'master') return true;
     if (tab.adminOnly) return false;
-    return Array.isArray(adminUser?.permissions) && adminUser.permissions.includes(tab.id);
+
+    if (adminUser?.role === 'agent') {
+      return Array.isArray(adminUser?.permissions) && adminUser.permissions.includes(tab.id);
+    }
+
+    if (adminUser?.role === 'admin' || adminUser?.role === 'manager') {
+      const companyPerms = Array.isArray(adminUser?.companyPermissions) ? adminUser.companyPermissions : adminUser?.permissions;
+      if (Array.isArray(companyPerms)) {
+        if (companyPerms.length === 0) return false;
+        return companyPerms.includes(tab.id);
+      }
+      return true;
+    }
+
+    return true;
   });
 
   useEffect(() => {
@@ -186,8 +200,10 @@ export default function AdminSidebar({
       )}
     </View>
   );
-  const renderConsoleHeader = (compact = false, showClose = false) => (
-    <View className={`${compact ? 'px-5 pb-5 pt-5' : 'px-6 py-5'} border-b`} style={{ borderColor: colors.border }}>
+  const renderConsoleHeader = (compact = false, showClose = false) => {
+    const isVeltrium = true;
+    return (
+      <View className={`${compact ? 'px-5 pb-5 pt-5' : 'px-6 py-5'} border-b`} style={{ borderColor: colors.border }}>
       <View className="flex-row items-center justify-between">
         <View className="min-w-0 flex-1 pr-3">
           <NovaLogo dark={darkMode} width={compact ? 132 : 136} height={34} />
@@ -229,6 +245,7 @@ export default function AdminSidebar({
       )}
     </View>
   );
+};
   const renderDrawerContent = () => (
     <View style={{ flex: 1, height: '100%' }}>
       {Platform.OS === 'web' && (

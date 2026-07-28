@@ -2377,10 +2377,27 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
 
   const hasPermission = (permId) => {
     if (adminUser?.role === 'master') return true;
-    if (!Array.isArray(adminUser?.permissions)) return false;
-    if (adminUser.permissions.includes(permId)) return true;
-    if (['depositAddresses', 'depositsList'].includes(permId)) return adminUser.permissions.includes('deposits');
-    if (['withdrawalsList', 'withdrawalDetails'].includes(permId)) return adminUser.permissions.includes('withdrawals');
+
+    if (adminUser?.role === 'agent') {
+      if (!Array.isArray(adminUser?.permissions) || adminUser.permissions.length === 0) return false;
+      if (adminUser.permissions.includes(permId)) return true;
+      if (['depositAddresses', 'depositsList'].includes(permId)) return adminUser.permissions.includes('deposits');
+      if (['withdrawalsList', 'withdrawalDetails'].includes(permId)) return adminUser.permissions.includes('withdrawals');
+      return false;
+    }
+
+    if (adminUser?.role === 'admin' || adminUser?.role === 'manager') {
+      const companyPerms = Array.isArray(adminUser?.companyPermissions) ? adminUser.companyPermissions : adminUser?.permissions;
+      if (Array.isArray(companyPerms)) {
+        if (companyPerms.length === 0) return false;
+        if (companyPerms.includes(permId)) return true;
+        if (['depositAddresses', 'depositsList'].includes(permId)) return companyPerms.includes('deposits');
+        if (['withdrawalsList', 'withdrawalDetails'].includes(permId)) return companyPerms.includes('withdrawals');
+        return false;
+      }
+      return true;
+    }
+
     return false;
   };
 

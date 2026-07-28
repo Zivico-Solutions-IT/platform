@@ -1,4 +1,5 @@
 const { Sequelize } = require('sequelize');
+const tenantStorage = require('./tenantStorage');
 
 // Validation runs before authenticate(). Non-routable placeholders keep module
 // construction from crashing before the HTTP health server can start.
