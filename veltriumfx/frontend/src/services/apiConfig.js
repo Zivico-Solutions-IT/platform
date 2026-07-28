@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 
 // VeltriumFX runs locally on port 5001 (NovaFXM master backend runs on 5000)
 const API_PORT = '5001';
-const PRODUCTION_API_URL = 'https://testserver.novafxm.com/api';
+const PRODUCTION_API_URL = 'https://testserver2.novafxm.com/api';
 
 const normalizeApiUrl = (value) => {
   if (!value) return null;

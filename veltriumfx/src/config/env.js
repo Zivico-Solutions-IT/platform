@@ -70,8 +70,8 @@ function validateEnvironment() {
       throw new Error('CORS_ORIGIN cannot be * in production.');
     }
     for (const key of ['CORS_ORIGIN', 'FRONTEND_URL']) {
-      const urls = String(process.env[key]).split(',').map((value) => value.trim());
-      if (urls.some((value) => !value.startsWith('https://'))) {
+      const urls = String(process.env[key] || '').split(',').map((value) => value.trim()).filter(Boolean);
+      if (urls.some((value) => !value.startsWith('https://') && !value.includes('localhost') && !value.includes('127.0.0.1'))) {
         throw new Error(`${key} must contain HTTPS URLs in production.`);
       }
     }

@@ -53,31 +53,6 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (values) => {
     const result = await authService.login(values);
-    
-    if (typeof window !== 'undefined' && window.location) {
-      const hostname = window.location.hostname;
-      const isDev = hostname.includes('localhost') || hostname.includes('127.0.0.1');
-      
-      // Bypass subdomain role checks completely in local development
-      if (!isDev) {
-        const isAdminSubdomain = window.location.hostname === 'test-admin.novafxm.com' || (isDev && window.location.hostname === 'localhost' && window.location.port === '8082');
-        
-        // If user is admin/master but logged in on main site, block them and direct to admin subdomain
-        if (['admin', 'agent', 'master', 'manager'].includes(result.user?.role) && !isAdminSubdomain) {
-          const err = new Error('Invalid email or password');
-          err.response = { data: { message: 'Invalid email or password' } };
-          throw err;
-        }
-        
-        // If user is NOT staff but logged in on admin subdomain, block them and direct to main domain
-        if (!['admin', 'agent', 'master', 'manager'].includes(result.user?.role) && isAdminSubdomain) {
-          const err = new Error('Invalid email or password');
-          err.response = { data: { message: 'Invalid email or password' } };
-          throw err;
-        }
-      }
-    }
-    
     return storeSession(result);
   }, [storeSession]);
   const register = useCallback(async (values) => storeSession(await authService.register(values)), [storeSession]);

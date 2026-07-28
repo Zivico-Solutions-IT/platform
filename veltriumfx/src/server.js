@@ -37,10 +37,16 @@ const allowedOrigins = String(process.env.CORS_ORIGIN || 'https://novafxm.com') 
   .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter(Boolean);
 const allowAnyOrigin = allowedOrigins.includes('*');
-const corsOrigin = allowAnyOrigin
-  ? true
-  : (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin.replace(/\/$/, '')));
-const corsOptions = { origin: corsOrigin, credentials: !allowAnyOrigin };
+const corsOrigin = (origin, callback) => {
+  if (!origin) return callback(null, true);
+  const cleanOrigin = origin.replace(/\/$/, '');
+  const isAllowed = allowAnyOrigin ||
+                    allowedOrigins.includes(cleanOrigin) ||
+                    /\.novafxm\.com$/i.test(cleanOrigin) ||
+                    /novafxm\.com$/i.test(cleanOrigin);
+  callback(null, isAllowed);
+};
+const corsOptions = { origin: corsOrigin, credentials: true };
 
 app.use((req, res, next) => {
   res.set({

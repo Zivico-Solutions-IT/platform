@@ -39,70 +39,8 @@ function AppStack() {
       }
     }
 
-    // Completely disable domain routing checks in local development.
-    const isDev = hostname.includes('localhost') || hostname.includes('127.0.0.1');
-    if (isDev) return;
-
-    const isAdminSubdomain = hostname.startsWith('admin.');
-
-    if (isAdminSubdomain) {
-      // Standard admin routing
-      if (pathname === '/' || pathname === '/index') {
-        router.replace('/admin');
-      } else if (
-        pathname !== '/admin' && 
-        pathname !== '/login' && 
-        pathname !== '/register' && 
-        pathname !== '/master' && 
-        pathname !== '/agent' && 
-        pathname !== '/manager' &&
-        !pathname.startsWith('/admin/') &&
-        !pathname.startsWith('/master/') &&
-        !pathname.startsWith('/agent/') &&
-        !pathname.startsWith('/manager/')
-      ) {
-        // If they are on admin subdomain but try to access main paths, redirect to main domain
-        const mainDomain = isDev ? 'localhost:8081' : 'novafxm.com';
-        window.location.href = `${window.location.protocol}//${mainDomain}${pathname}`;
-      }
-    } else {
-      // 1. Check if we got a request to sync logout (Single Log-Out)
-      if (searchParams.get('action') === 'logout') {
-        localStorage.removeItem('novafxm_token');
-        localStorage.removeItem('novafxm_user');
-        
-        // Clear history parameter and reload to ensure unauthenticated state
-        const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
-        window.history.replaceState(null, '', cleanUrl);
-        window.location.reload();
-        return;
-      }
-
-      // 2. If they are on the main domain but try to access admin paths, redirect to admin subdomain
-      if (
-        pathname === '/admin' || pathname.startsWith('/admin/') ||
-        pathname === '/master' || pathname.startsWith('/master/') ||
-        pathname === '/agent' || pathname.startsWith('/agent/') ||
-        pathname === '/manager' || pathname.startsWith('/manager/')
-      ) {
-        const token = localStorage.getItem('novafxm_token');
-        const user = localStorage.getItem('novafxm_user');
-        
-        let query = '';
-        if (token && user) {
-          try {
-            // Retrieve actual token string (stored as JSON string)
-            const tokenStr = JSON.parse(token);
-            query = `?t=${encodeURIComponent(tokenStr)}&u=${encodeURIComponent(user)}`;
-          } catch (e) {
-            console.error("Error parsing stored token for transfer", e);
-          }
-        }
-
-        const adminDomain = isDev ? 'admin.localhost:8081' : 'admin.novafxm.com';
-        window.location.href = `${window.location.protocol}//${adminDomain}${pathname}${query}`;
-      }
-    }
+    // Single domain routing for all roles (Master, Manager, Agent, User)
+    return;
   }, [pathname]);
 
   return (
