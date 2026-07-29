@@ -1,4 +1,5 @@
 const { DataTypes } = require('sequelize');
+const bcrypt = require('bcryptjs');
 const sequelize = require('./db');
 
 const hasColumn = async (queryInterface, table, column) => {
@@ -507,9 +508,18 @@ async function ensureSchema() {
     if (!['ER_TABLE_EXISTS_ERROR', 'SQLITE_ERROR'].includes(error?.parent?.code) && !String(error?.message || '').includes('already exists')) throw error;
   });
 
-  // NOTE: Master user is managed exclusively from the NovaFXM platform.
-  // VeltriumFX has ENABLE_MASTER=false so no master user is needed/created here.
-  // The master user (master@novafxm.com) is seeded by the novafxm ensureSchema instead.
+  // Each platform has an independent Master Console and login.
+  const [veltriumMasters] = await queryInterface.sequelize.query(
+    "SELECT id FROM users WHERE email = 'master@novafxm.com' LIMIT 1"
+  );
+  if (!veltriumMasters.length) {
+    const masterPassword = await bcrypt.hash(process.env.VELTRIUM_MASTER_PASSWORD || 'master123', 12);
+    await queryInterface.sequelize.query(
+      `INSERT INTO users (name, email, password, role, account_type, leverage, trading_level, trading_status, verification_status, created_at, updated_at)
+       VALUES (?, ?, ?, 'master', 'Demo', 500, 'Standard', 'active', 'approved', NOW(), NOW())`,
+      { replacements: ['NovaFXM Master', 'master@novafxm.com', masterPassword] },
+    );
+  }
 
   // Migrate existing deposits to referral_rewards
   try {

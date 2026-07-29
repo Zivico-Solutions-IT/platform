@@ -1798,9 +1798,17 @@ exports.addCustomTrade = async (req, res, next) => {
   }
 };
 
+const symbolProjectFor = async (req) => {
+  if (req.projectId) return Project.findByPk(req.projectId);
+  // A platform-local Master Console has no selected-company header. Resolve
+  // this platform's own project instead of requiring the old global master UI.
+  if (req.user?.role === 'master') return Project.findOne({ where: { identifier: 'veltriumfx' } });
+  return null;
+};
+
 exports.getSymbols = async (req, res, next) => {
   try {
-    const project = req.projectId ? await Project.findByPk(req.projectId) : null;
+    const project = await symbolProjectFor(req);
     const visibilityMap = project?.symbolVisibility && typeof project.symbolVisibility === 'object'
       ? project.symbolVisibility
       : {};
@@ -1822,8 +1830,7 @@ exports.updateSymbols = async (req, res, next) => {
     if (!Array.isArray(visibilities)) {
       return res.status(400).json({ message: 'Visibilities array is required.' });
     }
-    if (!req.projectId) return res.status(400).json({ message: 'A company must be selected before updating symbols.' });
-    const project = await Project.findByPk(req.projectId);
+    const project = await symbolProjectFor(req);
     if (!project) return res.status(404).json({ message: 'Company not found.' });
     const validSymbols = new Set(tradingView.instruments.map((instrument) => instrument.symbol));
     const symbolVisibility = {};

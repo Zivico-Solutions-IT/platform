@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Award, BanknoteArrowDown, BanknoteArrowUp, BarChart3, Bell, LayoutDashboard, LogOut, Menu, Moon, RefreshCw, Settings, ShieldCheck, Sun, TrendingUp, UserRound, UsersRound, X, Coins, Activity } from 'lucide-react-native';
+import { AlertTriangle, Award, BanknoteArrowDown, BanknoteArrowUp, BarChart3, Bell, ChevronDown, LayoutDashboard, LogOut, Menu, Moon, RefreshCw, Settings, ShieldCheck, Sun, TrendingUp, UserRound, UsersRound, X, Coins, Activity } from 'lucide-react-native';
 import { Animated, Image, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAppTheme } from '../../context/ThemeContext';
 import NovaLogo from '../brand/NovaLogo';
+import { storage } from '../../utils/storage';
 
 const navigation = [
   { id: 'overview', label: 'Overview', shortLabel: 'Home', icon: LayoutDashboard },
@@ -66,6 +67,7 @@ export default function AdminSidebar({
   const mobile = width < 768;
   const [mobileTabsOpen, setMobileTabsOpen] = useState(false);
   const [mobileDrawerMounted, setMobileDrawerMounted] = useState(false);
+  const [platformMenuOpen, setPlatformMenuOpen] = useState(false);
   const drawerWidth = Math.min(width * 0.86, 340);
   const drawerAnim = useRef(new Animated.Value(-drawerWidth)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
@@ -202,16 +204,30 @@ export default function AdminSidebar({
   );
   const renderConsoleHeader = (compact = false, showClose = false) => {
     const isVeltrium = /veltrium/i.test(projectName);
+    const openVeltriumMaster = async () => {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const local = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        const configuredUrl = String(process.env.EXPO_PUBLIC_VELTRIUM_MASTER_URL || 'https://platform2.novafxm.com').replace(/\/(login|master)\/?$/, '');
+        const target = local
+          ? `${window.location.protocol}//${window.location.hostname}:8082/master`
+          : `${configuredUrl}/master`;
+        const token = await storage.get('token');
+        const sessionUrl = token
+          ? `${target}?t=${encodeURIComponent(token)}&u=${encodeURIComponent(JSON.stringify(adminUser))}`
+          : target;
+        window.location.assign(sessionUrl);
+      }
+    };
     return (
       <View className={`${compact ? 'px-5 pb-5 pt-5' : 'px-6 py-5'} border-b`} style={{ borderColor: colors.border }}>
         <View className="flex-row items-center justify-between">
           <View className="min-w-0 flex-1 pr-3">
             <NovaLogo dark={darkMode} width={compact ? 132 : 136} height={34} />
             <Text className="mt-2 text-lg font-medium" style={{ color: colors.text }}>
-              {isVeltrium ? 'VeltriumFX Console' : (adminUser?.role === 'master' ? 'Master Console' : adminUser?.role === 'agent' ? 'Agent Console' : 'Manager Console')}
+              {adminUser?.role === 'master' ? 'Master Console' : (isVeltrium ? 'VeltriumFX Console' : (adminUser?.role === 'agent' ? 'Agent Console' : 'Manager Console'))}
             </Text>
             <Text className="mt-0.5 text-xs" style={{ color: colors.muted }}>
-              {isVeltrium ? 'Operations control center' : (adminUser?.role === 'master' ? 'Master control center' : adminUser?.role === 'agent' ? 'Agent operations panel' : 'Manager control center')}
+              {adminUser?.role === 'master' ? 'Master control center' : (isVeltrium ? 'Operations control center' : (adminUser?.role === 'agent' ? 'Agent operations panel' : 'Manager control center'))}
             </Text>
           </View>
         <View className="flex-row items-center gap-3">
@@ -227,22 +243,22 @@ export default function AdminSidebar({
             </Pressable>
           )}
         </View>
-      </View>
-      {adminUser?.role === 'master' && (
-        <Pressable
-          onPress={onReturnToMaster}
-          style={{
-            flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 15,
-            backgroundColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 10,
-            marginTop: 20
-          }}
-        >
-          <View style={{ width: 36, height: 36, backgroundColor: 'rgba(59, 130, 246, 0.2)', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-            <Activity color="#3b82f6" size={20} />
+        </View>
+        {adminUser?.role === 'master' ? (
+          <View className="mt-4">
+            <Pressable onPress={() => setPlatformMenuOpen((open) => !open)} className="flex-row items-center rounded-xl border px-3 py-2.5" style={{ backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}40` }}>
+              <Activity size={17} color={colors.primary} />
+              <Text className="ml-2 flex-1 text-sm font-semibold" style={{ color: colors.text }}>NovaFXM Master</Text>
+              <ChevronDown size={16} color={colors.muted} />
+            </Pressable>
+            {platformMenuOpen ? <View className="mt-1 overflow-hidden rounded-xl border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+              <Pressable onPress={openVeltriumMaster} className="px-3 py-3">
+                <Text className="text-sm font-semibold" style={{ color: colors.text }}>VeltriumFX Master</Text>
+                <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Open its own URL and sign in</Text>
+              </Pressable>
+            </View> : null}
           </View>
-          <Text style={{ color: '#3b82f6', fontSize: 15, fontWeight: '600' }}>Master Panel</Text>
-        </Pressable>
-      )}
+        ) : null}
     </View>
   );
 };

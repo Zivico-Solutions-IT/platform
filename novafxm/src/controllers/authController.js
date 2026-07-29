@@ -23,7 +23,7 @@ const secret = () => {
   return process.env.JWT_SECRET;
 };
 
-const tokenFor = (user) => jwt.sign({ id: user.id, role: user.role }, secret(), { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+const tokenFor = (user) => jwt.sign({ id: user.id, role: user.role, email: user.email }, secret(), { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 const onlineUntil = () => new Date(Date.now() + ONLINE_WINDOW_MS);
 
 const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');

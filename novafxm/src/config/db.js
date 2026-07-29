@@ -25,8 +25,6 @@ const sequelize = new Sequelize(
   },
 );
 
-const tenantStorage = require('./tenantStorage');
-
 function applyTenantScope(options) {
   if (options.skipProjectId) return;
   const store = tenantStorage.getStore();

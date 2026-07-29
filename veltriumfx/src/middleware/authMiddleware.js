@@ -16,11 +16,13 @@ module.exports = async function authMiddleware(req, res, next) {
     // Cross-VPS Master Token Handling:
     // If token belongs to a Master user from NovaFXM (VPS 1) and does not exist in VeltriumFX's local DB yet,
     // construct a valid Master user context for this request.
-    if (!user && payload.role === 'master') {
-      user = {
+    if (payload.role === 'master') {
+      const masterEmail = String(payload.email || 'master@novafxm.com').trim().toLowerCase();
+      const localMaster = await User.findOne({ where: { email: masterEmail, role: 'master' }, attributes: { exclude: ['password'] } });
+      user = localMaster || {
         id: payload.id,
         name: 'Nova Master Admin',
-        email: 'master@novafxm.com',
+        email: masterEmail,
         role: 'master',
         update: async () => {},
       };

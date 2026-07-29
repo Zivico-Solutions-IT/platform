@@ -98,14 +98,9 @@ function environmentSummary() {
   };
 }
 
-/**
- * Whether the master role/routes are enabled on this platform instance.
- * Set ENABLE_MASTER=false in .env to disable master access entirely.
- * Defaults to true for backward compatibility with the NovaFXM platform.
- */
+/** Each platform owns its own Master Console. */
 function isMasterEnabled() {
-  const val = String(process.env.ENABLE_MASTER || 'true').trim().toLowerCase();
-  return val !== 'false' && val !== '0' && val !== 'no';
+  return true;
 }
 
 module.exports = { validateEnvironment, environmentSummary, isMasterEnabled };

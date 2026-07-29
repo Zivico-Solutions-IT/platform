@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { ChevronDown, Edit3, Eye, EyeOff, Plus, ShieldCheck, Trash2, X } from 'lucide-react-native';
 import CustomButton from '../common/CustomButton';
@@ -94,6 +95,10 @@ export default function AgentManagement() {
   const [sortOpen, setSortOpen] = useState(false);
   const [expandedAgentId, setExpandedAgentId] = useState(null);
   const [companyPermissionIds, setCompanyPermissionIds] = useState(null);
+  const [workspace, setWorkspace] = useState('templates');
+  const [templateRole, setTemplateRole] = useState('manager');
+  const [roleTemplates, setRoleTemplates] = useState({ manager: [], agent: [] });
+  const [templateMessage, setTemplateMessage] = useState('');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -177,6 +182,12 @@ export default function AgentManagement() {
       .catch(() => setCompanyPermissionIds([]));
   }, []);
 
+  useEffect(() => {
+    AsyncStorage.getItem('veltriumfx.staff-role-templates.v1').then((saved) => {
+      if (saved) setRoleTemplates((current) => ({ ...current, ...JSON.parse(saved) }));
+    }).catch(() => {});
+  }, []);
+
   const companyPermissions = companyPermissionIds === null
     ? availablePermissions
     : availablePermissions.map((permission) => ({
@@ -185,10 +196,10 @@ export default function AgentManagement() {
     })).filter((permission) => companyPermissionIds.includes(permission.id) || permission.subPermissions?.length);
   const allowedPermissionIds = companyPermissionIds === null ? allPermissionIds : companyPermissionIds;
 
-  const openCreate = () => {
+  const openCreate = (role = 'agent') => {
     setEditingAgent(null);
     setPasswordVisible(false);
-    setForm({ name: '', email: '', phone: '', password: '', role: 'agent', permissions: [] });
+    setForm({ name: '', email: '', phone: '', password: '', role, permissions: roleTemplates[role] || [] });
     setModalVisible(true);
   };
 
@@ -243,6 +254,26 @@ export default function AgentManagement() {
     });
   };
 
+  const toggleTemplatePermissionCategory = (permissionIds) => {
+    const ids = permissionIds.flatMap((id) => {
+      const permission = availablePermissions.find((item) => item.id === id);
+      return [id, ...(permission?.subPermissions || []).map((sub) => sub.id)];
+    }).filter((id) => allowedPermissionIds.includes(id));
+    setRoleTemplates((current) => {
+      const next = new Set(current[templateRole] || []);
+      const selectAll = ids.some((id) => !next.has(id));
+      ids.forEach((id) => selectAll ? next.add(id) : next.delete(id));
+      return { ...current, [templateRole]: Array.from(next) };
+    });
+  };
+
+  const saveRoleTemplates = async () => {
+    try {
+      await AsyncStorage.setItem('veltriumfx.staff-role-templates.v1', JSON.stringify(roleTemplates));
+      setTemplateMessage(`${templateRole === 'manager' ? 'Manager' : 'Agent'} template saved with ${(roleTemplates[templateRole] || []).length} permissions.`);
+    } catch { setTemplateMessage('Unable to save the role template. Please try again.'); }
+  };
+
   const saveAgent = async () => {
     try {
       if (editingAgent) {
@@ -290,8 +321,33 @@ export default function AgentManagement() {
     }
   };
 
+  const StaffWorkspaceTabs = () => <View className="mb-6 flex-row self-start rounded-xl p-1" style={{ backgroundColor: colors.surface }}>
+    {[['templates', 'Role Permissions'], ['users', 'User Permissions']].map(([id, label]) => <Pressable key={id} onPress={() => setWorkspace(id)} className="rounded-lg px-4 py-2.5" style={{ backgroundColor: workspace === id ? colors.panel : 'transparent' }}><Text className="text-sm font-bold" style={{ color: workspace === id ? colors.primary : colors.muted }}>{label}</Text></Pressable>)}
+  </View>;
+
+  if (workspace === 'templates') {
+    const selectedPermissions = roleTemplates[templateRole] || [];
+    return <ScrollView className="flex-1 px-4 py-5 md:px-8" style={{ backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 42 }}>
+      <Text className="text-3xl font-bold" style={{ color: colors.text }}>Staff & Permissions</Text>
+      <Text className="mb-5 mt-2 text-sm" style={{ color: colors.muted }}>Create Manager and Agent permission templates for this company.</Text>
+      <StaffWorkspaceTabs />
+      <View className="gap-5 lg:flex-row">
+        <View className="w-full lg:w-[310px] rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+          <Text className="text-lg font-bold" style={{ color: colors.text }}>Role Categories</Text><Text className="mb-4 mt-1 text-sm" style={{ color: colors.muted }}>Select a role to configure its default access.</Text>
+          {[['manager', 'Manager'], ['agent', 'Agent']].map(([id, label]) => <Pressable key={id} onPress={() => setTemplateRole(id)} className="mb-3 rounded-xl border p-4" style={{ backgroundColor: templateRole === id ? `${colors.primary}14` : colors.surface, borderColor: templateRole === id ? colors.primary : colors.border }}><Text className="text-base font-bold" style={{ color: colors.text }}>{label}</Text><Text className="mt-1 text-xs" style={{ color: colors.muted }}>{(roleTemplates[id] || []).length} permissions selected</Text></Pressable>)}
+          <Pressable onPress={() => { setWorkspace('users'); openCreate(templateRole); }} className="mt-2 items-center rounded-xl py-3" style={{ backgroundColor: colors.primary }}><Text className="font-bold" style={{ color: '#fff' }}>Add {templateRole === 'manager' ? 'Manager' : 'Agent'}</Text></Pressable>
+        </View>
+        <View className="min-w-0 flex-1 rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+          <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3"><View><Text className="text-xl font-bold" style={{ color: colors.text }}>{templateRole === 'manager' ? 'Manager' : 'Agent'} Role Permissions</Text><Text className="mt-1 text-sm" style={{ color: colors.muted }}>These defaults are applied when you add a new {templateRole}.</Text>{templateMessage ? <Text className="mt-2 text-xs font-semibold" style={{ color: templateMessage.startsWith('Unable') ? colors.danger : colors.success }}>{templateMessage}</Text> : null}</View><Pressable onPress={saveRoleTemplates} className="rounded-xl px-4 py-3" style={{ backgroundColor: colors.primary }}><Text className="font-bold" style={{ color: '#fff' }}>Save Template</Text></Pressable></View>
+          <View className="flex-row flex-wrap gap-4">{permissionCategories.map((category) => { const permissions = category.ids.map((id) => availablePermissions.find((item) => item.id === id)).filter((item) => item && allowedPermissionIds.includes(item.id)); if (!permissions.length) return null; const ids = permissions.flatMap((item) => [item.id, ...(item.subPermissions || []).map((sub) => sub.id)]); const selected = ids.every((id) => selectedPermissions.includes(id)); return <View key={category.title} className="min-w-[240px] flex-1 rounded-xl border p-4" style={{ backgroundColor: colors.surface, borderColor: colors.border }}><View className="mb-3 flex-row items-center justify-between"><Text className="font-bold" style={{ color: colors.text }}>{category.title}</Text><Pressable onPress={() => toggleTemplatePermissionCategory(category.ids)}><Text className="text-xs font-bold" style={{ color: colors.primary }}>{selected ? 'Clear all' : 'Select all'}</Text></Pressable></View>{permissions.map((permission) => { const checked = [permission.id, ...(permission.subPermissions || []).map((sub) => sub.id)].every((id) => selectedPermissions.includes(id)); return <Pressable key={permission.id} onPress={() => toggleTemplatePermissionCategory([permission.id])} className="mb-2 flex-row items-center rounded-lg border p-3" style={{ backgroundColor: checked ? `${colors.primary}12` : colors.panel, borderColor: checked ? colors.primary : colors.border }}><View className="mr-2 h-4 w-4 rounded border" style={{ backgroundColor: checked ? colors.primary : 'transparent', borderColor: checked ? colors.primary : colors.muted }} /><Text className="flex-1 text-sm font-semibold" style={{ color: colors.text }}>{permission.label}</Text></Pressable>; })}</View>; })}</View>
+        </View>
+      </View>
+    </ScrollView>;
+  }
+
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <View className="px-4 pb-1 pt-5 md:px-8"><Text className="text-3xl font-bold" style={{ color: colors.text }}>Staff & Permissions</Text><Text className="mb-5 mt-2 text-sm" style={{ color: colors.muted }}>Review existing Managers and Agents, then manage their individual access.</Text><StaffWorkspaceTabs /></View>
       {/* Hidden dummy inputs to absorb browser credentials autofill */}
       <TextInput
         style={{ width: 0, height: 0, opacity: 0, position: 'absolute', left: -9999, top: -9999 }}
@@ -611,6 +667,7 @@ export default function AgentManagement() {
                     {passwordVisible ? <Eye size={18} color={colors.muted} /> : <EyeOff size={18} color={colors.muted} />}
                   </Pressable>
                 </View>
+                <View><Text className="mb-2 text-sm font-bold" style={{ color: colors.text }}>Staff Role</Text><View className="flex-row gap-2">{['manager', 'agent'].map((role) => <Pressable key={role} onPress={() => setForm((current) => ({ ...current, role }))} className="flex-1 rounded-xl border py-3" style={{ backgroundColor: form.role === role ? `${colors.primary}18` : colors.surface, borderColor: form.role === role ? colors.primary : colors.border }}><Text className="text-center text-sm font-bold" style={{ color: form.role === role ? colors.primary : colors.text }}>{role === 'manager' ? 'Manager' : 'Agent'}</Text></Pressable>)}</View><Pressable onPress={() => setForm((current) => ({ ...current, permissions: roleTemplates[current.role] || [] }))} className="mt-2 self-start rounded-lg px-3 py-2" style={{ backgroundColor: `${colors.primary}15` }}><Text className="text-xs font-bold" style={{ color: colors.primary }}>Apply {form.role === 'manager' ? 'Manager' : 'Agent'} Template</Text></Pressable></View>
                 
                 <View className="mt-2 pb-4">
                   <Text className="text-sm font-bold mb-3" style={{ color: colors.text }}>Agent Permissions</Text>

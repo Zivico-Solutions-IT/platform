@@ -5532,3 +5532,16 @@ Error: ReferenceError: tenantStorage is not defined
     at async User.create (D:\platform\veltriumfx\node_modules\sequelize\lib\model.js:1362:12)
     at async exports.createAgent (D:\platform\veltriumfx\src\controllers\adminController.js:1905:19)
 --------------------------------------------------
+
+Date: 2026-07-28T08:46:57.927Z
+Method: GET
+URL: /api/admin/referral-rewards
+Body: {}
+Error: Error
+    at Query.run (D:\platform\veltriumfx\node_modules\sequelize\lib\dialects\mysql\query.js:52:25)
+    at D:\platform\veltriumfx\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MySQLQueryInterface.select (D:\platform\veltriumfx\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async ReferralReward.findAll (D:\platform\veltriumfx\node_modules\sequelize\lib\model.js:1140:21)
+    at async exports.referralRewards (D:\platform\veltriumfx\src\controllers\adminController.js:1986:21)
+--------------------------------------------------

@@ -38,7 +38,7 @@ const XIcon = () => (
 );
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const { darkMode, colors } = useAppTheme();
 
   // View: 'login' | 'forgot-email' | 'forgot-code' | 'forgot-newpass' | 'forgot-success'
@@ -59,6 +59,15 @@ export default function LoginScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState('');
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === 'master') router.replace('/master');
+    else if (user.role === 'admin') router.replace('/admin');
+    else if (user.role === 'agent') router.replace('/agent');
+    else if (user.role === 'manager') router.replace('/manager');
+    else router.replace('/trading');
+  }, [user]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
