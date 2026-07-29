@@ -3,6 +3,7 @@ import { Link, router } from 'expo-router';
 import {
   Linking,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -11,9 +12,9 @@ import {
 import { Eye, EyeOff, ArrowLeft, Mail, ShieldCheck, LockKeyhole, CheckCircle2 } from 'lucide-react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
+import NovaLogo from '../src/components/brand/NovaLogo';
 import Svg, { Path } from 'react-native-svg';
 import { useAppTheme } from '../src/context/ThemeContext';
-import AuthLayout from '../src/components/auth/AuthLayout';
 
 const GoogleIcon = () => (
   <Svg width={22} height={22} viewBox="0 0 24 24">
@@ -38,17 +39,7 @@ const XIcon = () => (
 
 export default function LoginScreen() {
   const { login, user } = useAuth();
-  const { darkMode, colors: themeColors } = useAppTheme();
-  const colors = {
-    ...themeColors,
-    panel: 'rgba(3,37,23,0.94)',
-    surface: 'rgba(255,255,255,0.065)',
-    border: 'rgba(255,255,255,0.14)',
-    text: '#FFFFFF',
-    muted: 'rgba(255,255,255,0.62)',
-    primary: '#00674F',
-    secondary: '#D3D3D3',
-  };
+  const { darkMode, colors } = useAppTheme();
 
   // View: 'login' | 'forgot-email' | 'forgot-code' | 'forgot-newpass' | 'forgot-success'
   const [view, setView] = useState('login');
@@ -226,14 +217,14 @@ export default function LoginScreen() {
   };
 
   const inputStyle = {
-    backgroundColor: colors.surface,
+    backgroundColor: darkMode ? colors.surface : '#ffffff',
     borderColor: colors.border,
     color: colors.text,
     caretColor: colors.text,
     outlineStyle: 'none',
   };
   const labelStyle = { color: colors.muted };
-  const linkColor = '#D3D3D3';
+  const linkColor = darkMode ? colors.primary : '#014421';
 
   // Step indicator dots for forgot password flow
   const StepIndicator = ({ currentStep }) => {
@@ -263,12 +254,32 @@ export default function LoginScreen() {
     const forgotStepNum = view === 'forgot-email' ? 1 : view === 'forgot-code' ? 2 : view === 'forgot-newpass' ? 2 : 3;
 
     return (
-      <AuthLayout mode="login">
+      <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
+        <View className="min-h-full items-center justify-center px-5 py-10">
+          <View
+            className="relative w-full max-w-md rounded-[24px] px-7 py-10"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.border,
+              borderWidth: 1,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 16 },
+              shadowOpacity: darkMode ? 0.4 : 0.08,
+              shadowRadius: 32,
+              elevation: 24,
+            }}
+          >
+            {/* Logo Badge */}
+            <View className="absolute -top-7 left-0 right-0 z-10 items-center">
+              <View className="rounded-2xl px-4 py-2" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
+                <NovaLogo dark={darkMode} width={130} height={38} />
+              </View>
+            </View>
 
             {view === 'forgot-success' ? (
               /* ─── Success View ─── */
               <>
-                <View className="items-center">
+                <View className="mt-6 items-center">
                   <View
                     className="mb-4 h-16 w-16 items-center justify-center rounded-full"
                     style={{ backgroundColor: darkMode ? '#064E3B' : '#D1FAE5' }}
@@ -285,9 +296,9 @@ export default function LoginScreen() {
 
                 <TouchableOpacity
                   onPress={resetForgotState}
-                  className="mt-8 w-full items-center rounded-xl bg-[#D3D3D3] py-3"
+                  className="mt-8 w-full items-center rounded-xl bg-[#014421] py-3"
                 >
-                  <Text className="text-[14px] font-semibold text-[#052418]">Back to Login</Text>
+                  <Text className="text-[14px] font-semibold text-white">Back to Login</Text>
                 </TouchableOpacity>
               </>
             ) : view === 'forgot-email' ? (
@@ -347,10 +358,10 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   onPress={handleSendResetCode}
                   disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#D3D3D3] py-3"
+                  className="w-full items-center rounded-xl bg-[#014421] py-3"
                   style={{ opacity: forgotLoading ? 0.7 : 1 }}
                 >
-                  <Text className="text-[14px] font-semibold text-[#052418]">
+                  <Text className="text-[14px] font-semibold text-white">
                     {forgotLoading ? 'Sending Code...' : 'Send Reset Code'}
                   </Text>
                 </TouchableOpacity>
@@ -416,10 +427,10 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   onPress={handleVerifyCode}
                   disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#D3D3D3] py-3"
+                  className="w-full items-center rounded-xl bg-[#014421] py-3"
                   style={{ opacity: forgotLoading ? 0.7 : 1 }}
                 >
-                  <Text className="text-[14px] font-semibold text-[#052418]">
+                  <Text className="text-[14px] font-semibold text-white">
                     Verify Code
                   </Text>
                 </TouchableOpacity>
@@ -485,9 +496,7 @@ export default function LoginScreen() {
                     />
                     <TouchableOpacity
                       onPress={() => setShowNewPassword((v) => !v)}
-                      className="h-11 w-11 items-center justify-center"
-                      accessibilityRole="button"
-                      accessibilityLabel={showNewPassword ? 'Hide new password' : 'Show new password'}
+                      className="px-3 py-2"
                     >
                       {showNewPassword ? (
                         <Eye size={18} color={colors.muted} />
@@ -515,9 +524,7 @@ export default function LoginScreen() {
                     />
                     <TouchableOpacity
                       onPress={() => setShowConfirmPassword((v) => !v)}
-                      className="h-11 w-11 items-center justify-center"
-                      accessibilityRole="button"
-                      accessibilityLabel={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                      className="px-3 py-2"
                     >
                       {showConfirmPassword ? (
                         <Eye size={18} color={colors.muted} />
@@ -537,27 +544,50 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   onPress={handleResetPassword}
                   disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#D3D3D3] py-3"
+                  className="w-full items-center rounded-xl bg-[#014421] py-3"
                   style={{ opacity: forgotLoading ? 0.7 : 1 }}
                 >
-                  <Text className="text-[14px] font-semibold text-[#052418]">
+                  <Text className="text-[14px] font-semibold text-white">
                     {forgotLoading ? 'Resetting Password...' : 'Reset Password'}
                   </Text>
                 </TouchableOpacity>
               </>
             ) : null}
 
-      </AuthLayout>
+          </View>
+        </View>
+      </ScrollView>
     );
   }
 
   // ─── Login View ───
   return (
-    <AuthLayout mode="login">
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
+      <View className="min-h-full items-center justify-center px-5 py-10">
+        <View 
+          className="relative w-full max-w-md rounded-[24px] px-7 py-10" 
+          style={{ 
+            backgroundColor: colors.panel, 
+            borderColor: colors.border, 
+            borderWidth: 1,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 16 },
+            shadowOpacity: darkMode ? 0.4 : 0.08,
+            shadowRadius: 32,
+            elevation: 24,
+          }}
+        >
+
+        {/* Logo Badge */}
+        <View className="absolute -top-7 left-0 right-0 z-10 items-center">
+          <View className="rounded-2xl px-4 py-2" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
+            <NovaLogo dark={darkMode} width={130} height={38} />
+          </View>
+        </View>
 
         {/* Header */}
-        <View className="mb-2">
-          <Text className="text-center text-[28px] font-bold tracking-tight" style={{ color: colors.text }}>
+        <View className="mt-6 mb-2">
+          <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
             Welcome Back
           </Text>
           <Text className="mt-2 text-center text-[13px] font-medium" style={labelStyle}>
@@ -603,8 +633,7 @@ export default function LoginScreen() {
               />
               <TouchableOpacity
                 onPress={() => setShowPassword((value) => !value)}
-                className="h-11 w-11 items-center justify-center"
-                accessibilityRole="button"
+                className="px-3 py-2"
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
@@ -650,20 +679,10 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
-            className="min-h-[48px] w-full items-center justify-center rounded-full px-4"
-            style={{
-              backgroundColor: '#D3D3D3',
-              borderColor: '#FFFFFF',
-              borderWidth: 1,
-              opacity: loading ? 0.7 : 1,
-              shadowColor: '#D3D3D3',
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.24,
-              shadowRadius: 14,
-              elevation: 7,
-            }}
+            className="w-full items-center rounded-lg bg-[#014421] py-2.5 shadow-md"
+            style={{ opacity: loading ? 0.7 : 1 }}
           >
-            <Text className="text-sm font-bold" style={{ color: '#00674F' }}>
+            <Text className="text-sm font-semibold text-white">
               {loading ? 'Logging in...' : 'Login'}
             </Text>
           </TouchableOpacity>
@@ -713,6 +732,9 @@ export default function LoginScreen() {
           </Pressable>
         </Link>
 
-    </AuthLayout>
+      </View>
+      </View>
+
+    </ScrollView>
   );
 }
