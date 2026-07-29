@@ -154,9 +154,8 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email: String(email || '').trim().toLowerCase() }, include: [{ model: Wallet, as: 'wallet' }] });
     if (!user || !(await bcrypt.compare(String(password || ''), user.password))) return res.status(401).json({ message: 'Invalid email or password.' });
-    // Block master login on platforms where ENABLE_MASTER=false (e.g. VeltriumFX)
     if (user.role === 'master' && !isMasterEnabled()) {
-      return res.status(403).json({ message: 'Master access is disabled on this platform. Please log in from the NovaFXM platform.' });
+      return res.status(401).json({ message: 'Invalid email or password.' });
     }
     if (user.role !== 'master' && user.projectId) {
       const project = await Project.findByPk(user.projectId);
