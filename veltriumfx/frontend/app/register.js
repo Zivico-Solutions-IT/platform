@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { Linking, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
+import { Linking, Pressable, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
-import NovaLogo from '../src/components/brand/NovaLogo';
 import { Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react-native';
+import AuthLayout from '../src/components/auth/AuthLayout';
 import Svg, { Path } from 'react-native-svg';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
@@ -31,7 +31,17 @@ const XIcon = () => (
 
 export default function RegisterScreen() {
   const { register } = useAuth();
-  const { darkMode, colors } = useAppTheme();
+  const { darkMode, colors: themeColors } = useAppTheme();
+  const colors = {
+    ...themeColors,
+    panel: 'rgba(3,37,23,0.94)',
+    surface: 'rgba(255,255,255,0.065)',
+    border: 'rgba(255,255,255,0.14)',
+    text: '#FFFFFF',
+    muted: 'rgba(255,255,255,0.62)',
+    primary: '#00674F',
+    secondary: '#D3D3D3',
+  };
   const params = useLocalSearchParams();
   const [form, setForm] = useState({
     name: '',
@@ -53,8 +63,8 @@ export default function RegisterScreen() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const update = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
-  const inputBackground = darkMode ? colors.surface : '#ffffff';
-  const placeholderColor = darkMode ? colors.muted : '#9CA3AF';
+  const inputBackground = colors.surface;
+  const placeholderColor = 'rgba(255,255,255,0.38)';
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -439,7 +449,7 @@ export default function RegisterScreen() {
     outlineStyle: 'none',
   };
   const labelStyle = { color: colors.muted };
-  const linkColor = darkMode ? colors.primary : '#014421';
+  const linkColor = '#D3D3D3';
 
   const submit = async () => {
   const trimmedFirstName = form.name.split(' ')[0]?.trim() || '';
@@ -530,20 +540,11 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="min-h-full items-center justify-center px-4 py-10">
-        <View className="relative w-full max-w-md rounded-2xl px-6 py-5 shadow-xl" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1 }}>
-
-          {/* Logo Badge */}
-          <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-            <View className="rounded-xl px-3 py-2 shadow-md" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1 }}>
-              <NovaLogo dark={darkMode} width={120} height={36} />
-            </View>
-          </View>
+    <AuthLayout mode="register">
 
           {/* Header */}
-          <View className="mt-5">
-            <Text className="text-center text-2xl font-semimedium" style={{ color: colors.text }}>
+          <View>
+            <Text className="text-center text-[27px] font-bold tracking-tight" style={{ color: colors.text }}>
               Welcome to <Text style={{ color: linkColor }}>VeltriumFX!</Text>
             </Text>
             <Text className="mt-2 text-center text-sm" style={labelStyle}>
@@ -554,7 +555,7 @@ export default function RegisterScreen() {
           <View className="mt-7">
 
             {/* First and Last Name Row */}
-            <View className="flex-row gap-4 mb-4">
+            <View className="mb-4 gap-4 sm:flex-row">
               <View className="flex-1">
                 <Text className="mb-1.5 text-xs font-medium" style={labelStyle}>First Name *</Text>
                 <TextInput
@@ -700,7 +701,8 @@ export default function RegisterScreen() {
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
+                  className="absolute right-0 top-0 h-full w-11 items-center justify-center"
+                  accessibilityRole="button"
                   accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <Eye size={18} color={colors.muted} /> : <EyeOff size={18} color={colors.muted} />}
@@ -745,7 +747,8 @@ export default function RegisterScreen() {
                 />
                 <TouchableOpacity
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
+                  className="absolute right-0 top-0 h-full w-11 items-center justify-center"
+                  accessibilityRole="button"
                   accessibilityLabel={showConfirmPassword ? 'Hide password' : 'Show password'}
                 >
                   {showConfirmPassword ? <Eye size={18} color={colors.muted} /> : <EyeOff size={18} color={colors.muted} />}
@@ -755,8 +758,8 @@ export default function RegisterScreen() {
 
             {/* Terms and Conditions */}
             <View className="flex-row items-start gap-2 mb-4">
-              <TouchableOpacity onPress={() => setForm({ ...form, agree: !form.agree })} className="mt-0.5">
-                <View className="w-4 h-4 rounded border items-center justify-center" style={{ borderColor: form.agree ? linkColor : colors.border, backgroundColor: form.agree ? linkColor : inputStyle.backgroundColor }}>
+              <TouchableOpacity onPress={() => setForm({ ...form, agree: !form.agree })} className="h-11 w-11 -ml-3 -mt-3 items-center justify-center" accessibilityRole="checkbox" accessibilityState={{ checked: form.agree }}>
+                <View className="w-5 h-5 rounded border items-center justify-center" style={{ borderColor: form.agree ? linkColor : colors.border, backgroundColor: form.agree ? linkColor : inputStyle.backgroundColor }}>
                   {form.agree && <Text className="text-white text-xs">✓</Text>}
                 </View>
               </TouchableOpacity>
@@ -773,10 +776,20 @@ export default function RegisterScreen() {
             <Pressable
               onPress={submit}
               disabled={loading}
-              className="w-full rounded-lg bg-[#014421] py-2.5 items-center shadow-md"
-              style={{ opacity: loading ? 0.7 : 1 }}
+              className="min-h-[48px] w-full items-center justify-center rounded-full px-4"
+              style={{
+                backgroundColor: '#D3D3D3',
+                borderColor: '#FFFFFF',
+                borderWidth: 1,
+                opacity: loading ? 0.7 : 1,
+                shadowColor: '#D3D3D3',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.24,
+                shadowRadius: 14,
+                elevation: 7,
+              }}
             >
-              <Text className="text-white font-semimedium text-sm">{loading ? 'Signing up...' : 'Sign Up'}</Text>
+              <Text className="text-sm font-bold" style={{ color: '#00674F' }}>{loading ? 'Signing up...' : 'Sign Up'}</Text>
             </Pressable>
           </View>
 
@@ -824,8 +837,6 @@ export default function RegisterScreen() {
             </Pressable>
           </Link>
 
-        </View>
-      </View>
-    </ScrollView>
+    </AuthLayout>
   );
 }
