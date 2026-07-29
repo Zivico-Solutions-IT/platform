@@ -84,8 +84,7 @@ export default function LoginScreen() {
           visibility: hidden !important;
         }
         input[type="password"]::-webkit-credentials-auto-fill-button,
-        input[type="password"]::-webkit-contacts-auto-fill-button,
-        input[type="password"]::-webkit-textfield-decoration-container {
+        input[type="password"]::-webkit-contacts-auto-fill-button {
           display: none !important;
           visibility: hidden !important;
           pointer-events: none !important;
