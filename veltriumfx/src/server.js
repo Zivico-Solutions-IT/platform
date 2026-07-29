@@ -42,7 +42,7 @@ const corsOrigin = (origin, callback) => {
   const cleanOrigin = origin.replace(/\/$/, '');
   const isAllowed = allowAnyOrigin ||
                     allowedOrigins.includes(cleanOrigin) ||
-                    /^http:\/\/(localhost|127\.0\.0\.1):(8081|8082)$/i.test(cleanOrigin) ||
+                    /^http:\/\/(localhost|127\.0\.0\.1):\d+$/i.test(cleanOrigin) ||
                     /\.novafxm\.com$/i.test(cleanOrigin) ||
                     /novafxm\.com$/i.test(cleanOrigin);
   callback(null, isAllowed);

@@ -13,7 +13,7 @@ function accountLabel(account) {
   return account?.name || `${account?.type || 'Demo'} account`;
 }
 
-export default function DemoAccountMenu({ accounts = [], selectedAccount, onSelectAccount, onClose, onOpenPanel }) {
+export default function DemoAccountMenu({ accounts = [], selectedAccount, onSelectAccount, onClose }) {
   const { user } = useAuth();
   const { colors } = useAppTheme();
   const { notify } = useToast();
@@ -37,11 +37,6 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
   const activeBgColor = isActiveLive ? '#12cf7a10' : `${colors.primary}10`;
   const activeBorderColor = isActiveLive ? '#12cf7a25' : `${colors.primary}25`;
 
-  const openPanel = (panel) => {
-    onClose?.();
-    onOpenPanel?.(panel);
-  };
-
   return (
     <View
       className="absolute z-50 overflow-hidden rounded-lg border p-3 shadow-2xl"
@@ -63,7 +58,7 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
       <View className="mb-2.5 flex-row items-start justify-between">
         <View>
           <Text className="text-base font-bold" style={{ color: colors.text }}>Account</Text>
-          <Text className="mt-0.5 text-[10px]" style={{ color: colors.muted }}>Switch accounts and manage trading access</Text>
+          <Text className="mt-0.5 text-[10px]" style={{ color: colors.muted }}>Switch between Live and Demo</Text>
         </View>
         <Pressable onPress={onClose} className="h-7 w-7 items-center justify-center rounded-full" style={{ backgroundColor: colors.surface }}>
           <X size={15} color={colors.text} />
@@ -146,10 +141,6 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
               );
             })}
           </View>
-
-          <Pressable onPress={() => openPanel('account')} className="mb-1 rounded-lg px-4 py-2" style={{ backgroundColor: colors.primary }}>
-            <Text className="text-center font-semibold text-xs" style={{ color: '#0B0B0B' }}>Manage Accounts</Text>
-          </Pressable>
         </View>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 480 }}>
@@ -227,10 +218,6 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
               );
             })}
           </View>
-
-          <Pressable onPress={() => openPanel('account')} className="mb-2 rounded-lg px-4 py-2.5" style={{ backgroundColor: colors.primary }}>
-            <Text className="text-center font-semibold text-sm" style={{ color: '#0B0B0B' }}>Manage Accounts</Text>
-          </Pressable>
         </ScrollView>
       )}
     </View>

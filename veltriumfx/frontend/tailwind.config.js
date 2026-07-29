@@ -6,14 +6,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        panel: '#0d1a16',
-        surface: '#112319',
-        border: '#1a3328',
-        primary: '#00674F',
-        secondary: '#D3D3D3',
+        panel: '#0d1818',
+        surface: '#132323',
+        border: '#24413d',
+        primary: '#00C896',
+        secondary: '#D7B75A',
+        medium: '#07100f',
         success: '#12cf7a',
         danger: '#f24d58',
-        muted: '#7a9e94',
+        muted: '#93aaa4',
       },
     },
   },

@@ -16,7 +16,7 @@ const ORDER_TYPES = [
 
 function SwitchRow({ active, label, onPress, colors }) {
   return (
-    <Pressable onPress={onPress} className="flex-row items-center justify-between rounded-lg border px-3 py-2" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+    <Pressable onPress={onPress} className="flex-row items-center justify-between rounded-xl border px-3 py-2.5" style={{ backgroundColor: colors.surface, borderColor: active ? `${colors.primary}66` : colors.border }}>
       <Text className="text-xs font-medium" style={{ color: colors.text }}>{label}</Text>
       <View
         className="h-6 w-11 justify-center rounded-full px-1"
@@ -50,8 +50,8 @@ export default function OrderPanel({ showAvailableMargin = true }) {
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
   const mobile = width < 760;
-  const panelBackground = darkMode ? '#171b21' : colors.panel;
-  const controlBackground = darkMode ? '#20262d' : colors.surface;
+  const panelBackground = darkMode ? 'rgba(13, 24, 24, 0.88)' : 'rgba(255, 255, 255, 0.90)';
+  const controlBackground = darkMode ? 'rgba(19, 35, 35, 0.96)' : '#f6fbf9';
   const orderSuccess = '#12cf7a';
   const orderDanger = '#f24d58';
   const mobileActionWidth = Math.max(280, Math.min(width - 24, 460));
@@ -66,9 +66,9 @@ export default function OrderPanel({ showAvailableMargin = true }) {
   const mobileTicketHeight = Math.max(500, height - mobileTicketTopOffset - 6);
   const mobilePalette = darkMode
     ? {
-      background: '#171b21',
-      panel: '#171b21',
-      control: '#20262d',
+      background: 'rgba(13, 24, 24, 0.94)',
+      panel: 'rgba(13, 24, 24, 0.94)',
+      control: 'rgba(19, 35, 35, 0.96)',
       border: colors.border,
       text: colors.text,
       muted: colors.muted,
@@ -78,16 +78,16 @@ export default function OrderPanel({ showAvailableMargin = true }) {
       snapshot: '#20262d',
     }
     : {
-      background: '#fffdf7',
-      panel: '#fffdf7',
-      control: '#f3eddd',
-      border: '#dec889',
-      text: '#232323',
-      muted: '#66645e',
-      activeTab: '#f8dc7d',
-      activeTabText: '#b88a12',
-      switchOff: '#d7c890',
-      snapshot: '#f6f0df',
+      background: '#ffffff',
+      panel: '#ffffff',
+      control: '#f6fbf9',
+      border: colors.border,
+      text: colors.text,
+      muted: colors.muted,
+      activeTab: colors.primarySoft,
+      activeTabText: colors.primary,
+      switchOff: colors.border,
+      snapshot: '#eef5f2',
     };
   const snapshotRows = [
     ['Spread', spreadText],
@@ -273,7 +273,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
               className="w-full max-w-[390px] overflow-hidden rounded-2xl border px-4 py-4 shadow-2xl"
               style={{ 
                 backgroundColor: panelBackground, 
-                borderColor: colors.border, 
+                borderColor: `${colors.primary}42`, 
                 maxHeight: mobileTicketHeight,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 16 },
@@ -286,7 +286,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
               <View className="flex-row items-start justify-between mb-2">
                 <View>
                   <Text className="text-base font-bold" style={{ color: colors.text }}>New Trade</Text>
-                  <Text className="text-xs font-bold uppercase tracking-wider mt-0.5" style={{ color: colors.muted }}>{currentSymbol.symbol}</Text>
+                  <Text className="text-xs font-bold uppercase tracking-wider mt-0.5" style={{ color: colors.primary }}>{currentSymbol.symbol}</Text>
                 </View>
                 <Pressable onPress={() => setOrderModal(false)} className="h-8 w-8 items-center justify-center rounded-xl" style={{ backgroundColor: controlBackground }}>
                   <Text className="text-lg font-light leading-5" style={{ color: colors.text }}>×</Text>
@@ -298,8 +298,8 @@ export default function OrderPanel({ showAvailableMargin = true }) {
                   <Pressable
                     key={type.value}
                     onPress={() => selectOrderType(type.value)}
-                    className="rounded-full px-2.5 py-1.5"
-                    style={{ backgroundColor: orderType === type.value ? activeTabBackground : 'transparent' }}
+                    className="rounded-full border px-2.5 py-1.5"
+                    style={{ backgroundColor: orderType === type.value ? activeTabBackground : 'transparent', borderColor: orderType === type.value ? `${colors.primary}55` : 'transparent' }}
                   >
                     <Text
                       className="text-[10px] font-medium"
@@ -311,7 +311,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
                 ))}
               </View>
 
-              <View className="mt-2.5 flex-row justify-between rounded-xl px-3 py-2" style={{ backgroundColor: controlBackground }}>
+              <View className="mt-2.5 flex-row justify-between rounded-xl border px-3 py-2" style={{ backgroundColor: controlBackground, borderColor: colors.border }}>
                 <View>
                   <Text className="text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Bid</Text>
                   <Text className="mt-0.5 text-sm font-bold" style={{ color: colors.danger }}>{quote(currentSymbol.bid, currentSymbol.decimals)}</Text>
@@ -448,20 +448,20 @@ export default function OrderPanel({ showAvailableMargin = true }) {
     }
 
     return (
-      <View className="border-t px-2 py-1" style={{ backgroundColor: colors.background, borderColor: colors.border }}>
+      <View className="border-t px-2 py-2" style={{ backgroundColor: darkMode ? 'rgba(7, 16, 15, 0.98)' : 'rgba(255,255,255,0.96)', borderColor: colors.border }}>
         <View className="flex-row gap-2" style={{ width: mobileActionWidth, alignSelf: 'center' }}>
           <Pressable
             onPress={() => openOrderModal('SELL')}
-            className="h-[36px] flex-1 flex-row items-center justify-center gap-1.5 rounded-md"
-            style={{ backgroundColor: orderDanger }}
+            className="h-[40px] flex-1 flex-row items-center justify-center gap-1.5 rounded-xl"
+            style={{ backgroundColor: orderDanger, shadowColor: orderDanger, shadowOpacity: 0.24, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 4 }}
           >
             <Text className="text-[10px] font-bold uppercase text-white">Sell</Text>
             <Text className="text-xs font-bold text-white">{quote(currentSymbol.bid, currentSymbol.decimals)}</Text>
           </Pressable>
           <Pressable
             onPress={() => openOrderModal('BUY')}
-            className="h-[36px] flex-1 flex-row items-center justify-center gap-1.5 rounded-md"
-            style={{ backgroundColor: orderSuccess }}
+            className="h-[40px] flex-1 flex-row items-center justify-center gap-1.5 rounded-xl"
+            style={{ backgroundColor: orderSuccess, shadowColor: orderSuccess, shadowOpacity: 0.24, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 4 }}
           >
             <Text className="text-[10px] font-bold uppercase text-white">Buy</Text>
             <Text className="text-xs font-bold text-white">{quote(currentSymbol.ask, currentSymbol.decimals)}</Text>
@@ -473,12 +473,24 @@ export default function OrderPanel({ showAvailableMargin = true }) {
   }
 
   return (
-    <View className="h-full rounded-xl border lg:w-[300px]" style={{ backgroundColor: panelBackground, borderColor: colors.border, height: '100%' }}>
+    <View
+      className="h-full rounded-2xl border lg:w-[300px]"
+      style={{
+        backgroundColor: panelBackground,
+        borderColor: `${colors.primary}32`,
+        height: '100%',
+        shadowColor: '#001b16',
+        shadowOffset: { width: 0, height: 14 },
+        shadowOpacity: darkMode ? 0.20 : 0.08,
+        shadowRadius: 28,
+        elevation: 8,
+      }}
+    >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 10 }}>
         <View className="flex-row items-center justify-between">
           <View>
             <Text className="text-base font-bold" style={{ color: colors.text }}>New Trade</Text>
-            <Text className="text-xs font-bold uppercase tracking-wider mt-0.5" style={{ color: colors.muted }}>{currentSymbol.symbol}</Text>
+            <Text className="text-xs font-bold uppercase tracking-wider mt-0.5" style={{ color: colors.primary }}>{currentSymbol.symbol}</Text>
           </View>
         </View>
 
@@ -487,8 +499,8 @@ export default function OrderPanel({ showAvailableMargin = true }) {
             <Pressable
               key={type.value}
               onPress={() => selectOrderType(type.value)}
-              className="rounded-full px-2.5 py-1.5"
-              style={{ backgroundColor: orderType === type.value ? activeTabBackground : 'transparent' }}
+              className="rounded-full border px-2.5 py-1.5"
+              style={{ backgroundColor: orderType === type.value ? activeTabBackground : 'transparent', borderColor: orderType === type.value ? `${colors.primary}55` : 'transparent' }}
             >
               <Text
                 className="text-[10px] font-medium"
@@ -500,7 +512,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
           ))}
         </View>
 
-        <View className="mt-2.5 flex-row justify-between rounded-xl px-3 py-2" style={{ backgroundColor: controlBackground }}>
+        <View className="mt-2.5 flex-row justify-between rounded-xl border px-3 py-2" style={{ backgroundColor: controlBackground, borderColor: colors.border }}>
           <View>
             <Text className="text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Bid</Text>
             <Text className="mt-0.5 text-sm font-bold" style={{ color: colors.danger }}>{quote(currentSymbol.bid, currentSymbol.decimals)}</Text>

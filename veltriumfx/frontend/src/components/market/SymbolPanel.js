@@ -45,7 +45,7 @@ function SymbolMarketRow({ item, selected, onSelect, colors, darkMode }) {
   const rowBackground = selected
     ? colors.primarySoft
     : hovered
-      ? darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(212, 175, 55, 0.12)'
+      ? darkMode ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 166, 126, 0.08)'
       : 'transparent';
   const fakeVolume = Number.isFinite(Number(item.volume))
     ? `${(Number(item.volume) / 1000000).toFixed(2)}M`
@@ -56,13 +56,18 @@ function SymbolMarketRow({ item, selected, onSelect, colors, darkMode }) {
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
       onPress={() => onSelect(item.symbol)}
-      className="h-[48px] flex-row items-center px-2"
-      style={{ backgroundColor: rowBackground, cursor: 'pointer' }}
+      className="h-[50px] flex-row items-center rounded-xl px-2"
+      style={{
+        backgroundColor: rowBackground,
+        borderWidth: selected ? 1 : 0,
+        borderColor: selected ? `${colors.primary}55` : 'transparent',
+        cursor: 'pointer',
+      }}
     >
       <View className="flex-row items-center flex-1 min-w-0">
         <Star size={14} color={selected || hovered ? colors.primary : colors.muted} />
-        <View className="mx-1.5 h-4 w-4 items-center justify-center rounded-full" style={{ backgroundColor: tone }}>
-          <Text className="text-[8px] font-medium text-white">{displaySymbol[0] || '$'}</Text>
+        <View className="mx-2 h-5 w-5 items-center justify-center rounded-full" style={{ backgroundColor: `${tone}24`, borderWidth: 1, borderColor: `${tone}66` }}>
+          <Text className="text-[8px] font-bold" style={{ color: tone }}>{displaySymbol[0] || '$'}</Text>
         </View>
         <View className="flex-1 min-w-0">
           <View className="flex-row items-center">
@@ -86,9 +91,9 @@ export default function SymbolPanel({ onSelectSymbol }) {
   const [search, setSearch] = useState('');
   const [marketTab, setMarketTab] = useState('COIN-M');
   const [tag, setTag] = useState('All');
-  const panelBackground = darkMode ? colors.panel : '#e8f8ee';
-  const controlBackground = darkMode ? colors.surface : '#f6fff9';
-  const tabBackground = darkMode ? colors.surface : '#f6fff9';
+  const panelBackground = darkMode ? 'rgba(13, 24, 24, 0.86)' : 'rgba(255, 255, 255, 0.88)';
+  const controlBackground = darkMode ? 'rgba(19, 35, 35, 0.92)' : '#f6fbf9';
+  const tabBackground = darkMode ? 'rgba(19, 35, 35, 0.92)' : '#edf6f3';
   const desktop = width >= 1100;
   const mobile = width < 760;
   const panelHeight = desktop ? undefined : 390;
@@ -115,7 +120,19 @@ export default function SymbolPanel({ onSelectSymbol }) {
   );
 
   return (
-    <View className="overflow-hidden rounded-2xl border p-2 lg:h-full lg:w-[350px]" style={{ height: panelHeight, backgroundColor: panelBackground, borderColor: colors.border }}>
+    <View
+      className="overflow-hidden rounded-2xl border p-2 lg:h-full lg:w-[350px]"
+      style={{
+        height: panelHeight,
+        backgroundColor: panelBackground,
+        borderColor: colors.border,
+        shadowColor: '#001b16',
+        shadowOffset: { width: 0, height: 14 },
+        shadowOpacity: darkMode ? 0.20 : 0.08,
+        shadowRadius: 28,
+        elevation: 8,
+      }}
+    >
       <View className={`${mobile ? 'mb-2 rounded-md p-0.5' : 'mb-3 rounded-xl p-1'} flex-row border`} style={{ backgroundColor: tabBackground, borderColor: colors.border }}>
         <Pressable onPress={() => setTab('symbols')} className={`${mobile ? 'rounded px-2 py-2' : 'rounded-lg px-3 py-3'} mr-1 flex-1 flex-row items-center justify-center`} style={{ backgroundColor: tab === 'symbols' ? colors.primary : 'transparent' }}>
           <CircleDollarSign size={mobile ? 14 : 18} color={tab === 'symbols' ? '#0B0B0B' : colors.muted} />
@@ -147,7 +164,18 @@ export default function SymbolPanel({ onSelectSymbol }) {
         </View>
       ) : (
         <View className="flex-1 min-h-0">
-          <View className="p-3 mb-3 border rounded-xl" style={{ backgroundColor: darkMode ? colors.surface : '#ffffff', borderColor: colors.border }}>
+          <View
+            className="p-3 mb-3 border rounded-xl"
+            style={{
+              backgroundColor: darkMode ? 'rgba(19, 35, 35, 0.96)' : '#ffffff',
+              borderColor: `${colors.primary}35`,
+              shadowColor: colors.primary,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: darkMode ? 0.16 : 0.08,
+              shadowRadius: 16,
+              elevation: 3,
+            }}
+          >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1 min-w-0">
                 <Star size={16} color={colors.primary} />
@@ -169,7 +197,7 @@ export default function SymbolPanel({ onSelectSymbol }) {
             </View>
           </View>
 
-          <View className="flex-row items-center px-4 mb-3 border rounded-xl" style={{ backgroundColor: controlBackground, borderColor: colors.border }}>
+          <View className="flex-row items-center px-4 mb-3 border rounded-xl" style={{ backgroundColor: controlBackground, borderColor: `${colors.border}cc` }}>
             <Search size={18} color={colors.muted} />
             <TextInput value={search} onChangeText={setSearch} placeholder="Search" placeholderTextColor={colors.muted} className="flex-1 ml-2 h-11" style={{ color: colors.text }} />
           </View>
@@ -196,7 +224,7 @@ export default function SymbolPanel({ onSelectSymbol }) {
             ))}
           </ScrollView>
 
-          <View className="flex-row px-2 py-2 border-b" style={{ borderColor: colors.border }}>
+          <View className="flex-row rounded-t-xl px-2 py-2 border-b" style={{ borderColor: colors.border, backgroundColor: darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,166,126,0.05)' }}>
             <Text className="flex-1 text-[11px] font-medium" style={{ color: colors.muted }}>Symbols ↕ / Vol ↕</Text>
             <Text className="w-[72px] text-right text-[11px] font-medium" style={{ color: colors.muted }}>Last Price ↕</Text>
             <Text className="w-[64px] text-right text-[11px] font-medium" style={{ color: colors.muted }}>24h Chg ↕</Text>
@@ -204,7 +232,7 @@ export default function SymbolPanel({ onSelectSymbol }) {
           </View>
 
           <ScrollView
-            className="min-h-0 border-b deep-green-scrollbar rounded-b-xl lg:flex-1"
+            className="min-h-0 deep-green-scrollbar rounded-b-xl lg:flex-1"
             style={{ borderColor: colors.border }}
             showsVerticalScrollIndicator
             indicatorStyle={darkMode ? 'white' : 'medium'}

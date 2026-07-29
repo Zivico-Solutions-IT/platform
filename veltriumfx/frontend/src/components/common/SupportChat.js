@@ -110,7 +110,7 @@ export default function SupportChat() {
     }
   };
 
-  const activeThemeColor = darkMode ? colors.primary : '#014421';
+  const activeThemeColor = colors.primary;
 
   // Toggle Chat Widget Open/Close (no floating button, only triggerable via event)
   if (!isOpen) {
@@ -165,7 +165,7 @@ export default function SupportChat() {
               className="h-10 w-10 items-center justify-center rounded-full"
               style={{ backgroundColor: darkMode ? '#022C22' : '#E6F4EA' }}
             >
-              <Headphones size={20} color={darkMode ? '#34D399' : '#014421'} />
+              <Headphones size={20} color={colors.primary} />
             </View>
             <View className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-white bg-green-500" />
           </View>

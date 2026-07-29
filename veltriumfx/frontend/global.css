@@ -19,7 +19,7 @@ textarea:focus {
 }
 
 .deep-green-scrollbar {
-  scrollbar-color: #8c8c8c #f0f7f5;
+  scrollbar-color: #00A67E #eef5f2;
   scrollbar-width: thin;
 }
 
@@ -29,36 +29,36 @@ textarea:focus {
 }
 
 .deep-green-scrollbar::-webkit-scrollbar-track {
-  background: #f0f7f5;
-  border-left: 1px solid rgba(0, 103, 79, .14);
+  background: #eef5f2;
+  border-left: 1px solid rgba(0, 166, 126, .16);
 }
 
 .deep-green-scrollbar::-webkit-scrollbar-thumb {
-  background: #8c8c8c;
-  border: 2px solid #f0f7f5;
+  background: #00A67E;
+  border: 2px solid #eef5f2;
   border-radius: 999px;
 }
 
 .deep-green-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #00674F;
+  background: #007b61;
 }
 
 /* Dark mode overrides */
 .dark .deep-green-scrollbar {
-  scrollbar-color: rgba(0, 103, 79, .72) #080f0c;
+  scrollbar-color: rgba(0, 200, 150, .74) #07100f;
 }
 
 .dark .deep-green-scrollbar::-webkit-scrollbar-track {
-  background: #080f0c;
+  background: #07100f;
 }
 
 .dark .deep-green-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 103, 79, .72);
-  border: 2px solid #080f0c;
+  background: rgba(0, 200, 150, .74);
+  border: 2px solid #07100f;
 }
 
 .dark .deep-green-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #00674F;
+  background: #00C896;
 }
 
 #admin-sidebar-backdrop {

@@ -2,9 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import {
   Award,
+  ArrowDown,
+  ArrowUp,
+  Clock,
   LogOut,
   Settings2,
   ShieldCheck,
+  WalletCards,
   X,
   HelpCircle,
 } from 'lucide-react-native';
@@ -79,7 +83,11 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
   );
 }
 
-export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPanel, selectedAccount, deposits = [], transactions = [] }) {
+function accountId(account) {
+  return String(account?.id || '').replace(/\D/g, '').slice(-6).padStart(6, '0');
+}
+
+export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPanel, selectedAccount, summary, deposits = [], transactions = [] }) {
   const { user, logout } = useAuth();
   const { colors } = useAppTheme();
   const { width, height } = useWindowDimensions();
@@ -95,6 +103,11 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const displayName = user?.name || 'Nova FXM Client';
   const firstName = displayName.split(/\s+/)[0] || 'Client';
   const accountType = selectedAccount?.type || user?.accountType || 'Demo';
+  const accountBalance = Number.isFinite(Number(selectedAccount?.balance))
+    ? Number(selectedAccount.balance)
+    : Number(summary?.balance || 0);
+  const accountTier = selectedAccount?.tier || 'Standard';
+  const realAccount = accountType.toLowerCase() === 'live';
   const selectedAccountId = selectedAccount?.id ? String(selectedAccount.id) : '';
   const approvedStatuses = ['approved', 'completed'];
   const liveAccountDeposits = accountType !== 'Live'
@@ -294,11 +307,57 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                   palette={palette}
                 />
               </View>
+
+              <View className="mb-4 rounded-xl p-4" style={{ backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border }}>
+                <View className="flex-row items-center justify-between">
+                  <View>
+                    <Text className="text-xl font-medium" style={{ color: palette.text }}>Funding</Text>
+                    <Text className="mt-1 text-xs" style={{ color: palette.muted }}>Manage deposits, withdrawals, and history</Text>
+                  </View>
+                  <View className="rounded-full px-3 py-1" style={{ backgroundColor: realAccount ? `${colors.success}22` : `${palette.accent}22` }}>
+                    <Text className="text-[11px] font-bold uppercase" style={{ color: realAccount ? colors.success : palette.accent }}>
+                      {realAccount ? 'Real' : 'Demo'}
+                    </Text>
+                  </View>
+                </View>
+                <View className="mt-4 rounded-xl p-3" style={{ backgroundColor: palette.panel }}>
+                  <View className="flex-row items-center justify-between">
+                    <View>
+                      <Text className="text-xs" style={{ color: palette.muted }}>{accountTier}</Text>
+                      <Text className="mt-1 text-2xl font-medium" style={{ color: palette.text }}>{money(accountBalance)} USD</Text>
+                    </View>
+                    <Text className="text-xs font-medium" style={{ color: palette.muted }}>#{accountId(selectedAccount)}</Text>
+                  </View>
+                </View>
+                <View className="mt-3 flex-row gap-2">
+                  {[
+                    ['deposit', 'Deposit', ArrowUp],
+                    ['withdraw', 'Withdraw', ArrowDown],
+                    ['history', 'History', Clock],
+                  ].map(([panel, title, Icon]) => (
+                    <Pressable
+                      key={panel}
+                      onPress={() => openPanel(panel)}
+                      className="min-h-[42px] flex-1 items-center justify-center rounded-xl border"
+                      style={{ backgroundColor: panel === 'deposit' ? palette.accent : 'transparent', borderColor: panel === 'deposit' ? palette.accent : palette.border }}
+                    >
+                      <Icon size={16} color={panel === 'deposit' ? '#07100f' : palette.text} />
+                      <Text className="mt-1 text-[11px] font-bold" style={{ color: panel === 'deposit' ? '#07100f' : palette.text }}>{title}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
             </>
           ) : null}
 
           <Text className={`mb-4 ${mobile ? 'pl-0' : 'pl-[18px]'} text-xl font-medium`} style={{ color: palette.text }}>Account</Text>
 
+          <MenuAction
+            icon={WalletCards}
+            title="Manage Accounts"
+            onPress={() => openPanel('account')}
+            palette={palette}
+          />
           <MenuAction
             icon={Settings2}
             title="Settings"

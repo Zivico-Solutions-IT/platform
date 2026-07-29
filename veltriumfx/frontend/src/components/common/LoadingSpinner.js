@@ -47,7 +47,7 @@ export default function LoadingSpinner() {
   }, [logoOpacity, logoScale, logoShimmer]);
 
   return (
-    <View className="flex-1 items-center justify-center bg-[#060d0a]">
+    <View className="flex-1 items-center justify-center bg-[#07100f]">
       <Animated.View style={{ opacity: logoOpacity, transform: [{ scale: logoScale }] }}>
         <View className="overflow-hidden" style={{ width: 286, height: 85 }}>
           <Image source={VELTRIUM_LOGO} resizeMode="contain" style={{ width: 286, height: 85 }} />
@@ -58,7 +58,7 @@ export default function LoadingSpinner() {
               left: 0,
               width: 46,
               height: 110,
-              backgroundColor: 'rgba(0, 103, 79, 0.35)',
+              backgroundColor: 'rgba(0, 200, 150, 0.34)',
               opacity: logoOpacity.interpolate({ inputRange: [0, 1], outputRange: [0, 0.9] }),
               transform: [
                 { translateX: logoShimmer.interpolate({ inputRange: [0, 1], outputRange: [-72, 318] }) },

@@ -224,7 +224,35 @@ export default function LoginScreen() {
     outlineStyle: 'none',
   };
   const labelStyle = { color: colors.muted };
-  const linkColor = darkMode ? colors.primary : '#014421';
+  const linkColor = colors.primary;
+  const primaryButtonStyle = {
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: darkMode ? 0.22 : 0.16,
+    shadowRadius: 18,
+    elevation: 4,
+  };
+  const authCardStyle = {
+    backgroundColor: colors.panel,
+    borderColor: darkMode ? `${colors.primary}38` : colors.border,
+    borderWidth: 1,
+    shadowColor: darkMode ? colors.primary : '#0f2f29',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: darkMode ? 0.16 : 0.10,
+    shadowRadius: 36,
+    elevation: 24,
+  };
+  const pageStyle = {
+    backgroundColor: colors.background,
+    ...(typeof document !== 'undefined'
+      ? {
+          backgroundImage: darkMode
+            ? `linear-gradient(135deg, ${colors.background} 0%, #071d1a 48%, #16211d 100%)`
+            : `linear-gradient(135deg, ${colors.background} 0%, #fbfefd 50%, #e2f1ec 100%)`,
+        }
+      : {}),
+  };
 
   // Step indicator dots for forgot password flow
   const StepIndicator = ({ currentStep }) => {
@@ -238,7 +266,7 @@ export default function LoginScreen() {
             style={{
               width: currentStep === step ? 24 : 8,
               height: 8,
-              backgroundColor: currentStep >= step ? '#014421' : (darkMode ? colors.border : '#E5E7EB'),
+              backgroundColor: currentStep >= step ? colors.primary : (darkMode ? colors.border : '#D8E5E0'),
               borderRadius: 4,
             }}
           />
@@ -258,16 +286,7 @@ export default function LoginScreen() {
         <View className="min-h-full items-center justify-center px-5 py-10">
           <View
             className="relative w-full max-w-md rounded-[24px] px-7 py-10"
-            style={{
-              backgroundColor: colors.panel,
-              borderColor: colors.border,
-              borderWidth: 1,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 16 },
-              shadowOpacity: darkMode ? 0.4 : 0.08,
-              shadowRadius: 32,
-              elevation: 24,
-            }}
+            style={authCardStyle}
           >
             {/* Logo Badge */}
             <View className="absolute -top-7 left-0 right-0 z-10 items-center">
@@ -296,9 +315,10 @@ export default function LoginScreen() {
 
                 <TouchableOpacity
                   onPress={resetForgotState}
-                  className="mt-8 w-full items-center rounded-xl bg-[#014421] py-3"
+                  className="mt-8 w-full items-center rounded-xl py-3"
+                  style={primaryButtonStyle}
                 >
-                  <Text className="text-[14px] font-semibold text-white">Back to Login</Text>
+                  <Text className="text-[14px] font-semibold text-medium">Back to Login</Text>
                 </TouchableOpacity>
               </>
             ) : view === 'forgot-email' ? (
@@ -358,10 +378,10 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   onPress={handleSendResetCode}
                   disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#014421] py-3"
-                  style={{ opacity: forgotLoading ? 0.7 : 1 }}
+                  className="w-full items-center rounded-xl py-3"
+                  style={[primaryButtonStyle, { opacity: forgotLoading ? 0.7 : 1 }]}
                 >
-                  <Text className="text-[14px] font-semibold text-white">
+                  <Text className="text-[14px] font-semibold text-medium">
                     {forgotLoading ? 'Sending Code...' : 'Send Reset Code'}
                   </Text>
                 </TouchableOpacity>
@@ -427,10 +447,10 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   onPress={handleVerifyCode}
                   disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#014421] py-3"
-                  style={{ opacity: forgotLoading ? 0.7 : 1 }}
+                  className="w-full items-center rounded-xl py-3"
+                  style={[primaryButtonStyle, { opacity: forgotLoading ? 0.7 : 1 }]}
                 >
-                  <Text className="text-[14px] font-semibold text-white">
+                  <Text className="text-[14px] font-semibold text-medium">
                     Verify Code
                   </Text>
                 </TouchableOpacity>
@@ -544,10 +564,10 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   onPress={handleResetPassword}
                   disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#014421] py-3"
-                  style={{ opacity: forgotLoading ? 0.7 : 1 }}
+                  className="w-full items-center rounded-xl py-3"
+                  style={[primaryButtonStyle, { opacity: forgotLoading ? 0.7 : 1 }]}
                 >
-                  <Text className="text-[14px] font-semibold text-white">
+                  <Text className="text-[14px] font-semibold text-medium">
                     {forgotLoading ? 'Resetting Password...' : 'Reset Password'}
                   </Text>
                 </TouchableOpacity>
@@ -562,20 +582,24 @@ export default function LoginScreen() {
 
   // ─── Login View ───
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
+    <ScrollView className="flex-1" style={pageStyle}>
       <View className="min-h-full items-center justify-center px-5 py-10">
+        <View className="mb-7 hidden w-full max-w-[860px] overflow-hidden rounded-2xl border p-5 lg:flex-row lg:items-center lg:justify-between" style={{ backgroundColor: darkMode ? 'rgba(13, 24, 24, 0.72)' : 'rgba(255,255,255,0.74)', borderColor: `${colors.primary}36` }}>
+          <View>
+            <Text className="text-xs font-bold uppercase tracking-wider" style={{ color: colors.primary }}>VeltriumFX Trading Desk</Text>
+            <Text className="mt-1 text-2xl font-bold" style={{ color: colors.text }}>Fast login. Cleaner workspace. Sharper execution.</Text>
+          </View>
+          <View className="mt-4 flex-row gap-3 lg:mt-0">
+            {['Live markets', 'Risk tools', 'Instant orders'].map((item) => (
+              <View key={item} className="rounded-full border px-3 py-2" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
+                <Text className="text-xs font-semibold" style={{ color: colors.text }}>{item}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
         <View 
           className="relative w-full max-w-md rounded-[24px] px-7 py-10" 
-          style={{ 
-            backgroundColor: colors.panel, 
-            borderColor: colors.border, 
-            borderWidth: 1,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 16 },
-            shadowOpacity: darkMode ? 0.4 : 0.08,
-            shadowRadius: 32,
-            elevation: 24,
-          }}
+          style={authCardStyle}
         >
 
         {/* Logo Badge */}
@@ -679,10 +703,10 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
-            className="w-full items-center rounded-lg bg-[#014421] py-2.5 shadow-md"
-            style={{ opacity: loading ? 0.7 : 1 }}
+            className="w-full items-center rounded-lg py-2.5 shadow-md"
+            style={[primaryButtonStyle, { opacity: loading ? 0.7 : 1 }]}
           >
-            <Text className="text-sm font-semibold text-white">
+            <Text className="text-sm font-semibold text-medium">
               {loading ? 'Logging in...' : 'Login'}
             </Text>
           </TouchableOpacity>

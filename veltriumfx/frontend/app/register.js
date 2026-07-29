@@ -439,7 +439,26 @@ export default function RegisterScreen() {
     outlineStyle: 'none',
   };
   const labelStyle = { color: colors.muted };
-  const linkColor = darkMode ? colors.primary : '#014421';
+  const linkColor = colors.primary;
+  const primaryButtonStyle = {
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: darkMode ? 0.22 : 0.16,
+    shadowRadius: 18,
+    elevation: 4,
+    opacity: loading ? 0.7 : 1,
+  };
+  const authCardStyle = {
+    backgroundColor: colors.panel,
+    borderColor: darkMode ? `${colors.primary}38` : colors.border,
+    borderWidth: 1,
+    shadowColor: darkMode ? colors.primary : '#0f2f29',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: darkMode ? 0.16 : 0.10,
+    shadowRadius: 36,
+    elevation: 24,
+  };
 
   const submit = async () => {
   const trimmedFirstName = form.name.split(' ')[0]?.trim() || '';
@@ -532,7 +551,7 @@ export default function RegisterScreen() {
   return (
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
       <View className="min-h-full items-center justify-center px-4 py-10">
-        <View className="relative w-full max-w-md rounded-2xl px-6 py-5 shadow-xl" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1 }}>
+        <View className="relative w-full max-w-md rounded-2xl px-6 py-5 shadow-xl" style={authCardStyle}>
 
           {/* Logo Badge */}
           <View className="absolute -top-7 left-0 right-0 z-10 items-center">
@@ -756,8 +775,8 @@ export default function RegisterScreen() {
             {/* Terms and Conditions */}
             <View className="flex-row items-start gap-2 mb-4">
               <TouchableOpacity onPress={() => setForm({ ...form, agree: !form.agree })} className="mt-0.5">
-                <View className="w-4 h-4 rounded border items-center justify-center" style={{ borderColor: form.agree ? linkColor : colors.border, backgroundColor: form.agree ? linkColor : inputStyle.backgroundColor }}>
-                  {form.agree && <Text className="text-white text-xs">✓</Text>}
+                <View className="w-4 h-4 rounded border items-center justify-center" style={{ borderColor: form.agree ? colors.primary : colors.border, backgroundColor: form.agree ? colors.primary : inputStyle.backgroundColor }}>
+                  {form.agree && <Text className="text-medium text-xs">✓</Text>}
                 </View>
               </TouchableOpacity>
               <Text className="flex-1 text-xs leading-relaxed" style={labelStyle}>
@@ -773,10 +792,10 @@ export default function RegisterScreen() {
             <Pressable
               onPress={submit}
               disabled={loading}
-              className="w-full rounded-lg bg-[#014421] py-2.5 items-center shadow-md"
-              style={{ opacity: loading ? 0.7 : 1 }}
+              className="w-full rounded-lg py-2.5 items-center shadow-md"
+              style={primaryButtonStyle}
             >
-              <Text className="text-white font-semimedium text-sm">{loading ? 'Signing up...' : 'Sign Up'}</Text>
+              <Text className="text-medium font-semimedium text-sm">{loading ? 'Signing up...' : 'Sign Up'}</Text>
             </Pressable>
           </View>
 

@@ -9,7 +9,7 @@ import { useAppTheme } from '../src/context/ThemeContext';
 
 const medium = '#0B0B0B';
 const GOLD = '#D4AF37';
-const GREEN = '#014421';
+const GREEN = '#007b61';
 
 function Card({ title, children, colors }) {
   return (

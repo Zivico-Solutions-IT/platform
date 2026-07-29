@@ -896,7 +896,7 @@ document.addEventListener('message', receiveLiveUpdate);
 </body></html>`;
 }
 
-export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin }) {
+export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin, orderTicketOpen = false, onToggleOrderTicket }) {
   const { currentSymbol, openPosition, prices, setSelectedSymbol } = useDemoTrading();
   const { colors } = useAppTheme();
   const { notify } = useToast();
@@ -1326,6 +1326,16 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
     setIndicatorOpen(false);
     setSettingsOpen(false);
   };
+  const toggleOrderTicket = () => {
+    setTimeframeMenuOpen(false);
+    setSymbolTabMenuOpen(false);
+    setChartMenuOpen(false);
+    setIndicatorOpen(false);
+    setSettingsOpen(false);
+    setDrawingOpen(false);
+    setSymbolMenuOpen(false);
+    onToggleOrderTicket?.();
+  };
   const toggleChartFullscreen = () => {
     const nextVal = !chartFullscreen;
     if (isFullscreen === undefined) {
@@ -1621,6 +1631,30 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                   </Pressable>
                 ))}
                 <View className="flex-row items-center" style={{ marginLeft: 'auto', paddingLeft: compactToolbar ? 8 : 12, columnGap: compactToolbar ? 2 : 4 }}>
+                  {!isAdmin ? (
+                    <Pressable
+                      onPress={toggleOrderTicket}
+                      className="flex-row items-center justify-center rounded-md border"
+                      style={{
+                        height: iconButtonSize,
+                        paddingHorizontal: compactToolbar ? 8 : 10,
+                        backgroundColor: orderTicketOpen ? ui.controlActive : ui.control,
+                        borderColor: orderTicketOpen ? ui.controlActive : ui.border,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {orderTicketOpen ? (
+                        <X size={compactToolbar ? 13 : 15} color={ui.activeText} />
+                      ) : (
+                        <Plus size={compactToolbar ? 13 : 15} color={ui.text} />
+                      )}
+                      {!compactToolbar ? (
+                        <Text className="ml-1.5 text-xs font-bold" style={{ color: orderTicketOpen ? ui.activeText : ui.text }}>
+                          New Order
+                        </Text>
+                      ) : null}
+                    </Pressable>
+                  ) : null}
                   <IconButton active={chartMenuOpen} bare ui={ui} size={iconButtonSize} onPress={toggleChartMenu}>
                     <ActiveChartIcon size={compactToolbar ? 14 : 17} color={chartMenuOpen ? ui.accent : ui.text} />
                   </IconButton>

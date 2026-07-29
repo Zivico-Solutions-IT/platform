@@ -8,27 +8,32 @@ import OrderPanel from '../order/OrderPanel';
 import SymbolPanel from '../market/SymbolPanel';
 import InsufficientFundsModal from '../order/InsufficientFundsModal';
 import OpenPositions from '../positions/OpenPositions';
-import AccountSummary from '../account/AccountSummary';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
-import BirthdayWidget from '../account/BirthdayWidget';
 import BirthdayModal from '../account/BirthdayModal';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 
-function OrderRail({ summary, user, showSummary = true, showAvailableMargin = true }) {
+function OrderRail({ showAvailableMargin = false }) {
+  const { darkMode, colors } = useAppTheme();
   return (
-    <View className="h-full overflow-hidden" style={{ width: 300, maxWidth: '100%', overflow: 'hidden', height: '100%' }}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: 12, paddingBottom: 12 }}
-        style={{ flex: 1 }}
-      >
-        <BirthdayWidget />
-        <OrderPanel showAvailableMargin={showAvailableMargin} />
-        {showSummary ? <AccountSummary summary={summary} user={user} /> : null}
-      </ScrollView>
+    <View
+      className="h-full overflow-hidden rounded-2xl border"
+      style={{
+        width: 310,
+        maxWidth: '100%',
+        height: '100%',
+        backgroundColor: darkMode ? 'rgba(13, 24, 24, 0.78)' : 'rgba(255,255,255,0.86)',
+        borderColor: `${colors.primary}32`,
+        shadowColor: '#001b16',
+        shadowOffset: { width: 0, height: 14 },
+        shadowOpacity: darkMode ? 0.22 : 0.08,
+        shadowRadius: 28,
+        elevation: 8,
+      }}
+    >
+      <OrderPanel showAvailableMargin={showAvailableMargin} />
     </View>
   );
 }
@@ -44,11 +49,11 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
   const symbolTabs = ['Popular', 'Crypto CFD', 'Energies', 'Forex', 'Indices', 'Metals'];
 
   const ui = useMemo(() => ({
-    background: darkMode ? '#0e1726' : colors.background,
-    menu: darkMode ? '#121e30' : colors.surface,
+    background: darkMode ? colors.background : colors.background,
+    menu: darkMode ? colors.panel : colors.surface,
     menuBorder: colors.border,
     border: colors.border,
-    soft: darkMode ? 'rgba(212, 175, 55, 0.12)' : 'rgba(212, 175, 55, 0.15)',
+    soft: `${colors.primary}18`,
     control: colors.surface,
     accent: colors.primary,
     activeText: '#0B0B0B',
@@ -110,11 +115,12 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
 export default function TradingLayout() {
   const params = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
-  const { colors } = useAppTheme();
+  const { darkMode, colors } = useAppTheme();
   const { user, isAdmin } = useAuth();
   const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('trade');
+  const [orderTicketOpen, setOrderTicketOpen] = useState(false);
 
   const desktop = width >= 1100;
   const tablet = width >= 760;
@@ -124,6 +130,13 @@ export default function TradingLayout() {
     : tablet
       ? Math.max(540, Math.min(640, height - 170))
       : Math.max(430, Math.min(560, height - 210));
+  const workspaceBackground = darkMode
+    ? `linear-gradient(135deg, ${colors.background} 0%, #081514 42%, #101815 100%)`
+    : `linear-gradient(135deg, ${colors.background} 0%, #f8fbf9 46%, #edf4f0 100%)`;
+  const shellStyle = {
+    backgroundColor: colors.background,
+    ...(typeof document !== 'undefined' ? { backgroundImage: workspaceBackground } : {}),
+  };
 
   useEffect(() => {
     if (params.panel === 'verification') setSidePanel('verification');
@@ -139,7 +152,7 @@ export default function TradingLayout() {
 
   if (mobile) {
     return (
-      <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <View className="flex-1" style={shellStyle}>
         {!chartFullscreen && <TopAccountBar />}
         <View className="flex-1" style={{ paddingBottom: chartFullscreen ? 0 : 48 }}>
           {mobileTab === 'symbols' ? (
@@ -153,7 +166,13 @@ export default function TradingLayout() {
           ) : (
             <View className="flex-1 flex-col min-h-0">
               <View className="flex-1 min-h-[340px] min-w-0">
-                <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
+                <TradingChart
+                  isFullscreen={chartFullscreen}
+                  onFullscreenChange={setChartFullscreen}
+                  isAdmin={isAdmin}
+                  orderTicketOpen={orderTicketOpen}
+                  onToggleOrderTicket={() => setOrderTicketOpen((open) => !open)}
+                />
               </View>
               {!chartFullscreen && !sidePanel ? (
                 <View className="w-full shrink-0">
@@ -168,15 +187,19 @@ export default function TradingLayout() {
           <View
             className="flex-row items-center justify-around border-t"
             style={{
-              backgroundColor: colors.surface,
+              backgroundColor: darkMode ? 'rgba(13, 24, 24, 0.96)' : 'rgba(255, 255, 255, 0.96)',
               borderColor: colors.border,
               position: 'fixed',
               bottom: 0,
               left: 0,
               right: 0,
-              height: 48,
+              height: 54,
               zIndex: 4000,
               elevation: 4000,
+              shadowColor: '#001b16',
+              shadowOffset: { width: 0, height: -8 },
+              shadowOpacity: darkMode ? 0.28 : 0.10,
+              shadowRadius: 18,
             }}
           >
             <Pressable
@@ -184,7 +207,7 @@ export default function TradingLayout() {
               className="items-center justify-center flex-1 py-0.5"
             >
               <View
-                className="h-5 w-10 items-center justify-center rounded-full"
+                className="h-6 w-12 items-center justify-center rounded-full"
                 style={{ backgroundColor: mobileTab === 'symbols' ? `${colors.primary}25` : 'transparent' }}
               >
                 <ListFilter size={16} color={mobileTab === 'symbols' ? colors.primary : colors.muted} />
@@ -202,7 +225,7 @@ export default function TradingLayout() {
               className="items-center justify-center flex-1 py-0.5"
             >
               <View
-                className="h-5 w-10 items-center justify-center rounded-full"
+                className="h-6 w-12 items-center justify-center rounded-full"
                 style={{ backgroundColor: mobileTab === 'trade' ? `${colors.primary}25` : 'transparent' }}
               >
                 <CandlestickChart size={16} color={mobileTab === 'trade' ? colors.primary : colors.muted} />
@@ -220,7 +243,7 @@ export default function TradingLayout() {
               className="items-center justify-center flex-1 py-0.5"
             >
               <View
-                className="h-5 w-10 items-center justify-center rounded-full"
+                className="h-6 w-12 items-center justify-center rounded-full"
                 style={{ backgroundColor: mobileTab === 'position' ? `${colors.primary}25` : 'transparent' }}
               >
                 <Briefcase size={16} color={mobileTab === 'position' ? colors.primary : colors.muted} />
@@ -245,33 +268,45 @@ export default function TradingLayout() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+    <View className="flex-1" style={shellStyle}>
       {!chartFullscreen && <TopAccountBar />}
       <ScrollView
         scrollEnabled={!chartFullscreen}
         keyboardShouldPersistTaps="handled"
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: chartFullscreen ? 0 : (mobile ? 6 : 12), paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 24) }}
+        contentContainerStyle={{ flexGrow: 1, padding: chartFullscreen ? 0 : (mobile ? 6 : 14), paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 24) }}
       >
         <View
-          className={chartFullscreen ? 'flex-1' : (desktop ? 'flex-row gap-3 overflow-hidden' : mobile ? 'gap-1.5 overflow-hidden' : 'gap-3 overflow-hidden')}
+          className={chartFullscreen ? 'flex-1' : (desktop ? 'flex-row gap-4 overflow-hidden' : mobile ? 'gap-1.5 overflow-hidden' : 'gap-3 overflow-hidden')}
           style={{ height: chartFullscreen ? undefined : chartAreaHeight, overflow: chartFullscreen ? 'visible' : 'hidden' }}
         >
           {desktop ? (
             <>
-              <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              {!chartFullscreen && (
-                <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} />
-              )}
+              <TradingChart
+                isFullscreen={chartFullscreen}
+                onFullscreenChange={setChartFullscreen}
+                isAdmin={isAdmin}
+                orderTicketOpen={orderTicketOpen}
+                onToggleOrderTicket={() => setOrderTicketOpen((open) => !open)}
+              />
+              {!chartFullscreen && orderTicketOpen && !isAdmin ? (
+                <OrderRail showAvailableMargin={false} />
+              ) : null}
             </>
           ) : (
             <>
-              <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              {!chartFullscreen && (
+              <TradingChart
+                isFullscreen={chartFullscreen}
+                onFullscreenChange={setChartFullscreen}
+                isAdmin={isAdmin}
+                orderTicketOpen={orderTicketOpen}
+                onToggleOrderTicket={() => setOrderTicketOpen((open) => !open)}
+              />
+              {!chartFullscreen && orderTicketOpen && !isAdmin && !mobile ? (
                 <View className={tablet ? 'flex-row gap-3' : 'gap-1.5'}>
-                  {!mobile ? <OrderRail summary={summary} user={user} /> : null}
+                  <OrderRail showAvailableMargin />
                 </View>
-              )}
+              ) : null}
             </>
           )}
         </View>

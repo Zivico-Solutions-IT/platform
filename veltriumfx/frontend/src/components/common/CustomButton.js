@@ -30,13 +30,24 @@ export default function CustomButton({ title, onPress, variant = 'primary', load
   const secondaryTextColor = variant === 'secondary'
     ? (darkMode ? '#ffffff' : '#3a3520')
     : null;
+  const primaryStyle = variant === 'primary'
+    ? {
+        borderWidth: 1,
+        borderColor: darkMode ? 'rgba(0, 200, 150, 0.42)' : 'rgba(0, 122, 96, 0.24)',
+        shadowColor: darkMode ? '#00C896' : '#006b55',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: darkMode ? 0.18 : 0.12,
+        shadowRadius: 18,
+        elevation: 3,
+      }
+    : {};
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
       className={`${compact ? 'min-h-[36px] py-1.5 px-4' : 'min-h-[46px] px-5'} items-center justify-center rounded-xl ${variants[variant]} ${disabled ? 'opacity-50' : ''} ${className}`}
-      style={secondaryStyle}
+      style={[primaryStyle, secondaryStyle]}
     >
       {loading
         ? <ActivityIndicator color={variant === 'primary' ? '#0B0B0B' : (secondaryTextColor || '#fff')} size={compact ? 'small' : undefined} />
