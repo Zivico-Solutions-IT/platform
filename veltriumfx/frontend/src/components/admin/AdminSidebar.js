@@ -224,10 +224,10 @@ export default function AdminSidebar({
         <View className="min-w-0 flex-1 pr-3">
           <NovaLogo dark={darkMode} width={compact ? 132 : 136} height={34} />
           <Text className="mt-2 text-lg font-medium" style={{ color: colors.text }}>
-            {adminUser?.role === 'master' ? 'Master Console' : (isVeltrium ? 'VeltriumFX Console' : (adminUser?.role === 'agent' ? 'Agent Console' : adminUser?.role === 'manager' ? 'Manager Console' : 'Manager Console'))}
+            {adminUser?.role === 'master' ? 'Master Console' : (adminUser?.role === 'agent' ? 'Agent Console' : 'Manager Console')}
           </Text>
           <Text className="mt-0.5 text-xs" style={{ color: colors.muted }}>
-            {adminUser?.role === 'master' ? 'Master control center' : (isVeltrium ? 'Operations control center' : (adminUser?.role === 'agent' ? 'Agent operations panel' : 'Manager control center'))}
+            {adminUser?.role === 'master' ? 'Master control center' : (adminUser?.role === 'agent' ? 'Agent operations panel' : 'Manager control center')}
           </Text>
         </View>
         <View className="flex-row items-center gap-3">
