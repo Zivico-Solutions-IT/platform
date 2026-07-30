@@ -162,8 +162,19 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
   const ActivePaymentGroupIcon = activePaymentGroup.icon;
   const isBankMethod = form.paymentMethod === 'Bank Transfer' || activePaymentGroup.title === 'Bank';
   const selectedDepositRule = depositRules[selectedCurrency.code] || depositRules.USD;
-  const selectedSymbol = selectedCurrency.symbol;
-  const selectedMethodAddresses = depositAddresses.filter((item) => item.paymentMethod === form.paymentMethod && item.isActive !== false);
+  const selectedMethodAddresses = depositAddresses.filter((item) => {
+    if (item.isActive === false) return false;
+    const a = String(item.paymentMethod || '').trim().toLowerCase();
+    const b = String(form.paymentMethod || '').trim().toLowerCase();
+    if (a === b) return true;
+    if (['usdt', 'trc20', 'bep20', 'erc20', 'crypto'].includes(a) && ['usdt', 'trc20', 'bep20', 'erc20', 'crypto'].includes(b)) {
+      return a === b || a === 'usdt' || b === 'usdt' || a === 'crypto' || b === 'crypto';
+    }
+    if (['bank', 'bank transfer', 'rtgs', 'neft', 'imps', 'net banking'].includes(a) && ['bank', 'bank transfer', 'rtgs', 'neft', 'imps', 'net banking'].includes(b)) {
+      return true;
+    }
+    return false;
+  });
   const mobile = width < 640;
   const activeMethodBasis = mobile ? '48.5%' : activePaymentGroup.methods.length <= 3 ? '31.5%' : '23.5%';
 
