@@ -8,7 +8,7 @@ const ONLINE_WINDOW_MS = 45 * 1000;
 // External tenant API endpoints (Port 5001 in local dev, VPS 2 in production)
 const EXTERNAL_TENANT_APIS = {
   6: process.env.NODE_ENV === 'production'
-    ? 'https://testserver2.novafxm.com/api'
+    ? 'https://server.veltriumfx.com/api'
     : 'http://localhost:5001/api',
 };
 
