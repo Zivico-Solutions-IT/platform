@@ -382,6 +382,26 @@ async function ensureSchema() {
     after: 'is_active',
   });
 
+  try {
+    const [addrCount] = await queryInterface.sequelize.query('SELECT COUNT(*) as cnt FROM deposit_method_addresses');
+    const countVal = addrCount?.[0]?.cnt || addrCount?.[0]?.['COUNT(*)'] || 0;
+    if (parseInt(countVal, 10) === 0) {
+      const now = new Date();
+      await queryInterface.bulkInsert('deposit_method_addresses', [{
+        payment_method: 'TRC20',
+        label: 'TRC20 Main Wallet',
+        address: 'TYD2b2D8vX4g5M6n7P8q9R0s1T2u3V4w5X',
+        qr_data: 'TYD2b2D8vX4g5M6n7P8q9R0s1T2u3V4w5X',
+        is_active: true,
+        currency: 'USD',
+        created_at: now,
+        updated_at: now,
+      }]);
+    }
+  } catch (e) {
+    // Ignore seed error
+  }
+
   await addColumnIfMissing(queryInterface, 'withdrawals', 'withdrawal_method', {
     type: DataTypes.ENUM('Bank', 'Crypto'),
     allowNull: false,
