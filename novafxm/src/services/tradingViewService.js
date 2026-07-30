@@ -136,8 +136,15 @@ const allInstruments = [
   instrument('OANDA:XPTUSD', 'XPT/USD', 'Platinum / US Dollar', 'METALS', 'forex'),
 ];
 
+const POPULAR_ORDER = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'EUR/CHF', 'EUR/JPY', 'XAU/USD', 'XAG/USD', 'WTI/USD'];
+
 const instruments = allInstruments;
 const streamInstruments = [...instruments].sort((left, right) => {
+  if (left.popular && right.popular) {
+    const idxA = POPULAR_ORDER.indexOf(left.symbol);
+    const idxB = POPULAR_ORDER.indexOf(right.symbol);
+    return (idxA !== -1 ? idxA : 999) - (idxB !== -1 ? idxB : 999);
+  }
   if (left.popular !== right.popular) return right.popular ? 1 : -1;
   return left.symbol.localeCompare(right.symbol);
 });
