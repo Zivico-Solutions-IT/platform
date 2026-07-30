@@ -2,12 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const AdmZip = require('adm-zip');
 
-console.log('📦 Zipping VeltriumFX Frontend (dist)...');
-const distPath = path.join(__dirname, 'veltriumfx', 'frontend', 'dist');
+console.log('📦 Zipping VeltriumFX Frontend...');
+const webBuildPath = path.join(__dirname, 'veltriumfx', 'frontend', 'web_build');
+const distPath = fs.existsSync(webBuildPath) ? webBuildPath : path.join(__dirname, 'veltriumfx', 'frontend', 'dist');
 const zipPath = path.join(__dirname, 'veltriumfx-frontend.zip');
 
 if (!fs.existsSync(distPath)) {
-  console.error('❌ dist folder not found!');
+  console.error('❌ Build folder (web_build / dist) not found!');
   process.exit(1);
 }
 

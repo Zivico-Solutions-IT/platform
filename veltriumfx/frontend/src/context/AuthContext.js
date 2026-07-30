@@ -74,7 +74,7 @@ export function AuthProvider({ children }) {
       if (!isDev) {
         const isAdminSubdomain = hostname.startsWith('admin.');
         if (isAdminSubdomain) {
-          const mainDomain = 'test.novafxm.com';
+          const mainDomain = 'veltriumfx.com';
           window.location.href = `${window.location.protocol}//${mainDomain}?action=logout`;
         }
       }

@@ -33,7 +33,8 @@ const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-const allowedOrigins = String(process.env.CORS_ORIGIN || 'https://novafxm.com')  .split(',')
+const allowedOrigins = String(process.env.CORS_ORIGIN || 'https://veltriumfx.com,https://platform.veltriumfx.com,https://admin.veltriumfx.com')
+  .split(',')
   .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter(Boolean);
 const allowAnyOrigin = allowedOrigins.includes('*');
@@ -43,6 +44,8 @@ const corsOrigin = (origin, callback) => {
   const isAllowed = allowAnyOrigin ||
                     allowedOrigins.includes(cleanOrigin) ||
                     /^http:\/\/(localhost|127\.0\.0\.1):(8081|8082)$/i.test(cleanOrigin) ||
+                    /\.veltriumfx\.com$/i.test(cleanOrigin) ||
+                    /veltriumfx\.com$/i.test(cleanOrigin) ||
                     /\.novafxm\.com$/i.test(cleanOrigin) ||
                     /novafxm\.com$/i.test(cleanOrigin);
   callback(null, isAllowed);
