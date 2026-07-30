@@ -162,6 +162,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
   const ActivePaymentGroupIcon = activePaymentGroup.icon;
   const isBankMethod = form.paymentMethod === 'Bank Transfer' || activePaymentGroup.title === 'Bank';
   const selectedDepositRule = depositRules[selectedCurrency.code] || depositRules.USD;
+  const selectedSymbol = selectedCurrency.symbol;
   const selectedMethodAddresses = depositAddresses.filter((item) => {
     if (item.isActive === false) return false;
     const a = String(item.paymentMethod || '').trim().toLowerCase();

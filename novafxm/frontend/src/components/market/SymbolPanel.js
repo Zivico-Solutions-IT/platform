@@ -97,10 +97,11 @@ export default function SymbolPanel({ onSelectSymbol }) {
   const selectedTone = selectedPositive ? colors.success : colors.danger;
   const marketTabs = ['Popular', 'Crypto CFD', 'Energies', 'Forex', 'Indices', 'Metals'];
   const tags = ['All', 'New Listing', 'AI', 'Layer-1', 'Layer-2', 'Gaming', 'Meme', 'Infrastructure'];
+  const POPULAR_ORDER = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'EUR/CHF', 'EUR/JPY', 'XAU/USD', 'XAG/USD', 'WTI/USD'];
   const filtered = useMemo(
     () => {
       const query = search.trim().toLowerCase();
-      return prices.filter((item) => {
+      const items = prices.filter((item) => {
         const matchesSearch = !query || item.symbol.toLowerCase().includes(query) || item.group?.toLowerCase().includes(query);
         const itemGroup = String(item.group || '').toLowerCase();
         const matchesTab = marketTab === 'Popular'
@@ -110,6 +111,14 @@ export default function SymbolPanel({ onSelectSymbol }) {
             : itemGroup.includes(marketTab.toLowerCase());
         return matchesSearch && matchesTab;
       });
+      if (marketTab === 'Popular') {
+        return items.sort((a, b) => {
+          const idxA = POPULAR_ORDER.indexOf(a.symbol);
+          const idxB = POPULAR_ORDER.indexOf(b.symbol);
+          return (idxA !== -1 ? idxA : 999) - (idxB !== -1 ? idxB : 999);
+        });
+      }
+      return items;
     },
     [marketTab, prices, search],
   );

@@ -64,10 +64,11 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
     );
   };
 
+  const POPULAR_ORDER = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'EUR/CHF', 'EUR/JPY', 'XAU/USD', 'XAG/USD', 'WTI/USD'];
   const filteredSymbols = useMemo(() => {
     const query = search.trim().toLowerCase();
     const favSet = new Set(favoriteSymbols);
-    return prices.filter((item) => {
+    const items = prices.filter((item) => {
       const matchesSearch = !query || item.symbol.toLowerCase().includes(query) || item.group?.toLowerCase().includes(query);
       const itemGroup = String(item.group || '').toLowerCase();
       const matchesTab = symbolTab === 'Favorites'
@@ -79,6 +80,14 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
             : itemGroup.includes(symbolTab.toLowerCase());
       return matchesSearch && matchesTab;
     });
+    if (symbolTab === 'Popular') {
+      return items.sort((a, b) => {
+        const idxA = POPULAR_ORDER.indexOf(a.symbol);
+        const idxB = POPULAR_ORDER.indexOf(b.symbol);
+        return (idxA !== -1 ? idxA : 999) - (idxB !== -1 ? idxB : 999);
+      });
+    }
+    return items;
   }, [prices, search, symbolTab, favoriteSymbols]);
 
   return (
