@@ -2,10 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { ChevronDown, Sun, Moon, UserRound, Wallet, ArrowUp, Bell, LayoutDashboard, Activity } from 'lucide-react-native';
-import Svg, { Polyline, Defs, LinearGradient, Stop, Polygon, Circle, RadialGradient } from 'react-native-svg';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
-import { money, percent, quote } from '../../utils/formatters';
+import { money, quote } from '../../utils/formatters';
 import { storage } from '../../utils/storage';
 import { useAppTheme } from '../../context/ThemeContext';
 import api from '../../services/api';
@@ -95,15 +94,10 @@ export default function TopAccountBar() {
     ['Bonus', money(summaryBonus)],
     ['Free Funds', money(summaryFreeFunds)],
   ];
-  const symbolPrice = Number(currentSymbol?.price || currentSymbol?.bid || 0);
-  const symbolChange = Number(currentSymbol?.change || 0);
   const desktopHeaderBg = darkMode ? '#02070d' : colors.background;
   const desktopDivider = darkMode ? '#172536' : colors.border;
   const desktopText = colors.text;
   const desktopMuted = darkMode ? '#66758a' : colors.muted;
-  const sparklinePoints = symbolChange >= 0
-    ? '2,34 15,31 26,32 37,24 48,27 58,10 67,18 78,20 90,7 100,12 112,4'
-    : '2,7 15,12 26,10 37,18 48,16 58,29 67,22 78,25 90,33 100,28 112,35';
 
   const maxMetricStep = Math.max(metrics.length - visibleMetricCount, 0);
   const notificationIds = useMemo(() => {
@@ -407,68 +401,6 @@ export default function TopAccountBar() {
             <NovaLogo dark={darkMode} width={compactDesktop ? 165 : 205} height={compactDesktop ? 46 : 56} />
           </Pressable>
         </View>
-      )}
-      {!mobile && (
-        <>
-          <View className={`${compactDesktop ? 'h-[48px]' : 'h-[54px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
-          <View
-            className={`${compactDesktop ? 'h-[48px]' : 'h-[54px]'} flex-row items-center justify-center`}
-            style={{ paddingHorizontal: compactDesktop ? 16 : 24 }}
-          >
-            <View style={{ width: compactDesktop ? 80 : 100 }} className="justify-center">
-              <View className="flex-row justify-between items-center mb-1">
-                <Text className="text-[8px] font-bold tracking-widest uppercase" style={{ color: desktopMuted }}>Vol Rate</Text>
-                <Text className="text-[8px] font-black tracking-widest uppercase" style={{ color: symbolChange < 0 ? colors.danger : colors.success }}>
-                  {percent(symbolChange)}
-                </Text>
-              </View>
-              {(() => {
-                const symbolStr = currentSymbol?.symbol || 'BTC';
-                const isUp = symbolChange >= 0;
-                const width = compactDesktop ? 80 : 100;
-                const height = 18;
-                const stepX = width / 11;
-                
-                let points = [];
-                let lastX = 0;
-                let lastY = 0;
-                for (let i = 0; i < 12; i++) {
-                  const seed = (symbolStr.charCodeAt(i % symbolStr.length) || i) * (i + 1);
-                  const rawY = 2 + (seed % 12);
-                  const trendOffset = isUp ? (12 - i) * 0.4 : i * 0.4;
-                  const y = Math.max(1, Math.min(17, (rawY * 0.5) + trendOffset));
-                  lastX = (i * stepX).toFixed(1);
-                  lastY = y.toFixed(1);
-                  points.push(`${lastX},${lastY}`);
-                }
-                const pointsStr = points.join(' ');
-                const lineColor = isUp ? colors.success : colors.danger;
-                
-                return (
-                  <View className="overflow-hidden" style={{ height: 18, width }}>
-                    <Svg width={width} height={18} viewBox={`0 0 ${width} 18`}>
-                      <Defs>
-                        <LinearGradient id="volSpark" x1="0" y1="0" x2="0" y2="1">
-                          <Stop offset="0" stopColor={lineColor} stopOpacity="0.6" />
-                          <Stop offset="1" stopColor={lineColor} stopOpacity="0.0" />
-                        </LinearGradient>
-                        <RadialGradient id="glow" cx="50%" cy="50%" r="50%">
-                          <Stop offset="0%" stopColor={lineColor} stopOpacity="0.7" />
-                          <Stop offset="100%" stopColor={lineColor} stopOpacity="0" />
-                        </RadialGradient>
-                      </Defs>
-                      <Polygon points={`${pointsStr} ${width},18 0,18`} fill="url(#volSpark)" />
-                      <Polyline points={pointsStr} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <Circle cx={lastX} cy={lastY} r="5" fill="url(#glow)" />
-                      <Circle cx={lastX} cy={lastY} r="1.5" fill={darkMode ? '#fff' : lineColor} />
-                    </Svg>
-                  </View>
-                );
-              })()}
-            </View>
-          </View>
-          <View className={`${compactDesktop ? 'h-[48px]' : 'h-[54px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
-        </>
       )}
       {mobile && !isAdmin ? (
         <ScrollView 
