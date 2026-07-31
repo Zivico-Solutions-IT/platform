@@ -125,7 +125,7 @@ export default function TradingLayout() {
   const { user, isAdmin } = useAuth();
   const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
-  const [mobileTab, setMobileTab] = useState('trade');
+  const [mobileTab, setMobileTab] = useState('symbols');
 
   const desktop = width >= 1100;
   const tablet = width >= 760;

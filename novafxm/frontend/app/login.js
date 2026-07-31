@@ -626,9 +626,9 @@ export default function LoginScreen() {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
-                autoComplete="off"
-                textContentType="none"
-                importantForAutofill="no"
+                autoComplete="current-password"
+                textContentType="password"
+                importantForAutofill="yes"
                 value={form.password}
                 onChangeText={(password) => setForm((value) => ({ ...value, password }))}
               />
