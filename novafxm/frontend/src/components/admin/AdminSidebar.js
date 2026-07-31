@@ -207,7 +207,7 @@ export default function AdminSidebar({
     const openVeltriumMaster = async () => {
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         const local = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-        const configuredUrl = String(process.env.EXPO_PUBLIC_VELTRIUM_MASTER_URL || 'https://platform2.novafxm.com').replace(/\/(login|master)\/?$/, '');
+        const configuredUrl = String(process.env.EXPO_PUBLIC_VELTRIUM_MASTER_URL || 'https://platform.veltriumfx.com').replace(/\/(login|master)\/?$/, '');
         const target = local
           ? `${window.location.protocol}//${window.location.hostname}:8082/master`
           : `${configuredUrl}/master`;
@@ -254,7 +254,7 @@ export default function AdminSidebar({
             {platformMenuOpen ? <View className="mt-1 overflow-hidden rounded-xl border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
               <Pressable onPress={openVeltriumMaster} className="px-3 py-3">
                 <Text className="text-sm font-semibold" style={{ color: colors.text }}>VeltriumFX Master</Text>
-                <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Open its own URL and sign in</Text>
+                <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Switch without signing in again</Text>
               </Pressable>
             </View> : null}
           </View>

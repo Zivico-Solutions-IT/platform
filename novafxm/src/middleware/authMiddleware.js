@@ -18,7 +18,23 @@ module.exports = async function authMiddleware(req, res, next) {
     if (!token) return res.status(401).json({ message: 'Authentication required.' });
     if (!process.env.JWT_SECRET) return res.status(500).json({ message: 'Authentication is not configured.' });
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findByPk(payload.id, { attributes: { exclude: ['password'] } });
+    let user = await User.findByPk(payload.id, { attributes: { exclude: ['password'] } });
+
+    // Master sessions may originate from the other platform database, where
+    // the same master account can have a different numeric ID.
+    if (payload.role === 'master') {
+      const masterEmail = String(payload.email || '').trim().toLowerCase();
+      const localMaster = masterEmail
+        ? await User.findOne({ where: { email: masterEmail, role: 'master' }, attributes: { exclude: ['password'] } })
+        : null;
+      user = localMaster || {
+        id: payload.id,
+        name: 'Master Admin',
+        email: masterEmail,
+        role: 'master',
+        update: async () => {},
+      };
+    }
     if (!user) return res.status(401).json({ message: 'Account not found.' });
     if (user.role !== 'master' && user.projectId) {
       const project = await Project.findByPk(user.projectId);

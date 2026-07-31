@@ -254,7 +254,7 @@ export default function AdminSidebar({
           {platformMenuOpen ? <View className="mt-1 overflow-hidden rounded-xl border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
             <Pressable onPress={openNovaMaster} className="px-3 py-3">
               <Text className="text-sm font-semibold" style={{ color: colors.text }}>NovaFXM Master</Text>
-              <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Open its own URL and sign in</Text>
+              <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Switch without signing in again</Text>
             </Pressable>
           </View> : null}
         </View>
