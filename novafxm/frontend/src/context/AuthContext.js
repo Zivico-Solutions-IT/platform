@@ -6,6 +6,23 @@ import { hasConsoleUi } from '../utils/appHost';
 
 export const AuthContext = createContext(null);
 
+const transferredSession = (() => {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('t');
+  const encodedUser = params.get('u');
+  if (!token || !encodedUser) return null;
+  try {
+    const user = JSON.parse(encodedUser);
+    localStorage.setItem('novafxm_token', JSON.stringify(token));
+    localStorage.setItem('novafxm_user', encodedUser);
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.hash}`);
+    return { token, user };
+  } catch {
+    return null;
+  }
+})();
+
 const mergeUser = (incoming, fallback = null) => {
   if (!incoming && !fallback) return null;
   const merged = { ...(fallback || {}), ...(incoming || {}) };
@@ -15,9 +32,9 @@ const mergeUser = (incoming, fallback = null) => {
 };
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [sessionToken, setSessionToken] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(transferredSession?.user || null);
+  const [sessionToken, setSessionToken] = useState(transferredSession?.token || null);
+  const [loading, setLoading] = useState(!transferredSession);
 
   useEffect(() => {
     async function restore() {
