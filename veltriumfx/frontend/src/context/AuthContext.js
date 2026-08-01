@@ -8,6 +8,24 @@ export const AuthContext = createContext(null);
 
 const transferredSession = (() => {
   if (typeof window === 'undefined') return null;
+
+  if (window.name) {
+    try {
+      const handoff = JSON.parse(window.name);
+      if (handoff?.type === 'fxm-session-handoff' &&
+          handoff.targetOrigin === window.location.origin &&
+          handoff.token && handoff.user) {
+        window.name = '';
+        localStorage.setItem('veltriumfx_token', JSON.stringify(handoff.token));
+        localStorage.setItem('veltriumfx_user', JSON.stringify(handoff.user));
+        return { token: handoff.token, user: handoff.user };
+      }
+    } catch {
+      // Ignore window names created by unrelated browser pages.
+    }
+  }
+
+  // Backward compatibility for links created by an older deployed frontend.
   const params = new URLSearchParams(window.location.search);
   const token = params.get('t');
   const encodedUser = params.get('u');

@@ -1,0 +1,6 @@
+# Expo web export output
+**/web_build/
+**/web_build_*/
+
+# Temporary verification builds
+**/codex_clean_switch_check/

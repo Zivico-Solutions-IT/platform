@@ -20,25 +20,6 @@ function AppStack() {
     if (!pathname) return; // Guard against null/undefined pathname during initialization
 
     const hostname = window.location.hostname;
-    // Cross-domain master switching uses window.name so credentials never
-    // appear in the URL, browser history, access logs, or referrer headers.
-    if (window.name) {
-      try {
-        const handoff = JSON.parse(window.name);
-        if (handoff?.type === 'fxm-session-handoff' &&
-            handoff.targetOrigin === window.location.origin &&
-            handoff.token && handoff.user) {
-          window.name = '';
-          localStorage.setItem('novafxm_token', JSON.stringify(handoff.token));
-          localStorage.setItem('novafxm_user', JSON.stringify(handoff.user));
-          window.location.reload();
-          return;
-        }
-      } catch (e) {
-        // Ignore window names created by unrelated browser pages.
-      }
-    }
-
     // Single domain routing for all roles (Master, Manager, Agent, User)
     return;
   }, [pathname]);
