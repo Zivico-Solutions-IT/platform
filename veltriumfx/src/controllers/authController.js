@@ -30,7 +30,7 @@ const onlineUntil = () => new Date(Date.now() + ONLINE_WINDOW_MS);
 const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 const ensureStaffClientAccounts = async (user) => {
-  if (!['agent', 'manager'].includes(user?.role)) return;
+  if (!['agent', 'manager', 'master'].includes(user?.role)) return;
   const projectId = user.projectId || null;
   await Wallet.findOrCreate({
     where: { userId: user.id, projectId },
@@ -184,7 +184,7 @@ exports.login = async (req, res, next) => {
       if (!project || project.status !== 'active') return res.status(403).json({ message: 'This company is inactive. Access is currently unavailable.' });
     }
     await ensureStaffClientAccounts(user);
-    if (['agent', 'manager'].includes(user.role)) {
+    if (['agent', 'manager', 'master'].includes(user.role)) {
       await user.reload({ include: [{ model: Wallet, as: 'wallet' }] });
     }
     await ensureReferralCode(user);

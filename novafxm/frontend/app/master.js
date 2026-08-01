@@ -3,6 +3,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { useAuth } from '../src/hooks/useAuth';
 import RequireAuth from '../src/components/auth/RequireAuth';
 import AdminScreen from './admin';
+import { isMasterHost } from '../src/utils/appHost';
 
 /** Each platform owns its data while the Master session can switch platforms. */
 function MasterConsole() {
@@ -14,6 +15,7 @@ function MasterConsole() {
   }, [router, user?.role]);
 
   if (!user || user.role !== 'master') return <Redirect href="/login" />;
+  if (!isMasterHost()) return <Redirect href="/trading" />;
   return <AdminScreen />;
 }
 

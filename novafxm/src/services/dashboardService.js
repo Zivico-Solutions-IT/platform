@@ -3,7 +3,8 @@ const { User, Wallet, Transaction, TradingAccount, Trade, BankAccount, Deposit, 
 
 const money = (value) => Number(Number(value || 0).toFixed(2));
 
-const referralCodeFor = (user) => `NVX${String(user.id).padStart(6, '0')}`;
+const publicNumberFor = (id) => String(Number(id) + 4999).padStart(6, '0');
+const referralCodeFor = (user) => `NVX${publicNumberFor(user.id)}`;
 const ACCOUNT_LIMITS = {
   Demo: 2,
   Live: 5,
@@ -11,9 +12,9 @@ const ACCOUNT_LIMITS = {
 
 async function ensureReferralCode(user) {
   if (!user) return null;
-  if (user.referralCode) return user.referralCode;
   if (!user.id) return null;
   const referralCode = referralCodeFor(user);
+  if (user.referralCode === referralCode) return referralCode;
   if (typeof user.update === 'function') {
     await user.update({ referralCode }).catch(() => {});
   }
@@ -90,8 +91,9 @@ async function dashboardForUser(userId, origin = '') {
   await syncExistingAccountBalances(userId, user.wallet, user);
   await TradingAccount.update({ status: 'active' }, { where: { userId, type: 'Live', status: 'pending' } });
 
-  // Only 'user' role accounts participate in referral programme
-  const isRegularUser = user.role === 'user';
+  // Every authenticated client profile, including staff using the normal
+  // platform, participates in the referral programme.
+  const isRegularUser = true;
 
   let isBirthdayToday = false;
   if (user.dateOfBirth) {

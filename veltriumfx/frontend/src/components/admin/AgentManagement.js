@@ -151,6 +151,8 @@ export default function AgentManagement() {
       // default / 'newest': newest first
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
+  const managerCount = agents.filter((agent) => agent?.role === 'manager').length;
+  const agentCount = agents.filter((agent) => agent?.role === 'agent').length;
   
   const [form, setForm] = useState({
     name: '',
@@ -325,11 +327,21 @@ export default function AgentManagement() {
     {[['templates', 'Role Permissions'], ['users', 'User Permissions']].map(([id, label]) => <Pressable key={id} onPress={() => setWorkspace(id)} className="rounded-lg px-4 py-2.5" style={{ backgroundColor: workspace === id ? colors.panel : 'transparent' }}><Text className="text-sm font-bold" style={{ color: workspace === id ? colors.primary : colors.muted }}>{label}</Text></Pressable>)}
   </View>;
 
+  const StaffSummary = () => <View className="flex-row flex-wrap gap-2">
+    <View className="min-w-[118px] rounded-xl border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Managers</Text>
+      <Text className="mt-1 text-2xl font-bold" style={{ color: colors.text }}>{loading ? '—' : managerCount}</Text>
+    </View>
+    <View className="min-w-[118px] rounded-xl border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Agents</Text>
+      <Text className="mt-1 text-2xl font-bold" style={{ color: colors.text }}>{loading ? '—' : agentCount}</Text>
+    </View>
+  </View>;
+
   if (workspace === 'templates') {
     const selectedPermissions = roleTemplates[templateRole] || [];
     return <ScrollView className="flex-1 px-4 py-5 md:px-8" style={{ backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 42 }}>
-      <Text className="text-3xl font-bold" style={{ color: colors.text }}>Staff & Permissions</Text>
-      <Text className="mb-5 mt-2 text-sm" style={{ color: colors.muted }}>Create Manager and Agent permission templates for this company.</Text>
+      <View className="mb-5 flex-row flex-wrap items-start justify-between gap-4"><View className="min-w-0 flex-1"><Text className="text-3xl font-bold" style={{ color: colors.text }}>Staff & Permissions</Text><Text className="mt-2 text-sm" style={{ color: colors.muted }}>Create Manager and Agent permission templates for this company.</Text></View><StaffSummary /></View>
       <StaffWorkspaceTabs />
       <View className="gap-5 lg:flex-row">
         <View className="w-full lg:w-[310px] rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
@@ -347,7 +359,7 @@ export default function AgentManagement() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="px-4 pb-1 pt-5 md:px-8"><Text className="text-3xl font-bold" style={{ color: colors.text }}>Staff & Permissions</Text><Text className="mb-5 mt-2 text-sm" style={{ color: colors.muted }}>Review existing Managers and Agents, then manage their individual access.</Text><StaffWorkspaceTabs /></View>
+      <View className="px-4 pb-1 pt-5 md:px-8"><View className="mb-5 flex-row flex-wrap items-start justify-between gap-4"><View className="min-w-0 flex-1"><Text className="text-3xl font-bold" style={{ color: colors.text }}>Staff & Permissions</Text><Text className="mt-2 text-sm" style={{ color: colors.muted }}>Review existing Managers and Agents, then manage their individual access.</Text></View><StaffSummary /></View><StaffWorkspaceTabs /></View>
       {/* Hidden dummy inputs to absorb browser credentials autofill */}
       <TextInput
         style={{ width: 0, height: 0, opacity: 0, position: 'absolute', left: -9999, top: -9999 }}

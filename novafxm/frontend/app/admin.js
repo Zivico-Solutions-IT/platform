@@ -6050,7 +6050,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       >
         {true && (
         <View className={mobile ? 'mb-5 gap-3' : 'mb-5 flex-row flex-wrap items-start justify-between gap-3'}>
-          {!(mobile && section === 'userManagement' && userManagementSubpage === 'assignUsers') ? (
+          {section !== 'agents' && !(mobile && section === 'userManagement' && userManagementSubpage === 'assignUsers') ? (
             <View className={mobile ? 'w-full flex-row items-center justify-between' : 'min-w-0 flex-1'}>
 
               <Text className={`${mobile ? 'text-2xl' : 'text-3xl'} font-medium`} adjustsFontSizeToFit style={{ color: colors.text, flexShrink: 0, whiteSpace: 'nowrap' }}>

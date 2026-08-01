@@ -43,7 +43,7 @@ export default function WalletCard({ summary, transactions = [], user }) {
     },
     { submittedDeposits: 0, approvedDeposits: 0, pendingDeposits: 0, approvedWithdrawals: 0, pendingWithdrawals: 0 },
   );
-  const accountId = String(user?.id || 27075).slice(-6).padStart(6, '0');
+  const accountId = String(Number(user?.id || 1) + 4999).padStart(6, '0');
   const bonus = Number(summary.bonus || 0);
 
   return (

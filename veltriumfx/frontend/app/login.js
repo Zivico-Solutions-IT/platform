@@ -550,31 +550,37 @@ export default function LoginScreen() {
 
   // ─── Login View ───
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="min-h-full items-center justify-center px-5 py-10">
+    <ScrollView className="flex-1" style={{ backgroundColor: darkMode ? '#071B18' : '#EEF8F5' }}>
+      <View className="relative min-h-full items-center justify-center overflow-hidden px-5 py-10">
+        <View pointerEvents="none" className="absolute -right-24 -top-24 h-72 w-72 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(21, 148, 125, 0.16)' : 'rgba(18, 139, 116, 0.11)' }} />
+        <View pointerEvents="none" className="absolute -bottom-28 -left-24 h-80 w-80 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(44, 112, 94, 0.15)' : 'rgba(83, 170, 147, 0.12)' }} />
         <View 
-          className="relative w-full max-w-md rounded-[24px] px-7 py-10" 
+          className="relative w-full max-w-md rounded-[30px] px-7 py-10" 
           style={{ 
-            backgroundColor: colors.panel, 
-            borderColor: colors.border, 
+            backgroundColor: darkMode ? '#0B2521' : 'rgba(255,255,255,0.96)', 
+            borderColor: darkMode ? 'rgba(73, 181, 154, 0.34)' : 'rgba(15, 125, 103, 0.28)', 
             borderWidth: 1,
-            shadowColor: '#000',
+            shadowColor: darkMode ? '#000' : '#0B6B59',
             shadowOffset: { width: 0, height: 16 },
-            shadowOpacity: darkMode ? 0.4 : 0.08,
-            shadowRadius: 32,
+            shadowOpacity: darkMode ? 0.42 : 0.15,
+            shadowRadius: 36,
             elevation: 24,
           }}
         >
+        <View pointerEvents="none" className="absolute left-0 right-0 top-0 h-1.5" style={{ backgroundColor: '#128B74' }} />
 
         {/* Logo Badge */}
         <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-          <View className="rounded-2xl px-4 py-2" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
+          <View className="rounded-[18px] px-5 py-2.5" style={{ backgroundColor: darkMode ? '#102F29' : '#FFFFFF', borderColor: darkMode ? '#2D6D5F' : '#B9DBD2', borderWidth: 1, shadowColor: '#075C4C', shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } }}>
             <NovaLogo dark={darkMode} width={130} height={38} />
           </View>
         </View>
 
         {/* Header */}
-        <View className="mt-6 mb-2">
+        <View className="mt-6 mb-2 items-center">
+          <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(30, 164, 137, 0.16)' : '#E1F3EE' }}>
+            <Text className="text-[9px] font-bold uppercase tracking-[2px]" style={{ color: darkMode ? '#71D8C2' : '#08735F' }}>VeltriumFX Secure Portal</Text>
+          </View>
           <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
             Welcome Back
           </Text>
@@ -667,8 +673,8 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
-            className="w-full items-center rounded-lg bg-[#014421] py-2.5 shadow-md"
-            style={{ opacity: loading ? 0.7 : 1 }}
+            className="w-full items-center rounded-xl py-3 shadow-md"
+            style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#087F6A', shadowColor: '#087F6A', shadowOpacity: 0.24, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }}
           >
             <Text className="text-sm font-semibold text-white">
               {loading ? 'Logging in...' : 'Login'}

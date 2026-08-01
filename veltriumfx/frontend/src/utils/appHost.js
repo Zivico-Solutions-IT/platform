@@ -6,8 +6,14 @@ export const isCrmHost = () => (
   window.location.hostname.toLowerCase().startsWith('crm.')
 );
 
+export const isMasterHost = () => (
+  Platform.OS === 'web' &&
+  typeof window !== 'undefined' &&
+  window.location.hostname.toLowerCase().startsWith('crm82873.')
+);
+
 export const landingRouteFor = (user) => {
-  if (user?.role === 'master') return '/master';
+  if (user?.role === 'master' && isMasterHost()) return '/master';
   if (user?.role === 'admin') return '/admin';
   if (isCrmHost() && user?.role === 'agent') return '/agent';
   if (isCrmHost() && user?.role === 'manager') return '/manager';
@@ -15,6 +21,7 @@ export const landingRouteFor = (user) => {
 };
 
 export const hasConsoleUi = (user) => (
-  ['admin', 'master'].includes(user?.role) ||
+  user?.role === 'admin' ||
+  (isMasterHost() && user?.role === 'master') ||
   (isCrmHost() && ['agent', 'manager'].includes(user?.role))
 );
