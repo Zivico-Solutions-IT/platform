@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { ChevronDown, Sun, Moon, UserRound, Wallet, ArrowUp, Bell, LayoutDashboard, Activity } from 'lucide-react-native';
+import { ChevronDown, Sun, Moon, UserRound, Bell, LayoutDashboard, Activity, Plus, X } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
 import { money, quote } from '../../utils/formatters';
@@ -16,7 +16,6 @@ import {
 } from '../../utils/adminNotifications';
 import NovaLogo from '../brand/NovaLogo';
 import DemoAccountMenu from './DemoAccountMenu';
-import FundingMenu from './FundingMenu';
 import HeaderSidePanel from './HeaderSidePanel';
 import ProfileMenu from './ProfileMenu';
 import NotificationMenu from './NotificationMenu';
@@ -25,7 +24,7 @@ const visibleMetricCount = 4;
 
 export default function TopAccountBar() {
   const { width } = useWindowDimensions();
-  const { currentSymbol, summary, selectedTradingAccount, setSelectedTradingAccount, sidePanel, setSidePanel, transactions } = useDemoTrading();
+  const { currentSymbol, summary, selectedTradingAccount, setSelectedTradingAccount, sidePanel, setSidePanel, transactions, orderPanelVisible, setOrderPanelVisible } = useDemoTrading();
   const params = useLocalSearchParams();
   const { user, isAdmin } = useAuth();
   const { darkMode, colors, toggleTheme } = useAppTheme();
@@ -229,7 +228,6 @@ export default function TopAccountBar() {
   const openProfileMenu = (action) => { cancelProfileHoverClose(); setHoveredAction(action); setMenu((cur) => (cur === 'profile' ? cur : 'profile')); };
 
   const profileHoverProps = (action) => ({ onHoverIn: () => openProfileMenu(action), onHoverOut: () => setHoveredAction(null) });
-  const openWalletMenu = () => setMenu((current) => (current === 'wallet' ? null : 'wallet'));
   const goToAdminDashboard = () => {
     setMenu(null);
     router.push('/admin');
@@ -241,7 +239,6 @@ export default function TopAccountBar() {
   };
 
   const isMenuActionActive = (action) => {
-    if (menu === 'wallet' && (action === 'wallet' || action === 'mobile-wallet')) return true;
     if (menu === 'profile' && (action === 'profile' || action === 'mobile-profile')) return true;
     if (menu === 'notifications' && (action === 'notifications' || action === 'mobile-notifications')) return true;
     return false;
@@ -431,6 +428,29 @@ export default function TopAccountBar() {
       {!mobile && isAdmin ? <View style={{ flex: 1 }} /> : null}
       {!mobile && user && !isAdmin ? (
         <Pressable
+          {...hoverProps('new-order')}
+          onPress={() => setOrderPanelVisible((visible) => !visible)}
+          className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center justify-center rounded-lg border`}
+          style={iconButtonStyle('new-order', {
+            paddingHorizontal: compactDesktop ? 10 : 14,
+            backgroundColor: orderPanelVisible ? colors.primary : colors.panel,
+            borderColor: colors.primary,
+            gap: 6,
+          })}
+        >
+          {orderPanelVisible
+            ? <X size={15} color="#FFFFFF" />
+            : <Plus size={15} color={colors.primary} />}
+          <Text
+            className={`${compactDesktop ? 'text-[10px]' : 'text-xs'} font-bold`}
+            style={{ color: orderPanelVisible ? '#FFFFFF' : colors.primary }}
+          >
+            New Order
+          </Text>
+        </Pressable>
+      ) : null}
+      {!mobile && user && !isAdmin ? (
+        <Pressable
           onPress={() => setMenu(menu === 'account' ? null : 'account')}
           className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center rounded-lg border`}
           style={{
@@ -468,11 +488,6 @@ export default function TopAccountBar() {
       <Pressable {...hoverProps('theme')} onPress={toggleTheme} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('theme', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
         <View style={iconHoverStyle('theme')}>{darkMode ? <Sun size={20} color={iconColor('theme')} /> : <Moon size={20} color={iconColor('theme')} />}</View>
       </Pressable>
-      {user && !isAdmin ? (
-        <Pressable {...hoverProps('wallet')} onPress={openWalletMenu} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('wallet', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('wallet')}><Wallet size={20} color={iconColor('wallet')} /></View>
-        </Pressable>
-      ) : null}
       {user ? (
         <Pressable {...hoverProps('notifications')} onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('notifications', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
           <View style={iconHoverStyle('notifications')}><Bell size={20} color={iconColor('notifications')} /></View>
@@ -502,11 +517,6 @@ export default function TopAccountBar() {
                   onClose={() => setMenu(null)}
                   onOpenPanel={openSidePanel}
                 />
-              </Pressable>
-            ) : null}
-            {menu === 'wallet' ? (
-              <Pressable onPress={(event) => event.stopPropagation()}>
-                <FundingMenu selectedAccount={selectedAccount} summary={summary} onClose={() => setMenu(null)} onSwitchAccount={() => setMenu('account')} onOpenPanel={openSidePanel} />
               </Pressable>
             ) : null}
             {menu === 'profile' ? (

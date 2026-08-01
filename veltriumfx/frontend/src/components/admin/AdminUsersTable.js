@@ -445,9 +445,9 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
           nestedScrollEnabled
           stickyHeaderIndices={[0]}
           style={{ maxHeight: tableHeight }}
-          contentContainerStyle={{ minWidth: 1395 }}
+          contentContainerStyle={{ minWidth: 1165 }}
         >
-          <StickyTableHeader style={{ minWidth: 1395 }}>
+          <StickyTableHeader style={{ minWidth: 1165 }}>
             <Header width={220}>Client Account</Header>
             <Header width={320}>Account & Controls</Header>
             <Header width={130}>Deposit</Header>
@@ -455,7 +455,6 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
             <Header width={130}>Balance</Header>
             <Header width={120}>Equity</Header>
             <Header width={115}>Status</Header>
-            <Header width={220}>Admin Notes</Header>
           </StickyTableHeader>
           {users.map((user) => {
             const accounts = user.tradingAccounts?.length
@@ -538,7 +537,6 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
                         <TextCell width={130}>{`$${money(accountBalance)}`}</TextCell>
                         <TextCell width={120}>{`$${money(equity)}`}</TextCell>
                         <TextCell width={115} className={status === 'active' ? 'text-success' : status === 'pending' ? 'text-primary' : 'text-danger'}>{status === 'active' ? 'Active' : status === 'pending' ? 'Pending' : 'Frozen'}</TextCell>
-                        <TextCell width={220} className="text-muted">{user.adminNotes || '-'}</TextCell>
                       </View>
                     );
                   })}

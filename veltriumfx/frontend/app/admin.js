@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useRouter, usePathname } from 'expo-router';
 import { Alert, Animated, Image, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { AlertTriangle, ArrowLeft, Bell, Camera, ChevronDown, Plus, ChevronUp, CreditCard, Eye, EyeOff, LayoutDashboard, LogOut, Moon, RefreshCw, Search, Settings, ShieldCheck, Sun, TrendingUp, TrendingDown, UserRound, Wallet, X, Users, Coins, ArrowUpRight, ArrowDownRight, Copy, UsersRound } from 'lucide-react-native';
+import { AlertTriangle, ArrowLeft, Bell, Camera, ChevronDown, Plus, ChevronUp, CreditCard, Eye, EyeOff, LogOut, Moon, RefreshCw, Search, Settings, ShieldCheck, Sun, TrendingUp, TrendingDown, UserRound, Wallet, X, Users, Coins, ArrowUpRight, ArrowDownRight, Copy, UsersRound } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 import Svg, { Path, Circle, Line, Text as SvgText, G, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { io } from 'socket.io-client';
@@ -1557,6 +1557,14 @@ export default function AdminScreen() {
   const [openUserProfileLoading, setOpenUserProfileLoading] = useState(false);
 
   const [marketPrices, setMarketPrices] = useState([]);
+  const availableTradeSymbols = useMemo(() => {
+    const symbols = marketPrices
+      .map((item) => String(item?.symbol || '').trim())
+      .filter(Boolean);
+    return symbols.length
+      ? [...new Set(symbols)]
+      : ['XAU/USD', 'BTC/USD', 'ETH/USD', 'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'WTI/USD', 'SPX/USD'];
+  }, [marketPrices]);
   const [chartCandles, setChartCandles] = useState([]);
   const [chartTimeframe, setChartTimeframe] = useState('1D');
   const [chartLoading, setChartLoading] = useState(false);
@@ -1984,10 +1992,17 @@ export default function AdminScreen() {
       if (!token || !user) throw new Error('A client session could not be created.');
 
       const localHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-      const clientOrigin = localHost
-        ? window.location.origin
-        : `${window.location.protocol}//test.novafxm.com`;
-      const sessionUrl = `${clientOrigin}/trading?t=${encodeURIComponent(token)}&u=${encodeURIComponent(JSON.stringify(user))}`;
+      const configuredOrigin = String(process.env.EXPO_PUBLIC_PLATFORM_URL || 'https://platform.veltriumfx.com')
+        .replace(/\/(login|register|trading)\/?$/, '')
+        .replace(/\/$/, '');
+      const clientOrigin = localHost ? window.location.origin : configuredOrigin;
+      const sessionUrl = `${clientOrigin}/trading`;
+      window.name = JSON.stringify({
+        type: 'fxm-session-handoff',
+        targetOrigin: new URL(sessionUrl).origin,
+        token,
+        user,
+      });
       window.location.assign(sessionUrl);
     } catch (error) {
       setAddTradeError(error.response?.data?.message || error.message || 'Unable to open the client profile.');
@@ -5343,7 +5358,7 @@ export default function AdminScreen() {
             <View>
               <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Select Trading Asset (Symbol)</Text>
               <View className="flex-row flex-wrap gap-2 justify-between">
-                {['XAU/USD', 'BTC/USD', 'ETH/USD', 'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'WTI/USD', 'SPX/USD'].map((sym) => {
+                {availableTradeSymbols.map((sym) => {
                   const isSelected = addTradeForm.symbol === sym;
                   return (
                     <Pressable
@@ -5442,7 +5457,7 @@ export default function AdminScreen() {
               </View>
 
               <View className="mb-1.5 flex-row gap-1.5">
-                {['15m', '30m', '1H', '4H', '1D'].map((tf) => (
+                {['1m', '15m', '30m', '1H', '4H', '1D'].map((tf) => (
                   <Pressable
                     key={tf}
                     onPress={() => setChartTimeframe(tf)}
@@ -6090,15 +6105,6 @@ export default function AdminScreen() {
               style={{ overflow: 'visible' }}
               contentContainerStyle={{ alignItems: 'center', flexDirection: 'row', gap: 8, flexWrap: 'nowrap', justifyContent: 'flex-end', overflow: 'visible', paddingTop: 7, paddingRight: 7 }}
             >
-              <Pressable
-                onPress={() => router.push('/trading')}
-                accessibilityLabel="Go to platform"
-                className={`${mobile ? 'w-12 px-0' : 'min-w-[116px] px-4'} h-12 flex-row items-center justify-center rounded-xl border`}
-                style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}
-              >
-                <LayoutDashboard size={18} color={colors.primary} />
-                {!mobile ? <Text className="ml-2 text-sm font-medium" style={{ color: colors.text }}>Platform</Text> : null}
-              </Pressable>
               <View className="relative h-12 w-12 overflow-visible" style={{ zIndex: 20, elevation: 20 }}>
                 <Pressable onPress={() => setNotificationsOpen((current) => !current)} className="h-12 w-12 items-center justify-center rounded-xl border p-0" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
                   <Bell size={20} color={colors.text} />

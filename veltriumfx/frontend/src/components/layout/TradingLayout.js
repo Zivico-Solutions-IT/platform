@@ -123,7 +123,7 @@ export default function TradingLayout() {
   const { width, height } = useWindowDimensions();
   const { colors } = useAppTheme();
   const { user, isAdmin } = useAuth();
-  const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
+  const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel, orderPanelVisible } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
 
@@ -271,7 +271,7 @@ export default function TradingLayout() {
           {desktop ? (
             <>
               <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              {!chartFullscreen && (
+              {!chartFullscreen && orderPanelVisible && (
                 <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} />
               )}
             </>
@@ -280,7 +280,7 @@ export default function TradingLayout() {
               <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
               {!chartFullscreen && (
                 <View className={tablet ? 'flex-row gap-3' : 'gap-1.5'}>
-                  {!mobile ? <OrderRail summary={summary} user={user} /> : null}
+                  {!mobile && orderPanelVisible ? <OrderRail summary={summary} user={user} /> : null}
                 </View>
               )}
             </>

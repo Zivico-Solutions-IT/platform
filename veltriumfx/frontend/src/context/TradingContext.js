@@ -24,6 +24,7 @@ export function TradingProvider({ children }) {
   const [selectedTradingAccount, setSelectedTradingAccount] = useState(null);
   const [ready, setReady] = useState(false);
   const [sidePanel, setSidePanel] = useState(null);
+  const [orderPanelVisible, setOrderPanelVisible] = useState(true);
   const [insufficientFundsVisible, setInsufficientFundsVisible] = useState(false);
   const protectionToastIdsRef = useRef(new Set());
   const locallyClosedIdsRef = useRef(new Set());
@@ -368,10 +369,12 @@ export function TradingProvider({ children }) {
       ready,
       sidePanel,
       setSidePanel,
+      orderPanelVisible,
+      setOrderPanelVisible,
       insufficientFundsVisible,
       setInsufficientFundsVisible,
     }),
-    [prices, connected, selectedSymbol, currentSymbol, livePositions, closedPositions, pendingOrders, summary, selectedTradingAccount, transactions, openPosition, closePosition, cancelPendingOrder, updatePositionRisk, createPendingOrder, submitDeposit, submitWithdrawal, syncAccount, ready, sidePanel, insufficientFundsVisible],
+    [prices, connected, selectedSymbol, currentSymbol, livePositions, closedPositions, pendingOrders, summary, selectedTradingAccount, transactions, openPosition, closePosition, cancelPendingOrder, updatePositionRisk, createPendingOrder, submitDeposit, submitWithdrawal, syncAccount, ready, sidePanel, orderPanelVisible, insufficientFundsVisible],
   );
 
   return <TradingContext.Provider value={value}>{children}</TradingContext.Provider>;

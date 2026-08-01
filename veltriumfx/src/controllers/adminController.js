@@ -533,11 +533,11 @@ exports.assignAgent = async (req, res, next) => {
     await sequelize.transaction(async (transaction) => {
       if (assignedAgentId !== null) {
         const agent = await User.findOne({
-          where: { id: assignedAgentId, role: 'agent' },
+          where: { id: assignedAgentId, role: { [Op.in]: ['agent', 'manager'] } },
           transaction,
           lock: transaction.LOCK.UPDATE,
         });
-        if (!agent) throw apiError('Agent not found.', 404);
+        if (!agent) throw apiError('Agent or manager not found.', 404);
       }
 
       const selectedUsers = await User.findAll({

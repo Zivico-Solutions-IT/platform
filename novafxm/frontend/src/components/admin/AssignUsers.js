@@ -148,18 +148,20 @@ export default function AssignUsers({ users, loading, onRefresh }) {
     }
   };
 
-  // Managers can supervise all clients, but only an Agent can own an assignment.
-  const assignableAgents = useMemo(() => agents.filter((agent) => agent.role === 'agent'), [agents]);
+  const assignableStaff = useMemo(
+    () => agents.filter((staff) => ['agent', 'manager'].includes(staff.role)),
+    [agents],
+  );
 
   const agentOptions = useMemo(() => {
     return [
-      { label: 'Select Agent to Assign...', value: '' },
-      ...assignableAgents.map((agent) => ({
-        label: agent.name,
-        value: agent.id.toString(),
+      { label: 'Select Agent or Manager...', value: '' },
+      ...assignableStaff.map((staff) => ({
+        label: `${staff.name} (${staff.role === 'manager' ? 'Manager' : 'Agent'})`,
+        value: staff.id.toString(),
       })),
     ];
-  }, [assignableAgents]);
+  }, [assignableStaff]);
 
   const statusOptions = [
     { label: 'All Users', value: 'all' },
@@ -174,7 +176,7 @@ export default function AssignUsers({ users, loading, onRefresh }) {
       return;
     }
     if (!targetAgentId) {
-      setAssignError('Please select an agent to assign.');
+      setAssignError('Please select an agent or manager to assign.');
       return;
     }
 
@@ -299,7 +301,7 @@ export default function AssignUsers({ users, loading, onRefresh }) {
             value={targetAgentId}
             onChange={setTargetAgentId}
             options={agentOptions}
-            placeholder="Select Agent to Assign..."
+            placeholder="Select Agent or Manager..."
             colors={colors}
             darkMode={darkMode}
             height={40}
