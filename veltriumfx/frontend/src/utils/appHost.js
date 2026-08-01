@@ -7,9 +7,7 @@ export const isCrmHost = () => (
 );
 
 export const isMasterHost = () => (
-  Platform.OS === 'web' &&
-  typeof window !== 'undefined' &&
-  window.location.hostname.toLowerCase().startsWith('crm82873.')
+  isCrmHost()
 );
 
 export const landingRouteFor = (user) => {

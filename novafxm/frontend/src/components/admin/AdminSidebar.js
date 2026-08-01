@@ -207,7 +207,7 @@ export default function AdminSidebar({
     const openVeltriumMaster = async () => {
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         const local = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-        const configuredUrl = String(process.env.EXPO_PUBLIC_VELTRIUM_MASTER_URL || 'https://crm82873.veltriumfx.com').replace(/\/(login|master)\/?$/, '');
+        const configuredUrl = String(process.env.EXPO_PUBLIC_VELTRIUM_MASTER_URL || 'https://crm.veltriumfx.com').replace(/\/(login|master)\/?$/, '');
         const target = local
           ? `${window.location.protocol}//${window.location.hostname}:8082/master`
           : `${configuredUrl}/master`;

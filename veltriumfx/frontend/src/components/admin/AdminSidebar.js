@@ -207,7 +207,7 @@ export default function AdminSidebar({
     const openNovaMaster = async () => {
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         const local = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-        const configuredUrl = String(process.env.EXPO_PUBLIC_NOVAFXM_MASTER_URL || 'https://crm82873.novafxm.com').replace(/\/(login|master)\/?$/, '');
+        const configuredUrl = String(process.env.EXPO_PUBLIC_NOVAFXM_MASTER_URL || 'https://crm.novafxm.com').replace(/\/(login|master)\/?$/, '');
         const target = local
           ? `${window.location.protocol}//${window.location.hostname}:8081/master`
           : `${configuredUrl}/master`;
