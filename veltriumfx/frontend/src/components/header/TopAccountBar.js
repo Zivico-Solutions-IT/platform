@@ -94,7 +94,6 @@ export default function TopAccountBar() {
     ['Free Funds', money(summaryFreeFunds)],
   ];
   const desktopHeaderBg = darkMode ? '#02070d' : colors.background;
-  const desktopDivider = darkMode ? '#172536' : colors.border;
   const desktopText = colors.text;
   const desktopMuted = darkMode ? '#66758a' : colors.muted;
 
@@ -382,45 +381,52 @@ export default function TopAccountBar() {
           ref={metricsScrollRef} 
           horizontal 
           showsHorizontalScrollIndicator={false} 
-          className="h-[50px] rounded-2xl mt-3 mx-3" 
-          contentContainerStyle={{ paddingHorizontal: 12 }} 
+          className="h-[58px] mt-3 mx-3" 
+          contentContainerStyle={{ paddingHorizontal: 2, gap: 6 }} 
           onLayout={({ nativeEvent }) => setMetricsWidth(nativeEvent.layout.width)} 
-          style={{ backgroundColor: `${colors.primary}15` }}
+          style={{ backgroundColor: 'transparent' }}
         >
-          {metrics.map(([label, value], index) => (
+          {metrics.map(([label, value]) => (
             <View 
               key={label} 
-              className="justify-center h-full px-1 items-center"
+              className="justify-center h-full rounded-xl border px-2"
               style={{
                 width: metricsWidth ? (metricsWidth - 24) / visibleMetricCount : 100,
-                borderLeftWidth: index === 0 ? 0 : 1,
-                borderLeftColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: darkMode ? 'rgba(0, 103, 79, 0.16)' : 'rgba(0, 103, 79, 0.07)',
+                borderColor: darkMode ? 'rgba(211, 211, 211, 0.16)' : 'rgba(0, 103, 79, 0.16)',
               }}
             >
-              <Text className="text-[8px] font-bold tracking-widest uppercase mb-0.5 opacity-60" numberOfLines={1} style={{ color: colors.text }}>{label}</Text>
+              <View className="mb-1 h-1 w-5 rounded-full" style={{ backgroundColor: colors.primary }} />
+              <Text className="text-[8px] font-bold tracking-widest uppercase mb-0.5" numberOfLines={1} style={{ color: colors.muted }}>{label}</Text>
               <Text className="text-[10px] font-bold tracking-tight" numberOfLines={1} style={{ color: label === 'Net Profit' && summary.openProfit < 0 ? colors.danger : (label === 'Net Profit' && summary.openProfit > 0 ? colors.success : colors.text) }}>{value}</Text>
             </View>
           ))}
         </ScrollView>
       ) : !mobile && !isAdmin ? (
         <View
-          className={`${twoRowDesktop ? 'h-[42px]' : compactDesktop ? 'h-[48px]' : 'h-[54px]'} flex-row items-center px-2`}
+          className={`${twoRowDesktop ? 'h-[50px]' : compactDesktop ? 'h-[52px]' : 'h-[58px]'} flex-row items-center px-2 gap-1.5`}
           style={twoRowDesktop ? { flexBasis: '100%', width: '100%', order: 2 } : { flex: 1, minWidth: 0 }}
         >
-          {desktopMetrics.map(([label, value], index) => (
+          {desktopMetrics.map(([label, value]) => (
             <View
               key={label}
-              className="min-w-0 justify-center px-2"
+              className="min-w-0 justify-center rounded-xl border px-2.5"
               style={{
-                width: `${100 / desktopMetrics.length}%`,
-                borderLeftWidth: index === 0 ? 0 : 1,
-                borderColor: desktopDivider,
+                flex: 1,
+                height: compactDesktop ? 42 : 46,
+                backgroundColor: darkMode ? 'rgba(0, 103, 79, 0.16)' : 'rgba(0, 103, 79, 0.07)',
+                borderColor: darkMode ? 'rgba(211, 211, 211, 0.16)' : 'rgba(0, 103, 79, 0.16)',
               }}
             >
-              <Text className={`${compactDesktop ? 'text-[9px]' : 'text-[11px]'} font-bold uppercase tracking-wider`} numberOfLines={1} style={{ color: desktopMuted }}>{label}</Text>
-              <Text className={`mt-0.5 ${compactDesktop ? 'text-xs' : 'text-[14px]'} font-bold`} numberOfLines={1} style={{ color: label === 'Net Profit' && summaryNetProfit < 0 ? colors.danger : desktopText }}>
-                {label === 'Net Profit' && summaryNetProfit > 0 ? `+${value}` : value}
-              </Text>
+              <View className="flex-row items-center">
+                <View className="mr-1.5 h-5 w-1 rounded-full" style={{ backgroundColor: colors.primary }} />
+                <View className="min-w-0 flex-1">
+                  <Text className={`${compactDesktop ? 'text-[8px]' : 'text-[9px]'} font-bold uppercase tracking-wider`} numberOfLines={1} style={{ color: desktopMuted }}>{label}</Text>
+                  <Text className={`${compactDesktop ? 'text-xs' : 'text-[14px]'} font-bold`} numberOfLines={1} style={{ color: label === 'Net Profit' && summaryNetProfit < 0 ? colors.danger : (label === 'Net Profit' && summaryNetProfit > 0 ? colors.success : desktopText) }}>
+                    {label === 'Net Profit' && summaryNetProfit > 0 ? `+${value}` : value}
+                  </Text>
+                </View>
+              </View>
             </View>
           ))}
         </View>
