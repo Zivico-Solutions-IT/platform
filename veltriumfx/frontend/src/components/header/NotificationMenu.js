@@ -39,11 +39,10 @@ function NotificationItem({ Icon, title, body, time, tone, colors, read, onPress
 
 export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
   const { colors } = useAppTheme();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { transactions, setSidePanel } = useDemoTrading();
   const [dashboard, setDashboard] = useState(null);
   const [adminData, setAdminData] = useState(emptyAdminNotificationData);
-  const isAdmin = ['admin', 'agent'].includes(user?.role);
   const { width } = useWindowDimensions();
   const isMobile = width < 992;
 

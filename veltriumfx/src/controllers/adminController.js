@@ -18,6 +18,30 @@ const publicAttributes = { exclude: ['password', 'resetPasswordToken', 'resetPas
 const publicListAttributes = {
   exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires', 'profileImage', 'idProofImage', 'addressProofImage'],
 };
+
+const ensureStaffClientAccounts = async (user, transaction = undefined) => {
+  const projectId = user.projectId || null;
+  const options = transaction ? { transaction } : {};
+  await Wallet.findOrCreate({
+    where: { userId: user.id, projectId },
+    defaults: { userId: user.id, projectId, balance: 0, equity: 0, freeFunds: 0 },
+    ...options,
+  });
+  await TradingAccount.findOrCreate({
+    where: { userId: user.id, projectId, isPrimary: true },
+    defaults: {
+      userId: user.id,
+      projectId,
+      type: 'Demo',
+      name: 'Demo account 1',
+      balance: DEMO_BALANCE,
+      leverage: DEFAULT_LEVERAGE,
+      status: 'active',
+      isPrimary: true,
+    },
+    ...options,
+  });
+};
 const leanUserAttributes = [
   'id',
   'name',
@@ -1901,6 +1925,7 @@ exports.createAgent = async (req, res, next) => {
         if (phone) existingUser.phone = phone;
         existingUser.password = await bcrypt.hash(finalPassword, 12);
         await existingUser.save();
+        await ensureStaffClientAccounts(existingUser);
         
         const publicAgent = existingUser.toJSON();
         delete publicAgent.password;
@@ -1909,14 +1934,21 @@ exports.createAgent = async (req, res, next) => {
       return res.status(409).json({ message: 'Email already registered.' });
     }
 
-    const agent = await User.create({
-      name: name.trim(),
-      email: normalizedEmail,
-      phone: phone || null,
-      password: await bcrypt.hash(finalPassword, 12),
-      role: finalRole,
-      permissions: finalPermissions,
-      projectId: req.projectId || null,
+    const agent = await sequelize.transaction(async (transaction) => {
+      const created = await User.create({
+        name: name.trim(),
+        email: normalizedEmail,
+        phone: phone || null,
+        password: await bcrypt.hash(finalPassword, 12),
+        role: finalRole,
+        permissions: finalPermissions,
+        accountType: 'Demo',
+        leverage: DEFAULT_LEVERAGE,
+        tradingStatus: 'active',
+        projectId: req.projectId || null,
+      }, { transaction });
+      await ensureStaffClientAccounts(created, transaction);
+      return created;
     });
     const publicAgent = agent.toJSON();
     delete publicAgent.password;

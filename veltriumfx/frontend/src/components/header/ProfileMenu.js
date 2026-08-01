@@ -80,7 +80,7 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
 }
 
 export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPanel, selectedAccount, deposits = [], transactions = [] }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { colors } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const slideAnim = useRef(new Animated.Value(410)).current;
@@ -89,7 +89,6 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const mobile = width < 990;
   const initials = useMemo(() => initialsFor(user), [user]);
   const verified = user?.verificationStatus === 'approved';
-  const isAdmin = ['admin', 'agent'].includes(user?.role);
   const panelWidth = width < 500 ? width : 410;
   const panelHeight = height;
   const displayName = user?.name || 'Nova FXM Client';

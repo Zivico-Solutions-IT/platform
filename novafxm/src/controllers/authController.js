@@ -28,6 +28,28 @@ const onlineUntil = () => new Date(Date.now() + ONLINE_WINDOW_MS);
 
 const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
+const ensureStaffClientAccounts = async (user) => {
+  if (!['agent', 'manager'].includes(user?.role)) return;
+  const projectId = user.projectId || null;
+  await Wallet.findOrCreate({
+    where: { userId: user.id, projectId },
+    defaults: { userId: user.id, projectId, balance: 0, equity: 0, freeFunds: 0 },
+  });
+  await TradingAccount.findOrCreate({
+    where: { userId: user.id, projectId, isPrimary: true },
+    defaults: {
+      userId: user.id,
+      projectId,
+      type: 'Demo',
+      name: 'Demo account 1',
+      balance: 5000,
+      leverage: DEFAULT_LEVERAGE,
+      status: 'active',
+      isPrimary: true,
+    },
+  });
+};
+
 exports.register = async (req, res, next) => {
   try {
     const { name, email, phone, password, accountType, referralCode } = req.body;
@@ -156,6 +178,10 @@ exports.login = async (req, res, next) => {
     if (user.role !== 'master' && user.projectId) {
       const project = await Project.findByPk(user.projectId);
       if (!project || project.status !== 'active') return res.status(403).json({ message: 'This company is inactive. Access is currently unavailable.' });
+    }
+    await ensureStaffClientAccounts(user);
+    if (['agent', 'manager'].includes(user.role)) {
+      await user.reload({ include: [{ model: Wallet, as: 'wallet' }] });
     }
     await ensureReferralCode(user);
     await user.update({ lastLoginAt: new Date(), onlineUntil: onlineUntil() });

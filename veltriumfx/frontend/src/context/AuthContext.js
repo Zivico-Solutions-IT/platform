@@ -2,6 +2,7 @@ import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { authService } from '../services/authService';
 import { apiBaseUrl } from '../services/apiConfig';
 import { storage } from '../utils/storage';
+import { hasConsoleUi } from '../utils/appHost';
 
 export const AuthContext = createContext(null);
 
@@ -142,7 +143,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, updateProfile, submitVerification, refreshUser, isAdmin: ['admin', 'agent', 'master', 'manager'].includes(user?.role), isMaster: user?.role === 'master' }),
+    () => ({ user, loading, login, register, logout, updateProfile, submitVerification, refreshUser, isAdmin: hasConsoleUi(user), isMaster: user?.role === 'master' }),
     [user, loading, login, register, logout, updateProfile, submitVerification, refreshUser],
   );
 

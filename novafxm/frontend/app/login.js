@@ -15,6 +15,7 @@ import { authService } from '../src/services/authService';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import Svg, { Path } from 'react-native-svg';
 import { useAppTheme } from '../src/context/ThemeContext';
+import { landingRouteFor } from '../src/utils/appHost';
 
 const GoogleIcon = () => (
   <Svg width={22} height={22} viewBox="0 0 24 24">
@@ -62,11 +63,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (!user) return;
-    if (user.role === 'master') router.replace('/master');
-    else if (user.role === 'admin') router.replace('/admin');
-    else if (user.role === 'agent') router.replace('/agent');
-    else if (user.role === 'manager') router.replace('/manager');
-    else router.replace('/trading');
+    router.replace(landingRouteFor(user));
   }, [user]);
 
   useEffect(() => {
@@ -110,17 +107,7 @@ export default function LoginScreen() {
     setError('');
     try {
       const user = await login(form);
-      if (user.role === 'master') {
-        router.replace('/master');
-      } else if (user.role === 'admin') {
-        router.replace('/admin');
-      } else if (user.role === 'agent') {
-        router.replace('/agent');
-      } else if (user.role === 'manager') {
-        router.replace('/manager');
-      } else {
-        router.replace('/trading');
-      }
+      router.replace(landingRouteFor(user));
     } catch (requestError) {
       const requestUrl = `${requestError.config?.baseURL || ''}${requestError.config?.url || ''}`;
       const fallbackMessage = __DEV__ && requestUrl

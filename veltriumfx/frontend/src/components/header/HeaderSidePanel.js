@@ -366,10 +366,9 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
   const { width } = useWindowDimensions();
   const isMobile = width < 992;
   const isMobileLayout = width < 760;
-  const { logout } = useAuth();
+  const { logout, isAdmin } = useAuth();
   const profileImageInputRef = useRef(null);
   const returnedToWithdrawRef = useRef(false);
-  const isAdmin = ['admin', 'agent'].includes(user?.role);
   const [activeSection, setActiveSection] = useState(initialSection);
   const [profile, setProfile] = useState({
     name: user?.name || '',
