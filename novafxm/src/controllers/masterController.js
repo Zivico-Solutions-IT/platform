@@ -3,6 +3,39 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const tradingView = require('../services/tradingViewService');
 
+const currentCompanyProject = async (req) => {
+  if (req.projectId) {
+    const selected = await Project.findByPk(req.projectId);
+    if (selected) return selected;
+  }
+  return Project.findOne({ where: { identifier: 'novafxm' } });
+};
+
+exports.companyStatus = async (req, res) => {
+  try {
+    const project = await currentCompanyProject(req);
+    if (!project) return res.status(404).json({ message: 'Company not found.' });
+    return res.json({ company: { id: project.id, name: project.name, identifier: project.identifier, status: project.status } });
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to load company status.' });
+  }
+};
+
+exports.updateCompanyStatus = async (req, res) => {
+  try {
+    const status = String(req.body.status || '').trim().toLowerCase();
+    if (!['active', 'suspended'].includes(status)) {
+      return res.status(400).json({ message: 'Company status must be active or suspended.' });
+    }
+    const project = await currentCompanyProject(req);
+    if (!project) return res.status(404).json({ message: 'Company not found.' });
+    await project.update({ status });
+    return res.json({ company: { id: project.id, name: project.name, identifier: project.identifier, status: project.status } });
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to update company status.' });
+  }
+};
+
 const STAFF_PERMISSIONS = ['overview', 'marginAlerts', 'users', 'userManagement', 'assignUsers', 'userManagementUsers', 'verifications', 'deposits', 'depositAddresses', 'depositsList', 'referrals', 'withdrawals', 'withdrawalsList', 'withdrawalDetails', 'userLevels', 'trades', 'addTrading', 'symbols', 'agents'];
 const normalizePermissions = (permissions) => {
   let parsed = permissions;

@@ -30,6 +30,15 @@ import { calculateRequiredMargin } from '../src/utils/calculations';
 import AnimatedPopup from '../src/components/AnimatedPopup';
 
 const empty = { users: [], birthdays: [], deposits: [], withdrawals: [], bankAccounts: [], depositMethodAddresses: [], trades: [], referralRewards: [], stats: {} };
+const ADD_TRADE_GROUPS = [
+  { id: 'POPULAR', label: 'Popular' },
+  { id: 'CRYPTO CFD', label: 'Crypto' },
+  { id: 'FOREX', label: 'Forex' },
+  { id: 'INDICES', label: 'Indices' },
+  { id: 'METALS', label: 'Metals' },
+  { id: 'ENERGIES', label: 'Energies' },
+];
+const ADD_TRADE_POPULAR = new Set(['EUR/USD', 'GBP/USD', 'USD/JPY', 'EUR/CHF', 'EUR/JPY', 'XAU/USD', 'XAG/USD', 'WTI/USD']);
 // The overview period selector calculates each leaderboard from these records.
 // Request the largest safe page so changing to an earlier month/year does not
 // accidentally use only the most recent activity.
@@ -1557,14 +1566,28 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const [openUserProfileLoading, setOpenUserProfileLoading] = useState(false);
 
   const [marketPrices, setMarketPrices] = useState([]);
-  const availableTradeSymbols = useMemo(() => {
-    const symbols = marketPrices
-      .map((item) => String(item?.symbol || '').trim())
-      .filter(Boolean);
-    return symbols.length
-      ? [...new Set(symbols)]
-      : ['XAU/USD', 'BTC/USD', 'ETH/USD', 'EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'WTI/USD', 'SPX/USD'];
+  const [tradeSymbolGroup, setTradeSymbolGroup] = useState('POPULAR');
+  const availableTradeInstruments = useMemo(() => {
+    const instruments = marketPrices
+      .map((item) => ({ symbol: String(item?.symbol || '').trim(), group: String(item?.group || '').trim() }))
+      .filter((item) => item.symbol);
+    if (instruments.length) return [...new Map(instruments.map((item) => [item.symbol, item])).values()];
+    return [
+      { symbol: 'XAU/USD', group: 'METALS' }, { symbol: 'XAG/USD', group: 'METALS' },
+      { symbol: 'BTC/USD', group: 'CRYPTO CFD' }, { symbol: 'ETH/USD', group: 'CRYPTO CFD' },
+      { symbol: 'EUR/USD', group: 'FOREX' }, { symbol: 'GBP/USD', group: 'FOREX' },
+      { symbol: 'USD/JPY', group: 'FOREX' }, { symbol: 'AUD/USD', group: 'FOREX' },
+      { symbol: 'WTI/USD', group: 'ENERGIES' }, { symbol: 'SPX/USD', group: 'INDICES' },
+    ];
   }, [marketPrices]);
+  const availableTradeGroups = useMemo(() => ADD_TRADE_GROUPS.filter((group) => (
+    group.id === 'POPULAR'
+      ? availableTradeInstruments.some((item) => ADD_TRADE_POPULAR.has(item.symbol))
+      : availableTradeInstruments.some((item) => item.group === group.id)
+  )), [availableTradeInstruments]);
+  const visibleTradeSymbols = useMemo(() => availableTradeInstruments
+    .filter((item) => tradeSymbolGroup === 'POPULAR' ? ADD_TRADE_POPULAR.has(item.symbol) : item.group === tradeSymbolGroup)
+    .map((item) => item.symbol), [availableTradeInstruments, tradeSymbolGroup]);
   const [chartCandles, setChartCandles] = useState([]);
   const [chartTimeframe, setChartTimeframe] = useState('1D');
   const [chartLoading, setChartLoading] = useState(false);
@@ -2213,6 +2236,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [adminProfileOpen, setAdminProfileOpen] = useState(false);
   const [adminProfileError, setAdminProfileError] = useState('');
+  const [companyStatus, setCompanyStatus] = useState('active');
+  const [companyStatusLoading, setCompanyStatusLoading] = useState(false);
   const mobile = width < 760;
   const [walletSortBy, setWalletSortBy] = useState('newest');
   const [walletSortOpen, setWalletSortOpen] = useState(false);
@@ -2320,13 +2345,19 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
         trades: trades.data.trades,
         referralRewards: referralRewards.data.rewards || [],
       });
+      if (adminUser?.role !== 'master') setCompanyStatus('active');
       setError('');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Unable to load administrator dashboard.');
+      const requestMessage = requestError.response?.data?.message || 'Unable to load administrator dashboard.';
+      if (requestError.response?.status === 403 && /company (?:is inactive|console is frozen)/i.test(requestMessage)) {
+        setCompanyStatus('suspended');
+      } else {
+        setError(requestMessage);
+      }
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [isAdmin]);
+  }, [adminUser?.role, isAdmin]);
 
   useEffect(() => {
     load();
@@ -2335,6 +2366,42 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     }, 30000);
     return () => clearInterval(timer);
   }, [load]);
+
+  useEffect(() => {
+    if (adminUser?.role !== 'master') return;
+    api.get('/master/company-status')
+      .then(({ data: responseData }) => setCompanyStatus(responseData?.company?.status || 'active'))
+      .catch((requestError) => setError(requestError.response?.data?.message || 'Unable to load company status.'));
+  }, [adminUser?.role]);
+
+  const updateCompanyFreeze = useCallback((nextStatus) => {
+    const freezing = nextStatus === 'suspended';
+    Alert.alert(
+      freezing ? 'Freeze company?' : 'Unfreeze company?',
+      freezing
+        ? 'Managers and agents will immediately lose access to every console tab until the company is unfrozen.'
+        : 'Managers and agents will regain access according to their permissions.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: freezing ? 'Freeze Company' : 'Unfreeze Company',
+          style: freezing ? 'destructive' : 'default',
+          onPress: async () => {
+            setCompanyStatusLoading(true);
+            try {
+              const { data: responseData } = await api.put('/master/company-status', { status: nextStatus });
+              setCompanyStatus(responseData?.company?.status || nextStatus);
+              setMessage(freezing ? 'Company access has been frozen.' : 'Company access has been restored.');
+            } catch (requestError) {
+              setError(requestError.response?.data?.message || 'Unable to update company status.');
+            } finally {
+              setCompanyStatusLoading(false);
+            }
+          },
+        },
+      ],
+    );
+  }, []);
 
   // ── Real-time: inject new users as soon as they register ──────────────────
   useEffect(() => {
@@ -5005,9 +5072,6 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                     <Pressable onPress={() => openWallet(user)} className="min-h-[38px] justify-center rounded-2xl border px-4" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
                       <Text className="text-xs font-medium" style={{ color: colors.text }}>Wallet</Text>
                     </Pressable>
-                    <Pressable onPress={() => setBalanceModal({ user, operation: 'add_balance' })} className="min-h-[38px] justify-center rounded-2xl px-4" style={{ backgroundColor: colors.primary }}>
-                      <Text className="text-xs font-medium text-medium">Add Deposit</Text>
-                    </Pressable>
                   </View>
                 </View>
               );
@@ -5357,8 +5421,18 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
 
             <View>
               <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Select Trading Asset (Symbol)</Text>
-              <View className="flex-row flex-wrap gap-2 justify-between">
-                {availableTradeSymbols.map((sym) => {
+              <View className="mb-3 flex-row flex-wrap gap-2">
+                {availableTradeGroups.map((group) => {
+                  const active = tradeSymbolGroup === group.id;
+                  return (
+                    <Pressable key={group.id} onPress={() => setTradeSymbolGroup(group.id)} className="rounded-xl border px-3 py-2" style={{ backgroundColor: active ? colors.primary : colors.panel, borderColor: active ? colors.primary : colors.border }}>
+                      <Text className="text-xs font-bold" style={{ color: active ? '#FFFFFF' : colors.muted }}>{group.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <View className="flex-row flex-wrap gap-2">
+                {visibleTradeSymbols.map((sym) => {
                   const isSelected = addTradeForm.symbol === sym;
                   return (
                     <Pressable
@@ -5374,7 +5448,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                       }}
                       className="rounded-2xl border px-3 py-2"
                       style={{
-                        width: mobile ? '31.5%' : undefined,
+                        minWidth: mobile ? '31.5%' : 96,
                         backgroundColor: isSelected ? colors.primary : colors.surface,
                         borderColor: isSelected ? colors.primary : colors.border,
                       }}
@@ -6002,6 +6076,21 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     );
   };
 
+  if (companyStatus === 'suspended' && adminUser?.role !== 'master') {
+    return (
+      <View className="flex-1 items-center justify-center p-6" style={{ backgroundColor: colors.background }}>
+        <View className="w-full max-w-xl items-center rounded-3xl border p-8" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+          <ShieldCheck size={42} color={colors.danger} />
+          <Text className="mt-4 text-center text-2xl font-bold" style={{ color: colors.text }}>Company Access Frozen</Text>
+          <Text className="mt-2 text-center text-sm" style={{ color: colors.muted }}>This company console has been temporarily frozen by the Master. No dashboard sections are available. Contact Support to unlock access.</Text>
+          <Pressable onPress={signOut} className="mt-6 rounded-xl px-6 py-3" style={{ backgroundColor: colors.danger }}>
+            <Text className="font-semibold text-white">Sign Out</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View className={mobile ? 'flex-1' : 'flex-1 flex-row'} style={{ backgroundColor: colors.background }}>
       {!hideSidebar && (
@@ -6171,9 +6260,21 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
           <View>
             {/* Timeframe Selector for Financial Metrics */}
             <View className="mb-4 flex-row justify-between items-center flex-wrap gap-3" style={{ zIndex: 50 }}>
-              <Text className="text-sm font-semibold" style={{ color: colors.muted }}>
-                Financial Metrics Summary
-              </Text>
+              <View className="flex-row flex-wrap items-center gap-3">
+                <Text className="text-sm font-semibold" style={{ color: colors.muted }}>Financial Metrics Summary</Text>
+                {adminUser?.role === 'master' ? (
+                  <Pressable
+                    disabled={companyStatusLoading}
+                    onPress={() => updateCompanyFreeze(companyStatus === 'suspended' ? 'active' : 'suspended')}
+                    className="rounded-xl border px-4 py-2"
+                    style={{ backgroundColor: companyStatus === 'suspended' ? `${colors.success}18` : `${colors.danger}12`, borderColor: companyStatus === 'suspended' ? colors.success : colors.danger, opacity: companyStatusLoading ? 0.65 : 1 }}
+                  >
+                    <Text className="text-xs font-bold" style={{ color: companyStatus === 'suspended' ? colors.success : colors.danger }}>
+                      {companyStatusLoading ? 'Updating...' : companyStatus === 'suspended' ? 'Unfreeze Company' : 'Freeze Company'}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
               <View className="flex-row items-center gap-2">
                 <Text className="text-xs font-semibold" style={{ color: colors.muted }}>Filter Period:</Text>
                 <TimeframeDropdown

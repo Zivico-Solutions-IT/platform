@@ -67,7 +67,7 @@ exports.register = async (req, res, next) => {
     const projectId = headerProjectId ? parseInt(headerProjectId, 10) : (referrer ? referrer.projectId : null);
     if (projectId) {
       const project = await Project.findByPk(projectId);
-      if (!project || project.status !== 'active') return res.status(403).json({ message: 'This company is inactive. Registration is unavailable.' });
+      if (!project || project.status === 'inactive') return res.status(403).json({ message: 'This company is inactive. Registration is unavailable.' });
     }
 
     const user = await sequelize.transaction(async (transaction) => {
@@ -177,7 +177,10 @@ exports.login = async (req, res, next) => {
     if (!user || !(await bcrypt.compare(String(password || ''), user.password))) return res.status(401).json({ message: 'Invalid email or password.' });
     if (user.role !== 'master' && user.projectId) {
       const project = await Project.findByPk(user.projectId);
-      if (!project || project.status !== 'active') return res.status(403).json({ message: 'This company is inactive. Access is currently unavailable.' });
+      if (!project || project.status === 'inactive') return res.status(403).json({ message: 'This company is inactive. Access is currently unavailable.' });
+      if (project.status === 'suspended' && ['admin', 'agent', 'manager'].includes(user.role)) {
+        return res.status(403).json({ message: 'This company console is frozen. Contact support to unlock.' });
+      }
     }
     await ensureStaffClientAccounts(user);
     if (['agent', 'manager', 'master'].includes(user.role)) {

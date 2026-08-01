@@ -10,6 +10,8 @@ const masterMiddleware = (req, res, next) => {
 router.use(authMiddleware);
 router.use(masterMiddleware);
 
+router.get('/company-status', masterController.companyStatus);
+router.put('/company-status', masterController.updateCompanyStatus);
 router.get('/projects', masterController.listProjects);
 router.post('/projects', masterController.createProject);
 router.put('/projects/:id', masterController.updateProject);

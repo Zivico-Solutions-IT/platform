@@ -32,8 +32,12 @@ module.exports = async function authMiddleware(req, res, next) {
     
     if (user.role !== 'master' && user.projectId) {
       const project = await Project.findByPk(user.projectId);
-      if (!project || project.status !== 'active') {
+      const consoleRole = ['admin', 'agent', 'manager'].includes(user.role);
+      if (!project || project.status === 'inactive') {
         return res.status(403).json({ message: 'This company is inactive. Access is currently unavailable.' });
+      }
+      if (project.status === 'suspended' && consoleRole) {
+        return res.status(403).json({ message: 'This company console is frozen. Contact support to unlock.' });
       }
     }
 
