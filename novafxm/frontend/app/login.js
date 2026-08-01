@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, router } from 'expo-router';
 import {
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -81,8 +82,7 @@ export default function LoginScreen() {
           visibility: hidden !important;
         }
         input[type="password"]::-webkit-credentials-auto-fill-button,
-        input[type="password"]::-webkit-contacts-auto-fill-button,
-        input[type="password"]::-webkit-textfield-decoration-container {
+        input[type="password"]::-webkit-contacts-auto-fill-button {
           display: none !important;
           visibility: hidden !important;
           pointer-events: none !important;
@@ -473,10 +473,10 @@ export default function LoginScreen() {
                   <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
                     <TextInput
                       className="flex-1 px-4 py-3 text-[14px]"
-                      style={{ color: colors.text }}
+                      style={{ color: colors.text, ...(Platform.OS === 'web' && !showNewPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
                       placeholder="At least 8 characters"
                       placeholderTextColor="#9CA3AF"
-                      secureTextEntry={!showNewPassword}
+                      secureTextEntry={Platform.OS !== 'web' && !showNewPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
                       value={newPassword}
@@ -501,10 +501,10 @@ export default function LoginScreen() {
                   <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
                     <TextInput
                       className="flex-1 px-4 py-3 text-[14px]"
-                      style={{ color: colors.text }}
+                      style={{ color: colors.text, ...(Platform.OS === 'web' && !showConfirmPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
                       placeholder="Confirm your password"
                       placeholderTextColor="#9CA3AF"
-                      secureTextEntry={!showConfirmPassword}
+                      secureTextEntry={Platform.OS !== 'web' && !showConfirmPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
                       value={confirmPassword}
@@ -607,10 +607,10 @@ export default function LoginScreen() {
             <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
               <TextInput
                 className="flex-1 px-4 py-3 text-[14px]"
-                style={{ color: colors.text }}
+                style={{ color: colors.text, ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
                 placeholder="****"
                 placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showPassword}
+                secureTextEntry={Platform.OS !== 'web' && !showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="current-password"

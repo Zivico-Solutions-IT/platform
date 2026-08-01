@@ -46,10 +46,10 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
     <View
       className="absolute z-50 overflow-hidden rounded-lg border p-3 shadow-2xl"
       style={{
-        width: isMobile ? 310 : 350,
-        maxWidth: '92%',
+        width: isMobile ? Math.min(width - 16, 410) : 350,
+        maxWidth: isMobile ? width - 16 : '92%',
         top: isMobile ? 96 : 74,
-        left: isMobile ? 12 : 'auto',
+        left: isMobile ? 8 : 'auto',
         right: isMobile ? 'auto' : 190,
         backgroundColor: colors.panel,
         borderColor: colors.border,

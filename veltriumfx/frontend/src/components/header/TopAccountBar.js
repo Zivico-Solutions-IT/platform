@@ -308,28 +308,11 @@ export default function TopAccountBar() {
         <>
           {mobile ? (
         <View className="gap-2">
-          {/* Single compact row: logo, account switcher and utility icons */}
+          {/* Brand and utility actions */}
           <View className="flex-row items-center justify-between">
             <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
               <NovaLogo dark={darkMode} width={narrowPhone ? 88 : 100} height={narrowPhone ? 24 : 28} />
             </Pressable>
-            {user ? (
-              <Pressable
-                onPress={() => setMenu(menu === 'account' ? null : 'account')}
-                className="h-[34px] flex-row items-center rounded-xl border px-2"
-                style={{
-                  minWidth: narrowPhone ? 74 : 84,
-                  backgroundColor: menu === 'account' ? colors.surface : colors.panel,
-                  borderColor: menu === 'account' ? colors.primary : colors.border,
-                }}
-              >
-                <Activity size={11} color={colors.primary} />
-                <Text className="ml-1 flex-1 text-[10px] font-bold uppercase" numberOfLines={1} style={{ color: colors.primary }}>
-                  {selectedAccount?.type || 'Demo'}
-                </Text>
-                <ChevronDown size={12} color={colors.muted} />
-              </Pressable>
-            ) : null}
             <View className="flex-row items-center gap-1.5">
               <Pressable {...hoverProps('mobile-theme')} onPress={toggleTheme} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-theme', { backgroundColor: `${colors.text}08` })}>
                 <View style={iconHoverStyle('mobile-theme')}>{darkMode ? <Sun size={16} color={iconColor('mobile-theme')} /> : <Moon size={16} color={iconColor('mobile-theme')} />}</View>
@@ -358,6 +341,37 @@ export default function TopAccountBar() {
               ) : null}
             </View>
           </View>
+
+          {/* Full-width account selector. The account menu is anchored directly below it. */}
+          {user && !isAdmin ? (
+            <Pressable
+              onPress={() => setMenu(menu === 'account' ? null : 'account')}
+              className="h-[44px] w-full flex-row items-center rounded-xl border px-3"
+              style={{
+                backgroundColor: menu === 'account' ? `${colors.primary}12` : colors.panel,
+                borderColor: menu === 'account' ? colors.primary : colors.border,
+                shadowColor: colors.primary,
+                shadowOpacity: menu === 'account' ? 0.14 : 0,
+                shadowRadius: 8,
+                elevation: menu === 'account' ? 2 : 0,
+              }}
+            >
+              <View className="mr-2 flex-row items-center rounded-lg px-2 py-1" style={{ backgroundColor: `${colors.primary}16` }}>
+                <Activity size={13} color={colors.primary} />
+                <Text className="ml-1.5 text-[11px] font-bold uppercase" style={{ color: colors.primary }}>
+                  {selectedAccount?.type || 'Demo'}
+                </Text>
+              </View>
+              <Text className="flex-1 text-[11px] font-bold" numberOfLines={1} style={{ color: colors.text }}>
+                {money(selectedAccountBalance)} {selectedAccount?.currency || 'USD'}
+              </Text>
+              <ChevronDown
+                size={15}
+                color={colors.muted}
+                style={{ transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }] }}
+              />
+            </Pressable>
+          ) : null}
         </View>
       ) : (
         <View style={{ marginBottom: mobile ? 12 : 0, marginRight: mobile ? 0 : (compactDesktop ? 6 : 14), justifyContent: 'center' }}>

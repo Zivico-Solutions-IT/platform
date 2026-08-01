@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import { Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react-native';
@@ -53,8 +53,7 @@ export default function RegisterScreen() {
       input[type="password"]::-ms-reveal,
       input[type="password"]::-ms-clear { display: none !important; }
       input[type="password"]::-webkit-credentials-auto-fill-button,
-      input[type="password"]::-webkit-contacts-auto-fill-button,
-      input[type="password"]::-webkit-textfield-decoration-container {
+      input[type="password"]::-webkit-contacts-auto-fill-button {
         display: none !important; visibility: hidden !important; pointer-events: none !important;
       }
       input:-webkit-autofill,
@@ -508,12 +507,16 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: darkMode ? '#071B18' : '#EEF8F5' }}>
+    <ScrollView className="flex-1" style={{ backgroundColor: darkMode ? '#041511' : '#F4FBF9' }}>
       <View className="relative min-h-full items-center justify-center overflow-hidden px-4 py-12">
-        <View pointerEvents="none" className="absolute -right-24 -top-24 h-72 w-72 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(0,103,79,0.22)' : 'rgba(0,103,79,0.09)' }} />
-        <View pointerEvents="none" className="absolute -bottom-28 -left-24 h-80 w-80 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(211,211,211,0.05)' : 'rgba(0,103,79,0.08)' }} />
+        <View pointerEvents="none" className="absolute -right-24 -top-24 h-80 w-80 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(0,193,148,0.16)' : 'rgba(0,183,141,0.16)' }} />
+        <View pointerEvents="none" className="absolute -bottom-28 -left-24 h-96 w-96 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(14,165,233,0.10)' : 'rgba(14,165,233,0.12)' }} />
+        <View pointerEvents="none" className="absolute left-[12%] top-[10%] h-24 w-24 rounded-full" style={{ backgroundColor: 'rgba(245,180,0,0.14)' }} />
+        <View pointerEvents="none" className="absolute bottom-[12%] right-[14%] h-16 w-16 rotate-12 rounded-[20px]" style={{ backgroundColor: 'rgba(139,92,246,0.12)' }} />
         <View className="relative w-full max-w-lg rounded-[30px] px-6 py-8" style={{ backgroundColor: darkMode ? '#0B2521' : 'rgba(255,255,255,0.97)', borderColor: darkMode ? '#315D53' : '#D3D3D3', borderWidth: 1, shadowColor: '#00674F', shadowOffset: { width: 0, height: 16 }, shadowOpacity: darkMode ? 0.4 : 0.14, shadowRadius: 36, elevation: 24 }}>
-          <View pointerEvents="none" className="absolute left-0 right-0 top-0 h-1.5" style={{ backgroundColor: '#00674F' }} />
+          <View pointerEvents="none" className="absolute left-0 top-0 h-1.5 w-1/3" style={{ backgroundColor: '#00674F' }} />
+          <View pointerEvents="none" className="absolute left-1/3 top-0 h-1.5 w-1/3" style={{ backgroundColor: '#0EA5E9' }} />
+          <View pointerEvents="none" className="absolute right-0 top-0 h-1.5 w-1/3" style={{ backgroundColor: '#F5B400' }} />
 
           {/* Logo Badge */}
           <View className="absolute -top-7 left-0 right-0 z-10 items-center">
@@ -524,7 +527,7 @@ export default function RegisterScreen() {
 
           {/* Header */}
           <View className="mt-7 items-center">
-            <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(0,103,79,0.28)' : '#E5F2EE' }}>
+            <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(0,103,79,0.28)' : '#E5F2EE', borderColor: darkMode ? '#246758' : '#B9DED4', borderWidth: 1 }}>
               <Text className="text-[9px] font-bold uppercase tracking-[2px]" style={{ color: darkMode ? '#71D8C2' : '#00674F' }}>Create your trading account</Text>
             </View>
             <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
@@ -533,6 +536,10 @@ export default function RegisterScreen() {
             <Text className="mt-2 max-w-sm text-center text-[13px] leading-5" style={labelStyle}>
               Complete your details below to open a secure account.
             </Text>
+            <View className="mt-4 flex-row gap-2">
+              <View className="rounded-full px-3 py-1" style={{ backgroundColor: darkMode ? '#12362F' : '#E7F6F1' }}><Text className="text-[10px] font-semibold" style={{ color: darkMode ? '#75D8C2' : '#00674F' }}>Secure onboarding</Text></View>
+              <View className="rounded-full px-3 py-1" style={{ backgroundColor: darkMode ? '#102B39' : '#E8F5FC' }}><Text className="text-[10px] font-semibold" style={{ color: darkMode ? '#7DD3FC' : '#0369A1' }}>Quick setup</Text></View>
+            </View>
           </View>
 
           <View className="mt-7">
@@ -544,7 +551,7 @@ export default function RegisterScreen() {
                 <TextInput
                   placeholder="First Name"
                   className="rounded-lg border px-4 py-2.5 text-sm"
-                  style={inputStyle}
+                  style={[inputStyle, Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : null]}
                   placeholderTextColor={placeholderColor}
                   value={firstName}
                   onChangeText={handleFirstNameChange}
@@ -673,7 +680,7 @@ export default function RegisterScreen() {
                   style={inputStyle}
                   placeholder="Enter password"
                   placeholderTextColor={placeholderColor}
-                  secureTextEntry={!showPassword}
+                  secureTextEntry={Platform.OS !== 'web' && !showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="new-password"
@@ -715,10 +722,10 @@ export default function RegisterScreen() {
               <View className="relative">
                 <TextInput
                   className="rounded-lg border px-4 py-2.5 pr-11 text-sm"
-                  style={inputStyle}
+                  style={[inputStyle, Platform.OS === 'web' && !showConfirmPassword ? { WebkitTextSecurity: 'disc' } : null]}
                   placeholder="Confirm your password"
                   placeholderTextColor={placeholderColor}
-                  secureTextEntry={!showConfirmPassword}
+                  secureTextEntry={Platform.OS !== 'web' && !showConfirmPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="new-password"

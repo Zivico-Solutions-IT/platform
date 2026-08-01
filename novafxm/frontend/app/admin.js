@@ -332,6 +332,24 @@ function AdminNotificationMenu({ notifications, colors, darkMode, onClose, onRea
   );
 }
 
+function AdminPasswordInput({ label, value, onChangeText, placeholder, visible, onToggle, colors }) {
+  const maskOnWeb = Platform.OS === 'web' && !visible;
+  return (
+    <View className="mb-4">
+      <Text className="mb-2 text-sm font-medium" style={{ color: colors.muted }}>{label}</Text>
+      <View className="relative">
+        <CustomInput className="mb-0" value={value} onChangeText={onChangeText} placeholder={placeholder}
+          secureTextEntry={Platform.OS !== 'web' && !visible} autoCapitalize="none" autoCorrect={false}
+          autoComplete="new-password" textContentType="none"
+          style={{ paddingRight: 48, ...(maskOnWeb ? { WebkitTextSecurity: 'disc' } : {}) }} />
+        <Pressable onPress={onToggle} accessibilityLabel={visible ? 'Hide password' : 'Show password'} className="absolute right-0 top-0 h-12 w-12 items-center justify-center">
+          {visible ? <Eye size={18} color={colors.muted} /> : <EyeOff size={18} color={colors.muted} />}
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function AdminProfileModal({ visible, user, busyAction, error, onClose, onSaveProfile, onChangePassword }) {
   const { darkMode, colors } = useAppTheme();
   const profileImageInputRef = useRef(null);
@@ -412,31 +430,6 @@ function AdminProfileModal({ visible, user, busyAction, error, onClose, onSavePr
     });
   };
 
-  const PasswordInput = ({ label, value, onChangeText, placeholder, visibleKey }) => {
-    const visiblePassword = passwordVisible[visibleKey];
-    return (
-      <View className="mb-4">
-        <Text className="mb-2 text-sm font-medium" style={{ color: colors.muted }}>{label}</Text>
-        <View className="relative">
-          <CustomInput
-            className="mb-0"
-            value={value}
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            secureTextEntry={!visiblePassword}
-            style={{ paddingRight: 48 }}
-          />
-          <Pressable
-            onPress={() => setPasswordVisible((current) => ({ ...current, [visibleKey]: !current[visibleKey] }))}
-            accessibilityLabel={visiblePassword ? 'Hide password' : 'Show password'}
-            className="absolute right-0 top-0 h-12 w-12 items-center justify-center"
-          >
-            {visiblePassword ? <Eye size={18} color={colors.muted} /> : <EyeOff size={18} color={colors.muted} />}
-          </Pressable>
-        </View>
-      </View>
-    );
-  };
   const roleLabel = user?.role === 'master' ? 'Master' : user?.role === 'agent' ? 'Agent' : user?.role === 'manager' ? 'Manager' : 'Admin';
   const roleColor = user?.role === 'manager' ? colors.success : colors.primary;
 
@@ -569,15 +562,15 @@ function AdminProfileModal({ visible, user, busyAction, error, onClose, onSavePr
               </View>
               {passwordOpen ? (
                 <View style={{ marginTop: 18, paddingTop: 18, borderTopWidth: 1, borderTopColor: colors.border }}>
-                  <PasswordInput label="Current Password" value={form.currentPassword}
+                  <AdminPasswordInput label="Current Password" value={form.currentPassword}
                     onChangeText={(currentPassword) => setForm((current) => ({ ...current, currentPassword }))}
-                    placeholder="Verify current password" visibleKey="current" />
-                  <PasswordInput label="New Password" value={form.password}
+                    placeholder="Verify current password" visible={passwordVisible.current} onToggle={() => setPasswordVisible((current) => ({ ...current, current: !current.current }))} colors={colors} />
+                  <AdminPasswordInput label="New Password" value={form.password}
                     onChangeText={(password) => setForm((current) => ({ ...current, password }))}
-                    placeholder="Minimum 8 characters" visibleKey="next" />
-                  <PasswordInput label="Confirm New Password" value={form.confirmPassword}
+                    placeholder="Minimum 8 characters" visible={passwordVisible.next} onToggle={() => setPasswordVisible((current) => ({ ...current, next: !current.next }))} colors={colors} />
+                  <AdminPasswordInput label="Confirm New Password" value={form.confirmPassword}
                     onChangeText={(confirmPassword) => setForm((current) => ({ ...current, confirmPassword }))}
-                    placeholder="Repeat new password" visibleKey="confirm" />
+                    placeholder="Repeat new password" visible={passwordVisible.confirm} onToggle={() => setPasswordVisible((current) => ({ ...current, confirm: !current.confirm }))} colors={colors} />
                   <Pressable disabled={busyAction === 'profile-password'} onPress={submitPassword}
                     style={{ height: 46, justifyContent: 'center', alignItems: 'center', borderRadius: 12, backgroundColor: roleColor, opacity: busyAction === 'profile-password' ? 0.6 : 1, marginTop: 6 }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: '#0B0B0B' }}>{busyAction === 'profile-password' ? 'Changing...' : 'Change Password'}</Text>

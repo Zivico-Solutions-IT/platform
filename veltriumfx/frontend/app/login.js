@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, router } from 'expo-router';
 import {
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -58,8 +59,7 @@ export default function LoginScreen() {
           visibility: hidden !important;
         }
         input[type="password"]::-webkit-credentials-auto-fill-button,
-        input[type="password"]::-webkit-contacts-auto-fill-button,
-        input[type="password"]::-webkit-textfield-decoration-container {
+        input[type="password"]::-webkit-contacts-auto-fill-button {
           display: none !important;
           visibility: hidden !important;
           pointer-events: none !important;
@@ -450,10 +450,10 @@ export default function LoginScreen() {
                   <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
                     <TextInput
                       className="flex-1 px-4 py-3 text-[14px]"
-                      style={{ color: colors.text }}
+                      style={{ color: colors.text, ...(Platform.OS === 'web' && !showNewPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
                       placeholder="At least 8 characters"
                       placeholderTextColor="#9CA3AF"
-                      secureTextEntry={!showNewPassword}
+                      secureTextEntry={Platform.OS !== 'web' && !showNewPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
                       value={newPassword}
@@ -478,10 +478,10 @@ export default function LoginScreen() {
                   <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
                     <TextInput
                       className="flex-1 px-4 py-3 text-[14px]"
-                      style={{ color: colors.text }}
+                      style={{ color: colors.text, ...(Platform.OS === 'web' && !showConfirmPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
                       placeholder="Confirm your password"
                       placeholderTextColor="#9CA3AF"
-                      secureTextEntry={!showConfirmPassword}
+                      secureTextEntry={Platform.OS !== 'web' && !showConfirmPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
                       value={confirmPassword}
@@ -527,15 +527,17 @@ export default function LoginScreen() {
 
   // ─── Login View ───
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: darkMode ? '#071B18' : '#EEF8F5' }}>
+    <ScrollView className="flex-1" style={{ backgroundColor: darkMode ? '#041511' : '#F4FBF9' }}>
       <View className="relative min-h-full items-center justify-center overflow-hidden px-5 py-10">
-        <View pointerEvents="none" className="absolute -right-24 -top-24 h-72 w-72 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(21, 148, 125, 0.16)' : 'rgba(18, 139, 116, 0.11)' }} />
-        <View pointerEvents="none" className="absolute -bottom-28 -left-24 h-80 w-80 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(44, 112, 94, 0.15)' : 'rgba(83, 170, 147, 0.12)' }} />
+        <View pointerEvents="none" className="absolute -right-24 -top-24 h-80 w-80 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(0, 193, 148, 0.16)' : 'rgba(0, 183, 141, 0.16)' }} />
+        <View pointerEvents="none" className="absolute -bottom-28 -left-24 h-96 w-96 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(14, 165, 233, 0.10)' : 'rgba(14, 165, 233, 0.12)' }} />
+        <View pointerEvents="none" className="absolute left-[12%] top-[12%] h-24 w-24 rounded-full" style={{ backgroundColor: 'rgba(245, 180, 0, 0.14)' }} />
+        <View pointerEvents="none" className="absolute bottom-[16%] right-[14%] h-16 w-16 rotate-12 rounded-[20px]" style={{ backgroundColor: 'rgba(139, 92, 246, 0.12)' }} />
         <View 
           className="relative w-full max-w-md rounded-[30px] px-7 py-10" 
           style={{ 
             backgroundColor: darkMode ? '#0B2521' : 'rgba(255,255,255,0.96)', 
-            borderColor: darkMode ? 'rgba(73, 181, 154, 0.34)' : 'rgba(15, 125, 103, 0.28)', 
+            borderColor: darkMode ? 'rgba(73, 181, 154, 0.42)' : 'rgba(0, 103, 79, 0.20)', 
             borderWidth: 1,
             shadowColor: darkMode ? '#000' : '#0B6B59',
             shadowOffset: { width: 0, height: 16 },
@@ -544,7 +546,9 @@ export default function LoginScreen() {
             elevation: 24,
           }}
         >
-        <View pointerEvents="none" className="absolute left-0 right-0 top-0 h-1.5" style={{ backgroundColor: '#00674F' }} />
+        <View pointerEvents="none" className="absolute left-0 top-0 h-1.5 w-1/3" style={{ backgroundColor: '#00674F' }} />
+        <View pointerEvents="none" className="absolute left-1/3 top-0 h-1.5 w-1/3" style={{ backgroundColor: '#0EA5E9' }} />
+        <View pointerEvents="none" className="absolute right-0 top-0 h-1.5 w-1/3" style={{ backgroundColor: '#F5B400' }} />
 
         {/* Logo Badge */}
         <View className="absolute -top-7 left-0 right-0 z-10 items-center">
@@ -555,15 +559,20 @@ export default function LoginScreen() {
 
         {/* Header */}
         <View className="mt-6 mb-2 items-center">
-          <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(30, 164, 137, 0.16)' : '#E5F2EE' }}>
+          <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(30, 164, 137, 0.16)' : '#E5F2EE', borderColor: darkMode ? '#246758' : '#B9DED4', borderWidth: 1 }}>
             <Text className="text-[9px] font-bold uppercase tracking-[2px]" style={{ color: darkMode ? '#71D8C2' : '#00674F' }}>VeltriumFX Secure Portal</Text>
           </View>
           <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
             Welcome Back
           </Text>
           <Text className="mt-2 text-center text-[13px] font-medium" style={labelStyle}>
-            Login to continue to your account
+            Trade smarter. Access your account securely.
           </Text>
+          <View className="mt-4 flex-row gap-2">
+            <View className="rounded-full px-3 py-1" style={{ backgroundColor: darkMode ? '#12362F' : '#E7F6F1' }}><Text className="text-[10px] font-semibold" style={{ color: darkMode ? '#75D8C2' : '#00674F' }}>Secure</Text></View>
+            <View className="rounded-full px-3 py-1" style={{ backgroundColor: darkMode ? '#102B39' : '#E8F5FC' }}><Text className="text-[10px] font-semibold" style={{ color: darkMode ? '#7DD3FC' : '#0369A1' }}>Fast access</Text></View>
+            <View className="rounded-full px-3 py-1" style={{ backgroundColor: darkMode ? '#392E14' : '#FFF7D6' }}><Text className="text-[10px] font-semibold" style={{ color: darkMode ? '#FACC15' : '#9A6700' }}>24/7</Text></View>
+          </View>
         </View>
 
         <View className="mt-7">
@@ -590,10 +599,10 @@ export default function LoginScreen() {
             <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
               <TextInput
                 className="flex-1 px-4 py-3 text-[14px]"
-                style={{ color: colors.text }}
+                style={{ color: colors.text, ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
                 placeholder="****"
                 placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showPassword}
+                secureTextEntry={Platform.OS !== 'web' && !showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="current-password"

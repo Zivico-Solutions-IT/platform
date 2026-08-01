@@ -299,25 +299,31 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                 />
               </View>
 
-              {mobile ? (
-                <View className="mb-2 flex-row gap-2">
-                  {[
-                    ['Deposit', ArrowUp, 'deposit'],
-                    ['Withdraw', ArrowDown, 'withdraw'],
-                    ['History', Clock, 'history'],
-                  ].map(([title, Icon, panel]) => (
-                    <Pressable
-                      key={panel}
-                      onPress={() => openPanel(panel)}
-                      className="h-[46px] flex-1 items-center justify-center rounded-xl border"
-                      style={{ borderColor: palette.border, backgroundColor: palette.panel }}
-                    >
-                      <Icon size={15} color={palette.text} />
-                      <Text className="mt-0.5 text-[10px] font-medium" style={{ color: palette.text }}>{title}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
+              <Text className={`${mobile ? 'mb-2 mt-1 text-base' : 'mb-4 mt-1 text-xl'} ${mobile ? 'pl-0' : 'pl-[18px]'} font-medium`} style={{ color: palette.text }}>
+                Funding Options
+              </Text>
+
+              <MenuAction
+                icon={ArrowUp}
+                title="Deposit"
+                onPress={() => openPanel('deposit')}
+                palette={palette}
+                compact={mobile}
+              />
+              <MenuAction
+                icon={ArrowDown}
+                title="Withdraw"
+                onPress={() => openPanel('withdraw')}
+                palette={palette}
+                compact={mobile}
+              />
+              <MenuAction
+                icon={Clock}
+                title="Transaction History"
+                onPress={() => openPanel('history')}
+                palette={palette}
+                compact={mobile}
+              />
             </>
           ) : null}
 

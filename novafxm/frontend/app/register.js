@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { Linking, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import { Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react-native';
@@ -75,8 +75,7 @@ export default function RegisterScreen() {
       input[type="password"]::-ms-reveal,
       input[type="password"]::-ms-clear { display: none !important; }
       input[type="password"]::-webkit-credentials-auto-fill-button,
-      input[type="password"]::-webkit-contacts-auto-fill-button,
-      input[type="password"]::-webkit-textfield-decoration-container {
+      input[type="password"]::-webkit-contacts-auto-fill-button {
         display: none !important; visibility: hidden !important; pointer-events: none !important;
       }
       input:-webkit-autofill,
@@ -560,7 +559,7 @@ export default function RegisterScreen() {
                 <TextInput
                   placeholder="First Name"
                   className="rounded-lg border px-4 py-2.5 text-sm"
-                  style={inputStyle}
+                  style={[inputStyle, Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : null]}
                   placeholderTextColor={placeholderColor}
                   value={firstName}
                   onChangeText={handleFirstNameChange}
@@ -689,7 +688,7 @@ export default function RegisterScreen() {
                   style={inputStyle}
                   placeholder="Enter password"
                   placeholderTextColor={placeholderColor}
-                  secureTextEntry={!showPassword}
+                  secureTextEntry={Platform.OS !== 'web' && !showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="new-password"
@@ -731,10 +730,10 @@ export default function RegisterScreen() {
               <View className="relative">
                 <TextInput
                   className="rounded-lg border px-4 py-2.5 pr-11 text-sm"
-                  style={inputStyle}
+                  style={[inputStyle, Platform.OS === 'web' && !showConfirmPassword ? { WebkitTextSecurity: 'disc' } : null]}
                   placeholder="Confirm your password"
                   placeholderTextColor={placeholderColor}
-                  secureTextEntry={!showConfirmPassword}
+                  secureTextEntry={Platform.OS !== 'web' && !showConfirmPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="new-password"
