@@ -9,7 +9,6 @@ import { dateTime } from '../../utils/formatters';
 import api from '../../services/api';
 
 const availablePermissions = [
-  { id: 'agents', label: 'Staff & Permissions' },
   { id: 'overview', label: 'Overview' },
   { id: 'marginAlerts', label: 'Margin Alerts' },
   { id: 'users', label: 'User Wallets' },
@@ -51,7 +50,7 @@ const allPermissionIds = availablePermissions.flatMap((permission) => [
   ...(permission.subPermissions || []).map((subPermission) => subPermission.id),
 ]);
 const permissionCategories = [
-  { title: 'Workspace Access', ids: ['overview', 'marginAlerts', 'agents'] },
+  { title: 'Workspace Access', ids: ['overview', 'marginAlerts'] },
   { title: 'Client Operations', ids: ['userManagement', 'users', 'verifications', 'userLevels'] },
   { title: 'Financial Operations', ids: ['deposits', 'referrals', 'withdrawals'] },
   { title: 'Trading Operations', ids: ['trades', 'addTrading', 'symbols'] },
@@ -69,11 +68,11 @@ const getPermLabel = (permId) => {
 };
 
 const normalizePermissions = (permissions) => {
-  if (Array.isArray(permissions)) return permissions;
+  if (Array.isArray(permissions)) return permissions.filter((permission) => allPermissionIds.includes(permission));
   if (typeof permissions !== 'string') return [];
   try {
     const parsed = JSON.parse(permissions);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.filter((permission) => allPermissionIds.includes(permission)) : [];
   } catch {
     return [];
   }

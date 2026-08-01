@@ -308,11 +308,28 @@ export default function TopAccountBar() {
         <>
           {mobile ? (
         <View className="gap-2">
-          {/* Row 1: Logo & Utility Icons */}
+          {/* Single compact row: logo, account switcher and utility icons */}
           <View className="flex-row items-center justify-between">
             <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
-              <NovaLogo dark={darkMode} width={narrowPhone ? 108 : 130} height={narrowPhone ? 28 : 34} />
+              <NovaLogo dark={darkMode} width={narrowPhone ? 88 : 100} height={narrowPhone ? 24 : 28} />
             </Pressable>
+            {user ? (
+              <Pressable
+                onPress={() => setMenu(menu === 'account' ? null : 'account')}
+                className="h-[34px] flex-row items-center rounded-xl border px-2"
+                style={{
+                  minWidth: narrowPhone ? 74 : 84,
+                  backgroundColor: menu === 'account' ? colors.surface : colors.panel,
+                  borderColor: menu === 'account' ? colors.primary : colors.border,
+                }}
+              >
+                <Activity size={11} color={colors.primary} />
+                <Text className="ml-1 flex-1 text-[10px] font-bold uppercase" numberOfLines={1} style={{ color: colors.primary }}>
+                  {selectedAccount?.type || 'Demo'}
+                </Text>
+                <ChevronDown size={12} color={colors.muted} />
+              </Pressable>
+            ) : null}
             <View className="flex-row items-center gap-1.5">
               <Pressable {...hoverProps('mobile-theme')} onPress={toggleTheme} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-theme', { backgroundColor: `${colors.text}08` })}>
                 <View style={iconHoverStyle('mobile-theme')}>{darkMode ? <Sun size={16} color={iconColor('mobile-theme')} /> : <Moon size={16} color={iconColor('mobile-theme')} />}</View>
@@ -320,11 +337,6 @@ export default function TopAccountBar() {
               {isAdmin ? (
                 <Pressable {...hoverProps('mobile-admin-dashboard')} onPress={goToAdminDashboard} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-admin-dashboard', { backgroundColor: `${colors.text}08` })}>
                   <View style={iconHoverStyle('mobile-admin-dashboard')}><LayoutDashboard color={iconColor('mobile-admin-dashboard')} size={16} /></View>
-                </Pressable>
-              ) : null}
-              {user && !isAdmin ? (
-                <Pressable {...hoverProps('mobile-wallet')} onPress={openWalletMenu} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-wallet', { backgroundColor: `${colors.success}1A` })}>
-                  <View style={iconHoverStyle('mobile-wallet')}><Wallet color={colors.success} size={16} /></View>
                 </Pressable>
               ) : null}
               {user ? (
@@ -345,54 +357,6 @@ export default function TopAccountBar() {
                 </Pressable>
               ) : null}
             </View>
-          </View>
-          {/* Row 2: Account Select & Action Buttons */}
-          <View className="flex-row items-center gap-2">
-            {user ? (
-              <Pressable
-                onPress={() => setMenu(menu === 'account' ? null : 'account')}
-                className="h-[40px] flex-1 flex-row items-center justify-between rounded-xl border px-3"
-                style={{
-                  backgroundColor: menu === 'account' ? (darkMode ? '#1E232A' : '#FAFAFA') : colors.panel,
-                  borderColor: menu === 'account' ? colors.primary : colors.border,
-                  shadowColor: colors.primary,
-                  shadowOpacity: menu === 'account' ? (darkMode ? 0.3 : 0.2) : 0,
-                  shadowRadius: 8,
-                  elevation: menu === 'account' ? 2 : 0,
-                }}
-              >
-                <View className="flex-row items-center">
-                  <View className="mr-2 flex-row items-center justify-center rounded px-1.5 py-1" style={{ backgroundColor: `${colors.primary}1A` }}>
-                    <Activity size={10} color={colors.primary} className="mr-1" />
-                    <Text className="text-[9px] font-bold uppercase tracking-wider" style={{ color: colors.primary }}>
-                      {selectedAccount?.type || 'Demo'}
-                    </Text>
-                  </View>
-                  <Text className="text-xs font-bold" numberOfLines={1} style={{ color: colors.text }}>
-                    {money(selectedAccountBalance)} <Text className="text-[9px] font-bold" style={{ color: colors.muted }}>USD</Text>
-                  </Text>
-                </View>
-                <ChevronDown size={14} color={colors.muted} />
-              </Pressable>
-            ) : null}
-            {user && !isAdmin ? (
-              <Pressable
-                {...hoverProps('mobile-deposit')}
-                onPress={() => openSidePanel('deposit')}
-                className="h-[40px] flex-row items-center justify-center rounded-xl px-3"
-                style={[
-                  {
-                    backgroundColor: 'transparent',
-                    borderWidth: 1.5,
-                    borderColor: colors.success,
-                  },
-                  hoveredAction === 'mobile-deposit' ? { backgroundColor: `${colors.success}1A` } : null
-                ]}
-              >
-                <ArrowUp color={colors.success} size={14} strokeWidth={2.5} />
-                <Text className="ml-1 text-xs font-bold" style={{ color: colors.success }}>Deposit</Text>
-              </Pressable>
-            ) : null}
           </View>
         </View>
       ) : (

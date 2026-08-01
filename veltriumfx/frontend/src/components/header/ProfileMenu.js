@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import {
   Award,
+  ArrowDown,
+  ArrowUp,
+  Clock,
   LogOut,
   Settings2,
   ShieldCheck,
@@ -23,14 +26,14 @@ function initialsFor(user) {
     .join('') || 'NU';
 }
 
-function MenuTile({ icon: Icon, title, subtitle, badge, onPress, palette }) {
+function MenuTile({ icon: Icon, title, subtitle, badge, onPress, palette, compact = false }) {
   return (
     <Pressable
       onPress={(event) => {
         event.stopPropagation?.();
         onPress();
       }}
-      className="min-h-[110px] flex-1 justify-between rounded-xl p-3"
+      className={`${compact ? 'min-h-[82px] p-2.5' : 'min-h-[110px] p-3'} flex-1 justify-between rounded-xl`}
       style={{ backgroundColor: palette.tile }}
     >
       <View className="flex-row items-center justify-between">
@@ -49,7 +52,7 @@ function MenuTile({ icon: Icon, title, subtitle, badge, onPress, palette }) {
   );
 }
 
-function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
+function MenuAction({ icon: Icon, title, onPress, danger = false, palette, compact = false }) {
   const [pressed, setPressed] = useState(false);
   return (
     <Pressable
@@ -60,19 +63,19 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
         onPress();
       }}
       style={{
-        marginBottom: 8,
+        marginBottom: compact ? 6 : 8,
         flexDirection: 'row',
         alignItems: 'center',
         borderRadius: 12,
         borderWidth: 1,
         borderColor: palette.border,
-        paddingHorizontal: 18,
-        paddingVertical: 14,
+        paddingHorizontal: compact ? 14 : 18,
+        paddingVertical: compact ? 10 : 14,
         backgroundColor: pressed ? palette.tile : 'transparent',
       }}
     >
       <Icon size={20} color={danger ? palette.danger : palette.text} strokeWidth={1.8} />
-      <Text style={{ marginLeft: 12, fontSize: 16, fontWeight: '500', color: danger ? palette.danger : palette.text }}>
+      <Text style={{ marginLeft: 10, fontSize: compact ? 14 : 16, fontWeight: '500', color: danger ? palette.danger : palette.text }}>
         {title}
       </Text>
     </Pressable>
@@ -180,9 +183,9 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
         zIndex: 50,
         width: mobile ? '100%' : panelWidth,
         height: panelHeight,
-        paddingTop: mobile ? 28 : 24,
-        paddingBottom: mobile ? 24 : 20,
-        paddingHorizontal: mobile ? 20 : 20,
+        paddingTop: mobile ? 12 : 24,
+        paddingBottom: mobile ? 12 : 20,
+        paddingHorizontal: mobile ? 14 : 20,
         backgroundColor: palette.panel,
         borderLeftWidth: mobile ? 0 : 1,
         borderLeftColor: palette.border,
@@ -195,7 +198,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
         transform: [{ translateX: slideAnim }],
       }}
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: mobile ? 24 : 0 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: mobile ? 4 : 0 }}>
         <Animated.View
           style={{
             opacity: contentAnim,
@@ -209,15 +212,15 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             ],
           }}
         >
-          <View className={`mb-5 flex-row items-center justify-between ${mobile ? '' : 'pl-[18px]'}`}>
-            <Text className={`${mobile ? 'text-2xl' : 'text-2xl'} font-medium`} style={{ color: palette.text }}>My Profile</Text>
+          <View className={`${mobile ? 'mb-2' : 'mb-5'} flex-row items-center justify-between ${mobile ? '' : 'pl-[18px]'}`}>
+            <Text className={`${mobile ? 'text-xl' : 'text-2xl'} font-medium`} style={{ color: palette.text }}>My Profile</Text>
             <Pressable onPress={onClose} className="h-10 w-10 items-center justify-center">
               <X size={mobile ? 24 : 26} color={palette.text} strokeWidth={1.8} />
             </Pressable>
           </View>
 
-          <View className={`mb-4 flex-row items-center ${mobile ? '' : 'px-[18px]'}`}>
-            <View className="h-[50px] w-[50px] items-center justify-center rounded-full" style={{ backgroundColor: palette.accent }}>
+          <View className={`${mobile ? 'mb-2' : 'mb-4'} flex-row items-center ${mobile ? '' : 'px-[18px]'}`}>
+            <View className={`${mobile ? 'h-[42px] w-[42px]' : 'h-[50px] w-[50px]'} items-center justify-center rounded-full`} style={{ backgroundColor: palette.accent }}>
               <Text className="text-base font-medium text-medium">{initials}</Text>
             </View>
             <View className="ml-4 flex-1">
@@ -230,7 +233,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
 
           {!isAdmin ? (
             <>
-              <View className="mb-4 rounded-xl p-4" style={{ backgroundColor: palette.card }}>
+              <View className={`${mobile ? 'mb-2 p-3' : 'mb-4 p-4'} rounded-xl`} style={{ backgroundColor: palette.card }}>
                 {showUpgradePrompt ? (
                   <View>
                     <Text className="text-base font-medium" style={{ color: palette.text }}>Upgrade Your Trading Level</Text>
@@ -276,7 +279,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                 )}
               </View>
 
-              <View className="mb-4 flex-row gap-3">
+              <View className={`${mobile ? 'mb-2 gap-2' : 'mb-4 gap-3'} flex-row`}>
                 <MenuTile
                   icon={ShieldCheck}
                   title="Verification"
@@ -284,6 +287,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                   badge={verified ? null : 'Unverified'}
                   onPress={() => openPanel('verification')}
                   palette={palette}
+                  compact={mobile}
                 />
                 <MenuTile
                   icon={Award}
@@ -291,18 +295,40 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                   subtitle="Invite & earn rewards"
                   onPress={() => openPanel('referral')}
                   palette={palette}
+                  compact={mobile}
                 />
               </View>
+
+              {mobile ? (
+                <View className="mb-2 flex-row gap-2">
+                  {[
+                    ['Deposit', ArrowUp, 'deposit'],
+                    ['Withdraw', ArrowDown, 'withdraw'],
+                    ['History', Clock, 'history'],
+                  ].map(([title, Icon, panel]) => (
+                    <Pressable
+                      key={panel}
+                      onPress={() => openPanel(panel)}
+                      className="h-[46px] flex-1 items-center justify-center rounded-xl border"
+                      style={{ borderColor: palette.border, backgroundColor: palette.panel }}
+                    >
+                      <Icon size={15} color={palette.text} />
+                      <Text className="mt-0.5 text-[10px] font-medium" style={{ color: palette.text }}>{title}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
             </>
           ) : null}
 
-          <Text className={`mb-4 ${mobile ? 'pl-0' : 'pl-[18px]'} text-xl font-medium`} style={{ color: palette.text }}>Account</Text>
+          <Text className={`${mobile ? 'mb-2 text-base' : 'mb-4 text-xl'} ${mobile ? 'pl-0' : 'pl-[18px]'} font-medium`} style={{ color: palette.text }}>Account</Text>
 
           <MenuAction
             icon={Settings2}
             title="Settings"
             onPress={() => openPanel('settings')}
             palette={palette}
+            compact={mobile}
           />
           {user?.role === 'user' && (
             <MenuAction
@@ -313,6 +339,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                 DeviceEventEmitter.emit('openSupportChat');
               }}
               palette={palette}
+              compact={mobile}
             />
           )}
           <MenuAction
@@ -321,6 +348,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             onPress={signOut}
             danger
             palette={palette}
+            compact={mobile}
           />
         </Animated.View>
       </ScrollView>

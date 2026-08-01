@@ -1,33 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { Linking, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
+import { Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import { Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react-native';
-import Svg, { Path } from 'react-native-svg';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
-
-const GoogleIcon = () => (
-  <Svg width={22} height={22} viewBox="0 0 24 24">
-    <Path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-    <Path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-    <Path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-    <Path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-  </Svg>
-);
-
-const FacebookIcon = () => (
-  <Svg width={20} height={20} viewBox="0 0 24 24" fill="white">
-    <Path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </Svg>
-);
-
-const XIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="white">
-    <Path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-  </Svg>
-);
 
 export default function RegisterScreen() {
   const { register } = useAuth();
@@ -439,7 +417,7 @@ export default function RegisterScreen() {
     outlineStyle: 'none',
   };
   const labelStyle = { color: colors.muted };
-  const linkColor = darkMode ? colors.primary : '#014421';
+  const linkColor = darkMode ? colors.primary : '#00674F';
 
   const submit = async () => {
   const trimmedFirstName = form.name.split(' ')[0]?.trim() || '';
@@ -530,24 +508,30 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="min-h-full items-center justify-center px-4 py-10">
-        <View className="relative w-full max-w-md rounded-2xl px-6 py-5 shadow-xl" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1 }}>
+    <ScrollView className="flex-1" style={{ backgroundColor: darkMode ? '#071B18' : '#EEF8F5' }}>
+      <View className="relative min-h-full items-center justify-center overflow-hidden px-4 py-12">
+        <View pointerEvents="none" className="absolute -right-24 -top-24 h-72 w-72 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(0,103,79,0.22)' : 'rgba(0,103,79,0.09)' }} />
+        <View pointerEvents="none" className="absolute -bottom-28 -left-24 h-80 w-80 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(211,211,211,0.05)' : 'rgba(0,103,79,0.08)' }} />
+        <View className="relative w-full max-w-lg rounded-[30px] px-6 py-8" style={{ backgroundColor: darkMode ? '#0B2521' : 'rgba(255,255,255,0.97)', borderColor: darkMode ? '#315D53' : '#D3D3D3', borderWidth: 1, shadowColor: '#00674F', shadowOffset: { width: 0, height: 16 }, shadowOpacity: darkMode ? 0.4 : 0.14, shadowRadius: 36, elevation: 24 }}>
+          <View pointerEvents="none" className="absolute left-0 right-0 top-0 h-1.5" style={{ backgroundColor: '#00674F' }} />
 
           {/* Logo Badge */}
           <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-            <View className="rounded-xl px-3 py-2 shadow-md" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1 }}>
-              <NovaLogo dark={darkMode} width={120} height={36} />
+            <View className="rounded-[18px] px-5 py-2.5 shadow-md" style={{ backgroundColor: darkMode ? '#102F29' : '#FFFFFF', borderColor: darkMode ? '#315D53' : '#D3D3D3', borderWidth: 1 }}>
+              <NovaLogo dark={darkMode} width={130} height={38} />
             </View>
           </View>
 
           {/* Header */}
-          <View className="mt-5">
-            <Text className="text-center text-2xl font-semimedium" style={{ color: colors.text }}>
-              Welcome to <Text style={{ color: linkColor }}>VeltriumFX!</Text>
+          <View className="mt-7 items-center">
+            <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(0,103,79,0.28)' : '#E5F2EE' }}>
+              <Text className="text-[9px] font-bold uppercase tracking-[2px]" style={{ color: darkMode ? '#71D8C2' : '#00674F' }}>Create your trading account</Text>
+            </View>
+            <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
+              Join VeltriumFX
             </Text>
-            <Text className="mt-2 text-center text-sm" style={labelStyle}>
-              Credentials are only used to authenticate. All saved data will be stored in your database.
+            <Text className="mt-2 max-w-sm text-center text-[13px] leading-5" style={labelStyle}>
+              Complete your details below to open a secure account.
             </Text>
           </View>
 
@@ -773,50 +757,16 @@ export default function RegisterScreen() {
             <Pressable
               onPress={submit}
               disabled={loading}
-              className="w-full rounded-lg bg-[#014421] py-2.5 items-center shadow-md"
-              style={{ opacity: loading ? 0.7 : 1 }}
+              className="w-full rounded-xl py-3 items-center shadow-md"
+              style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#00674F', shadowColor: '#00674F', shadowOpacity: 0.24, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }}
             >
               <Text className="text-white font-semimedium text-sm">{loading ? 'Signing up...' : 'Sign Up'}</Text>
             </Pressable>
           </View>
 
-          {/* Divider */}
-          <View className="my-6 flex-row items-center gap-3">
-            <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
-            <Text className="text-xs font-medium" style={labelStyle}>or</Text>
-            <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
-          </View>
-
-          {/* Social Login Buttons */}
-          <View className="flex-row justify-center gap-5">
-            <TouchableOpacity
-              onPress={() => Linking.openURL('https://google.com')}
-              className="rounded-full border shadow-md items-center justify-center"
-              style={{ height: 40, width: 40, backgroundColor: '#ffffff', borderColor: colors.border }}
-            >
-              <GoogleIcon />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => Linking.openURL('https://facebook.com')}
-              className="rounded-full bg-[#1877F2] shadow-md items-center justify-center"
-              style={{ height: 40, width: 40 }}
-            >
-              <FacebookIcon />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => Linking.openURL('https://x.com')}
-              className="rounded-full shadow-md items-center justify-center"
-              style={{ height: 40, width: 40, backgroundColor: '#0B0B0B', borderColor: colors.border, borderWidth: 1 }}
-            >
-              <XIcon />
-            </TouchableOpacity>
-          </View>
-
           {/* Login Link */}
           <Link href="/login" asChild>
-            <Pressable className="mt-6">
+            <Pressable className="mt-6 rounded-xl border px-4 py-3" style={{ borderColor: darkMode ? '#315D53' : '#D3D3D3', backgroundColor: darkMode ? '#102F29' : '#F7FAF9' }}>
               <Text className="text-center text-sm" style={labelStyle}>
                 Already have an account?{' '}
                 <Text className="font-semimedium" style={{ color: linkColor }}>Login</Text>

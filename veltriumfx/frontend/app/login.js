@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, router } from 'expo-router';
 import {
-  Linking,
   Pressable,
   ScrollView,
   Text,
@@ -13,30 +12,8 @@ import { Eye, EyeOff, ArrowLeft, Mail, ShieldCheck, LockKeyhole, CheckCircle2 } 
 import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
 import NovaLogo from '../src/components/brand/NovaLogo';
-import Svg, { Path } from 'react-native-svg';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { landingRouteFor } from '../src/utils/appHost';
-
-const GoogleIcon = () => (
-  <Svg width={22} height={22} viewBox="0 0 24 24">
-    <Path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-    <Path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-    <Path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-    <Path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-  </Svg>
-);
-
-const FacebookIcon = () => (
-  <Svg width={20} height={20} viewBox="0 0 24 24" fill="white">
-    <Path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </Svg>
-);
-
-const XIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="white">
-    <Path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-  </Svg>
-);
 
 export default function LoginScreen() {
   const { login, user } = useAuth();
@@ -212,7 +189,7 @@ export default function LoginScreen() {
     outlineStyle: 'none',
   };
   const labelStyle = { color: colors.muted };
-  const linkColor = darkMode ? colors.primary : '#014421';
+  const linkColor = darkMode ? colors.primary : '#00674F';
 
   // Step indicator dots for forgot password flow
   const StepIndicator = ({ currentStep }) => {
@@ -567,7 +544,7 @@ export default function LoginScreen() {
             elevation: 24,
           }}
         >
-        <View pointerEvents="none" className="absolute left-0 right-0 top-0 h-1.5" style={{ backgroundColor: '#128B74' }} />
+        <View pointerEvents="none" className="absolute left-0 right-0 top-0 h-1.5" style={{ backgroundColor: '#00674F' }} />
 
         {/* Logo Badge */}
         <View className="absolute -top-7 left-0 right-0 z-10 items-center">
@@ -578,8 +555,8 @@ export default function LoginScreen() {
 
         {/* Header */}
         <View className="mt-6 mb-2 items-center">
-          <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(30, 164, 137, 0.16)' : '#E1F3EE' }}>
-            <Text className="text-[9px] font-bold uppercase tracking-[2px]" style={{ color: darkMode ? '#71D8C2' : '#08735F' }}>VeltriumFX Secure Portal</Text>
+          <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(30, 164, 137, 0.16)' : '#E5F2EE' }}>
+            <Text className="text-[9px] font-bold uppercase tracking-[2px]" style={{ color: darkMode ? '#71D8C2' : '#00674F' }}>VeltriumFX Secure Portal</Text>
           </View>
           <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
             Welcome Back
@@ -674,7 +651,7 @@ export default function LoginScreen() {
             onPress={submit}
             disabled={loading}
             className="w-full items-center rounded-xl py-3 shadow-md"
-            style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#087F6A', shadowColor: '#087F6A', shadowOpacity: 0.24, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }}
+            style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#00674F', shadowColor: '#00674F', shadowOpacity: 0.24, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }}
           >
             <Text className="text-sm font-semibold text-white">
               {loading ? 'Logging in...' : 'Login'}
@@ -682,43 +659,9 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Divider */}
-        <View className="my-6 flex-row items-center gap-3">
-          <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
-          <Text className="text-xs font-medium" style={labelStyle}>or</Text>
-          <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
-        </View>
-
-        {/* Social Login Buttons */}
-        <View className="flex-row justify-center gap-5">
-          <TouchableOpacity
-            onPress={() => Linking.openURL('https://google.com')}
-            className="rounded-full border shadow-md items-center justify-center"
-            style={{ height: 42, width: 42, backgroundColor: '#ffffff', borderColor: colors.border }}
-          >
-            <GoogleIcon />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => Linking.openURL('https://facebook.com')}
-            className="rounded-full bg-[#1877F2] shadow-md items-center justify-center"
-            style={{ height: 42, width: 42 }}
-          >
-            <FacebookIcon />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => Linking.openURL('https://x.com')}
-            className="rounded-full shadow-md items-center justify-center"
-            style={{ height: 42, width: 42, backgroundColor: '#0B0B0B', borderColor: colors.border, borderWidth: 1 }}
-          >
-            <XIcon />
-          </TouchableOpacity>
-        </View>
-
         {/* Footer Links */}
         <Link href="/register" asChild>
-          <Pressable className="mt-6">
+          <Pressable className="mt-7 rounded-xl border px-4 py-3" style={{ borderColor: darkMode ? '#315D53' : '#D3D3D3', backgroundColor: darkMode ? '#102F29' : '#F7FAF9' }}>
             <Text className="text-center text-sm" style={labelStyle}>
               Don&apos;t have an account?{' '}
               <Text className="font-semibold" style={{ color: linkColor }}>Sign up</Text>

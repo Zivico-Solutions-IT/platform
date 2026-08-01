@@ -44,6 +44,11 @@ const transferredSession = (() => {
 const mergeUser = (incoming, fallback = null) => {
   if (!incoming && !fallback) return null;
   const merged = { ...(fallback || {}), ...(incoming || {}) };
+  if (incoming?.role === 'master' && fallback?.role === 'master') {
+    ['name', 'email', 'profileImage'].forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(fallback, field)) merged[field] = fallback[field];
+    });
+  }
   if (incoming && !Object.prototype.hasOwnProperty.call(incoming, 'dateOfBirth')) merged.dateOfBirth = fallback?.dateOfBirth || '';
   if (incoming && !Object.prototype.hasOwnProperty.call(incoming, 'profileImage')) merged.profileImage = fallback?.profileImage || null;
   return merged;
@@ -156,7 +161,7 @@ export function AuthProvider({ children }) {
 
   const updateProfile = useCallback(async (values) => {
     const result = await authService.updateProfile(values);
-    const nextUser = mergeUser({ ...result.user, ...values }, user);
+    const nextUser = mergeUser({ ...(user || {}), ...result.user, ...values });
     setUser(nextUser);
     await storage.set('user', nextUser);
     return nextUser;

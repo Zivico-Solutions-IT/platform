@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const axios = require('axios');
 const { User, Wallet, BankAccount, AdminNotification } = require('../models');
 const { getIo } = require('../config/socketIo');
 
@@ -30,6 +31,28 @@ const isValidDateOfBirth = (value) => {
 
 const isImageData = (value) => /^data:image\/(png|jpe?g|webp);base64,/i.test(String(value || ''));
 
+const masterApiUrl = () => (
+  process.env.NODE_ENV === 'production'
+    ? 'https://server.novafxm.com/api'
+    : 'http://127.0.0.1:5000/api'
+);
+
+const updateCanonicalMaster = async (req, path, body) => {
+  try {
+    const response = await axios.put(`${masterApiUrl()}${path}`, body, {
+      headers: {
+        authorization: req.headers.authorization,
+        'content-type': 'application/json',
+      },
+      timeout: 10000,
+    });
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    if (error.response) return { status: error.response.status, data: error.response.data };
+    throw error;
+  }
+};
+
 exports.profile = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.id, { attributes: { exclude: ['password'] }, include: [{ model: Wallet, as: 'wallet' }] });
@@ -41,6 +64,13 @@ exports.profile = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
   try {
+    // The CEO/master is one shared identity. NovaFXM is the canonical master
+    // account, so edits made from VeltriumFX must update that same record.
+    if (req.user?.role === 'master') {
+      const result = await updateCanonicalMaster(req, '/users/profile', req.body);
+      return res.status(result.status).json(result.data);
+    }
+
     const userObj = await User.findByPk(req.user.id);
     if (!userObj) return res.status(404).json({ message: 'User account not found.' });
 
@@ -114,6 +144,11 @@ exports.updateProfile = async (req, res, next) => {
 
 exports.changePassword = async (req, res, next) => {
   try {
+    if (req.user?.role === 'master') {
+      const result = await updateCanonicalMaster(req, '/users/password', req.body);
+      return res.status(result.status).json(result.data);
+    }
+
     const { currentPassword, newPassword, confirmPassword } = req.body;
     if (!currentPassword) return res.status(400).json({ message: 'Current password is required.' });
     if (!newPassword || String(newPassword).length < 8) return res.status(400).json({ message: 'New password must be at least 8 characters.' });

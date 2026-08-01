@@ -13,7 +13,7 @@ const DEFAULT_LEVERAGE = 500;
 const MIN_LEVERAGE = 100;
 const MAX_LEVERAGE = 2000;
 const TRADING_LEVELS = ['Standard', 'Silver', 'Gold', 'Platinum'];
-const STAFF_PERMISSIONS = ['overview', 'marginAlerts', 'users', 'userManagement', 'assignUsers', 'userManagementUsers', 'verifications', 'deposits', 'depositAddresses', 'depositsList', 'referrals', 'withdrawals', 'withdrawalsList', 'withdrawalDetails', 'userLevels', 'trades', 'addTrading', 'symbols', 'agents'];
+const STAFF_PERMISSIONS = ['overview', 'marginAlerts', 'users', 'userManagement', 'assignUsers', 'userManagementUsers', 'verifications', 'deposits', 'depositAddresses', 'depositsList', 'referrals', 'withdrawals', 'withdrawalsList', 'withdrawalDetails', 'userLevels', 'trades', 'addTrading', 'symbols'];
 const publicAttributes = { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires'] };
 const publicListAttributes = {
   exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires', 'profileImage', 'idProofImage', 'addressProofImage'],

@@ -1489,7 +1489,7 @@ function MarginCategoryCard({ id, label, count, background, color, colors, darkM
 
 export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const { width } = useWindowDimensions();
-  const { user: adminUser, isAdmin, logout, refreshUser } = useAuth();
+  const { user: adminUser, isAdmin, logout, updateProfile, refreshUser } = useAuth();
   const { darkMode, colors, toggleTheme } = useAppTheme();
   const router = useRouter();
 
@@ -3495,16 +3495,19 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       ? 'profileImage'
       : Object.prototype.hasOwnProperty.call(values, 'email') ? 'email' : 'name';
     const label = field === 'profileImage' ? 'profile photo' : field;
-    const isStaff = adminUser?.role === 'agent' || adminUser?.role === 'manager';
+    const isStaff = ['agent', 'manager', 'master'].includes(adminUser?.role);
     const endpoint = isStaff ? '/users/profile' : '/admin/profile';
-    const displayRole = adminUser?.role === 'agent' ? 'Agent' : adminUser?.role === 'manager' ? 'Manager' : 'Admin';
+    const displayRole = adminUser?.role === 'master' ? 'Master' : adminUser?.role === 'agent' ? 'Agent' : adminUser?.role === 'manager' ? 'Manager' : 'Admin';
     setBusyId(`profile-${field}`);
     setMessage('');
     setError('');
     setAdminProfileError('');
     try {
-      await api.put(endpoint, values);
-      await refreshUser();
+      if (adminUser?.role === 'master') await updateProfile(values);
+      else {
+        await api.put(endpoint, values);
+        await refreshUser();
+      }
       setMessage(`${displayRole} ${label} saved.`);
       if (onSuccess) onSuccess();
     } catch (requestError) {
@@ -3515,9 +3518,9 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   };
 
   const changeAdminPassword = async (values, onSuccess) => {
-    const isStaff = adminUser?.role === 'agent' || adminUser?.role === 'manager';
+    const isStaff = ['agent', 'manager', 'master'].includes(adminUser?.role);
     const endpoint = isStaff ? '/users/password' : '/admin/profile/password';
-    const displayRole = adminUser?.role === 'agent' ? 'Agent' : adminUser?.role === 'manager' ? 'Manager' : 'Admin';
+    const displayRole = adminUser?.role === 'master' ? 'Master' : adminUser?.role === 'agent' ? 'Agent' : adminUser?.role === 'manager' ? 'Manager' : 'Admin';
     const payload = isStaff
       ? { currentPassword: values.currentPassword, newPassword: values.password, confirmPassword: values.password }
       : values;
