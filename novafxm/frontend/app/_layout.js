@@ -20,22 +20,22 @@ function AppStack() {
     if (!pathname) return; // Guard against null/undefined pathname during initialization
 
     const hostname = window.location.hostname;
-    const searchParams = new URLSearchParams(window.location.search);
-    // An administrator can open a short-lived client session from the admin
-    // area.  Consume it before applying domain routing so this works both in
-    // local development and between the production subdomains.
-    const urlToken = searchParams.get('t');
-    const urlUser = searchParams.get('u');
-    if (urlToken && urlUser) {
+    // Cross-domain master switching uses window.name so credentials never
+    // appear in the URL, browser history, access logs, or referrer headers.
+    if (window.name) {
       try {
-        localStorage.setItem('novafxm_token', JSON.stringify(urlToken));
-        localStorage.setItem('novafxm_user', urlUser);
-        const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
-        window.history.replaceState(null, '', cleanUrl);
-        window.location.reload();
-        return;
+        const handoff = JSON.parse(window.name);
+        if (handoff?.type === 'fxm-session-handoff' &&
+            handoff.targetOrigin === window.location.origin &&
+            handoff.token && handoff.user) {
+          window.name = '';
+          localStorage.setItem('novafxm_token', JSON.stringify(handoff.token));
+          localStorage.setItem('novafxm_user', JSON.stringify(handoff.user));
+          window.location.reload();
+          return;
+        }
       } catch (e) {
-        console.error('Failed to save transferred session', e);
+        // Ignore window names created by unrelated browser pages.
       }
     }
 

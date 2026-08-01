@@ -212,10 +212,15 @@ export default function AdminSidebar({
           ? `${window.location.protocol}//${window.location.hostname}:8082/master`
           : `${configuredUrl}/master`;
         const token = await storage.get('token');
-        const sessionUrl = token
-          ? `${target}?t=${encodeURIComponent(token)}&u=${encodeURIComponent(JSON.stringify(adminUser))}`
-          : target;
-        window.location.assign(sessionUrl);
+        if (token && adminUser) {
+          window.name = JSON.stringify({
+            type: 'fxm-session-handoff',
+            targetOrigin: new URL(target).origin,
+            token,
+            user: adminUser,
+          });
+        }
+        window.location.assign(target);
       }
     };
     return (
