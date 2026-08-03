@@ -306,7 +306,7 @@ exports.users = async (req, res, next) => {
           [sequelize.fn('COUNT', sequelize.col('Trade.id')), 'totalTradesCount'],
         ],
         include: [{ model: TradingAccount, as: 'tradingAccount', attributes: [], where: { type: 'Live' }, required: true }],
-        group: ['Trade.userId'],
+        group: [sequelize.col('Trade.user_id')],
         raw: true,
       }),
     ]);
