@@ -262,8 +262,10 @@ exports.users = async (req, res, next) => {
         limit,
       }),
       Trade.findAll({
-        where: { status: 'open' },
-        include: [{ model: TradingAccount, as: 'tradingAccount', attributes: [], where: { type: 'Live' }, required: true }],
+        where: {
+          status: 'open',
+          tradingAccountId: { [Op.in]: sequelize.literal("(SELECT `id` FROM `trading_accounts` WHERE `type` = 'Live')") },
+        },
       }),
       tradingView.getPrices(),
       Deposit.findAll({
@@ -305,8 +307,10 @@ exports.users = async (req, res, next) => {
           [sequelize.fn('SUM', sequelize.col('profit')), 'totalClosedProfit'],
           [sequelize.fn('COUNT', sequelize.col('Trade.id')), 'totalTradesCount'],
         ],
-        include: [{ model: TradingAccount, as: 'tradingAccount', attributes: [], where: { type: 'Live' }, required: true }],
-        group: [sequelize.col('Trade.user_id')],
+        where: {
+          tradingAccountId: { [Op.in]: sequelize.literal("(SELECT `id` FROM `trading_accounts` WHERE `type` = 'Live')") },
+        },
+        group: ['userId'],
         raw: true,
       }),
     ]);
@@ -1346,9 +1350,11 @@ exports.trades = async (req, res, next) => {
   try {
     const userWhere = req.user?.role === 'agent' ? { assignedAgentId: req.user.id } : undefined;
     const { rows, count } = await Trade.findAndCountAll({
+      where: {
+        tradingAccountId: { [Op.in]: sequelize.literal("(SELECT `id` FROM `trading_accounts` WHERE `type` = 'Live')") },
+      },
       include: [
         { model: User, attributes: leanUserAttributes, where: userWhere },
-        { model: TradingAccount, as: 'tradingAccount', where: { type: 'Live' }, required: true },
       ],
       order: [['createdAt', 'DESC']],
       limit: listLimit(req.query.limit),
