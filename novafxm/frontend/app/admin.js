@@ -2376,28 +2376,35 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
 
   const updateCompanyFreeze = useCallback((nextStatus) => {
     const freezing = nextStatus === 'suspended';
+    const prompt = freezing
+      ? 'Managers and agents will only see the Overview lock screen until the company is unfrozen.'
+      : 'Managers and agents will regain access according to their permissions.';
+    const applyStatus = async () => {
+      setCompanyStatusLoading(true);
+      try {
+        const { data: responseData } = await api.put('/master/company-status', { status: nextStatus });
+        setCompanyStatus(responseData?.company?.status || nextStatus);
+        setMessage(freezing ? 'Company access has been frozen.' : 'Company access has been restored.');
+      } catch (requestError) {
+        setError(requestError.response?.data?.message || 'Unable to update company status.');
+      } finally {
+        setCompanyStatusLoading(false);
+      }
+    };
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm(`${freezing ? 'Freeze company?' : 'Unfreeze company?'}\n\n${prompt}`)) applyStatus();
+      return;
+    }
     Alert.alert(
       freezing ? 'Freeze company?' : 'Unfreeze company?',
-      freezing
-        ? 'Managers and agents will immediately lose access to every console tab until the company is unfrozen.'
-        : 'Managers and agents will regain access according to their permissions.',
+      prompt,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: freezing ? 'Freeze Company' : 'Unfreeze Company',
           style: freezing ? 'destructive' : 'default',
-          onPress: async () => {
-            setCompanyStatusLoading(true);
-            try {
-              const { data: responseData } = await api.put('/master/company-status', { status: nextStatus });
-              setCompanyStatus(responseData?.company?.status || nextStatus);
-              setMessage(freezing ? 'Company access has been frozen.' : 'Company access has been restored.');
-            } catch (requestError) {
-              setError(requestError.response?.data?.message || 'Unable to update company status.');
-            } finally {
-              setCompanyStatusLoading(false);
-            }
-          },
+          onPress: applyStatus,
         },
       ],
     );
@@ -2477,7 +2484,14 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   };
 
   const allowedSectionIds = ['overview', 'marginAlerts', 'users', 'userManagement', 'verifications', 'deposits', 'referrals', 'withdrawals', 'userLevels', 'trades', 'addTrading', 'symbols', 'agents'];
-  const canViewSection = (sectionId) => hasPermission(sectionId);
+  const canViewSection = (sectionId) => {
+    if (companyStatus === 'suspended' && adminUser?.role !== 'master') return sectionId === 'overview';
+    return hasPermission(sectionId);
+  };
+
+  useEffect(() => {
+    if (companyStatus === 'suspended' && adminUser?.role !== 'master') setSection('overview');
+  }, [adminUser?.role, companyStatus]);
 
   useEffect(() => {
     if (!adminUser || adminUser.role === 'master') return;
@@ -6076,21 +6090,6 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     );
   };
 
-  if (companyStatus === 'suspended' && adminUser?.role !== 'master') {
-    return (
-      <View className="flex-1 items-center justify-center p-6" style={{ backgroundColor: colors.background }}>
-        <View className="w-full max-w-xl items-center rounded-3xl border p-8" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-          <ShieldCheck size={42} color={colors.danger} />
-          <Text className="mt-4 text-center text-2xl font-bold" style={{ color: colors.text }}>Company Access Frozen</Text>
-          <Text className="mt-2 text-center text-sm" style={{ color: colors.muted }}>This company console has been temporarily frozen by the Master. No dashboard sections are available. Contact Support to unlock access.</Text>
-          <Pressable onPress={signOut} className="mt-6 rounded-xl px-6 py-3" style={{ backgroundColor: colors.danger }}>
-            <Text className="font-semibold text-white">Sign Out</Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View className={mobile ? 'flex-1' : 'flex-1 flex-row'} style={{ backgroundColor: colors.background }}>
       {!hideSidebar && (
@@ -6120,6 +6119,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
           adminNotificationCount={adminNotificationCount}
           onToggleNotifications={() => setNotificationsOpen((current) => !current)}
           onReturnToMaster={() => router.replace('/master')}
+          companyFrozen={companyStatus === 'suspended'}
         />
       )}
       <Modal visible={notificationsOpen} transparent animationType="fade" onRequestClose={() => setNotificationsOpen(false)}>
@@ -6258,6 +6258,17 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
         {error ? <Text className="mb-5 rounded-xl border border-danger/40 bg-danger/10 p-4 text-danger">{error}</Text> : null}
         {section === 'overview' && canViewSection('overview') ? (
           <View>
+            {companyStatus === 'suspended' && adminUser?.role !== 'master' ? (
+              <View className="min-h-[460px] items-center justify-center rounded-3xl border p-8" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+                <ShieldCheck size={46} color={colors.danger} />
+                <Text className="mt-4 text-center text-2xl font-bold" style={{ color: colors.text }}>Company Access Frozen</Text>
+                <Text className="mt-2 max-w-xl text-center text-sm" style={{ color: colors.muted }}>This company console is temporarily locked. Contact Support to unlock access.</Text>
+                <Pressable onPress={signOut} className="mt-6 rounded-xl px-6 py-3" style={{ backgroundColor: colors.danger }}>
+                  <Text className="font-semibold text-white">Sign Out</Text>
+                </Pressable>
+              </View>
+            ) : (
+            <>
             {/* Timeframe Selector for Financial Metrics */}
             <View className="mb-4 flex-row justify-between items-center flex-wrap gap-3" style={{ zIndex: 50 }}>
               <View className="flex-row flex-wrap items-center gap-3">
@@ -6436,6 +6447,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                 </View>
               </View>
             </View>
+            </>
+            )}
           </View>
         ) : null}
         {section === 'users' && canViewSection('users') ? (

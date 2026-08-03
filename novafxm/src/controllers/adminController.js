@@ -261,7 +261,10 @@ exports.users = async (req, res, next) => {
         ],
         limit,
       }),
-      Trade.findAll({ where: { status: 'open' } }),
+      Trade.findAll({
+        where: { status: 'open' },
+        include: [{ model: TradingAccount, as: 'tradingAccount', attributes: [], where: { type: 'Live' }, required: true }],
+      }),
       tradingView.getPrices(),
       Deposit.findAll({
         attributes: [
@@ -300,9 +303,10 @@ exports.users = async (req, res, next) => {
           'userId',
           [sequelize.fn('SUM', sequelize.col('lots')), 'totalVolume'],
           [sequelize.fn('SUM', sequelize.col('profit')), 'totalClosedProfit'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'totalTradesCount'],
+          [sequelize.fn('COUNT', sequelize.col('Trade.id')), 'totalTradesCount'],
         ],
-        group: ['userId'],
+        include: [{ model: TradingAccount, as: 'tradingAccount', attributes: [], where: { type: 'Live' }, required: true }],
+        group: ['Trade.userId'],
         raw: true,
       }),
     ]);
@@ -773,7 +777,7 @@ exports.userOverview = async (req, res, next) => {
     const [trades, deposits, withdrawals, livePrices] = await Promise.all([
       Trade.findAll({
         where: { userId: user.id },
-        include: [{ model: TradingAccount, as: 'tradingAccount' }],
+        include: [{ model: TradingAccount, as: 'tradingAccount', where: { type: 'Live' }, required: true }],
         order: [['createdAt', 'DESC']],
         limit: 100,
       }),
@@ -1342,7 +1346,10 @@ exports.trades = async (req, res, next) => {
   try {
     const userWhere = req.user?.role === 'agent' ? { assignedAgentId: req.user.id } : undefined;
     const { rows, count } = await Trade.findAndCountAll({
-      include: [{ model: User, attributes: leanUserAttributes, where: userWhere }],
+      include: [
+        { model: User, attributes: leanUserAttributes, where: userWhere },
+        { model: TradingAccount, as: 'tradingAccount', where: { type: 'Live' }, required: true },
+      ],
       order: [['createdAt', 'DESC']],
       limit: listLimit(req.query.limit),
     });

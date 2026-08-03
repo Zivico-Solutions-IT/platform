@@ -158,7 +158,7 @@ function ReferralPanel({ dashboard, colors }) {
 }
 
 function accountId(account) {
-  return String(Number(account?.id || 0) + 4999).padStart(6, '0');
+  return String(Number(account?.id || 0) + 2099).padStart(6, '0');
 }
 
 function AccountPanel({ dashboard, selectedAccount, summary, colors, onAccountsChanged, onSelectAccount }) {

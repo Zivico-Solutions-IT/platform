@@ -61,6 +61,7 @@ export default function AdminSidebar({
   adminNotificationCount,
   onToggleNotifications,
   onReturnToMaster,
+  companyFrozen = false,
 }) {
   const { width } = useWindowDimensions();
   const { darkMode, colors, projectName } = useAppTheme();
@@ -85,6 +86,7 @@ export default function AdminSidebar({
   }, [mobileTabsOpen]);
 
   const visibleNavigation = navigation.filter((tab) => {
+    if (companyFrozen && adminUser?.role !== 'master') return tab.id === 'overview';
     if (tab.masterOnly) return adminUser?.role === 'master';
     if (adminUser?.role === 'master') return true;
     if (tab.adminOnly) return false;

@@ -54,7 +54,7 @@ function Stat({ label, value, colors, mobile = false }) {
 }
 
 function accountNumber(account) {
-  return String(Number(account?.id || 0) + 4999).padStart(6, '0');
+  return String(Number(account?.id || 0) + 2099).padStart(6, '0');
 }
 
 function AccountCard({ account, colors, mobile = false }) {
