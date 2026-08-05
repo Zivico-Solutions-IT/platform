@@ -545,7 +545,7 @@ export default function RegisterScreen() {
                 <TextInput
                   placeholder="First Name"
                   className="rounded-lg border px-4 py-2.5 text-sm"
-                  style={[inputStyle, Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : null]}
+                  style={inputStyle}
                   placeholderTextColor={placeholderColor}
                   value={firstName}
                   onChangeText={handleFirstNameChange}
@@ -671,7 +671,7 @@ export default function RegisterScreen() {
               <View className="relative">
                 <TextInput
                   className="rounded-lg border px-4 py-2.5 pr-11 text-sm"
-                  style={inputStyle}
+                  style={[inputStyle, Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : null]}
                   placeholder="Enter password"
                   placeholderTextColor={placeholderColor}
                   secureTextEntry={Platform.OS !== 'web' && !showPassword}
@@ -684,7 +684,7 @@ export default function RegisterScreen() {
                   onChangeText={(val) => setForm((v) => ({ ...v, password: val }))}
                 />
                 <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
+                  onPress={() => setShowPassword((visible) => !visible)}
                   className="absolute right-4 top-1/2 -translate-y-1/2"
                   accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                 >

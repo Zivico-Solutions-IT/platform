@@ -40,6 +40,7 @@ const run = async () => {
   const toDay = process.env.CATCHUP_TO || dayId(toDate);
   const fromMonth = monthId(new Date(`${fromDay}T00:00:00.000Z`));
   const toMonth = monthId(new Date(`${toDay}T00:00:00.000Z`));
+  const skipExisting = process.env.CATCHUP_SKIP_EXISTING === 'true' ? 'true' : 'false';
 
   console.log(`Catching up candles: ${fromDay}..${toDay}`);
 
@@ -50,7 +51,7 @@ const run = async () => {
     BINANCE_IMPORT_TO: toMonth,
     BINANCE_IMPORT_API_FROM: fromDay,
     BINANCE_IMPORT_API_TO: toDay,
-    BINANCE_IMPORT_SKIP_EXISTING: 'false',
+    BINANCE_IMPORT_SKIP_EXISTING: skipExisting,
   });
 
   await runScript('src/scripts/importCoinbaseCandles.js', {
@@ -65,7 +66,7 @@ const run = async () => {
     DUKASCOPY_IMPORT_TIMEFRAMES: timeframes,
     DUKASCOPY_IMPORT_FROM: fromDay,
     DUKASCOPY_IMPORT_TO: toDay,
-    DUKASCOPY_IMPORT_SKIP_EXISTING: 'false',
+    DUKASCOPY_IMPORT_SKIP_EXISTING: skipExisting,
   });
 
   await runScript('src/scripts/importDukascopyCandles.js', {
@@ -73,7 +74,14 @@ const run = async () => {
     DUKASCOPY_IMPORT_TIMEFRAMES: timeframes,
     DUKASCOPY_IMPORT_FROM: fromDay,
     DUKASCOPY_IMPORT_TO: toDay,
-    DUKASCOPY_IMPORT_SKIP_EXISTING: 'false',
+    DUKASCOPY_IMPORT_SKIP_EXISTING: skipExisting,
+  });
+
+  await runScript('src/scripts/importYahooCandles.js', {
+    YAHOO_IMPORT_SYMBOLS: process.env.CATCHUP_YAHOO_SYMBOLS || 'ESX/EUR,F40/EUR,FTS/GBP,HSI/HKD,IBX/EUR',
+    YAHOO_IMPORT_TIMEFRAMES: timeframes,
+    YAHOO_IMPORT_FROM: fromDay,
+    YAHOO_IMPORT_TO: toDay,
   });
 };
 

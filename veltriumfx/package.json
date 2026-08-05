@@ -18,6 +18,7 @@
     "import:yahoo": "node src/scripts/importYahooCandles.js",
     "import:stooq": "node src/scripts/importStooqCandles.js",
     "catchup:candles": "node src/scripts/catchupCandles.js",
+    "backfill:candles:6m": "node src/scripts/backfillSixMonths.js",
     "migrate:candles": "node src/scripts/alterCandleVolume.js",
     "check": "node --check app.js && node --check src/config/env.js && node --check src/server.js",
     "list:users": "node list_users.js"
