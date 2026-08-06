@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { ChevronDown, Sun, Moon, UserRound, Wallet, ArrowUp, Bell, LayoutDashboard, Activity } from 'lucide-react-native';
-import Svg, { Polyline, Defs, LinearGradient, Stop, Polygon, Circle, RadialGradient } from 'react-native-svg';
+import { ChevronDown, Sun, Moon, UserRound, Wallet, Bell, LayoutDashboard, Activity, Plus, RefreshCw, Settings } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
-import { money, percent, quote } from '../../utils/formatters';
+import { money, quote } from '../../utils/formatters';
 import { storage } from '../../utils/storage';
 import { useAppTheme } from '../../context/ThemeContext';
 import api from '../../services/api';
@@ -24,7 +23,7 @@ import NotificationMenu from './NotificationMenu';
 
 const visibleMetricCount = 4;
 
-export default function TopAccountBar() {
+export default function TopAccountBar({ onNewOrder }) {
   const { width } = useWindowDimensions();
   const { currentSymbol, summary, selectedTradingAccount, setSelectedTradingAccount, sidePanel, setSidePanel, transactions } = useDemoTrading();
   const params = useLocalSearchParams();
@@ -87,13 +86,13 @@ export default function TopAccountBar() {
     ['Free Funds', `${money(summaryFreeFunds)} USD`],
   ];
   const desktopMetrics = [
-    ['Balance', money(summaryBalance)],
-    ['Equity', money(summaryEquity)],
-    ['Margin', money(summaryMargin)],
-    ['Margin Level', `${money(summaryMarginLevel)}%`],
-    ['Net Profit', money(summaryNetProfit)],
-    ['Bonus', money(summaryBonus)],
-    ['Free Funds', money(summaryFreeFunds)],
+    ['Balance', money(summaryBalance), 'USD'],
+    ['Equity', money(summaryEquity), 'USD'],
+    ['Margin', money(summaryMargin), 'USD'],
+    ['Margin Level', money(summaryMarginLevel), '%'],
+    ['Net Profit', money(summaryNetProfit), 'USD'],
+    ['Bonus', money(summaryBonus), 'USD'],
+    ['Free Funds', money(summaryFreeFunds), 'USD'],
   ];
   const symbolPrice = Number(currentSymbol?.price || currentSymbol?.bid || 0);
   const symbolChange = Number(currentSymbol?.change || 0);
@@ -208,6 +207,15 @@ export default function TopAccountBar() {
   }, [routeAccountId, selectedTradingAccount?.id, setSelectedTradingAccount, tradingAccounts, hasSwitchedToLive]);
 
   const selectAccount = (account) => { setSelectedTradingAccount(account); setMenu(null); };
+  const refreshDashboard = async () => {
+    try {
+      const result = await dashboardService.getDashboard();
+      setDashboard(result);
+      updateAccounts(result.accounts || [], selectedAccount);
+    } catch {
+      // Keep the current dashboard visible when a refresh request fails.
+    }
+  };
   const updateAccounts = useCallback((nextAccounts = [], preferredAccount = null) => {
     setAccounts(nextAccounts);
     setSelectedTradingAccount((current) => {
@@ -291,7 +299,7 @@ export default function TopAccountBar() {
     <View
       className={`${mobile ? 'relative z-40 gap-1.5 px-2 py-1.5' : 'relative z-40 py-1'}`}
       style={{
-        backgroundColor: mobile ? colors.background : desktopHeaderBg,
+        backgroundColor: mobile ? colors.background : (darkMode ? desktopHeaderBg : '#ffffff'),
         borderColor: colors.border,
         borderBottomWidth: showHeaderContent ? (mobile ? 0 : 1) : 0,
         shadowColor: '#000',
@@ -354,6 +362,9 @@ export default function TopAccountBar() {
           </View>
           {/* Row 2: Account Select & Action Buttons */}
           <View className="flex-row items-center gap-2">
+            <Pressable onPress={onNewOrder} className="h-[40px] flex-row items-center justify-center rounded-xl px-3" style={{ backgroundColor: colors.accent || '#2c79bb' }}>
+              <Plus size={15} color="#fff" /><Text className="ml-1.5 text-xs font-bold text-white">New Order</Text>
+            </Pressable>
             {user ? (
               <Pressable
                 onPress={() => setMenu(menu === 'account' ? null : 'account')}
@@ -381,24 +392,6 @@ export default function TopAccountBar() {
                 <ChevronDown size={14} color={colors.muted} />
               </Pressable>
             ) : null}
-            {user && !isAdmin ? (
-              <Pressable
-                {...hoverProps('mobile-deposit')}
-                onPress={() => openSidePanel('deposit')}
-                className="h-[40px] flex-row items-center justify-center rounded-xl px-3"
-                style={[
-                  {
-                    backgroundColor: 'transparent',
-                    borderWidth: 1.5,
-                    borderColor: colors.success,
-                  },
-                  hoveredAction === 'mobile-deposit' ? { backgroundColor: `${colors.success}1A` } : null
-                ]}
-              >
-                <ArrowUp color={colors.success} size={14} strokeWidth={2.5} />
-                <Text className="ml-1 text-xs font-bold" style={{ color: colors.success }}>Deposit</Text>
-              </Pressable>
-            ) : null}
           </View>
         </View>
       ) : (
@@ -408,68 +401,23 @@ export default function TopAccountBar() {
           </Pressable>
         </View>
       )}
-      {!mobile && (
-        <>
-          <View className={`${compactDesktop ? 'h-[48px]' : 'h-[54px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
-          <View
-            className={`${compactDesktop ? 'h-[48px]' : 'h-[54px]'} flex-row items-center justify-center`}
-            style={{ paddingHorizontal: compactDesktop ? 16 : 24 }}
-          >
-            <View style={{ width: compactDesktop ? 80 : 100 }} className="justify-center">
-              <View className="flex-row justify-between items-center mb-1">
-                <Text className="text-[8px] font-bold tracking-widest uppercase" style={{ color: desktopMuted }}>Vol Rate</Text>
-                <Text className="text-[8px] font-black tracking-widest uppercase" style={{ color: symbolChange < 0 ? colors.danger : colors.success }}>
-                  {percent(symbolChange)}
-                </Text>
-              </View>
-              {(() => {
-                const symbolStr = currentSymbol?.symbol || 'BTC';
-                const isUp = symbolChange >= 0;
-                const width = compactDesktop ? 80 : 100;
-                const height = 18;
-                const stepX = width / 11;
-                
-                let points = [];
-                let lastX = 0;
-                let lastY = 0;
-                for (let i = 0; i < 12; i++) {
-                  const seed = (symbolStr.charCodeAt(i % symbolStr.length) || i) * (i + 1);
-                  const rawY = 2 + (seed % 12);
-                  const trendOffset = isUp ? (12 - i) * 0.4 : i * 0.4;
-                  const y = Math.max(1, Math.min(17, (rawY * 0.5) + trendOffset));
-                  lastX = (i * stepX).toFixed(1);
-                  lastY = y.toFixed(1);
-                  points.push(`${lastX},${lastY}`);
-                }
-                const pointsStr = points.join(' ');
-                const lineColor = isUp ? colors.success : colors.danger;
-                
-                return (
-                  <View className="overflow-hidden" style={{ height: 18, width }}>
-                    <Svg width={width} height={18} viewBox={`0 0 ${width} 18`}>
-                      <Defs>
-                        <LinearGradient id="volSpark" x1="0" y1="0" x2="0" y2="1">
-                          <Stop offset="0" stopColor={lineColor} stopOpacity="0.6" />
-                          <Stop offset="1" stopColor={lineColor} stopOpacity="0.0" />
-                        </LinearGradient>
-                        <RadialGradient id="glow" cx="50%" cy="50%" r="50%">
-                          <Stop offset="0%" stopColor={lineColor} stopOpacity="0.7" />
-                          <Stop offset="100%" stopColor={lineColor} stopOpacity="0" />
-                        </RadialGradient>
-                      </Defs>
-                      <Polygon points={`${pointsStr} ${width},18 0,18`} fill="url(#volSpark)" />
-                      <Polyline points={pointsStr} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <Circle cx={lastX} cy={lastY} r="5" fill="url(#glow)" />
-                      <Circle cx={lastX} cy={lastY} r="1.5" fill={darkMode ? '#fff' : lineColor} />
-                    </Svg>
-                  </View>
-                );
-              })()}
-            </View>
-          </View>
-          <View className={`${compactDesktop ? 'h-[48px]' : 'h-[54px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
-        </>
-      )}
+      {!mobile && user && !isAdmin ? (
+        <Pressable
+          onPress={onNewOrder}
+          className={`${compactDesktop ? 'h-[42px]' : 'h-[54px]'} flex-row items-center rounded-xl px-4`}
+          style={{
+            backgroundColor: '#1f78bd',
+            shadowColor: '#1f78bd',
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 3,
+          }}
+        >
+          <Plus size={19} strokeWidth={3} color="#fff" />
+          <Text className="ml-2 font-bold text-white">New Order</Text>
+        </Pressable>
+      ) : null}
       {mobile && !isAdmin ? (
         <ScrollView 
           ref={metricsScrollRef} 
@@ -497,57 +445,73 @@ export default function TopAccountBar() {
         </ScrollView>
       ) : !mobile && !isAdmin ? (
         <View
-          className={`${twoRowDesktop ? 'h-[42px]' : compactDesktop ? 'h-[48px]' : 'h-[54px]'} flex-row items-center px-2`}
-          style={twoRowDesktop ? { flexBasis: '100%', width: '100%', order: 2 } : { flex: 1, minWidth: 0 }}
+          className={`${twoRowDesktop ? 'h-[54px]' : compactDesktop ? 'h-[58px]' : 'h-[64px]'} flex-row items-center rounded-2xl border`}
+          style={twoRowDesktop
+            ? { flexBasis: '100%', width: '100%', order: 2, paddingLeft: 10, backgroundColor: darkMode ? colors.panel : '#ffffff', borderColor: desktopDivider }
+            : {
+                flex: 1,
+                minWidth: 0,
+                paddingLeft: 10,
+                backgroundColor: darkMode ? colors.panel : '#ffffff',
+                borderColor: desktopDivider,
+                shadowColor: '#16385f',
+                shadowOpacity: darkMode ? 0 : 0.05,
+                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: darkMode ? 0 : 1,
+              }}
         >
-          {desktopMetrics.map(([label, value], index) => (
+          {desktopMetrics.map(([label, value, unit], index) => (
             <View
               key={label}
-              className="min-w-0 justify-center px-2"
+              className="min-w-0 justify-center"
               style={{
-                width: `${100 / desktopMetrics.length}%`,
+                flex: label === 'Margin Level' ? 1.12 : 1,
+                paddingHorizontal: compactDesktop ? 8 : 12,
                 borderLeftWidth: index === 0 ? 0 : 1,
                 borderColor: desktopDivider,
               }}
             >
-              <Text className={`${compactDesktop ? 'text-[9px]' : 'text-[11px]'} font-bold uppercase tracking-wider`} numberOfLines={1} style={{ color: desktopMuted }}>{label}</Text>
-              <Text className={`mt-0.5 ${compactDesktop ? 'text-xs' : 'text-[14px]'} font-bold`} numberOfLines={1} style={{ color: label === 'Net Profit' && summaryNetProfit < 0 ? colors.danger : desktopText }}>
+              <Text className={`${compactDesktop ? 'text-[9px]' : 'text-[11px]'} font-medium`} numberOfLines={1} style={{ color: desktopMuted }}>{label}</Text>
+              <Text className={`mt-0.5 ${compactDesktop ? 'text-[15px]' : 'text-[18px]'} font-medium tracking-tight`} numberOfLines={1} style={{ color: label === 'Net Profit' && summaryNetProfit < 0 ? colors.danger : desktopText }}>
                 {label === 'Net Profit' && summaryNetProfit > 0 ? `+${value}` : value}
+                <Text className={`${compactDesktop ? 'text-[8px]' : 'text-[10px]'} font-medium`} style={{ color: label === 'Net Profit' && summaryNetProfit < 0 ? colors.danger : desktopText }}> {unit}</Text>
               </Text>
             </View>
           ))}
+          <Pressable
+            {...hoverProps('profile')}
+            onPress={() => setMenu(menu === 'profile' ? null : 'profile')}
+            className="items-center justify-center"
+            style={{ width: compactDesktop ? 38 : 46, height: '100%', cursor: 'pointer' }}
+          >
+            <View style={iconHoverStyle('profile')}><Settings size={compactDesktop ? 17 : 19} color={desktopMuted} /></View>
+          </Pressable>
         </View>
       ) : null}
       {!mobile && isAdmin ? <View style={{ flex: 1 }} /> : null}
       {!mobile && user && !isAdmin ? (
         <Pressable
           onPress={() => setMenu(menu === 'account' ? null : 'account')}
-          className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center rounded-lg border`}
+          className={`${compactDesktop ? 'h-[48px]' : 'h-[62px]'} flex-row items-center rounded-xl border`}
           style={{
-            paddingHorizontal: compactDesktop ? 10 : 12,
-            backgroundColor: menu === 'account' ? colors.surface : colors.panel,
-            borderColor: menu === 'account' ? colors.primary : colors.border,
-            shadowColor: colors.primary,
-            shadowOpacity: menu === 'account' ? (darkMode ? 0.3 : 0.2) : 0,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: menu === 'account' ? 3 : 0,
+            width: compactDesktop ? 170 : 200,
+            paddingHorizontal: compactDesktop ? 12 : 16,
+            backgroundColor: darkMode ? colors.panel : '#ffffff',
+            borderColor: menu === 'account' ? '#1f78bd' : '#e1e6eb',
             cursor: 'pointer',
           }}
         >
-          <View className="mr-2 flex-row items-center justify-center rounded px-2 py-1" style={{ backgroundColor: `${colors.primary}1A` }}>
-            <Activity size={12} color={colors.primary} className="mr-1.5" />
-            <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.primary }}>
-              {selectedAccount?.type || 'Demo'}
+          <UserRound size={22} color={desktopMuted} />
+          <View className="ml-3 min-w-0 flex-1">
+            <View className="flex-row items-center">
+              <Text className="font-bold" style={{ color: desktopText }}>{selectedAccount?.type || 'Demo'}</Text>
+              <View className="ml-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#3fd07f' }} />
+            </View>
+            <Text className="mt-0.5 text-[11px]" numberOfLines={1} style={{ color: desktopMuted }}>
+              {selectedAccount?.name || `${selectedAccount?.type || 'Demo'} account 1`}
             </Text>
           </View>
-          <ChevronDown
-            size={14}
-            color={colors.muted}
-            style={{
-              transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }],
-            }}
-          />
         </Pressable>
       ) : null}
       {isAdmin ? (
@@ -555,27 +519,9 @@ export default function TopAccountBar() {
           <View style={iconHoverStyle('admin-dashboard')}><LayoutDashboard size={20} color={iconColor('admin-dashboard')} /></View>
         </Pressable>
       ) : null}
-      <Pressable {...hoverProps('theme')} onPress={toggleTheme} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('theme', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
-        <View style={iconHoverStyle('theme')}>{darkMode ? <Sun size={20} color={iconColor('theme')} /> : <Moon size={20} color={iconColor('theme')} />}</View>
-      </Pressable>
       {user && !isAdmin ? (
-        <Pressable {...hoverProps('wallet')} onPress={openWalletMenu} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('wallet', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('wallet')}><Wallet size={20} color={iconColor('wallet')} /></View>
-        </Pressable>
-      ) : null}
-      {user ? (
-        <Pressable {...hoverProps('notifications')} onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('notifications', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('notifications')}><Bell size={20} color={iconColor('notifications')} /></View>
-          {unreadNotificationCount ? (
-            <Text className="absolute right-0 top-0 min-w-[18px] rounded-full bg-danger px-1 text-center text-[10px] font-medium text-white">
-              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-            </Text>
-          ) : null}
-        </Pressable>
-      ) : null}
-      {user ? (
-        <Pressable {...hoverProps('profile')} onPress={() => setMenu(menu === 'profile' ? null : 'profile')} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('profile', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('profile')}><UserRound size={20} color={iconColor('profile')} /></View>
+        <Pressable {...hoverProps('refresh')} onPress={refreshDashboard} className="hidden items-center justify-center rounded-xl border lg:flex" style={iconButtonStyle('refresh', { width: compactDesktop ? 48 : 62, height: compactDesktop ? 48 : 62, backgroundColor: darkMode ? colors.panel : '#ffffff', borderColor: '#e1e6eb' })}>
+          <View style={iconHoverStyle('refresh')}><RefreshCw size={21} color={desktopMuted} /></View>
         </Pressable>
       ) : null}
         </>
@@ -634,4 +580,3 @@ export default function TopAccountBar() {
     </View>
   );
 }
-

@@ -216,7 +216,7 @@ async function fetchCoinbaseNative(product, symbol, timeframe, granularity, from
     const chunkTo = Math.min(to, cursor + maxSeconds);
     const response = await axios.get(`${COINBASE_API}/${encodeURIComponent(product)}/candles`, {
       timeout: 20000,
-      headers: { 'User-Agent': 'NovaFXM' },
+      headers: { 'User-Agent': 'A5Markets' },
       params: {
         granularity,
         start: new Date(cursor * 1000).toISOString(),

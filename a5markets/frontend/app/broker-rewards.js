@@ -151,7 +151,7 @@ export default function BrokerRewardsScreen() {
         </View>
         <View className="flex-row flex-wrap gap-3">
           <Pressable onPress={() => loadDashboard().catch(() => {})} className="flex-row items-center rounded-xl border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-            <RefreshCcw size={16} color={loading ? '#D4AF37' : '#8fa0bb'} />
+            <RefreshCcw size={16} color={loading ? '#17B8B2' : '#8fa0bb'} />
             <Text className="ml-2 font-medium" style={{ color: colors.text }}>Refresh</Text>
           </Pressable>
           <Link href="/dashboard" asChild>
@@ -194,7 +194,7 @@ export default function BrokerRewardsScreen() {
             <Text className="text-xl font-medium" style={{ color: colors.text }}>My Referrals</Text>
             <Text className="mt-1" style={{ color: colors.muted }}>Every client linked to your referral code.</Text>
           </View>
-          <UsersRound size={24} color="#D4AF37" />
+          <UsersRound size={24} color="#17B8B2" />
         </View>
         <View className="gap-3">
           {referrals.map((item) => <ReferralCard key={item.id} referral={item} colors={colors} />)}

@@ -1,15 +1,16 @@
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
 import { Link, router } from 'expo-router';
 import { CheckCircle2, FileCheck2, FileText, ShieldCheck, UploadCloud } from 'lucide-react-native';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import CustomButton from '../src/components/common/CustomButton';
 import DashboardTabs from '../src/components/layout/DashboardTabs';
+import PortalLayout from '../src/components/portal/PortalLayout';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
 
 const medium = '#0B0B0B';
-const GOLD = '#D4AF37';
-const GREEN = '#014421';
+const GOLD = '#17B8B2';
+const GREEN = '#153F73';
 
 function Card({ title, children, colors }) {
   return (
@@ -69,6 +70,7 @@ export default function VerificationScreen() {
   const { user, refreshUser } = useAuth();
   const { colors } = useAppTheme();
   const verificationStatus = user?.verificationStatus || 'unverified';
+  const VerificationLayout = String(user?.role || 'user').toLowerCase() === 'user' ? PortalLayout : Fragment;
 
   useEffect(() => {
     refreshUser?.().catch(() => {});
@@ -76,7 +78,7 @@ export default function VerificationScreen() {
 
   if (verificationStatus === 'approved') {
     return (
-      <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
+      <VerificationLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
         <AccountDashboardHeader user={user} colors={colors} />
         <View className="w-full max-w-[640px] mx-auto items-center rounded-2xl border p-6 sm:p-10" style={{ backgroundColor: colors.panel, borderColor: GREEN }}>
           <View className="mb-6 h-20 w-20 items-center justify-center rounded-full" style={{ backgroundColor: GREEN }}>
@@ -86,26 +88,26 @@ export default function VerificationScreen() {
           <Text className="mt-3 text-center text-sm sm:text-base" style={{ color: colors.muted }}>Your account is verified. You now have access to all enabled account features.</Text>
           <CustomButton title="Go to Dashboard" onPress={() => router.push('/dashboard')} className="mt-8 w-full sm:w-auto sm:min-w-[190px]" />
         </View>
-      </ScrollView>
+      </ScrollView></VerificationLayout>
     );
   }
 
   if (verificationStatus === 'rejected') {
     return (
-      <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
+      <VerificationLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
         <AccountDashboardHeader user={user} colors={colors} />
         <View className="w-full max-w-[640px] mx-auto items-center rounded-2xl border border-danger/60 bg-danger/10 p-6 sm:p-10">
           <Text className="text-center text-3xl sm:text-4xl font-medium" style={{ color: colors.text }}>Try Again</Text>
           <Text className="mt-3 text-center text-sm sm:text-base" style={{ color: colors.muted }}>Your verification was not approved. Upload clear ID proof and address proof photos again.</Text>
           <CustomButton title="Upload Again" onPress={() => router.push('/verification-upload')} className="mt-8 w-full sm:w-auto sm:min-w-[190px]" />
         </View>
-      </ScrollView>
+      </ScrollView></VerificationLayout>
     );
   }
 
   if (verificationStatus === 'pending') {
     return (
-      <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
+      <VerificationLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
         <AccountDashboardHeader user={user} colors={colors} />
         <View className="w-full max-w-[640px] mx-auto items-center rounded-2xl border p-6 sm:p-10" style={{ backgroundColor: colors.panel, borderColor: GOLD }}>
           <View className="mb-6 h-20 w-20 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(212, 175, 55, .14)' }}>
@@ -115,12 +117,12 @@ export default function VerificationScreen() {
           <Text className="mt-3 text-center text-sm sm:text-base" style={{ color: colors.muted }}>Waiting for admin review. You will see the result here once it is reviewed.</Text>
           <CustomButton title="Go to Dashboard" onPress={() => router.push('/dashboard')} className="mt-8 w-full sm:w-auto sm:min-w-[190px]" />
         </View>
-      </ScrollView>
+      </ScrollView></VerificationLayout>
     );
   }
 
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8">
+    <VerificationLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8">
       <AccountDashboardHeader user={user} colors={colors} />
 
       <View className="gap-4">
@@ -194,6 +196,6 @@ export default function VerificationScreen() {
           className="max-w-[180px]"
         />
       </View>
-    </ScrollView>
+    </ScrollView></VerificationLayout>
   );
 }

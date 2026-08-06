@@ -245,7 +245,7 @@ function ReferralsDropdown({ count, expanded, onPress }) {
           <Text className={`mt-0.5 ${mobile ? 'text-[10px]' : 'text-[11px]'}`} style={{ color: colors.muted }}>{count} linked client{count === 1 ? '' : 's'}</Text>
         </View>
         <View className={`ml-3 items-center justify-center rounded-full ${mobile ? 'h-6 w-6' : 'h-7 w-7'}`} style={{ backgroundColor: colors.panel }}>
-          <ChevronDown size={mobile ? 14 : 16} color="#D4AF37" style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }} />
+          <ChevronDown size={mobile ? 14 : 16} color="#17B8B2" style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }} />
         </View>
       </View>
     </Pressable>

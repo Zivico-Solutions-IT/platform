@@ -438,7 +438,7 @@ export default function RegisterScreen() {
     outlineStyle: 'none',
   };
   const labelStyle = { color: colors.muted };
-  const linkColor = darkMode ? colors.primary : '#014421';
+  const linkColor = darkMode ? colors.primary : '#153F73';
 
   const submit = async () => {
   const trimmedFirstName = form.name.split(' ')[0]?.trim() || '';
@@ -531,22 +531,17 @@ export default function RegisterScreen() {
   return (
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
       <View className="min-h-full items-center justify-center px-4 py-10">
-        <View className="relative w-full max-w-md rounded-2xl px-6 py-5 shadow-xl" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1 }}>
-
-          {/* Logo Badge */}
-          <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-            <View className="rounded-xl px-3 py-2 shadow-md" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1 }}>
-              <NovaLogo dark={darkMode} width={120} height={36} />
-            </View>
-          </View>
-
+        <View className="mb-5 items-center">
+          <NovaLogo dark={darkMode} width={190} height={68} />
+        </View>
+        <View className="a5-auth-shell relative w-full max-w-xl rounded-[28px] px-7 py-7 shadow-xl" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1 }}>
           {/* Header */}
-          <View className="mt-5">
+          <View>
             <Text className="text-center text-2xl font-semimedium" style={{ color: colors.text }}>
-              Welcome to <Text style={{ color: linkColor }}>Novafxm!</Text>
+              Open your <Text style={{ color: '#17b8b2' }}>A5 Markets</Text> account
             </Text>
             <Text className="mt-2 text-center text-sm" style={labelStyle}>
-              Credentials are only used to authenticate. All saved data will be stored in your database.
+              One secure profile for currencies, metals, indices and digital assets.
             </Text>
           </View>
 
@@ -772,7 +767,7 @@ export default function RegisterScreen() {
             <Pressable
               onPress={submit}
               disabled={loading}
-              className="w-full rounded-lg bg-[#014421] py-2.5 items-center shadow-md"
+              className="w-full rounded-lg bg-[#153F73] py-2.5 items-center shadow-md"
               style={{ opacity: loading ? 0.7 : 1 }}
             >
               <Text className="text-white font-semimedium text-sm">{loading ? 'Signing up...' : 'Sign Up'}</Text>

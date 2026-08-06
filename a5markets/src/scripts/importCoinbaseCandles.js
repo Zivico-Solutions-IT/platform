@@ -99,7 +99,7 @@ const parseCoinbaseCandles = (rows) => rows.map((cols) => ({
 const fetchCoinbaseCandles = async (product, granularity, fromDate, toDate) => {
   const response = await axios.get(`${COINBASE_API}/${encodeURIComponent(product)}/candles`, {
     timeout: 20000,
-    headers: { 'User-Agent': 'NovaFXM' },
+    headers: { 'User-Agent': 'A5Markets' },
     params: {
       granularity,
       start: fromDate.toISOString(),

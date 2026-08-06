@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import {
@@ -17,7 +17,7 @@ import {
   UserRound,
 } from 'lucide-react-native';
 import CustomButton from '../src/components/common/CustomButton';
-import DashboardTabs from '../src/components/layout/DashboardTabs';
+import PortalLayout from '../src/components/portal/PortalLayout';
 import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
 import { useAppTheme } from '../src/context/ThemeContext';
@@ -264,7 +264,7 @@ function SettingsMenuItem({ icon: Icon, title, subtitle, active, onPress }) {
   return (
     <Pressable onPress={onPress} className={`flex-row items-center rounded-xl p-4 ${active ? 'border-l-4 border-primary' : ''}`} style={{ backgroundColor: active ? `${colors.primary}1a` : 'transparent' }}>
       <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: active ? `${colors.primary}33` : colors.surface }}>
-        <Icon size={19} color={active ? '#D4AF37' : '#9CA3AF'} />
+        <Icon size={19} color={active ? '#17B8B2' : '#9CA3AF'} />
       </View>
       <View>
         <Text className="font-medium" style={{ color: active ? colors.primary : colors.text }}>{title}</Text>
@@ -378,8 +378,8 @@ function AccountInfoTile({ label, value, badge, tone = 'success' }) {
   const toneStyle = tone === 'danger'
     ? { backgroundColor: '#f24d5826', color: '#f24d58' }
     : tone === 'warning'
-      ? { backgroundColor: '#D4AF3726', color: '#D4AF37' }
-      : { backgroundColor: '#12cf7a26', color: '#12cf7a' };
+      ? { backgroundColor: '#17B8B226', color: '#17B8B2' }
+      : { backgroundColor: '#0C9F9126', color: '#0C9F91' };
 
   return (
     <View className="min-w-[160px] flex-1">
@@ -402,7 +402,7 @@ function SettingsPanel({ icon: Icon, title, subtitle, children }) {
     <View className="rounded-2xl border p-5 lg:p-7" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
       <View className="mb-6 flex-row items-center">
         <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
-          <Icon size={20} color="#D4AF37" />
+          <Icon size={20} color="#17B8B2" />
         </View>
         <View className="flex-1">
           <Text className="text-2xl font-medium" style={{ color: colors.text }}>{title}</Text>
@@ -943,20 +943,17 @@ export default function SettingsScreen() {
   const showTrc20Form = !savedTrc20Detail || trc20Rejected || (editingPayoutType === 'TRC20' && Boolean(editingBankAccountId));
   const showBep20Form = !savedBep20Detail || bep20Rejected || (editingPayoutType === 'BEP20' && Boolean(editingBankAccountId));
   const mobileLayout = width < 640;
+  const SettingsLayout = String(user?.role || 'user').toLowerCase() === 'user' ? PortalLayout : Fragment;
 
   return (
+    <SettingsLayout>
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-4 lg:p-8">
       <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
         <View className="min-w-0 flex-1">
           <Text className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>Settings</Text>
           <Text className="mt-1" style={{ color: colors.muted }}>Manage your account preferences and security</Text>
         </View>
-        <Pressable onPress={() => router.push('/dashboard')} className="rounded-xl border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-          <Text className="font-medium text-primary">Back to Dashboard</Text>
-        </Pressable>
       </View>
-
-      <DashboardTabs activeKey="settings" />
 
       <View
         className="overflow-hidden rounded-2xl border"
@@ -1090,15 +1087,15 @@ export default function SettingsScreen() {
                     ) : null}
                   </View>
                 ) : null}
-                <Text className="mt-6 text-xl font-medium" style={{ color: colors.text }}>{profileForm.name || 'NovaFXM User'}</Text>
-                <View className="mt-3 rounded-lg px-3 py-2" style={{ backgroundColor: user?.verificationStatus === 'approved' ? '#12cf7a26' : '#D4AF3726' }}>
-                  <Text className="font-medium" style={{ color: user?.verificationStatus === 'approved' ? '#12cf7a' : '#D4AF37' }}>
+                <Text className="mt-6 text-xl font-medium" style={{ color: colors.text }}>{profileForm.name || 'A5 Markets Client'}</Text>
+                <View className="mt-3 rounded-lg px-3 py-2" style={{ backgroundColor: user?.verificationStatus === 'approved' ? '#0C9F9126' : '#17B8B226' }}>
+                  <Text className="font-medium" style={{ color: user?.verificationStatus === 'approved' ? '#0C9F91' : '#17B8B2' }}>
                     {user?.verificationStatus === 'approved' ? 'Verified' : 'Not Verified'}
                   </Text>
                 </View>
                 <View className="mt-4 flex-row items-center">
                   <CalendarDays size={15} color="#8fa0bb" />
-                  <Text className="ml-2" style={{ color: colors.muted }}>Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'NovaFXM'}</Text>
+                  <Text className="ml-2" style={{ color: colors.muted }}>Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'A5 Markets'}</Text>
                 </View>
               </View>
 
@@ -1117,7 +1114,7 @@ export default function SettingsScreen() {
             <View className="rounded-2xl border p-5 lg:p-7" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
             <View className="mb-6 flex-row items-center">
               <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
-                <LockKeyhole size={20} color="#D4AF37" />
+                <LockKeyhole size={20} color="#17B8B2" />
               </View>
               <View>
                 <Text className="text-2xl font-medium" style={{ color: colors.text }}>Change Password</Text>
@@ -1171,7 +1168,7 @@ export default function SettingsScreen() {
             <View className="mt-5 rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
               <View className="mb-4 flex-row items-center">
                 <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
-                  <Shield size={18} color="#D4AF37" />
+                  <Shield size={18} color="#17B8B2" />
                 </View>
                 <View className="flex-1">
                   <Text className="text-lg font-medium" style={{ color: colors.text }}>Forgot Password</Text>
@@ -1429,7 +1426,7 @@ export default function SettingsScreen() {
             <SettingsPanel icon={LogOut} title="Session" subtitle="Manage your current login session.">
               <View className="rounded-xl border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
                 <Text className="font-medium" style={{ color: colors.text }}>Current Session</Text>
-                <Text className="mt-2 text-sm" style={{ color: colors.muted }}>Signed in as {user?.email || 'NovaFXM user'}.</Text>
+                <Text className="mt-2 text-sm" style={{ color: colors.muted }}>Signed in as {user?.email || 'A5 Markets client'}.</Text>
               </View>
               <CustomButton title="Logout" variant="danger" onPress={signOut} className="mt-5 max-w-[220px]" />
             </SettingsPanel>
@@ -1437,5 +1434,6 @@ export default function SettingsScreen() {
         </View>
       </View>
     </ScrollView>
+    </SettingsLayout>
   );
 }

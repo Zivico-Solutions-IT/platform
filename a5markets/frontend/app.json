@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "NovaFXM",
-    "slug": "novafxm",
-    "scheme": "novafxm",
+    "name": "A5 Markets",
+    "slug": "a5markets",
+    "scheme": "a5markets",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0B0B0B",
     "ios": {
-      "bundleIdentifier": "com.novafxm.mobile",
+      "bundleIdentifier": "com.a5markets.mobile",
       "supportsTablet": true,
       "infoPlist": {
         "NSAppTransportSecurity": {
@@ -18,7 +18,7 @@
       }
     },
     "android": {
-      "package": "com.novafxm.mobile",
+      "package": "com.a5markets.mobile",
       "permissions": ["INTERNET"],
       "usesCleartextTraffic": true,
       "adaptiveIcon": {

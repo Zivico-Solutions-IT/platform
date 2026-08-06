@@ -8,30 +8,13 @@ import OrderPanel from '../order/OrderPanel';
 import SymbolPanel from '../market/SymbolPanel';
 import InsufficientFundsModal from '../order/InsufficientFundsModal';
 import OpenPositions from '../positions/OpenPositions';
-import AccountSummary from '../account/AccountSummary';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
-import BirthdayWidget from '../account/BirthdayWidget';
 import BirthdayModal from '../account/BirthdayModal';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
-
-function OrderRail({ summary, user, showSummary = true, showAvailableMargin = true }) {
-  return (
-    <View className="h-full overflow-hidden" style={{ width: 300, maxWidth: '100%', overflow: 'hidden', height: '100%' }}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: 12, paddingBottom: 12 }}
-        style={{ flex: 1 }}
-      >
-        <BirthdayWidget />
-        <OrderPanel showAvailableMargin={showAvailableMargin} />
-        {showSummary ? <AccountSummary summary={summary} user={user} /> : null}
-      </ScrollView>
-    </View>
-  );
-}
+import A5MarketOrderModal from '../order/A5MarketOrderModal';
 
 function MobileSymbolWatchlist({ onSelectSymbol }) {
   const { prices, selectedSymbol, setSelectedSymbol } = useDemoTrading();
@@ -41,7 +24,7 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
   const [symbolTabMenuOpen, setSymbolTabMenuOpen] = useState(false);
   const [favoriteSymbols, setFavoriteSymbols] = useState([]);
 
-  const symbolTabs = ['Popular', 'Crypto CFD', 'Energies', 'Forex', 'Indices', 'Metals'];
+  const symbolTabs = ['Popular', 'Crypto CFD', 'Energies', 'Forex', 'Indices', 'Metals', 'Shares USA CFD'];
 
   const ui = useMemo(() => ({
     background: darkMode ? '#0e1726' : colors.background,
@@ -126,9 +109,11 @@ export default function TradingLayout() {
   const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
+  const [newOrderOpen, setNewOrderOpen] = useState(false);
+
+  const newOrderModal = <A5MarketOrderModal visible={newOrderOpen} onClose={() => setNewOrderOpen(false)} />;
 
   const desktop = width >= 1100;
-  const tablet = width >= 760;
   const mobile = width < 760;
   const chartAreaHeight = desktop
     ? Math.max(560, Math.min(680, height - 150))
@@ -151,7 +136,7 @@ export default function TradingLayout() {
   if (mobile) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
-        {!chartFullscreen && <TopAccountBar />}
+        {!chartFullscreen && <TopAccountBar onNewOrder={() => setNewOrderOpen(true)} />}
         <View className="flex-1" style={{ paddingBottom: chartFullscreen ? 0 : 48 }}>
           {mobileTab === 'symbols' ? (
             <View className="flex-1 p-2">
@@ -251,13 +236,14 @@ export default function TradingLayout() {
           onClose={() => setInsufficientFundsVisible(false)}
         />
         <BirthdayModal />
+        {newOrderModal}
       </View>
     );
   }
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
-      {!chartFullscreen && <TopAccountBar />}
+      {!chartFullscreen && <TopAccountBar onNewOrder={() => setNewOrderOpen(true)} />}
       <ScrollView
         scrollEnabled={!chartFullscreen}
         keyboardShouldPersistTaps="handled"
@@ -269,20 +255,10 @@ export default function TradingLayout() {
           style={{ height: chartFullscreen ? undefined : chartAreaHeight, overflow: chartFullscreen ? 'visible' : 'hidden' }}
         >
           {desktop ? (
-            <>
-              <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              {!chartFullscreen && (
-                <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} />
-              )}
-            </>
+            <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
           ) : (
             <>
               <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              {!chartFullscreen && (
-                <View className={tablet ? 'flex-row gap-3' : 'gap-1.5'}>
-                  {!mobile ? <OrderRail summary={summary} user={user} /> : null}
-                </View>
-              )}
             </>
           )}
         </View>
@@ -294,6 +270,7 @@ export default function TradingLayout() {
         onClose={() => setInsufficientFundsVisible(false)}
       />
       <BirthdayModal />
+      {newOrderModal}
     </View>
   );
 }

@@ -1,8 +1,8 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-const API_PORT = '5000';
-const PRODUCTION_API_URL = 'https://server.novafxm.com/api';
+const API_PORT = '5002';
+const PRODUCTION_API_URL = 'https://server.a5markets.com/api';
 
 const normalizeApiUrl = (value) => {
   if (!value) return null;

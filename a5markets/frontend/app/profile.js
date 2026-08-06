@@ -6,6 +6,7 @@ import CustomButton from '../src/components/common/CustomButton';
 import { useAuth } from '../src/hooks/useAuth';
 import { useDemoTrading } from '../src/hooks/useDemoTrading';
 import { useAppTheme } from '../src/context/ThemeContext';
+import PortalLayout from '../src/components/portal/PortalLayout';
 
 export default function ProfileScreen() {
   const { user, updateProfile, logout } = useAuth();
@@ -16,7 +17,7 @@ export default function ProfileScreen() {
     router.replace('/login');
   };
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-5 lg:p-8 mx-auto w-full max-w-[1180px]">
+    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: '#f4f8fc' }} contentContainerClassName="p-5 lg:p-8 mx-auto w-full max-w-[1180px]">
       <View className="mb-6 flex-row items-center justify-between">
         <Text className="text-2xl font-medium" style={{ color: colors.text }}>Profile</Text>
         <Link href="/trading" asChild><Pressable><Text className="text-primary font-medium">Back to Trading</Text></Pressable></Link>
@@ -33,6 +34,6 @@ export default function ProfileScreen() {
           TradingView Lightweight Charts(TM) Copyright (c) 2025 TradingView, Inc.
         </Link>
       </Text>
-    </ScrollView>
+    </ScrollView></PortalLayout>
   );
 }

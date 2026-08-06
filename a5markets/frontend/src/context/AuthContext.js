@@ -16,8 +16,8 @@ const transferredSession = (() => {
           handoff.targetOrigin === window.location.origin &&
           handoff.token && handoff.user) {
         window.name = '';
-        localStorage.setItem('novafxm_token', JSON.stringify(handoff.token));
-        localStorage.setItem('novafxm_user', JSON.stringify(handoff.user));
+        localStorage.setItem('a5markets_token', JSON.stringify(handoff.token));
+        localStorage.setItem('a5markets_user', JSON.stringify(handoff.user));
         return { token: handoff.token, user: handoff.user };
       }
     } catch {
@@ -32,8 +32,8 @@ const transferredSession = (() => {
   if (!token || !encodedUser) return null;
   try {
     const user = JSON.parse(encodedUser);
-    localStorage.setItem('novafxm_token', JSON.stringify(token));
-    localStorage.setItem('novafxm_user', encodedUser);
+    localStorage.setItem('a5markets_token', JSON.stringify(token));
+    localStorage.setItem('a5markets_user', encodedUser);
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.hash}`);
     return { token, user };
   } catch {
@@ -115,7 +115,7 @@ export function AuthProvider({ children }) {
       if (!isDev) {
         const isAdminSubdomain = hostname.startsWith('admin.');
         if (isAdminSubdomain) {
-          const mainDomain = 'novafxm.com';
+          const mainDomain = 'a5markets.com';
           window.location.href = `${window.location.protocol}//${mainDomain}?action=logout`;
         }
       }

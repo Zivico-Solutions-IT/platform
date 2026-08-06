@@ -19,9 +19,12 @@ function AppStack() {
     if (Platform.OS !== 'web') return;
     if (!pathname) return; // Guard against null/undefined pathname during initialization
 
-    const hostname = window.location.hostname;
-    // Single domain routing for all roles (Master, Manager, Agent, User)
-    return;
+    const hostname = window.location.hostname.toLowerCase();
+    if (hostname === 'portal.a5markets.com' && (pathname === '/' || pathname === '/trading')) {
+      router.replace('/dashboard');
+    } else if (hostname === 'platform.a5markets.com' && pathname === '/') {
+      router.replace('/trading');
+    }
   }, [pathname]);
 
   return (

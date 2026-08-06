@@ -1,13 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const keys = {
-  token: 'novafxm_token',
-  user: 'novafxm_user',
-  positions: 'novafxm_positions',
-  closed: 'novafxm_closed_positions',
-  wallet: 'novafxm_wallet',
-  transactions: 'novafxm_transactions',
-  selectedSymbol: 'novafxm_selected_symbol',
+  token: 'a5markets_token',
+  user: 'a5markets_user',
+  positions: 'a5markets_positions',
+  closed: 'a5markets_closed_positions',
+  wallet: 'a5markets_wallet',
+  transactions: 'a5markets_transactions',
+  selectedSymbol: 'a5markets_selected_symbol',
 };
 
 export const storage = {

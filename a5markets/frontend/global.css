@@ -6,6 +6,47 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(23, 184, 178, .18), transparent 28rem),
+    radial-gradient(circle at 92% 18%, rgba(44, 121, 187, .18), transparent 32rem),
+    #eef6f9;
+}
+
+@keyframes a5-rise {
+  from { opacity: 0; transform: translateY(18px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes a5-sheen {
+  0% { transform: translateX(-140%) skewX(-18deg); }
+  100% { transform: translateX(240%) skewX(-18deg); }
+}
+
+.a5-auth-shell { animation: a5-rise .55s cubic-bezier(.2,.8,.2,1) both; overflow: hidden; }
+.a5-auth-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(90deg, #153f73, #17b8b2, #2c79bb);
+}
+.a5-auth-shell::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 90px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.32), transparent);
+  animation: a5-sheen 5.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
 [role='button'],
 input,
 textarea {
@@ -19,7 +60,7 @@ textarea:focus {
 }
 
 .deep-green-scrollbar {
-  scrollbar-color: #8c8c8c #fafaf6;
+  scrollbar-color: #17b8b2 #eef6f9;
   scrollbar-width: thin;
 }
 
@@ -29,36 +70,36 @@ textarea:focus {
 }
 
 .deep-green-scrollbar::-webkit-scrollbar-track {
-  background: #fafaf6;
-  border-left: 1px solid rgba(212, 175, 55, .14);
+  background: #eef6f9;
+  border-left: 1px solid rgba(21, 63, 115, .12);
 }
 
 .deep-green-scrollbar::-webkit-scrollbar-thumb {
-  background: #8c8c8c;
-  border: 2px solid #fafaf6;
+  background: #17b8b2;
+  border: 2px solid #eef6f9;
   border-radius: 999px;
 }
 
 .deep-green-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #666666;
+  background: #153f73;
 }
 
 /* Dark mode overrides */
 .dark .deep-green-scrollbar {
-  scrollbar-color: rgba(212, 175, 55, .72) #12161c;
+  scrollbar-color: #36d0cb #0d2239;
 }
 
 .dark .deep-green-scrollbar::-webkit-scrollbar-track {
-  background: #12161c;
+  background: #0d2239;
 }
 
 .dark .deep-green-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, .72);
-  border: 2px solid #12161c;
+  background: #36d0cb;
+  border: 2px solid #0d2239;
 }
 
 .dark .deep-green-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #D4AF37;
+  background: #2c79bb;
 }
 
 #admin-sidebar-backdrop {

@@ -8,8 +8,8 @@ import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
 
 const medium = '#0B0B0B';
-const GOLD = '#D4AF37';
-const GREEN = '#014421';
+const GOLD = '#17B8B2';
+const GREEN = '#153F73';
 
 function fileName(file) {
   return file?.name || file?.uri?.split('/').pop() || '';

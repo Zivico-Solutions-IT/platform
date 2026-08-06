@@ -4,7 +4,7 @@ import { money } from '../../utils/formatters';
 export default function ProfileCard({ user, balance }) {
   const items = [
     ['Name', user?.name || 'Demo Trader'],
-    ['Email', user?.email || 'demo@novafxm.com'],
+    ['Email', user?.email || 'demo@a5markets.com'],
     ['Phone', user?.phone || '-'],
     ['Account Type', user?.accountType || 'Demo'],
     ['Wallet Balance', `${money(balance)} USD`],

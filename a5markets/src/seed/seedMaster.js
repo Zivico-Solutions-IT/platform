@@ -28,12 +28,12 @@ async function seedMaster() {
     await master.update({ password: masterPassword, role: 'master' });
   }
 
-  // 2. Ensure admin@novafxm.com
+  // 2. Ensure the A5 Markets administrator
   const [admin, adminCreated] = await User.findOrCreate({
-    where: { email: 'admin@novafxm.com' },
+    where: { email: 'admin@a5markets.com' },
     defaults: {
-      name: 'NOVA FXM Admin',
-      email: 'admin@novafxm.com',
+      name: 'A5 Markets Admin',
+      email: 'admin@a5markets.com',
       password: adminPassword,
       role: 'admin',
       accountType: 'Live',
@@ -44,12 +44,12 @@ async function seedMaster() {
     await admin.update({ password: adminPassword, role: 'admin' });
   }
 
-  console.log('✅ NovaFXM Master (master@novafxm.com / master123) is ready!');
-  console.log('✅ NovaFXM Admin (admin@novafxm.com / admin123) is ready!');
+  console.log('✅ Shared master account is ready for A5 Markets.');
+  console.log('✅ A5 Markets administrator is ready.');
   await sequelize.close();
 }
 
 seedMaster().catch((err) => {
-  console.error('Failed to seed NovaFXM Master:', err.message);
+  console.error('Failed to seed A5 Markets master data:', err.message);
   process.exitCode = 1;
 });

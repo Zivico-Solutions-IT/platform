@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image } from 'react-native';
 import { storage } from '../../utils/storage';
 
-const logoImage = require('../../../assets/novafxm logo cropped.png');
-const darkLogoImage = require('../../../assets/novafxm logo dark cropped.png');
-const veltriumLogo = require('../../../assets/veltriumfx-logo.png');
-const veltriumDarkLogo = require('../../../assets/veltriumfx-logo-dark.png');
+const logoImage = require('../../../assets/a5markets-logo.png');
 
 export default function NovaLogo({ dark = false, width = 190, height = 46 }) {
   const [projectName, setProjectName] = useState('');
@@ -26,16 +23,11 @@ export default function NovaLogo({ dark = false, width = 190, height = 46 }) {
     return () => clearInterval(interval);
   }, []);
 
-  const isVeltrium = /veltrium/i.test(projectName);
-  const source = isVeltrium
-    ? (dark ? veltriumDarkLogo : veltriumLogo)
-    : (dark ? darkLogoImage : logoImage);
-
   return (
     <Image
-      source={source}
+      source={logoImage}
       resizeMode="contain"
-      style={{ width: isVeltrium ? width + 15 : width, height }}
+      style={{ width: width + 12, height }}
     />
   );
 }

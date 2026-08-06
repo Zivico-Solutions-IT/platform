@@ -545,7 +545,7 @@ function AdminProfileModal({ visible, user, busyAction, error, onClose, onSavePr
               <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: colors.muted, marginBottom: 8 }}>Referral Link</Text>
               <View style={{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.panel, borderWidth: 1, borderColor: colors.border }}>
                 <Text style={{ fontSize: 12, fontWeight: '500', color: roleColor }} selectable={true} numberOfLines={1}>
-                  {typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}/register?ref=${user.referralCode}` : `https://novafxm.com/register?ref=${user.referralCode}`}
+                  {typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}/register?ref=${user.referralCode}` : `https://platform.a5markets.com/register?ref=${user.referralCode}`}
                 </Text>
               </View>
             </View>
@@ -1720,7 +1720,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       background: colors.surface,
       text: colors.text,
       border: colors.border,
-      up: '#12cf7a',
+      up: '#0C9F91',
       down: colors.danger,
       grid: colors.border,
       accent: colors.primary,
@@ -2015,7 +2015,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       if (!token || !user) throw new Error('A client session could not be created.');
 
       const localHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-      const configuredOrigin = String(process.env.EXPO_PUBLIC_PLATFORM_URL || 'https://platform.novafxm.com')
+      const configuredOrigin = String(process.env.EXPO_PUBLIC_PLATFORM_URL || 'https://platform.a5markets.com')
         .replace(/\/(login|register|trading)\/?$/, '')
         .replace(/\/$/, '');
       const clientOrigin = localHost ? window.location.origin : configuredOrigin;

@@ -224,23 +224,25 @@ export function TradingProvider({ children }) {
       }
       const quantity = Number(lots);
       if (!quantity || quantity <= 0) throw new Error('Enter a valid lot size.');
-      const orderPrice = Number(side === 'BUY' ? currentSymbol.ask : currentSymbol.bid) || currentSymbol.price || 0;
-      const requiredMargin = calculateRequiredMargin(selectedSymbol, quantity, orderPrice, user.leverage);
+      const orderSymbol = options.symbol || selectedSymbol;
+      const orderMarket = prices.find((item) => item.symbol === orderSymbol) || currentSymbol;
+      const orderPrice = Number(side === 'BUY' ? orderMarket.ask : orderMarket.bid) || orderMarket.price || 0;
+      const requiredMargin = calculateRequiredMargin(orderSymbol, quantity, orderPrice, user.leverage);
       if (summary.freeFunds < requiredMargin) {
         setInsufficientFundsVisible(true);
         throw new Error('Insufficient free funds.');
       }
-      const price = side === 'BUY' ? currentSymbol.ask : currentSymbol.bid;
+      const price = side === 'BUY' ? orderMarket.ask : orderMarket.bid;
       let position = {
         id: String(Date.now()),
-        symbol: selectedSymbol,
+        symbol: orderSymbol,
         side,
         lots: quantity,
         openPrice: price,
         openedAt: new Date().toISOString(),
       };
       const result = await tradeService.open({
-        symbol: selectedSymbol,
+        symbol: orderSymbol,
         side,
         lots: quantity,
         tradingAccountId: selectedAccountId,
@@ -251,7 +253,7 @@ export function TradingProvider({ children }) {
       position = result.trade;
       setPositions((existing) => [position, ...existing]);
     },
-    [currentSymbol, selectedAccountId, selectedSymbol, summary.freeFunds, user],
+    [currentSymbol, prices, selectedAccountId, selectedSymbol, summary.freeFunds, user],
   );
 
   const createPendingOrder = useCallback(

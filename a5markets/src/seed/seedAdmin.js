@@ -13,7 +13,7 @@ async function seedAdmin() {
   const password = await bcrypt.hash(plainPassword, 12);
   const [admin] = await User.findOrCreate({
     where: { email },
-    defaults: { name: 'NOVA FXM Admin', phone: null, password, role: 'admin', accountType: 'Live' },
+    defaults: { name: 'A5 Markets Admin', phone: null, password, role: 'admin', accountType: 'Live' },
   });
   if (admin.role !== 'admin') await admin.update({ password, role: 'admin', accountType: 'Live' });
   await Wallet.findOrCreate({ where: { userId: admin.id }, defaults: { balance: 0 } });

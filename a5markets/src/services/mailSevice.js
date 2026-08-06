@@ -22,7 +22,7 @@ const createTransporter = () => {
 
 const sendPasswordResetCode = async ({ to, code }) => {
   const from = process.env.MAIL_FROM || process.env.SMTP_USER;
-  const appName = process.env.APP_NAME || 'NovaFXM';
+  const appName = process.env.APP_NAME || 'A5 Markets';
   const transporter = createTransporter();
 
   await transporter.sendMail({

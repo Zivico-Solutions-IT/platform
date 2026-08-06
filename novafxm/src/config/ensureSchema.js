@@ -95,6 +95,14 @@ async function ensureSchema() {
     veltriumProjectId = veltriumProjects[0].id;
   }
 
+  // Register A5 Markets in the shared master company directory.
+  const [a5Projects] = await queryInterface.sequelize.query('SELECT id FROM projects WHERE identifier = "a5markets"');
+  if (a5Projects.length === 0) {
+    await queryInterface.sequelize.query(
+      `INSERT INTO projects (name, identifier, status, created_at, updated_at) VALUES ('A5 Markets', 'a5markets', 'active', NOW(), NOW())`
+    );
+  }
+
 
   await addColumnIfMissing(queryInterface, 'users', 'leverage', {
     type: DataTypes.INTEGER.UNSIGNED,

@@ -212,7 +212,7 @@ export default function LoginScreen() {
     outlineStyle: 'none',
   };
   const labelStyle = { color: colors.muted };
-  const linkColor = darkMode ? colors.primary : '#014421';
+  const linkColor = darkMode ? colors.primary : '#153f73';
 
   // Step indicator dots for forgot password flow
   const StepIndicator = ({ currentStep }) => {
@@ -226,7 +226,7 @@ export default function LoginScreen() {
             style={{
               width: currentStep === step ? 24 : 8,
               height: 8,
-              backgroundColor: currentStep >= step ? '#014421' : (darkMode ? colors.border : '#E5E7EB'),
+              backgroundColor: currentStep >= step ? '#153F73' : (darkMode ? colors.border : '#E5E7EB'),
               borderRadius: 4,
             }}
           />
@@ -244,6 +244,9 @@ export default function LoginScreen() {
     return (
       <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
         <View className="min-h-full items-center justify-center px-5 py-10">
+          <View className="mb-5 items-center">
+            <NovaLogo dark={darkMode} width={190} height={68} />
+          </View>
           <View
             className="relative w-full max-w-md rounded-[24px] px-7 py-10"
             style={{
@@ -257,13 +260,6 @@ export default function LoginScreen() {
               elevation: 24,
             }}
           >
-            {/* Logo Badge */}
-            <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-              <View className="rounded-2xl px-4 py-2" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
-                <NovaLogo dark={darkMode} width={130} height={38} />
-              </View>
-            </View>
-
             {view === 'forgot-success' ? (
               /* ─── Success View ─── */
               <>
@@ -284,7 +280,7 @@ export default function LoginScreen() {
 
                 <TouchableOpacity
                   onPress={resetForgotState}
-                  className="mt-8 w-full items-center rounded-xl bg-[#014421] py-3"
+                  className="mt-8 w-full items-center rounded-xl bg-[#153F73] py-3"
                 >
                   <Text className="text-[14px] font-semibold text-white">Back to Login</Text>
                 </TouchableOpacity>
@@ -346,7 +342,7 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   onPress={handleSendResetCode}
                   disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#014421] py-3"
+                  className="w-full items-center rounded-xl bg-[#153F73] py-3"
                   style={{ opacity: forgotLoading ? 0.7 : 1 }}
                 >
                   <Text className="text-[14px] font-semibold text-white">
@@ -415,7 +411,7 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   onPress={handleVerifyCode}
                   disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#014421] py-3"
+                  className="w-full items-center rounded-xl bg-[#153F73] py-3"
                   style={{ opacity: forgotLoading ? 0.7 : 1 }}
                 >
                   <Text className="text-[14px] font-semibold text-white">
@@ -532,7 +528,7 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   onPress={handleResetPassword}
                   disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#014421] py-3"
+                  className="w-full items-center rounded-xl bg-[#153F73] py-3"
                   style={{ opacity: forgotLoading ? 0.7 : 1 }}
                 >
                   <Text className="text-[14px] font-semibold text-white">
@@ -552,9 +548,12 @@ export default function LoginScreen() {
   return (
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
       <View className="min-h-full items-center justify-center px-5 py-10">
-        <View 
-          className="relative w-full max-w-md rounded-[24px] px-7 py-10" 
-          style={{ 
+        <View className="mb-5 items-center">
+          <NovaLogo dark={darkMode} width={190} height={68} />
+        </View>
+        <View
+          className="a5-auth-shell relative w-full max-w-md rounded-[28px] px-7 py-10"
+          style={{
             backgroundColor: colors.panel, 
             borderColor: colors.border, 
             borderWidth: 1,
@@ -565,21 +564,13 @@ export default function LoginScreen() {
             elevation: 24,
           }}
         >
-
-        {/* Logo Badge */}
-        <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-          <View className="rounded-2xl px-4 py-2" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
-            <NovaLogo dark={darkMode} width={130} height={38} />
-          </View>
-        </View>
-
         {/* Header */}
-        <View className="mt-6 mb-2">
+        <View className="mb-2">
           <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
-            Welcome Back
+            Access A5 Markets
           </Text>
           <Text className="mt-2 text-center text-[13px] font-medium" style={labelStyle}>
-            Login to continue to your account
+            Your global markets workspace, secured.
           </Text>
         </View>
 
@@ -667,8 +658,8 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
-            className="w-full items-center rounded-lg bg-[#014421] py-2.5 shadow-md"
-            style={{ opacity: loading ? 0.7 : 1 }}
+            className="w-full items-center rounded-xl py-3 shadow-md"
+            style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#153f73' }}
           >
             <Text className="text-sm font-semibold text-white">
               {loading ? 'Logging in...' : 'Login'}

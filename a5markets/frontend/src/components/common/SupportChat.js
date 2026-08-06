@@ -27,7 +27,7 @@ export default function SupportChat() {
     {
       id: '1',
       sender: 'ai',
-      text: 'Welcome to NovaFXM Customer Support! How can I assist you today?',
+      text: 'Welcome to A5 Markets Support. How can we help you navigate the markets today?',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -110,7 +110,7 @@ export default function SupportChat() {
     }
   };
 
-  const activeThemeColor = darkMode ? colors.primary : '#014421';
+  const activeThemeColor = darkMode ? colors.primary : '#153F73';
 
   // Toggle Chat Widget Open/Close (no floating button, only triggerable via event)
   if (!isOpen) {
@@ -165,13 +165,13 @@ export default function SupportChat() {
               className="h-10 w-10 items-center justify-center rounded-full"
               style={{ backgroundColor: darkMode ? '#022C22' : '#E6F4EA' }}
             >
-              <Headphones size={20} color={darkMode ? '#34D399' : '#014421'} />
+              <Headphones size={20} color={darkMode ? '#34D399' : '#153F73'} />
             </View>
             <View className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-white bg-green-500" />
           </View>
           <View>
             <Text className="text-sm font-bold" style={{ color: colors.text }}>
-              NovaFXM Support AI
+              A5 Markets Support
             </Text>
             <Text className="text-[11px] font-medium text-green-500">
               {'Online \u2022 AI Assistant'}

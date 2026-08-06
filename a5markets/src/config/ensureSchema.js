@@ -50,12 +50,12 @@ async function ensureSchema() {
     }).catch(() => {});
   }
 
-  // Seed default project and migrate existing records
-  const [projects] = await queryInterface.sequelize.query('SELECT id FROM projects WHERE identifier = "novafxm"');
+  // Seed A5 Markets as the default project for this standalone tenant database.
+  const [projects] = await queryInterface.sequelize.query('SELECT id FROM projects WHERE identifier = "a5markets"');
   let defaultProjectId;
   if (projects.length === 0) {
     const [result] = await queryInterface.sequelize.query(
-      `INSERT INTO projects (name, identifier, status, created_at, updated_at) VALUES ('Nova FXM', 'novafxm', 'active', NOW(), NOW())`
+      `INSERT INTO projects (name, identifier, status, created_at, updated_at) VALUES ('A5 Markets', 'a5markets', 'active', NOW(), NOW())`
     );
     defaultProjectId = result;
   } else {
@@ -68,31 +68,15 @@ async function ensureSchema() {
     }
   }
 
-  // Seed VeltriumFX as a second managed company under the master
-  const [veltriumProjects] = await queryInterface.sequelize.query('SELECT id FROM projects WHERE identifier = "veltriumfx"');
-  let veltriumProjectId;
-  if (veltriumProjects.length === 0) {
-    const [vtResult] = await queryInterface.sequelize.query(
-      `INSERT INTO projects (name, identifier, status, created_at, updated_at) VALUES ('VeltriumFX', 'veltriumfx', 'active', NOW(), NOW())`
-    );
-    veltriumProjectId = vtResult;
-    // Create default VeltriumFX admin
+  const allPermissionsJson = JSON.stringify(['overview', 'marginAlerts', 'users', 'userManagement', 'assignUsers', 'userManagementUsers', 'verifications', 'deposits', 'depositAddresses', 'depositsList', 'referrals', 'withdrawals', 'withdrawalsList', 'withdrawalDetails', 'userLevels', 'trades', 'addTrading', 'symbols', 'agents']);
+  const [a5Admins] = await queryInterface.sequelize.query('SELECT id FROM users WHERE email = "admin@a5markets.com"');
+  if (a5Admins.length === 0) {
     const bcrypt = require('bcryptjs');
-    const vtAdminHash = await bcrypt.hash('admin123', 12);
+    const adminHash = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD || 'admin123', 12);
     await queryInterface.sequelize.query(
-      `INSERT INTO users (name, email, password, role, project_id, account_type, leverage, trading_level, trading_status, verification_status, created_at, updated_at)
-       VALUES ('VeltriumFX Admin', 'admin@veltriumfx.com', '${vtAdminHash}', 'admin', ${veltriumProjectId}, 'Live', 500, 'Standard', 'active', 'unverified', NOW(), NOW())`
+      `INSERT INTO users (name, email, password, role, project_id, permissions, account_type, leverage, trading_level, trading_status, verification_status, created_at, updated_at)
+       VALUES ('A5 Markets Admin', 'admin@a5markets.com', '${adminHash}', 'admin', ${defaultProjectId}, '${allPermissionsJson}', 'Live', 500, 'Standard', 'active', 'unverified', NOW(), NOW())`
     );
-    // Ensure admin has a wallet
-    const [vtAdmin] = await queryInterface.sequelize.query(`SELECT id FROM users WHERE email = 'admin@veltriumfx.com'`);
-    if (vtAdmin.length > 0) {
-      await queryInterface.sequelize.query(
-        `INSERT IGNORE INTO wallets (user_id, project_id, balance, equity, free_funds, bonus, margin, margin_level, created_at, updated_at)
-         VALUES (${vtAdmin[0].id}, ${veltriumProjectId}, 0, 0, 0, 0, 0, 0, NOW(), NOW())`
-      );
-    }
-  } else {
-    veltriumProjectId = veltriumProjects[0].id;
   }
 
 

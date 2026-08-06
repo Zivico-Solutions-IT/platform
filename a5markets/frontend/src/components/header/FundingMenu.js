@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useAppTheme } from '../../context/ThemeContext';
 import { money } from '../../utils/formatters';
+import { router } from 'expo-router';
+import { navigateToA5App } from '../../utils/appHost';
 
 function accountId(account) {
   return String(Number(account?.id || 0) + 4999).padStart(6, '0');
@@ -56,7 +58,9 @@ export default function FundingMenu({ selectedAccount, summary, onClose, onSwitc
 
   const openPanel = (panel) => {
     onClose?.();
-    onOpenPanel?.(panel);
+    const routes = { deposit: '/deposit', withdraw: '/withdraw', history: '/transactions' };
+    if (routes[panel]) navigateToA5App('portal', routes[panel], router);
+    else onOpenPanel?.(panel);
   };
 
   useEffect(() => {

@@ -4,6 +4,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import { money } from '../../utils/formatters';
+import { router } from 'expo-router';
+import { navigateToA5App } from '../../utils/appHost';
 
 function accountId(account) {
   return String(Number(account?.id || 0) + 4999).padStart(6, '0');
@@ -33,13 +35,14 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
   
   const isMobile = width < 992;
   const isActiveLive = activeAccount?.type === 'Live';
-  const activeBrandColor = isActiveLive ? '#12cf7a' : colors.primary;
-  const activeBgColor = isActiveLive ? '#12cf7a10' : `${colors.primary}10`;
-  const activeBorderColor = isActiveLive ? '#12cf7a25' : `${colors.primary}25`;
+  const activeBrandColor = isActiveLive ? '#0C9F91' : colors.primary;
+  const activeBgColor = isActiveLive ? '#0C9F9110' : `${colors.primary}10`;
+  const activeBorderColor = isActiveLive ? '#0C9F9125' : `${colors.primary}25`;
 
   const openPanel = (panel) => {
     onClose?.();
-    onOpenPanel?.(panel);
+    if (panel === 'account') navigateToA5App('portal', '/dashboard?section=accounts', router);
+    else onOpenPanel?.(panel);
   };
 
   return (
@@ -106,10 +109,10 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
             {tradingAccounts.map((account) => {
               const selected = String(account.id) === String(activeAccount?.id);
               const isLive = account.type === 'Live';
-              const brandColor = isLive ? '#12cf7a' : colors.primary;
-              const selectedBgColor = isLive ? '#12cf7a18' : `${colors.primary}18`;
-              const selectedBorderColor = isLive ? '#12cf7a' : colors.primary;
-              const unselectedIconBg = isLive ? '#12cf7a12' : `${colors.primary}12`;
+              const brandColor = isLive ? '#0C9F91' : colors.primary;
+              const selectedBgColor = isLive ? '#0C9F9118' : `${colors.primary}18`;
+              const selectedBorderColor = isLive ? '#0C9F91' : colors.primary;
+              const unselectedIconBg = isLive ? '#0C9F9112' : `${colors.primary}12`;
 
               const statusTone = account.status === 'pending' ? colors.primary : colors.success;
               const showStatus = account.status && account.status !== 'active';
@@ -187,10 +190,10 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
             {tradingAccounts.map((account) => {
               const selected = String(account.id) === String(activeAccount?.id);
               const isLive = account.type === 'Live';
-              const brandColor = isLive ? '#12cf7a' : colors.primary;
-              const selectedBgColor = isLive ? '#12cf7a18' : `${colors.primary}18`;
-              const selectedBorderColor = isLive ? '#12cf7a' : colors.primary;
-              const unselectedIconBg = isLive ? '#12cf7a12' : `${colors.primary}12`;
+              const brandColor = isLive ? '#0C9F91' : colors.primary;
+              const selectedBgColor = isLive ? '#0C9F9118' : `${colors.primary}18`;
+              const selectedBorderColor = isLive ? '#0C9F91' : colors.primary;
+              const unselectedIconBg = isLive ? '#0C9F9112' : `${colors.primary}12`;
 
               const statusTone = account.status === 'pending' ? colors.primary : colors.success;
               const showStatus = account.status && account.status !== 'active';

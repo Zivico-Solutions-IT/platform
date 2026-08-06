@@ -4,7 +4,7 @@ const { User, Wallet, Transaction, TradingAccount, Trade, BankAccount, Deposit, 
 const money = (value) => Number(Number(value || 0).toFixed(2));
 
 const publicNumberFor = (id) => String(Number(id) + 4999).padStart(6, '0');
-const referralCodeFor = (user) => `NVX${publicNumberFor(user.id)}`;
+const referralCodeFor = (user) => `A5M${publicNumberFor(user.id)}`;
 const ACCOUNT_LIMITS = {
   Demo: 2,
   Live: 5,
@@ -216,7 +216,7 @@ async function dashboardForUser(userId, origin = '') {
   const isHosted = process.env.NODE_ENV === 'production' || 
     (process.env.DB_HOST && !/^(localhost|127\.0\.0\.1)$/i.test(process.env.DB_HOST));
   const defaultFrontendUrl = isHosted
-    ? 'https://novafxm.com'
+    ? 'https://a5markets.com'
     : 'http://localhost:8081';
 
   // Determine base URL, prioritizing non-localhost origins/FRONTEND_URLs in hosted environments

@@ -1,6 +1,8 @@
 # Expo web export output
 **/web_build/
 **/web_build_*/
+**/a5_preview/
+**/a5_*_check/
 
 # Temporary verification builds
 **/codex_*_check/

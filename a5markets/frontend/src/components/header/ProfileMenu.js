@@ -2,9 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import {
   Award,
+  CircleGauge,
+  Download,
   LogOut,
+  ReceiptText,
   Settings2,
   ShieldCheck,
+  Smartphone,
+  TrendingUp,
+  UserRound,
+  Volume2,
   X,
   HelpCircle,
 } from 'lucide-react-native';
@@ -12,6 +19,7 @@ import { Animated, Pressable, ScrollView, Text, View, useWindowDimensions, Devic
 import { useAuth } from '../../hooks/useAuth';
 import { useAppTheme } from '../../context/ThemeContext';
 import { money } from '../../utils/formatters';
+import { navigateToA5App } from '../../utils/appHost';
 
 function initialsFor(user) {
   const name = user?.name || user?.email || 'Nova User';
@@ -81,8 +89,9 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
 
 export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPanel, selectedAccount, deposits = [], transactions = [] }) {
   const { user, logout, isAdmin } = useAuth();
-  const { colors } = useAppTheme();
+  const { colors, darkMode, toggleTheme } = useAppTheme();
   const { width, height } = useWindowDimensions();
+  const [soundsEnabled, setSoundsEnabled] = useState(true);
   const slideAnim = useRef(new Animated.Value(410)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const contentAnim = useRef(new Animated.Value(0)).current;
@@ -91,7 +100,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const verified = user?.verificationStatus === 'approved';
   const panelWidth = width < 500 ? width : 410;
   const panelHeight = height;
-  const displayName = user?.name || 'Nova FXM Client';
+  const displayName = user?.name || 'A5 Markets Client';
   const firstName = displayName.split(/\s+/)[0] || 'Client';
   const accountType = selectedAccount?.type || user?.accountType || 'Demo';
   const selectedAccountId = selectedAccount?.id ? String(selectedAccount.id) : '';
@@ -157,7 +166,14 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
 
   const openPanel = (panel) => {
     onClose?.();
-    onOpenPanel?.(panel);
+    const routes = {
+      deposit: '/deposit',
+      verification: '/verification',
+      referral: '/broker-rewards',
+      settings: '/profile',
+    };
+    if (routes[panel]) navigateToA5App('portal', routes[panel], router);
+    else onOpenPanel?.(panel);
   };
 
   const signOut = async () => {
@@ -165,6 +181,75 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
     onClose?.();
     router.replace('/login');
   };
+
+  if (!mobile) {
+    const compactAction = (Icon, label, onPress, trailing = null) => (
+      <Pressable
+        key={label}
+        onPress={(event) => {
+          event.stopPropagation?.();
+          onPress?.();
+        }}
+        className="flex-row items-center px-5 py-3"
+        style={{ cursor: 'pointer' }}
+      >
+        <Icon size={20} color="#707780" strokeWidth={1.8} />
+        <Text className="ml-3 flex-1 text-[15px]" style={{ color: '#31343a' }}>{label}</Text>
+        {trailing}
+      </Pressable>
+    );
+
+    return (
+      <View
+        onPointerEnter={onHoverIn}
+        onPointerLeave={onHoverOut}
+        className="overflow-hidden rounded-2xl border bg-white"
+        style={{
+          position: 'absolute',
+          right: 8,
+          top: 68,
+          zIndex: 80,
+          width: 360,
+          borderColor: '#e4e7eb',
+          shadowColor: '#000',
+          shadowOpacity: 0.16,
+          shadowRadius: 18,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 12,
+        }}
+      >
+        <View className="py-2">
+          {compactAction(ReceiptText, 'Withdraw', () => navigateToA5App('portal', '/withdraw', router))}
+          {compactAction(TrendingUp, 'Deposit', () => navigateToA5App('portal', '/deposit', router))}
+          {compactAction(Award, 'My Rewards', () => navigateToA5App('portal', '/broker-rewards', router))}
+          {compactAction(CircleGauge, 'Mode', toggleTheme, (
+            <View className="flex-row items-center rounded-full bg-[#f2f3f5] px-2 py-1">
+              <Text className="text-base">☀️</Text>
+              <View className="ml-2 h-5 w-5 rounded-full" style={{ backgroundColor: darkMode ? '#1f78bd' : '#344054' }} />
+            </View>
+          ))}
+          {compactAction(Volume2, 'Sounds', () => setSoundsEnabled((value) => !value), (
+            <Volume2 size={19} color={soundsEnabled ? '#707780' : '#c0c4ca'} />
+          ))}
+          {compactAction(LogOut, 'Sign Out', signOut)}
+        </View>
+        <View className="border-t px-5 py-3" style={{ borderColor: '#eceef1' }}>
+          <View className="mb-2 flex-row items-center">
+            <UserRound size={18} color="#7b8189" />
+            <Text className="ml-3 text-xs" numberOfLines={1} style={{ color: '#7b8189' }}>Email : {user?.email || 'client@a5markets.com'}</Text>
+          </View>
+          <View className="mb-2 flex-row items-center">
+            <Smartphone size={18} color="#7b8189" />
+            <Text className="ml-3 text-xs" style={{ color: '#7b8189' }}>App Version : v1.0.0</Text>
+          </View>
+          <View className="flex-row items-center">
+            <Download size={18} color="#7b8189" />
+            <Text className="ml-3 text-xs" style={{ color: '#7b8189' }}>Last Data Fetch: {new Date().toLocaleString()}</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <Animated.View
@@ -224,7 +309,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
               <Text className="text-lg font-semimedium" style={{ color: palette.text }}>
                 Hey, <Text className="font-medium">{firstName.toUpperCase()}</Text>
               </Text>
-              <Text className="mt-1 text-sm" style={{ color: palette.muted }}>{user?.email || 'client@novafxm.com'}</Text>
+              <Text className="mt-1 text-sm" style={{ color: palette.muted }}>{user?.email || 'client@a5markets.com'}</Text>
             </View>
           </View>
 

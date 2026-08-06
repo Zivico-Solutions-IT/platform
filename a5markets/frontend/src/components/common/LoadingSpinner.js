@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Image, View } from 'react-native';
 
-const NOVAFX_LOGO = require('../../../assets/novafxm logo cropped.png');
+const NOVAFX_LOGO = require('../../../assets/a5markets-logo.png');
 export const LOADING_SPINNER_MIN_MS = 1700;
 
 export default function LoadingSpinner() {

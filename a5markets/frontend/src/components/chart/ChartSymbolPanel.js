@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { ChevronDown, ChevronLeft, Search, Star } from 'lucide-react-native';
-import { percent, quote } from '../../utils/formatters';
+import { ChevronDown, ChevronLeft, ChevronRight, Minus, Plus, Search, Star } from 'lucide-react-native';
+import { useDemoTrading } from '../../hooks/useDemoTrading';
+import { useToast } from '../../context/ToastContext';
+import { quote } from '../../utils/formatters';
 
 export default function ChartSymbolPanel({
   currentSymbol,
@@ -24,11 +26,39 @@ export default function ChartSymbolPanel({
   ui,
   isInline = false,
 }) {
+  const categoryBlue = '#1477b8';
+  const categoryBackground = '#d9eaf6';
+  const expandedBackground = '#eef7fc';
+  const categoryAccent = '#20bde2';
+  const { openPosition } = useDemoTrading();
+  const { notify } = useToast();
+  const [quickTradeSymbol, setQuickTradeSymbol] = useState(null);
+  const [quickLots, setQuickLots] = useState('0.01');
+  const [quickOrderLoading, setQuickOrderLoading] = useState(false);
   const favoriteSymbolSet = new Set(favoriteSymbols);
   const favoritesActive = symbolTab === 'Favorites';
   const selectedCategory = symbolTabs.includes(symbolTab) ? symbolTab : symbolTabs[0];
+  const [expandedCategory, setExpandedCategory] = useState(selectedCategory);
 
   const containerRef = useRef(null);
+
+  const changeQuickLots = (delta) => {
+    const next = Math.max(0.01, Math.round(((Number(quickLots) || 0.01) + delta) * 100) / 100);
+    setQuickLots(next.toFixed(2));
+  };
+
+  const submitQuickOrder = async (side, item) => {
+    try {
+      setQuickOrderLoading(true);
+      onSelectSymbol(item.symbol);
+      await openPosition(side, Number(quickLots), { symbol: item.symbol });
+      notify({ type: 'success', title: 'Order placed', message: `${side} ${quickLots} lots of ${item.symbol} placed successfully.` });
+    } catch (error) {
+      notify({ type: 'error', title: 'Order rejected', message: error?.response?.data?.message || error?.message || 'Order failed.' });
+    } finally {
+      setQuickOrderLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -45,6 +75,11 @@ export default function ChartSymbolPanel({
       document.removeEventListener('mousedown', handleOutsideClick);
     };
   }, [symbolTabMenuOpen, setSymbolTabMenuOpen]);
+
+  useEffect(() => {
+    if (favoritesActive) return;
+    setExpandedCategory(selectedCategory);
+  }, [favoritesActive, selectedCategory]);
 
   return (
     <View
@@ -64,51 +99,18 @@ export default function ChartSymbolPanel({
       }}
     >
       <View className="px-3 py-3 border-b" style={{ borderColor: ui.border, zIndex: 3300, elevation: 3300 }}>
-        <View className="flex-row items-center gap-2" style={{ zIndex: 3400, elevation: 3400 }}>
-          <View ref={containerRef} className="relative flex-1" style={{ zIndex: 3400, elevation: 3400 }}>
-            <Pressable
-              onPress={() => setSymbolTabMenuOpen((value) => !value)}
-              className="flex-row items-center justify-between px-3 border rounded-md h-9"
-              style={{
-                backgroundColor: symbolTabMenuOpen ? ui.soft : ui.control,
-                borderColor: symbolTabMenuOpen ? ui.accent : ui.border,
-                cursor: 'pointer',
-              }}
-            >
-              <Text className="text-xs font-medium" numberOfLines={1} style={{ color: symbolTabMenuOpen ? ui.accent : ui.text }}>{selectedCategory}</Text>
-              <ChevronDown size={13} color={symbolTabMenuOpen ? ui.accent : ui.muted} />
-            </Pressable>
-            {symbolTabMenuOpen ? (
-              <View
-                className="absolute left-0 right-0 p-1 border rounded-md shadow-2xl"
-                style={{ top: 42, backgroundColor: ui.menu, borderColor: ui.menuBorder, zIndex: 3500, elevation: 3500 }}
-              >
-                {symbolTabs.map((entry) => (
-                  <Pressable
-                    key={entry}
-                    onPress={() => onSelectTab(entry)}
-                    className="justify-center h-8 px-2 rounded"
-                    style={{ backgroundColor: entry === symbolTab ? ui.soft : 'transparent', cursor: 'pointer' }}
-                  >
-                    <Text className="text-xs font-medium" style={{ color: entry === symbolTab ? ui.accent : ui.text }}>{entry}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
+        <View className="flex-row items-center gap-2">
+          <View className="flex-row items-center flex-1 h-10 px-3 border rounded-xl" style={{ backgroundColor: ui.control, borderColor: ui.border }}>
+            <TextInput
+              value={search}
+              onChangeText={onSearchChange}
+              placeholder="Symbol Search"
+              placeholderTextColor={ui.muted}
+              className="flex-1 h-10 text-sm"
+              style={{ color: ui.text }}
+            />
+            <Search size={17} color={ui.muted} />
           </View>
-          <Pressable
-            onPress={() => onSelectTab('Favorites')}
-            className="flex-row items-center justify-center px-3 border rounded-md h-9"
-            style={{
-              minWidth: 104,
-              backgroundColor: favoritesActive ? ui.accent : ui.control,
-              borderColor: favoritesActive ? ui.accent : ui.border,
-              cursor: 'pointer',
-            }}
-          >
-            <Star size={15} color={favoritesActive ? ui.activeText : ui.muted} fill={favoritesActive ? ui.activeText : 'transparent'} />
-            <Text className="ml-1.5 text-xs font-medium" numberOfLines={1} style={{ color: favoritesActive ? ui.activeText : ui.text }}>Favorites</Text>
-          </Pressable>
           {onClose ? (
             <Pressable
               onPress={onClose}
@@ -119,27 +121,14 @@ export default function ChartSymbolPanel({
             </Pressable>
           ) : null}
         </View>
-        <View className="flex-row items-center h-10 px-3 mt-2 border rounded-md" style={{ backgroundColor: ui.control, borderColor: ui.border }}>
-          <Search size={16} color={ui.muted} />
-          <TextInput
-            value={search}
-            onChangeText={onSearchChange}
-            placeholder="Search"
-            placeholderTextColor={ui.muted}
-            className="flex-1 h-10 ml-2 text-sm"
-            style={{ color: ui.text }}
-          />
-        </View>
       </View>
 
-      <View className="flex-row items-center px-4 py-2 border-b" style={{ borderColor: ui.border }}>
-        <Text className="flex-1 text-[11px] font-medium" numberOfLines={1} style={{ color: ui.muted }}>Symbols / Vol</Text>
-        <View style={{ width: 85, alignItems: 'flex-end', paddingRight: 8 }}>
-          <Text className="text-[11px] font-medium" style={{ color: ui.muted }}>Bid</Text>
-        </View>
-        <View style={{ width: 85, alignItems: 'flex-end' }}>
-          <Text className="text-[11px] font-medium" style={{ color: ui.muted }}>Ask</Text>
-        </View>
+      <View className="flex-row items-center px-5 py-3 border-b" style={{ borderColor: ui.border }}>
+        <Text className="flex-1 text-xs font-medium text-center" style={{ color: ui.muted }}>Symbol</Text>
+        <Text className="w-[64px] text-xs font-medium text-center" style={{ color: ui.muted }}>Bid</Text>
+        <Text className="w-[64px] text-xs font-medium text-center" style={{ color: ui.muted }}>Spread</Text>
+        <Text className="w-[64px] text-xs font-medium text-center" style={{ color: ui.muted }}>Ask</Text>
+        <View style={{ width: 30 }} />
       </View>
 
       <ScrollView
@@ -148,7 +137,34 @@ export default function ChartSymbolPanel({
         persistentScrollbar
         style={Platform.OS === 'web' ? { overflowY: 'scroll', scrollbarGutter: 'stable' } : null}
       >
-        {filteredSymbols.map((item) => {
+        {(favoritesActive ? ['Favorites'] : symbolTabs).map((category, categoryIndex) => {
+          const expanded = favoritesActive || category === expandedCategory;
+          return (
+            <View key={category}>
+              <Pressable
+                onPress={() => {
+                  if (favoritesActive) return;
+                  if (expandedCategory === category) {
+                    setExpandedCategory(null);
+                    setQuickTradeSymbol(null);
+                    return;
+                  }
+                  setExpandedCategory(category);
+                  setQuickTradeSymbol(null);
+                  onSelectTab(category);
+                }}
+                className="flex-row items-center h-[50px] px-4"
+                style={{
+                  backgroundColor: expanded ? categoryBackground : categoryIndex % 2 ? '#f7f8fa' : ui.menu,
+                  borderRightWidth: 4,
+                  borderRightColor: expanded ? categoryAccent : 'transparent',
+                  cursor: 'pointer',
+                }}
+              >
+                {expanded ? <ChevronDown size={17} color="#687582" /> : <ChevronRight size={17} color="#687582" />}
+                <Text className="ml-2 text-xs font-semibold" style={{ color: expanded ? categoryBlue : ui.text }}>{category.toUpperCase()}</Text>
+              </Pressable>
+              {expanded ? filteredSymbols.map((item) => {
           const active = item.symbol === currentSymbol.symbol;
           const hovered = hoveredSymbol === item.symbol;
           const favorite = favoriteSymbolSet.has(item.symbol);
@@ -166,20 +182,26 @@ export default function ChartSymbolPanel({
             ? askVal > prevAsk
             : Number(item.change) >= 0;
           const askTone = askPositive ? ui.success : ui.danger;
+          const spread = Number.isFinite(askVal) && Number.isFinite(bidVal)
+            ? Math.max(0, (askVal - bidVal) * (10 ** Math.max(0, Number(item.decimals || 5) - 1)))
+            : Number(item.spread || 0);
+
+          const quickTradeOpen = quickTradeSymbol === item.symbol;
 
           return (
+            <View key={item.symbol}>
             <Pressable
-              key={item.symbol}
               onHoverIn={() => onHoverSymbol(item.symbol)}
               onHoverOut={() => onHoverSymbol(null)}
               onPress={() => onSelectSymbol(item.symbol)}
-              className="h-[48px] flex-row items-center px-4"
+              className="h-[48px] flex-row items-center px-4 border-b"
               style={{
                 backgroundColor: active
-                  ? 'rgba(212, 175, 55, 0.28)'
+                  ? categoryBackground
                   : hovered
                     ? ui.soft
-                    : 'transparent',
+                    : expandedBackground,
+                borderColor: ui.border,
                 cursor: 'pointer',
               }}
             >
@@ -194,28 +216,90 @@ export default function ChartSymbolPanel({
                 >
                   <Star
                     size={15}
-                    color={favorite || active ? (ui.accent || '#D4AF37') : ui.muted}
-                    fill={favorite || active ? (ui.accent || '#D4AF37') : 'transparent'}
+                    color={favorite || active ? (ui.accent || '#17B8B2') : ui.muted}
+                    fill={favorite || active ? (ui.accent || '#17B8B2') : 'transparent'}
                   />
                 </Pressable>
                 <View className="flex-1 min-w-0">
                   <View className="flex-row items-center">
-                    <Text className="text-sm font-semibold" numberOfLines={1} style={{ color: active ? (ui.accent || '#D4AF37') : ui.text }}>{item.symbol}</Text>
+                    <Text className="text-sm font-semibold" numberOfLines={1} style={{ color: active ? (ui.accent || '#17B8B2') : ui.text }}>{item.symbol}</Text>
                   </View>
-                  <Text className="text-[11px]" numberOfLines={1} style={{ color: active ? (ui.accent || '#D4AF37') : ui.muted }}>{item.group || 'Market'}</Text>
+                  <Text className="text-[11px]" numberOfLines={1} style={{ color: active ? (ui.accent || '#17B8B2') : ui.muted }}>{item.group || 'Market'}</Text>
                 </View>
               </View>
-              <View style={{ width: 85, alignItems: 'flex-end', justifyContent: 'center', paddingRight: 8 }}>
+              <View style={{ width: 64, alignItems: 'center', justifyContent: 'center' }}>
                 <Text className="text-xs font-semibold" numberOfLines={1} style={{ color: bidTone }}>
                   {quote(item.bid ?? item.price, item.decimals)}
                 </Text>
               </View>
-              <View style={{ width: 85, alignItems: 'flex-end', justifyContent: 'center' }}>
+              <View style={{ width: 64, alignItems: 'center', justifyContent: 'center' }}>
+                <Text className="text-xs font-medium" numberOfLines={1} style={{ color: ui.text }}>
+                  {Number.isFinite(spread) ? spread.toFixed(1) : '0.0'}
+                </Text>
+              </View>
+              <View style={{ width: 64, alignItems: 'center', justifyContent: 'center' }}>
                 <Text className="text-xs font-semibold" numberOfLines={1} style={{ color: askTone }}>
                   {quote(item.ask ?? item.price, item.decimals)}
                 </Text>
               </View>
+              <Pressable
+                onPress={(event) => {
+                  event?.stopPropagation?.();
+                  onSelectSymbol(item.symbol);
+                  setQuickTradeSymbol((symbol) => symbol === item.symbol ? null : item.symbol);
+                }}
+                className="items-center justify-center rounded-full"
+                style={{ width: 30, height: 30, cursor: 'pointer' }}
+              >
+                {quickTradeOpen
+                  ? <Minus size={18} color={ui.muted} />
+                  : <Plus size={18} color={ui.muted} />}
+              </Pressable>
             </Pressable>
+            {quickTradeOpen ? (
+              <View
+                className="flex-row items-stretch gap-2 px-3 py-3 border-b"
+                style={{ backgroundColor: categoryBackground, borderColor: ui.border }}
+              >
+                <Pressable
+                  disabled={quickOrderLoading}
+                  onPress={() => submitQuickOrder('SELL', item)}
+                  className="flex-1 items-center justify-center rounded-xl"
+                  style={{ minHeight: 66, backgroundColor: '#ff5258', opacity: quickOrderLoading ? 0.65 : 1 }}
+                >
+                  <Text className="text-[11px] font-semibold text-white">SELL</Text>
+                  <Text className="mt-1 text-base font-bold text-white">{quote(item.bid ?? item.price, item.decimals)}</Text>
+                </Pressable>
+
+                <View className="overflow-hidden bg-white rounded-xl" style={{ width: 130, minHeight: 66 }}>
+                  <View className="items-center justify-center flex-1 px-2">
+                    <Text className="text-sm font-medium" style={{ color: ui.text }}>{quickLots}</Text>
+                  </View>
+                  <View className="flex-row border-t" style={{ borderColor: ui.border, height: 28 }}>
+                    <Pressable onPress={() => changeQuickLots(-0.01)} className="items-center justify-center flex-1 border-r" style={{ borderColor: ui.border }}>
+                      <Minus size={16} color={ui.muted} />
+                    </Pressable>
+                    <Pressable onPress={() => changeQuickLots(0.01)} className="items-center justify-center flex-1">
+                      <Plus size={16} color={ui.muted} />
+                    </Pressable>
+                  </View>
+                </View>
+
+                <Pressable
+                  disabled={quickOrderLoading}
+                  onPress={() => submitQuickOrder('BUY', item)}
+                  className="flex-1 items-center justify-center rounded-xl"
+                  style={{ minHeight: 66, backgroundColor: '#28c45a', opacity: quickOrderLoading ? 0.65 : 1 }}
+                >
+                  <Text className="text-[11px] font-semibold text-white">BUY</Text>
+                  <Text className="mt-1 text-base font-bold text-white">{quote(item.ask ?? item.price, item.decimals)}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+            </View>
+          );
+              }) : null}
+            </View>
           );
         })}
         {!filteredSymbols.length ? (

@@ -16,11 +16,9 @@ import {
   X,
 } from 'lucide-react-native';
 import CustomButton from '../src/components/common/CustomButton';
-import LoadingSpinner, { LOADING_SPINNER_MIN_MS } from '../src/components/common/LoadingSpinner';
 import DepositForm from '../src/components/wallet/DepositForm';
 import WithdrawForm from '../src/components/wallet/WithdrawForm';
 import TransactionList from '../src/components/wallet/TransactionList';
-import DashboardTabs from '../src/components/layout/DashboardTabs';
 import { dashboardService } from '../src/services/dashboardService';
 import { walletService } from '../src/services/walletService';
 import { useAuth } from '../src/hooks/useAuth';
@@ -28,6 +26,7 @@ import { useWallet } from '../src/hooks/useWallet';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { dateTime, money, transactionTypeLabel } from '../src/utils/formatters';
 import { storage } from '../src/utils/storage';
+import PortalLayout from '../src/components/portal/PortalLayout';
 
 const DEMO_ACCOUNT_LIMIT = 2;
 const LIVE_ACCOUNT_LIMIT = 3;
@@ -60,7 +59,7 @@ function accountNumber(account) {
 function AccountCard({ account, colors, mobile = false }) {
   const active = account.status === 'active';
   const demo = account.type === 'Demo';
-  const tone = active ? '#12cf7a' : '#D4AF37';
+  const tone = active ? '#0C9F91' : '#17B8B2';
   const openTradingAccount = () => {
     if (active) router.push(`/trading?accountId=${account.id}`);
   };
@@ -69,8 +68,8 @@ function AccountCard({ account, colors, mobile = false }) {
     <View className={`${mobile ? 'p-4' : 'p-5'} flex-1 rounded-2xl border`} style={{ minWidth: mobile ? '100%' : 260, backgroundColor: colors.surface, borderColor: colors.border }}>
       <View className="mb-5 flex-row items-start justify-between">
         <View className="min-w-0 flex-1 flex-row items-center pr-3">
-          <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl" style={{ backgroundColor: demo ? '#D4AF3722' : '#12cf7a22' }}>
-            {demo ? <Wallet size={21} color="#D4AF37" /> : <ShieldCheck size={21} color="#12cf7a" />}
+          <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl" style={{ backgroundColor: demo ? '#17B8B222' : '#0C9F9122' }}>
+            {demo ? <Wallet size={21} color="#17B8B2" /> : <ShieldCheck size={21} color="#0C9F91" />}
           </View>
           <View className="min-w-0 flex-1">
             <Text className="text-lg font-medium" numberOfLines={1} style={{ color: colors.text }}>{account.name}</Text>
@@ -100,10 +99,10 @@ function AccountCard({ account, colors, mobile = false }) {
         style={{ borderColor: colors.border }}
       >
         <View className="min-w-0 flex-1 flex-row items-center pr-2">
-          {active ? <CheckCircle2 size={16} color="#12cf7a" /> : <Clock3 size={16} color="#D4AF37" />}
+          {active ? <CheckCircle2 size={16} color="#0C9F91" /> : <Clock3 size={16} color="#17B8B2" />}
           <Text className="ml-2 text-xs font-semimedium" numberOfLines={1} style={{ color: colors.muted }}>{active ? 'Ready for trading' : 'Waiting for activation'}</Text>
         </View>
-        <ArrowUpRight size={17} color={active ? '#D4AF37' : '#8fa0bb'} />
+        <ArrowUpRight size={17} color={active ? '#17B8B2' : '#8fa0bb'} />
       </Pressable>
     </View>
   );
@@ -120,7 +119,7 @@ function AccountGroup({ title, subtitle, accounts, emptyText, colors, mobile = f
         {accounts.map((account) => <AccountCard key={account.id} account={account} colors={colors} mobile={mobile} />)}
         {!accounts.length ? (
           <View className="w-full items-center rounded-2xl border border-dashed p-8" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-            <Plus size={26} color="#D4AF37" />
+            <Plus size={26} color="#17B8B2" />
             <Text className="mt-3 text-lg font-medium" style={{ color: colors.text }}>{emptyText}</Text>
           </View>
         ) : null}
@@ -423,15 +422,9 @@ export default function DashboardScreen() {
   const [activityView, setActivityView] = useState('trades');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState([]);
-  const [splashDone, setSplashDone] = useState(false);
   const [showBirthdayBonusPopup, setShowBirthdayBonusPopup] = useState(false);
   const [claimingBirthdayBonus, setClaimingBirthdayBonus] = useState(false);
   const mobile = width < 640;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSplashDone(true), LOADING_SPINNER_MIN_MS);
-    return () => clearTimeout(timer);
-  }, []);
 
   const loadDashboard = async ({ silent = false } = {}) => {
     if (!user) return;
@@ -646,12 +639,12 @@ export default function DashboardScreen() {
     router.replace('/login');
   };
 
-  if (authLoading || !user || !splashDone) {
-    return <LoadingSpinner />;
+  if (authLoading || !user) {
+    return null;
   }
 
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-4 lg:p-8">
+    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: '#f4f8fc' }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-4 lg:p-8">
       <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
         <View className="min-w-0 flex-1">
           <Text className={`${mobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>Account Dashboard</Text>
@@ -679,12 +672,10 @@ export default function DashboardScreen() {
               </View>
             </Pressable>
           </Modal>
-          <Link href="/trading" asChild><Pressable><Text style={{ color: '#D4AF37' }}>Back to Trading</Text></Pressable></Link>
+          <Link href="/trading" asChild><Pressable><Text style={{ color: '#17B8B2' }}>Back to Trading</Text></Pressable></Link>
           <Pressable onPress={signOut}><Text className="text-danger">Sign Out</Text></Pressable>
         </View>
       </View>
-
-      <DashboardTabs activeKey={activeSection} onSectionChange={setActiveSection} userRole={user?.role} />
 
       {activeSection === 'overview' ? (
         <View className="mb-5 flex-row flex-wrap gap-3">
@@ -822,6 +813,6 @@ export default function DashboardScreen() {
         </View>
       </Modal>
 
-    </ScrollView>
+    </ScrollView></PortalLayout>
   );
 }

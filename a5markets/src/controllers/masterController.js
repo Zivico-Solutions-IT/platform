@@ -8,7 +8,7 @@ const currentCompanyProject = async (req) => {
     const selected = await Project.findByPk(req.projectId);
     if (selected) return selected;
   }
-  return Project.findOne({ where: { identifier: 'novafxm' } });
+  return Project.findOne({ where: { identifier: 'a5markets' } });
 };
 
 exports.companyStatus = async (req, res) => {

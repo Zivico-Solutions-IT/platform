@@ -205,13 +205,18 @@ export default function AdminSidebar({
     </View>
   );
   const renderConsoleHeader = (compact = false, showClose = false) => {
-    const isVeltrium = /veltrium/i.test(projectName);
-    const openVeltriumMaster = async () => {
+    const isVeltrium = false;
+    const openCompanyMaster = async (company) => {
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
         const local = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-        const configuredUrl = String(process.env.EXPO_PUBLIC_VELTRIUM_MASTER_URL || 'https://crm.veltriumfx.com').replace(/\/(login|master)\/?$/, '');
+        const companies = {
+          novafxm: { env: process.env.EXPO_PUBLIC_NOVAFXM_MASTER_URL, url: 'https://crm.novafxm.com', port: 8081 },
+          veltriumfx: { env: process.env.EXPO_PUBLIC_VELTRIUM_MASTER_URL, url: 'https://crm.veltriumfx.com', port: 8082 },
+        };
+        const selected = companies[company];
+        const configuredUrl = String(selected.env || selected.url).replace(/\/(login|master)\/?$/, '');
         const target = local
-          ? `${window.location.protocol}//${window.location.hostname}:8082/master`
+          ? `${window.location.protocol}//${window.location.hostname}:${selected.port}/master`
           : `${configuredUrl}/master`;
         const token = await storage.get('token');
         if (token && adminUser) {
@@ -231,10 +236,10 @@ export default function AdminSidebar({
           <View className="min-w-0 flex-1 pr-3">
             <NovaLogo dark={darkMode} width={compact ? 132 : 136} height={34} />
             <Text className="mt-2 text-lg font-medium" style={{ color: colors.text }}>
-              {adminUser?.role === 'master' ? 'Master Console' : (isVeltrium ? 'VeltriumFX Console' : (adminUser?.role === 'agent' ? 'Agent Console' : 'Manager Console'))}
+              {adminUser?.role === 'master' ? 'A5 Markets Command Center' : (adminUser?.role === 'agent' ? 'A5 Partner Console' : 'A5 Operations Console')}
             </Text>
             <Text className="mt-0.5 text-xs" style={{ color: colors.muted }}>
-              {adminUser?.role === 'master' ? 'Master control center' : (isVeltrium ? 'Operations control center' : (adminUser?.role === 'agent' ? 'Agent operations panel' : 'Manager control center'))}
+              {adminUser?.role === 'master' ? 'Cross-market company control' : (adminUser?.role === 'agent' ? 'Partner operations workspace' : 'Market operations workspace')}
             </Text>
           </View>
         <View className="flex-row items-center gap-3">
@@ -255,11 +260,15 @@ export default function AdminSidebar({
           <View className="mt-4">
             <Pressable onPress={() => setPlatformMenuOpen((open) => !open)} className="flex-row items-center rounded-xl border px-3 py-2.5" style={{ backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}40` }}>
               <Activity size={17} color={colors.primary} />
-              <Text className="ml-2 flex-1 text-sm font-semibold" style={{ color: colors.text }}>NovaFXM Master</Text>
+              <Text className="ml-2 flex-1 text-sm font-semibold" style={{ color: colors.text }}>A5 Markets Master</Text>
               <ChevronDown size={16} color={colors.muted} />
             </Pressable>
             {platformMenuOpen ? <View className="mt-1 overflow-hidden rounded-xl border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-              <Pressable onPress={openVeltriumMaster} className="px-3 py-3">
+              <Pressable onPress={() => openCompanyMaster('novafxm')} className="px-3 py-3">
+                <Text className="text-sm font-semibold" style={{ color: colors.text }}>NovaFXM Master</Text>
+                <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Switch without signing in again</Text>
+              </Pressable>
+              <Pressable onPress={() => openCompanyMaster('veltriumfx')} className="border-t px-3 py-3" style={{ borderColor: colors.border }}>
                 <Text className="text-sm font-semibold" style={{ color: colors.text }}>VeltriumFX Master</Text>
                 <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Switch without signing in again</Text>
               </Pressable>

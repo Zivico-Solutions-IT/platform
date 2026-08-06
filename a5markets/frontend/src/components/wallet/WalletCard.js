@@ -63,7 +63,7 @@ export default function WalletCard({ summary, transactions = [], user }) {
         <View className="gap-4 lg:flex-row lg:items-end lg:justify-between">
           <View className="min-w-0">
             <View className="flex-row items-center">
-              <Wallet size={18} color="#D4AF37" />
+              <Wallet size={18} color="#17B8B2" />
               <Text className="ml-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Available Account Balance</Text>
             </View>
             <Text className={`${mobile ? 'text-3xl' : 'text-4xl'} mt-2 font-medium`} style={{ color: colors.text }} numberOfLines={1} adjustsFontSizeToFit>{money(summary.balance)} <Text className="text-base" style={{ color: colors.muted }}>USD</Text></Text>

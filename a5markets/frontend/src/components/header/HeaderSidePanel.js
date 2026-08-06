@@ -811,7 +811,7 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
                 </View>
                 {!isMobileLayout ? (
                   <>
-                    <Text className="mt-3 text-lg font-medium" style={{ color: colors.text }}>{profile.name || 'NovaFXM Client'}</Text>
+                    <Text className="mt-3 text-lg font-medium" style={{ color: colors.text }}>{profile.name || 'A5 Markets Client'}</Text>
                     <Text className="mt-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium" style={{ backgroundColor: user?.verificationStatus === 'approved' ? `${colors.success}22` : `${colors.primary}22`, color: user?.verificationStatus === 'approved' ? colors.success : colors.primary }}>
                       {user?.verificationStatus === 'approved' ? 'Verified' : 'Not Verified'}
                     </Text>

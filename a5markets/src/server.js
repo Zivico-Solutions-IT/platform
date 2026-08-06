@@ -7,7 +7,7 @@ const fatal = (type, error) => {
 process.on('uncaughtException', (error) => fatal('uncaughtException', error));
 process.on('unhandledRejection', (error) => fatal('unhandledRejection', error));
 
-console.log(`[startup] Booting NOVA FXM API; node=${process.version}; pid=${process.pid}`);
+console.log(`[startup] Booting A5 MARKETS API; node=${process.version}; pid=${process.pid}`);
 
 const { validateEnvironment, environmentSummary } = require('./config/env');
 console.log('[startup] Environment summary:', JSON.stringify(environmentSummary()));
@@ -33,12 +33,14 @@ const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-const configuredOrigins = String(process.env.CORS_ORIGIN || 'https://novafxm.com').split(',');
+const configuredOrigins = String(process.env.CORS_ORIGIN || 'https://a5markets.com').split(',');
 const allowedOrigins = Array.from(new Set([
   'http://localhost:8081',
   'http://127.0.0.1:8081',
   'http://localhost:8082',
   'http://127.0.0.1:8082',
+  'http://localhost:8083',
+  'http://127.0.0.1:8083',
   'http://localhost:19006',
   'http://127.0.0.1:19006',
   ...configuredOrigins
@@ -50,8 +52,8 @@ const corsOrigin = (origin, callback) => {
   const cleanOrigin = origin.replace(/\/$/, '');
   const isAllowed = allowAnyOrigin ||
                     allowedOrigins.includes(cleanOrigin) ||
-                    /\.novafxm\.com$/i.test(cleanOrigin) ||
-                    /novafxm\.com$/i.test(cleanOrigin);
+                    /\.a5markets\.com$/i.test(cleanOrigin) ||
+                    /a5markets\.com$/i.test(cleanOrigin);
   callback(null, isAllowed);
 };
 const corsOptions = { origin: corsOrigin, credentials: true };
@@ -125,12 +127,12 @@ let databaseError = null;
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/', (req, res) => res.json({
   status: 'ok',
-  service: 'NOVA FXM API',
+  service: 'A5 Markets API',
   health: '/api/health',
 }));
 app.get('/api/health', (req, res) => res.json({
   status: 'ok',
-  service: 'NOVA FXM API',
+  service: 'A5 Markets API',
   database: databaseStatus,
 }));
 app.get('/api/ready', (req, res) => res.status(databaseStatus === 'ready' ? 200 : 503).json({
@@ -327,7 +329,7 @@ async function start() {
     server.once('error', reject);
     server.listen(PORT, HOST, () => {
       server.off('error', reject);
-      console.log(`NOVA FXM API listening on ${HOST}:${PORT}; startup=${Date.now() - startupStartedAt}ms`);
+      console.log(`A5 Markets API listening on ${HOST}:${PORT}; startup=${Date.now() - startupStartedAt}ms`);
       resolve();
     });
   });

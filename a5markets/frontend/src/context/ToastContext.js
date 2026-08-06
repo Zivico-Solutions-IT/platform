@@ -6,7 +6,7 @@ import { useAppTheme } from './ThemeContext';
 const ToastContext = createContext({ notify: () => {} });
 
 const toneStyles = {
-  success: { icon: CheckCircle2, accent: '#12cf7a' },
+  success: { icon: CheckCircle2, accent: '#0C9F91' },
   error: { icon: AlertCircle, accent: '#f24d58' },
   warning: { icon: AlertCircle, accent: '#f5b84b' },
   info: { icon: Info, accent: '#4f8cff' },

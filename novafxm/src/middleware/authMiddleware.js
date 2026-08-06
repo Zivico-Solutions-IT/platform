@@ -5,11 +5,15 @@ const tenantStorage = require('../config/tenantStorage');
 
 const ONLINE_WINDOW_MS = 45 * 1000;
 
-// External tenant API endpoints (Port 5001 in local dev, VPS 2 in production)
+// External tenant API endpoints are keyed by the stable project identifier.
+// Database IDs differ between installations, so they must not be hard-coded.
 const EXTERNAL_TENANT_APIS = {
-  6: process.env.NODE_ENV === 'production'
+  veltriumfx: process.env.NODE_ENV === 'production'
     ? 'https://server.veltriumfx.com/api'
     : 'http://localhost:5001/api',
+  a5markets: process.env.NODE_ENV === 'production'
+    ? 'https://server.a5markets.com/api'
+    : 'http://localhost:5002/api',
 };
 
 module.exports = async function authMiddleware(req, res, next) {
@@ -65,8 +69,12 @@ module.exports = async function authMiddleware(req, res, next) {
     // Cross-Tenant Proxying:
     // When Master user accesses an external project (e.g. VeltriumFX on Port 5001),
     // proxy the API request directly to the target project's backend to load its standalone database.
-    if (user.role === 'master' && projectId && EXTERNAL_TENANT_APIS[projectId]) {
-      const targetApiUrl = EXTERNAL_TENANT_APIS[projectId];
+    let targetApiUrl = null;
+    if (user.role === 'master' && projectId) {
+      const selectedProject = await Project.findByPk(projectId, { attributes: ['identifier'] });
+      targetApiUrl = EXTERNAL_TENANT_APIS[String(selectedProject?.identifier || '').toLowerCase()] || null;
+    }
+    if (targetApiUrl) {
       const isMasterRoute = req.originalUrl.includes('/api/master') || req.originalUrl.includes('/api/auth/me');
       if (!isMasterRoute) {
         try {

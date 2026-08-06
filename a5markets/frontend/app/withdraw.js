@@ -3,6 +3,7 @@ import WithdrawForm from '../src/components/wallet/WithdrawForm';
 import { useWallet } from '../src/hooks/useWallet';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
+import PortalLayout from '../src/components/portal/PortalLayout';
 
 export default function WithdrawScreen() {
   const { user } = useAuth();
@@ -10,7 +11,7 @@ export default function WithdrawScreen() {
   const { summary, transactions, withdraw, loading } = useWallet();
   const fundingLocked = Boolean(user && user.verificationStatus !== 'approved');
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[650px] p-3 sm:p-6">
+    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: '#f4f8fc' }} contentContainerClassName="mx-auto w-full max-w-[650px] p-3 sm:p-6">
       <Text className="mb-5 text-2xl font-medium" style={{ color: colors.text }}>New Withdrawal</Text>
       <WithdrawForm
         onSubmit={(values) => withdraw(values, Boolean(user))}
@@ -20,6 +21,6 @@ export default function WithdrawScreen() {
         summary={summary}
         transactions={transactions}
       />
-    </ScrollView>
+    </ScrollView></PortalLayout>
   );
 }

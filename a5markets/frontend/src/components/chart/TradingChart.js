@@ -244,21 +244,21 @@ const loadCandlesWithRetry = async (symbol, timeframe, limit, options = {}, atte
 };
 
 const TRADING_CHART_TEAL = '#2bb8a8';
-const QUICK_TRADE_BUY = '#12cf7a';
+const QUICK_TRADE_BUY = '#0C9F91';
 
 const chartUiFromTheme = (colors) => ({
   background: colors.chartBackground,
   toolbar: colors.background,
   control: colors.panel,
-  controlActive: colors.primary,
+  controlActive: colors.mode === 'dark' ? colors.primary : '#10a5cf',
   border: colors.border,
   menu: colors.panel,
   menuBorder: colors.border,
   panel: colors.panel,
   muted: colors.muted,
   text: colors.text,
-  accent: colors.primary,
-  activeText: '#0B0B0B',
+  accent: colors.mode === 'dark' ? colors.primary : '#1477b8',
+  activeText: colors.mode === 'dark' ? '#0B0B0B' : '#ffffff',
   success: TRADING_CHART_TEAL,
   danger: colors.danger,
   grid: colors.chartGrid,
@@ -625,7 +625,7 @@ function renderIndicators() {
     addLine(exponentialAverage(data, Number(tools.macdSlow || 26)), '#f24d58', indicatorLineWidth);
     addLine(exponentialAverage(data, Number(tools.macdSignal || 9)), '#8aa8ff', indicatorLineWidth);
   }
-  if (tools.momentum) addLine(momentumLine(data, Number(tools.momentumPeriod || 10)), '#12cf7a', indicatorLineWidth);
+  if (tools.momentum) addLine(momentumLine(data, Number(tools.momentumPeriod || 10)), '#0C9F91', indicatorLineWidth);
   if (tools.sar) addLine(movingAverage(data, Math.max(2, Math.round(Number(tools.sarMax || .2) * 25))), '#ffffff', indicatorLineWidth);
   if (tools.rsi) addLine(rateOfChange(data, Number(tools.rsiPeriod || 14)), '#b58cff', indicatorLineWidth);
   if (tools.roc) addLine(rateOfChange(data, Number(tools.rocPeriod || 12)), '#ffb84d', indicatorLineWidth);
@@ -2102,7 +2102,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                     {[
                       ['Conversion Line Color', '#4fc3f7'],
                       ['Base Line Color', '#f24d58'],
-                      ['Leading Span A Color', '#12cf7a'],
+                      ['Leading Span A Color', '#0C9F91'],
                       ['Leading Span B Color', '#ffb84d'],
                     ].map(([label, color]) => (
                       <View key={label} className="mb-3">
@@ -2154,7 +2154,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                 {activeIndicator === 'momentum' ? (
                   <>
                     {[
-                      ['Color', '#12cf7a'],
+                      ['Color', '#0C9F91'],
                     ].map(([label, color], index) => (
                       <View key={`${label}-${index}`} className="mb-3">
                         <Text className="mb-1 text-[10px] font-semimedium" style={{ color: ui.muted }}>{label}</Text>

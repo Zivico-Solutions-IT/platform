@@ -826,7 +826,7 @@ export default function UserManagement({ users, loading, busyId, onCreate, onUpd
                     <Eye size={16} color={colors.text} />
                   </Pressable>
                   <Pressable disabled={blocked} onPress={() => editUser(user)} className={`rounded-2xl border p-2 ${blocked ? 'opacity-40' : ''}`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-                    <Edit3 size={16} color="#D4AF37" />
+                    <Edit3 size={16} color="#17B8B2" />
                   </Pressable>
                   <Pressable
                     disabled={blocked}

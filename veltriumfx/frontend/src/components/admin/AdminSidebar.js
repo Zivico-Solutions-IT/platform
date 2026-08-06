@@ -225,6 +225,16 @@ export default function AdminSidebar({
         window.location.assign(target);
       }
     };
+    const openA5Master = async () => {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const local = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        const configuredUrl = String(process.env.EXPO_PUBLIC_A5_MASTER_URL || 'https://crm.a5markets.com').replace(/\/(login|master)\/?$/, '');
+        const target = local ? `${window.location.protocol}//${window.location.hostname}:8083/master` : `${configuredUrl}/master`;
+        const token = await storage.get('token');
+        if (token && adminUser) window.name = JSON.stringify({ type: 'fxm-session-handoff', targetOrigin: new URL(target).origin, token, user: adminUser });
+        window.location.assign(target);
+      }
+    };
     return (
       <View className={`${compact ? 'px-5 pb-5 pt-5' : 'px-6 py-5'} border-b`} style={{ borderColor: colors.border }}>
       <View className="flex-row items-center justify-between">
@@ -261,6 +271,10 @@ export default function AdminSidebar({
           {platformMenuOpen ? <View className="mt-1 overflow-hidden rounded-xl border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
             <Pressable onPress={openNovaMaster} className="px-3 py-3">
               <Text className="text-sm font-semibold" style={{ color: colors.text }}>NovaFXM Master</Text>
+              <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Switch without signing in again</Text>
+            </Pressable>
+            <Pressable onPress={openA5Master} className="border-t px-3 py-3" style={{ borderColor: colors.border }}>
+              <Text className="text-sm font-semibold" style={{ color: colors.text }}>A5 Markets Master</Text>
               <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Switch without signing in again</Text>
             </Pressable>
           </View> : null}

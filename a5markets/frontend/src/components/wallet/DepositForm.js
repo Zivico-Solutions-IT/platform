@@ -29,7 +29,7 @@ const paymentMethods = [
 ];
 
 const paymentMethodGroups = [
-  { title: 'Crypto', subtitle: 'Wallet and chain transfers', icon: WalletCards, accent: '#D4AF37', methods: ['TRC20', 'BEP20', 'ERC20'] },
+  { title: 'Crypto', subtitle: 'Wallet and chain transfers', icon: WalletCards, accent: '#17B8B2', methods: ['TRC20', 'BEP20', 'ERC20'] },
   { title: 'Bank', subtitle: 'Direct bank rails', icon: Landmark, accent: '#38BDF8', methods: ['Bank Transfer'] },
 ].map((group) => ({
   ...group,
@@ -274,7 +274,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
             <Text className="mt-1 text-sm" style={{ color: colors.muted }}>Submit a funding request with receipt proof.</Text>
           </View>
           <View className="h-10 w-10 items-center justify-center rounded-2xl bg-primary/15">
-            <Wallet size={22} color="#D4AF37" />
+            <Wallet size={22} color="#17B8B2" />
           </View>
         </View>
       </View>
@@ -638,7 +638,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                       />
                     ) : null}
                     <View className="mb-3 h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
-                      <UploadCloud size={23} color="#D4AF37" />
+                      <UploadCloud size={23} color="#17B8B2" />
                     </View>
                     <Text className="text-center font-medium" style={{ color: colors.text }}>Click to upload or drag and drop</Text>
                     <Text className="mt-1 text-center text-xs" style={{ color: colors.muted }}>JPG or PNG receipt image</Text>
@@ -647,7 +647,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
               </View>
               <CustomInput label="Note (Optional)" placeholder="Optional note for admin review" value={form.note} onChangeText={update('note')} />
               <View className="mb-4 flex-row rounded-2xl border border-success/20 bg-success/10 p-4">
-                <ShieldCheck size={17} color="#12cf7a" />
+                <ShieldCheck size={17} color="#0C9F91" />
                 <Text className="ml-2 flex-1 text-xs font-semimedium" style={{ color: colors.text }}>Funds are credited only after payment verification. Never share your account password with anyone.</Text>
               </View>
               <CustomButton title="Submit Deposit Request" onPress={submit} loading={loading} disabled={disabled} variant="success" />
@@ -658,7 +658,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
         <View className="w-full gap-4 xl:w-[280px]">
           <View className="rounded-2xl border p-5 shadow-sm" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
             <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-success/10">
-              <ShieldCheck size={24} color="#12cf7a" />
+              <ShieldCheck size={24} color="#0C9F91" />
             </View>
             <Text className="text-lg font-medium" style={{ color: colors.text }}>Deposit Process</Text>
             <View className="mt-5 gap-4">
@@ -676,19 +676,19 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
             </View>
           </View>
           <View className="rounded-2xl border p-5 shadow-sm" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-            <Clock3 size={24} color="#12cf7a" />
+            <Clock3 size={24} color="#0C9F91" />
             <Text className="mt-3 text-base font-medium" style={{ color: colors.text }}>Estimated Processing Time</Text>
             <Text className="mt-3 text-sm leading-5" style={{ color: colors.muted }}>Standard review: 5 - 30 Minutes</Text>
             <Text className="mt-1 text-sm leading-5" style={{ color: colors.muted }}>Weekends and holidays: up to 24 hours</Text>
           </View>
           <View className="flex-1 rounded-2xl border p-5 shadow-sm" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-            <UploadCloud size={24} color="#D4AF37" />
+            <UploadCloud size={24} color="#17B8B2" />
             <Text className="mt-3 text-base font-medium" style={{ color: colors.text }}>Receipt Checklist</Text>
             <Text className="mt-2 text-sm leading-5" style={{ color: colors.muted }}>Before submitting, make sure your receipt clearly shows:</Text>
             <View className="mt-4 gap-3">
               {['Paid amount', 'Payment date', 'Payment method', 'Sender account details'].map((item) => (
                 <View key={item} className="flex-row items-center">
-                  <CheckCircle2 size={15} color="#12cf7a" />
+                  <CheckCircle2 size={15} color="#0C9F91" />
                   <Text className="ml-2 text-sm font-semimedium" style={{ color: colors.text }}>{item}</Text>
                 </View>
               ))}
