@@ -2,7 +2,7 @@ import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import {
-  BadgeCheck, ChevronRight, CircleDollarSign, History, Home, LogOut,
+  Award, BadgeCheck, ChevronRight, CircleDollarSign, History, Home, LogOut,
   LockKeyhole, Menu, Moon, PanelLeftClose, UserRound, WalletCards, X,
 } from 'lucide-react-native';
 import NovaLogo from '../brand/NovaLogo';
@@ -18,6 +18,7 @@ const nav = [
   ['Accounts', '/dashboard?section=accounts', BadgeCheck],
   ['Transactions', '/transactions', History],
   ['Verification', '/verification', BadgeCheck],
+  ['Broker Rewards', '/broker-rewards', Award],
 ];
 
 export default function PortalLayout({ children }) {
@@ -51,8 +52,8 @@ export default function PortalLayout({ children }) {
       {open ? (
         <View style={{ width: desktop ? 270 : Math.min(width * 0.86, 310), backgroundColor: '#102a46', padding: 20, zIndex: 50 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
-            <View style={{ width: 172, height: 56, borderRadius: 14, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
-              <NovaLogo width={148} height={46} />
+            <View style={{ width: 220, height: 82, borderRadius: 16, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+              <NovaLogo width={194} height={70} />
             </View>
             {!desktop ? <Pressable onPress={() => setOpen(false)}><X color="#fff" size={23} /></Pressable> : null}
           </View>

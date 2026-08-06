@@ -1,67 +1,66 @@
 import { Fragment, useEffect } from 'react';
-import { Link, router } from 'expo-router';
-import { CheckCircle2, FileCheck2, FileText, ShieldCheck, UploadCloud } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { CheckCircle2, FileText, ShieldCheck, UploadCloud } from 'lucide-react-native';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import CustomButton from '../src/components/common/CustomButton';
-import DashboardTabs from '../src/components/layout/DashboardTabs';
 import PortalLayout from '../src/components/portal/PortalLayout';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
 
-const medium = '#0B0B0B';
-const GOLD = '#17B8B2';
-const GREEN = '#153F73';
+const GOLD = '#dcb42a';
+const GREEN = '#20c66b';
+const INK = '#151515';
+const SOFT_GOLD = '#f8f1d8';
+const SOFT_GREEN = '#def6e7';
 
-function Card({ title, children, colors }) {
-  return (
-    <View className="rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-      <Text className="mb-4 text-lg font-medium" style={{ color: colors.text }}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function VerificationStep({ title, description, status, active, complete, colors }) {
-  const accent = complete ? GREEN : active ? GOLD : '#2b2b2b';
-  const labelColor = active ? medium : GOLD;
-  const labelBackground = active ? GOLD : complete ? 'rgba(1, 68, 33, .65)' : colors.panel;
-
+function KycStep({ title, description, status, current, colors }) {
   return (
     <View
-      className="flex-1 rounded-2xl border p-4"
-      style={{
-        backgroundColor: complete ? 'rgba(1, 68, 33, .16)' : active ? 'rgba(212, 175, 55, .12)' : colors.surface,
-        borderColor: accent,
-      }}
+      className="rounded-xl border p-6"
+      style={{ backgroundColor: current ? '#fdfbf3' : colors.panel, borderColor: current ? GOLD : colors.border }}
     >
-      <View className="mb-4 flex-row items-center justify-between">
-        <View className="h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: accent }}>
-          {complete ? <CheckCircle2 size={22} color={GOLD} /> : active ? <UploadCloud size={22} color={medium} /> : <FileText size={22} color={GOLD} />}
+      <View className="mb-5 flex-row items-start justify-between gap-3">
+        <View className="h-[60px] w-[60px] items-center justify-center rounded-xl" style={{ backgroundColor: current ? SOFT_GOLD : '#f4f5f3' }}>
+          {current ? <CheckCircle2 size={28} color={GOLD} /> : <UploadCloud size={28} color={INK} />}
         </View>
-        <Text className="rounded-full px-3 py-1 text-[10px] font-medium uppercase" style={{ color: labelColor, backgroundColor: labelBackground }}>
+        <Text
+          className="rounded-full px-3 py-1 text-[10px] font-medium uppercase"
+          style={{ backgroundColor: current ? GOLD : '#f4f4f2', color: current ? INK : '#777777' }}
+        >
           {status}
         </Text>
       </View>
-      <Text className="text-base font-medium" style={{ color: colors.text }}>{title}</Text>
-      <Text className="mt-2 text-sm leading-5" style={{ color: colors.muted }}>{description}</Text>
+      <Text className="text-xl font-medium" style={{ color: colors.text }}>{title}</Text>
+      <Text className="mt-3 text-base leading-6" style={{ color: colors.muted }}>{description}</Text>
     </View>
   );
 }
 
-function AccountDashboardHeader({ user, colors }) {
+function DocumentLink({ title, colors }) {
   return (
-    <View className="mb-6">
-      <View className="mb-6 flex-row flex-wrap items-start justify-between gap-3">
-        <View>
-          <Text className="text-3xl font-medium" style={{ color: colors.text }}>Account Dashboard</Text>
-          <Text className="mt-1" style={{ color: colors.muted }}>{user?.email || 'Manage accounts, funds, and rewards'}</Text>
-        </View>
-        <View className="flex-row gap-3">
-          <Link href="/trading" asChild><Pressable><Text style={{ color: GOLD }}>Back to Trading</Text></Pressable></Link>
-          <Link href="/login" asChild><Pressable><Text className="text-danger">Sign Out</Text></Pressable></Link>
-        </View>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => router.push('/verification-upload')}
+      className="flex-row items-center rounded-xl border p-5"
+      style={{ borderColor: GREEN, backgroundColor: colors.panel }}
+    >
+      <View className="h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: SOFT_GREEN }}>
+        <FileText size={22} color={GREEN} />
       </View>
-      <DashboardTabs activeKey="verification" />
+      <Text className="ml-4 text-lg font-medium" style={{ color: colors.text }}>{title}</Text>
+    </Pressable>
+  );
+}
+
+function StatusScreen({ title, description, icon, buttonTitle, colors }) {
+  return (
+    <View className="w-full max-w-[640px] mx-auto items-center rounded-2xl border p-6 sm:p-10" style={{ backgroundColor: colors.panel, borderColor: GOLD }}>
+      <View className="mb-6 h-20 w-20 items-center justify-center rounded-full" style={{ backgroundColor: SOFT_GOLD }}>
+        {icon}
+      </View>
+      <Text className="text-center text-3xl sm:text-4xl font-medium" style={{ color: colors.text }}>{title}</Text>
+      <Text className="mt-3 text-center text-sm sm:text-base" style={{ color: colors.muted }}>{description}</Text>
+      <CustomButton title={buttonTitle} onPress={() => router.push('/dashboard')} className="mt-8 w-full sm:w-auto sm:min-w-[190px]" />
     </View>
   );
 }
@@ -76,126 +75,72 @@ export default function VerificationScreen() {
     refreshUser?.().catch(() => {});
   }, [refreshUser]);
 
-  if (verificationStatus === 'approved') {
+  if (verificationStatus === 'approved' || verificationStatus === 'pending' || verificationStatus === 'rejected') {
+    const rejected = verificationStatus === 'rejected';
+    const pending = verificationStatus === 'pending';
     return (
-      <VerificationLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
-        <AccountDashboardHeader user={user} colors={colors} />
-        <View className="w-full max-w-[640px] mx-auto items-center rounded-2xl border p-6 sm:p-10" style={{ backgroundColor: colors.panel, borderColor: GREEN }}>
-          <View className="mb-6 h-20 w-20 items-center justify-center rounded-full" style={{ backgroundColor: GREEN }}>
-            <CheckCircle2 size={42} color={GOLD} />
-          </View>
-          <Text className="text-center text-3xl sm:text-4xl font-medium" style={{ color: colors.text }}>Verification Successfully</Text>
-          <Text className="mt-3 text-center text-sm sm:text-base" style={{ color: colors.muted }}>Your account is verified. You now have access to all enabled account features.</Text>
-          <CustomButton title="Go to Dashboard" onPress={() => router.push('/dashboard')} className="mt-8 w-full sm:w-auto sm:min-w-[190px]" />
-        </View>
-      </ScrollView></VerificationLayout>
-    );
-  }
-
-  if (verificationStatus === 'rejected') {
-    return (
-      <VerificationLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
-        <AccountDashboardHeader user={user} colors={colors} />
-        <View className="w-full max-w-[640px] mx-auto items-center rounded-2xl border border-danger/60 bg-danger/10 p-6 sm:p-10">
-          <Text className="text-center text-3xl sm:text-4xl font-medium" style={{ color: colors.text }}>Try Again</Text>
-          <Text className="mt-3 text-center text-sm sm:text-base" style={{ color: colors.muted }}>Your verification was not approved. Upload clear ID proof and address proof photos again.</Text>
-          <CustomButton title="Upload Again" onPress={() => router.push('/verification-upload')} className="mt-8 w-full sm:w-auto sm:min-w-[190px]" />
-        </View>
-      </ScrollView></VerificationLayout>
-    );
-  }
-
-  if (verificationStatus === 'pending') {
-    return (
-      <VerificationLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
-        <AccountDashboardHeader user={user} colors={colors} />
-        <View className="w-full max-w-[640px] mx-auto items-center rounded-2xl border p-6 sm:p-10" style={{ backgroundColor: colors.panel, borderColor: GOLD }}>
-          <View className="mb-6 h-20 w-20 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(212, 175, 55, .14)' }}>
-            <ShieldCheck size={42} color={GOLD} />
-          </View>
-          <Text className="text-center text-3xl sm:text-4xl font-medium" style={{ color: colors.text }}>Verification Submitted</Text>
-          <Text className="mt-3 text-center text-sm sm:text-base" style={{ color: colors.muted }}>Waiting for admin review. You will see the result here once it is reviewed.</Text>
-          <CustomButton title="Go to Dashboard" onPress={() => router.push('/dashboard')} className="mt-8 w-full sm:w-auto sm:min-w-[190px]" />
-        </View>
-      </ScrollView></VerificationLayout>
+      <VerificationLayout>
+        <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
+          <StatusScreen
+            colors={colors}
+            icon={rejected ? <FileText size={42} color={GOLD} /> : pending ? <ShieldCheck size={42} color={GOLD} /> : <CheckCircle2 size={42} color={GREEN} />}
+            title={rejected ? 'Try Again' : pending ? 'Verification Submitted' : 'Verification Successful'}
+            description={rejected ? 'Your verification was not approved. Upload clear ID proof and address proof photos again.' : pending ? 'Your documents are waiting for admin review. You will see the result here once reviewed.' : 'Your account is verified and all enabled account features are available.'}
+            buttonTitle="Go to Dashboard"
+          />
+          {rejected ? <CustomButton title="Upload Again" onPress={() => router.push('/verification-upload')} className="mt-4 w-full max-w-[640px] mx-auto" /> : null}
+        </ScrollView>
+      </VerificationLayout>
     );
   }
 
   return (
-    <VerificationLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8">
-      <AccountDashboardHeader user={user} colors={colors} />
+    <VerificationLayout>
+      <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8">
+        <View className="mb-6 flex-row items-start">
+          <View className="h-14 w-14 items-center justify-center rounded-xl" style={{ backgroundColor: SOFT_GOLD }}>
+            <ShieldCheck size={26} color={GOLD} />
+          </View>
+          <View className="ml-4 flex-1">
+            <Text className="text-3xl font-medium" style={{ color: colors.text }}>Verification</Text>
+            <Text className="mt-1 text-base" style={{ color: colors.muted }}>Step-wise KYC status and documents</Text>
+          </View>
+        </View>
 
-      <View className="gap-4">
-        <Card title="Verification Status" colors={colors}>
-          <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
+        <View className="rounded-2xl border p-4 sm:p-6" style={{ backgroundColor: '#fcfcf9', borderColor: '#e6e5df' }}>
+          <View className="mb-7 flex-row flex-wrap items-start justify-between gap-4">
             <View>
-              <Text className="text-2xl font-medium" style={{ color: colors.text }}>Unlock full account access</Text>
-              <Text className="mt-1" style={{ color: colors.muted }}>Complete verification to enable all trading, funding, and account features.</Text>
+              <Text className="text-2xl font-medium" style={{ color: INK }}>Unlock full account access</Text>
+              <Text className="mt-1 text-base" style={{ color: '#777777' }}>Upload your documents to enable withdrawals and full account features.</Text>
             </View>
-            <View className="flex-row items-center rounded-full border px-4 py-2" style={{ borderColor: GOLD, backgroundColor: 'rgba(212, 175, 55, .12)' }}>
-              <ShieldCheck size={18} color={GOLD} />
-              <Text className="ml-2 text-sm font-medium" style={{ color: GOLD }}>KYC Required</Text>
+            <View className="rounded-full border px-5 py-3" style={{ borderColor: GOLD }}>
+              <Text className="font-medium" style={{ color: GOLD }}>KYC Required</Text>
             </View>
           </View>
 
-          <View className="gap-4 xl:flex-row">
-            <View className="flex-[2] gap-3">
-              <VerificationStep
-                title="Unverified"
-                description="You've registered. Upload your documents to complete verification and unlock more features."
-                status="You are here"
-                complete
-                colors={colors}
-              />
-              <VerificationStep
-                title="Verified"
-                description="After verification, you'll gain access to enhanced features and more functionality."
-                status="Up next"
-                active
-                colors={colors}
-              />
-              <VerificationStep
-                title="CC-Verified"
-                description="This is the final step before you gain full access to all account features."
-                status="Locked"
-                colors={colors}
-              />
+          <View className="gap-6 xl:flex-row">
+            <View className="flex-[1.25] gap-4">
+              <KycStep title="Unverified" description="Upload your ID proof and address proof." status="You are here" current colors={colors} />
+              <KycStep title="Admin Review" description="Admin will review your documents and unlock full account access." status="Up next" colors={colors} />
             </View>
 
-            <View className="flex-1 rounded-2xl border p-5" style={{ backgroundColor: colors.surface, borderColor: GREEN }}>
-              <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: 'rgba(1, 68, 33, .55)' }}>
-                <FileCheck2 size={24} color={GOLD} />
+            <View className="flex-1 rounded-xl border p-6" style={{ backgroundColor: colors.panel, borderColor: '#e6e5df' }}>
+              <View className="mb-6 h-[72px] w-[72px] items-center justify-center rounded-xl" style={{ backgroundColor: SOFT_GREEN }}>
+                <FileText size={30} color={GOLD} />
               </View>
-              <Text className="text-lg font-medium" style={{ color: colors.text }}>Document Requirements</Text>
-              <Text className="mt-2 text-sm" style={{ color: colors.muted }}>Documents required to complete this stage.</Text>
-              <View className="mt-5 gap-3">
-                {['ID Proof', 'Address Proof'].map((item) => (
-                  <View key={item} className="flex-row items-center rounded-xl border p-3" style={{ backgroundColor: colors.panel, borderColor: GREEN }}>
-                    <View className="h-7 w-7 items-center justify-center rounded-full" style={{ backgroundColor: GREEN }}>
-                      <FileText size={15} color={GOLD} />
-                    </View>
-                    <Text className="ml-3 font-medium" style={{ color: colors.text }}>{item}</Text>
-                  </View>
-                ))}
+              <Text className="text-2xl font-medium" style={{ color: colors.text }}>Document Requirements</Text>
+              <Text className="mt-2 text-base" style={{ color: colors.muted }}>Both files are required before submission.</Text>
+              <View className="mt-7 gap-4">
+                <DocumentLink title="ID Proof" colors={colors} />
+                <DocumentLink title="Address Proof" colors={colors} />
               </View>
+              <Pressable onPress={() => router.push('/verification-upload')} className="mt-6 h-14 items-center justify-center rounded-xl" style={{ backgroundColor: GOLD }}>
+                <Text className="text-base font-medium" style={{ color: INK }}>Submit Verification</Text>
+              </Pressable>
             </View>
           </View>
-        </Card>
-
-        <Card title="Available Features" colors={colors}>
-          <View className="min-h-[120px] items-center justify-center rounded-2xl border border-dashed p-6" style={{ backgroundColor: colors.surface, borderColor: GREEN }}>
-            <Text className="text-lg font-medium" style={{ color: colors.text }}>No Features Available</Text>
-            <Text className="mt-2 text-center" style={{ color: colors.muted }}>New account tools will appear here after your verification status changes.</Text>
-          </View>
-        </Card>
-
-        <CustomButton
-          title={verificationStatus === 'rejected' ? 'Try Again ->' : 'Next Steps ->'}
-          onPress={() => router.push('/verification-upload')}
-          disabled={verificationStatus === 'approved' || verificationStatus === 'pending'}
-          className="max-w-[180px]"
-        />
-      </View>
-    </ScrollView></VerificationLayout>
+        </View>
+      </ScrollView>
+    </VerificationLayout>
   );
 }

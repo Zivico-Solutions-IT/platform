@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -415,7 +415,6 @@ export default function DashboardScreen() {
   const [activeSection, setActiveSection] = useState(String(params.section || 'overview'));
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [accountError, setAccountError] = useState('');
   const [pendingAccountType, setPendingAccountType] = useState(null);
   const [accountCreating, setAccountCreating] = useState(false);
@@ -479,7 +478,6 @@ export default function DashboardScreen() {
   const dashboardUser = dashboard?.user || user;
   const withdrawalLocked = Boolean(dashboardUser && dashboardUser.verificationStatus !== 'approved');
   const withdrawalLockedMessage = 'Verification approval is required before withdrawals.';
-  const referral = dashboard?.referral || {};
   const accounts = dashboard?.accounts || [];
   const demoAccounts = accounts.filter((account) => account.type === 'Demo');
   const liveAccounts = accounts.filter((account) => account.type === 'Live');
@@ -489,8 +487,6 @@ export default function DashboardScreen() {
   const liveTrades = dashboard?.liveTrades || [];
   const depositTransactions = transactions.filter((item) => item.type === 'deposit');
   const bankAccounts = dashboard?.bankAccounts || [];
-  const referrals = referral.referrals || [];
-  const referralText = useMemo(() => referral.url || '', [referral.url]);
   const notifications = useMemo(() => {
     const items = [];
     const reviewedVerification = ['approved', 'rejected'].includes(dashboardUser?.verificationStatus);
@@ -626,14 +622,6 @@ export default function DashboardScreen() {
     }
   };
 
-  const copyReferral = async () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard && referralText) {
-      await navigator.clipboard.writeText(referralText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }
-  };
-
   const signOut = async () => {
     await logout();
     router.replace('/login');
@@ -682,7 +670,6 @@ export default function DashboardScreen() {
           <Stat label="Balance" value={`${Number(wallet.balance || 0).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
           <Stat label="Equity" value={`${Number(wallet.equity || wallet.balance || 0).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
           <Stat label="Free Funds" value={`${Number(wallet.freeFunds || 0).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
-          {referral ? <Stat label="Referral Commission" value={`${Number(referral.commission || 0).toFixed(2)} USD`} colors={colors} mobile={mobile} /> : null}
         </View>
       ) : null}
 
@@ -695,18 +682,6 @@ export default function DashboardScreen() {
               <Text className="mt-2" style={{ color: colors.text }}>Phone: {dashboard?.user?.phone || '-'}</Text>
               <Text className="mt-2" style={{ color: colors.text }}>Trading Status: {dashboard?.user?.tradingStatus || 'active'}</Text>
             </Card>
-            {referral ? (
-              <Card title="Broker Referral" colors={colors} mobile={mobile}>
-                <Text style={{ color: colors.muted }}>Share this URL. New users who register from it are linked to you.</Text>
-                <TextInput
-                  editable={false}
-                  value={referralText}
-                  className="mt-4 rounded-xl border p-3"
-                  style={{ backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }}
-                />
-                <CustomButton title={copied ? 'Copied' : 'Copy Referral URL'} onPress={copyReferral} className="mt-4" />
-              </Card>
-            ) : null}
           </View>
           <View className="flex-1">
             <Card title="Live Account Activity" colors={colors} mobile={mobile}>

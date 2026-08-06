@@ -1,25 +1,79 @@
-import { ScrollView, Text } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, Text, View } from 'react-native';
 import WithdrawForm from '../src/components/wallet/WithdrawForm';
 import { useWallet } from '../src/hooks/useWallet';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
 import PortalLayout from '../src/components/portal/PortalLayout';
+import { dashboardService } from '../src/services/dashboardService';
+import { money } from '../src/utils/formatters';
+
+function AccountSummary({ label, value, colors }) {
+  return (
+    <View className="flex-1 rounded-2xl border p-5" style={{ minWidth: 230, backgroundColor: colors.panel, borderColor: colors.border }}>
+      <Text className="text-xs font-medium uppercase" style={{ color: colors.muted }}>{label}</Text>
+      <Text className="mt-3 text-xl font-medium" style={{ color: colors.text }}>{value}</Text>
+    </View>
+  );
+}
 
 export default function WithdrawScreen() {
   const { user } = useAuth();
   const { colors } = useAppTheme();
   const { summary, transactions, withdraw, loading } = useWallet();
+  const [accounts, setAccounts] = useState([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const [selectedAccountId, setSelectedAccountId] = useState('');
   const fundingLocked = Boolean(user && user.verificationStatus !== 'approved');
+  const liveAccounts = useMemo(
+    () => accounts.filter((account) => String(account.type || '').toLowerCase() === 'live' && account.status !== 'frozen'),
+    [accounts],
+  );
+  const selectedAccount = useMemo(
+    () => liveAccounts.find((account) => String(account.id) === String(selectedAccountId)) || liveAccounts[0] || null,
+    [liveAccounts, selectedAccountId],
+  );
+  const selectedSummary = useMemo(
+    () => ({ ...summary, balance: Number(selectedAccount?.balance ?? summary.balance ?? 0) }),
+    [selectedAccount?.balance, summary],
+  );
+
+  useEffect(() => {
+    let active = true;
+    dashboardService.getDashboard()
+      .then((result) => {
+        if (!active) return;
+        const nextAccounts = result.accounts || [];
+        setAccounts(nextAccounts);
+        const firstLive = nextAccounts.find((account) => String(account.type || '').toLowerCase() === 'live' && account.status !== 'frozen');
+        setSelectedAccountId(firstLive?.id ? String(firstLive.id) : '');
+      })
+      .catch(() => {
+        if (active) setAccounts([]);
+      })
+      .finally(() => {
+        if (active) setAccountsLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
   return (
-    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: '#f4f8fc' }} contentContainerClassName="mx-auto w-full max-w-[650px] p-3 sm:p-6">
-      <Text className="mb-5 text-2xl font-medium" style={{ color: colors.text }}>New Withdrawal</Text>
+    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: '#f4f8fc' }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-6 lg:p-8">
+      <Text className="mb-6 text-3xl font-medium" style={{ color: colors.text }}>New Withdrawal</Text>
+
+      <View className="mb-6 flex-row flex-wrap gap-4">
+        <AccountSummary label="Selected Account" value={selectedAccount?.name || (accountsLoading ? 'Loading live accounts...' : 'No live account')} colors={colors} />
+        <AccountSummary label="Balance" value={`${money(selectedSummary.balance)} ${selectedAccount?.currency || 'USD'}`} colors={colors} />
+      </View>
+
       <WithdrawForm
         onSubmit={(values) => withdraw(values, Boolean(user))}
         loading={loading}
-        disabled={fundingLocked}
-        disabledMessage="Verification approval is required before withdrawals."
-        summary={summary}
+        disabled={fundingLocked || !selectedAccount}
+        disabledMessage={fundingLocked ? 'Verification approval is required before withdrawals.' : 'Create or activate a Live account before withdrawals.'}
+        summary={selectedSummary}
         transactions={transactions}
+        selectedAccount={selectedAccount}
       />
     </ScrollView></PortalLayout>
   );

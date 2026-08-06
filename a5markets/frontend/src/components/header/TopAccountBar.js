@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { ChevronDown, Sun, Moon, UserRound, Wallet, Bell, LayoutDashboard, Activity, Plus, RefreshCw, Settings } from 'lucide-react-native';
+import { Check, ChevronDown, Sun, Moon, UserRound, Wallet, Bell, LayoutDashboard, Activity, Plus, RefreshCw, Settings } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
 import { money, quote } from '../../utils/formatters';
@@ -22,6 +22,34 @@ import ProfileMenu from './ProfileMenu';
 import NotificationMenu from './NotificationMenu';
 
 const visibleMetricCount = 4;
+
+function MetricSettingsMenu({ onClose, colors }) {
+  const [enabled, setEnabled] = useState(() => new Set(['Balance', 'Bonus', 'Equity', 'Free Funds', 'Margin', 'Margin Level', 'Profit']));
+  const toggle = (label) => setEnabled((current) => {
+    const next = new Set(current);
+    if (next.has(label)) next.delete(label); else next.add(label);
+    return next;
+  });
+
+  return (
+    <View className="absolute z-50 overflow-hidden rounded-2xl border bg-white p-2 shadow-xl" style={{ width: 150, right: 278, top: 74, borderColor: '#e4e7eb', elevation: 12 }}>
+      {['Balance', 'Bonus', 'Equity', 'Free Funds', 'Margin', 'Margin Level', 'Profit'].map((label) => {
+        const active = enabled.has(label);
+        return (
+          <Pressable key={label} onPress={() => toggle(label)} className="flex-row items-center px-2 py-2">
+            <View className="h-5 w-5 items-center justify-center" style={{ backgroundColor: active ? '#2f65e8' : '#fff', borderWidth: active ? 0 : 1, borderColor: colors.border }}>
+              {active ? <Check size={14} color="#fff" strokeWidth={3} /> : null}
+            </View>
+            <Text className="ml-2 text-sm" style={{ color: '#343840' }}>{label}</Text>
+          </Pressable>
+        );
+      })}
+      <Pressable onPress={onClose} className="mx-auto mt-1 rounded-md px-3 py-2" style={{ backgroundColor: '#1f78bd' }}>
+        <Text className="text-sm font-semibold text-white">Close</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 export default function TopAccountBar({ onNewOrder }) {
   const { width } = useWindowDimensions();
@@ -325,7 +353,7 @@ export default function TopAccountBar({ onNewOrder }) {
           {/* Row 1: Logo & Utility Icons */}
           <View className="flex-row items-center justify-between">
             <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
-              <NovaLogo dark={darkMode} width={narrowPhone ? 108 : 130} height={narrowPhone ? 28 : 34} />
+              <NovaLogo dark={darkMode} width={narrowPhone ? 120 : 150} height={narrowPhone ? 34 : 42} />
             </Pressable>
             <View className="flex-row items-center gap-1.5">
               <Pressable {...hoverProps('mobile-theme')} onPress={toggleTheme} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-theme', { backgroundColor: `${colors.text}08` })}>
@@ -397,14 +425,14 @@ export default function TopAccountBar({ onNewOrder }) {
       ) : (
         <View style={{ marginBottom: mobile ? 12 : 0, marginRight: mobile ? 0 : (compactDesktop ? 4 : 12), justifyContent: 'center' }}>
           <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
-            <NovaLogo dark={darkMode} width={compactDesktop ? 125 : 155} height={compactDesktop ? 33 : 42} />
+            <NovaLogo dark={darkMode} width={compactDesktop ? 150 : 190} height={compactDesktop ? 42 : 56} />
           </Pressable>
         </View>
       )}
       {!mobile && user && !isAdmin ? (
         <Pressable
           onPress={onNewOrder}
-          className={`${compactDesktop ? 'h-[42px]' : 'h-[54px]'} flex-row items-center rounded-xl px-4`}
+          className={`${compactDesktop ? 'h-[40px]' : 'h-[50px]'} flex-row items-center rounded-xl px-4`}
           style={{
             backgroundColor: '#1f78bd',
             shadowColor: '#1f78bd',
@@ -445,7 +473,7 @@ export default function TopAccountBar({ onNewOrder }) {
         </ScrollView>
       ) : !mobile && !isAdmin ? (
         <View
-          className={`${twoRowDesktop ? 'h-[54px]' : compactDesktop ? 'h-[58px]' : 'h-[64px]'} flex-row items-center rounded-2xl border`}
+          className={`${twoRowDesktop ? 'h-[50px]' : compactDesktop ? 'h-[52px]' : 'h-[56px]'} flex-row items-center rounded-2xl border`}
           style={twoRowDesktop
             ? { flexBasis: '100%', width: '100%', order: 2, paddingLeft: 10, backgroundColor: darkMode ? colors.panel : '#ffffff', borderColor: desktopDivider }
             : {
@@ -481,7 +509,7 @@ export default function TopAccountBar({ onNewOrder }) {
           ))}
           <Pressable
             {...hoverProps('profile')}
-            onPress={() => setMenu(menu === 'profile' ? null : 'profile')}
+            onPress={() => setMenu(menu === 'metrics' ? null : 'metrics')}
             className="items-center justify-center"
             style={{ width: compactDesktop ? 38 : 46, height: '100%', cursor: 'pointer' }}
           >
@@ -492,13 +520,13 @@ export default function TopAccountBar({ onNewOrder }) {
       {!mobile && isAdmin ? <View style={{ flex: 1 }} /> : null}
       {!mobile && user && !isAdmin ? (
         <Pressable
-          onPress={() => setMenu(menu === 'account' ? null : 'account')}
-          className={`${compactDesktop ? 'h-[48px]' : 'h-[62px]'} flex-row items-center rounded-xl border`}
+          onPress={() => setMenu(menu === 'profile' ? null : 'profile')}
+          className={`${compactDesktop ? 'h-[44px]' : 'h-[54px]'} flex-row items-center rounded-xl border`}
           style={{
             width: compactDesktop ? 170 : 200,
             paddingHorizontal: compactDesktop ? 12 : 16,
             backgroundColor: darkMode ? colors.panel : '#ffffff',
-            borderColor: menu === 'account' ? '#1f78bd' : '#e1e6eb',
+            borderColor: menu === 'profile' ? '#1f78bd' : '#e1e6eb',
             cursor: 'pointer',
           }}
         >
@@ -520,7 +548,7 @@ export default function TopAccountBar({ onNewOrder }) {
         </Pressable>
       ) : null}
       {user && !isAdmin ? (
-        <Pressable {...hoverProps('refresh')} onPress={refreshDashboard} className="hidden items-center justify-center rounded-xl border lg:flex" style={iconButtonStyle('refresh', { width: compactDesktop ? 48 : 62, height: compactDesktop ? 48 : 62, backgroundColor: darkMode ? colors.panel : '#ffffff', borderColor: '#e1e6eb' })}>
+        <Pressable {...hoverProps('refresh')} onPress={refreshDashboard} className="hidden items-center justify-center rounded-xl border lg:flex" style={iconButtonStyle('refresh', { width: compactDesktop ? 44 : 54, height: compactDesktop ? 44 : 54, backgroundColor: darkMode ? colors.panel : '#ffffff', borderColor: '#e1e6eb' })}>
           <View style={iconHoverStyle('refresh')}><RefreshCw size={21} color={desktopMuted} /></View>
         </Pressable>
       ) : null}
@@ -540,6 +568,7 @@ export default function TopAccountBar({ onNewOrder }) {
                 />
               </Pressable>
             ) : null}
+            {menu === 'metrics' ? <Pressable onPress={(event) => event.stopPropagation()}><MetricSettingsMenu colors={colors} onClose={() => setMenu(null)} /></Pressable> : null}
             {menu === 'wallet' ? (
               <Pressable onPress={(event) => event.stopPropagation()}>
                 <FundingMenu selectedAccount={selectedAccount} summary={summary} onClose={() => setMenu(null)} onSwitchAccount={() => setMenu('account')} onOpenPanel={openSidePanel} />

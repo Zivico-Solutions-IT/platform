@@ -3,8 +3,8 @@ import { Link, router } from 'expo-router';
 import { Copy, RefreshCcw, UsersRound } from 'lucide-react-native';
 import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import CustomButton from '../src/components/common/CustomButton';
-import LoadingSpinner, { LOADING_SPINNER_MIN_MS } from '../src/components/common/LoadingSpinner';
-import DashboardTabs from '../src/components/layout/DashboardTabs';
+import LoadingSpinner from '../src/components/common/LoadingSpinner';
+import PortalLayout from '../src/components/portal/PortalLayout';
 import { dashboardService } from '../src/services/dashboardService';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
@@ -85,12 +85,6 @@ export default function BrokerRewardsScreen() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [splashDone, setSplashDone] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSplashDone(true), LOADING_SPINNER_MIN_MS);
-    return () => clearTimeout(timer);
-  }, []);
 
   const loadDashboard = async () => {
     if (!user) return;
@@ -138,12 +132,12 @@ export default function BrokerRewardsScreen() {
     }
   };
 
-  if (authLoading || !user || !splashDone) {
+  if (authLoading || !user) {
     return <LoadingSpinner />;
   }
 
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8">
+    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8">
       <View className="mb-6 flex-row flex-wrap items-center justify-between gap-3">
         <View>
           <Text className="text-3xl font-medium" style={{ color: colors.text }}>Referral Programme</Text>
@@ -161,8 +155,6 @@ export default function BrokerRewardsScreen() {
           </Link>
         </View>
       </View>
-
-      <DashboardTabs activeKey="rewards" />
 
       <View className="mb-5 overflow-hidden rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.primary }}>
         <Text className="text-sm font-medium uppercase tracking-[1px]" style={{ color: colors.primary }}>Your Referral Code</Text>
@@ -214,6 +206,6 @@ export default function BrokerRewardsScreen() {
           {!(referral.rewards || []).length ? <Text className="rounded-xl border border-dashed p-5" style={{ backgroundColor: colors.surface, borderColor: colors.border, color: colors.muted }}>No rewards earned yet.</Text> : null}
         </View>
       </View>
-    </ScrollView>
+    </ScrollView></PortalLayout>
   );
 }

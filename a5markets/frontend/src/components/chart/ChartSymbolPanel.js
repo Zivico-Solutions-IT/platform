@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { ChevronDown, ChevronLeft, ChevronRight, Minus, Plus, Search, Star } from 'lucide-react-native';
+import { WebView } from 'react-native-webview';
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign, Minus, Plus, Search, Star } from 'lucide-react-native';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
 import { useToast } from '../../context/ToastContext';
 import { quote } from '../../utils/formatters';
+
+function calendarHtml(ui) {
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>html,body,.tradingview-widget-container,.tradingview-widget-container__widget{width:100%;height:100%;margin:0;background:${ui.menu};overflow:hidden}</style></head><body><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>{"colorTheme":"light","isTransparent":true,"width":"100%","height":"100%","locale":"en","importanceFilter":"-1,0,1"}</script></div></body></html>`;
+}
 
 export default function ChartSymbolPanel({
   currentSymbol,
@@ -29,12 +34,12 @@ export default function ChartSymbolPanel({
   const categoryBlue = '#1477b8';
   const categoryBackground = '#d9eaf6';
   const expandedBackground = '#eef7fc';
-  const categoryAccent = '#20bde2';
   const { openPosition } = useDemoTrading();
   const { notify } = useToast();
   const [quickTradeSymbol, setQuickTradeSymbol] = useState(null);
   const [quickLots, setQuickLots] = useState('0.01');
   const [quickOrderLoading, setQuickOrderLoading] = useState(false);
+  const [panelTab, setPanelTab] = useState('symbols');
   const favoriteSymbolSet = new Set(favoriteSymbols);
   const favoritesActive = symbolTab === 'Favorites';
   const selectedCategory = symbolTabs.includes(symbolTab) ? symbolTab : symbolTabs[0];
@@ -83,7 +88,7 @@ export default function ChartSymbolPanel({
 
   return (
     <View
-      className={isInline ? "flex-1 w-full overflow-hidden rounded-xl border shadow-sm" : "absolute max-w-[96vw] overflow-hidden rounded-lg border shadow-2xl"}
+      className={isInline ? "flex-1 w-full overflow-hidden rounded-xl border" : "absolute max-w-[96vw] overflow-hidden rounded-lg border"}
       style={isInline ? {
         backgroundColor: ui.menu,
         borderColor: ui.menuBorder,
@@ -98,6 +103,26 @@ export default function ChartSymbolPanel({
         elevation: 3200,
       }}
     >
+      <View className="flex-row border-b" style={{ borderColor: ui.border }}>
+        {[
+          ['symbols', 'Symbols', CircleDollarSign],
+          ['calendar', 'Calendar', CalendarDays],
+        ].map(([key, label, Icon]) => {
+          const active = panelTab === key;
+          return (
+            <Pressable key={key} onPress={() => setPanelTab(key)} className="h-12 flex-1 flex-row items-center justify-center border-b-2" style={{ borderColor: active ? '#1477b8' : 'transparent' }}>
+              <Icon size={18} color={active ? '#1477b8' : ui.muted} />
+              <Text className="ml-2 text-sm font-medium" style={{ color: active ? '#1477b8' : ui.muted }}>{label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {panelTab === 'calendar' ? (
+        <View className="flex-1 p-2" style={{ minHeight: 0 }}>
+          {Platform.OS === 'web' ? <iframe title="TradingView economic calendar" srcDoc={calendarHtml(ui)} style={{ width: '100%', height: '100%', border: 0 }} /> : <WebView source={{ html: calendarHtml(ui) }} style={{ flex: 1 }} />}
+        </View>
+      ) : <>
       <View className="px-3 py-3 border-b" style={{ borderColor: ui.border, zIndex: 3300, elevation: 3300 }}>
         <View className="flex-row items-center gap-2">
           <View className="flex-row items-center flex-1 h-10 px-3 border rounded-xl" style={{ backgroundColor: ui.control, borderColor: ui.border }}>
@@ -125,14 +150,14 @@ export default function ChartSymbolPanel({
 
       <View className="flex-row items-center px-5 py-3 border-b" style={{ borderColor: ui.border }}>
         <Text className="flex-1 text-xs font-medium text-center" style={{ color: ui.muted }}>Symbol</Text>
-        <Text className="w-[64px] text-xs font-medium text-center" style={{ color: ui.muted }}>Bid</Text>
-        <Text className="w-[64px] text-xs font-medium text-center" style={{ color: ui.muted }}>Spread</Text>
-        <Text className="w-[64px] text-xs font-medium text-center" style={{ color: ui.muted }}>Ask</Text>
-        <View style={{ width: 30 }} />
+        <Text className="w-[48px] text-[11px] font-medium text-center" style={{ color: ui.muted }}>Bid</Text>
+        <Text className="w-[48px] text-[11px] font-medium text-center" style={{ color: ui.muted }}>Spread</Text>
+        <Text className="w-[48px] text-[11px] font-medium text-center" style={{ color: ui.muted }}>Ask</Text>
+        <View style={{ width: 22 }} />
       </View>
 
       <ScrollView
-        className="flex-1 min-h-0"
+        className="flex-1 min-h-0 a5-blue-scrollbar"
         showsVerticalScrollIndicator
         persistentScrollbar
         style={Platform.OS === 'web' ? { overflowY: 'scroll', scrollbarGutter: 'stable' } : null}
@@ -156,8 +181,6 @@ export default function ChartSymbolPanel({
                 className="flex-row items-center h-[50px] px-4"
                 style={{
                   backgroundColor: expanded ? categoryBackground : categoryIndex % 2 ? '#f7f8fa' : ui.menu,
-                  borderRightWidth: 4,
-                  borderRightColor: expanded ? categoryAccent : 'transparent',
                   cursor: 'pointer',
                 }}
               >
@@ -194,7 +217,7 @@ export default function ChartSymbolPanel({
               onHoverIn={() => onHoverSymbol(item.symbol)}
               onHoverOut={() => onHoverSymbol(null)}
               onPress={() => onSelectSymbol(item.symbol)}
-              className="h-[48px] flex-row items-center px-4 border-b"
+              className="h-[48px] flex-row items-center px-2.5 border-b"
               style={{
                 backgroundColor: active
                   ? categoryBackground
@@ -205,7 +228,7 @@ export default function ChartSymbolPanel({
                 cursor: 'pointer',
               }}
             >
-              <View className="flex-row items-center flex-1 min-w-0 pr-2">
+              <View className="flex-row items-center pr-1.5" style={{ flex: 1, minWidth: 0 }}>
                 <Pressable
                   onPress={(event) => {
                     event?.stopPropagation?.();
@@ -216,29 +239,31 @@ export default function ChartSymbolPanel({
                 >
                   <Star
                     size={15}
-                    color={favorite || active ? (ui.accent || '#17B8B2') : ui.muted}
-                    fill={favorite || active ? (ui.accent || '#17B8B2') : 'transparent'}
+                    color={favorite ? (ui.accent || '#17B8B2') : ui.muted}
+                    fill={favorite ? (ui.accent || '#17B8B2') : 'transparent'}
                   />
                 </Pressable>
-                <View className="flex-1 min-w-0">
-                  <View className="flex-row items-center">
-                    <Text className="text-sm font-semibold" numberOfLines={1} style={{ color: active ? (ui.accent || '#17B8B2') : ui.text }}>{item.symbol}</Text>
+                <View className="ml-1 flex-row items-center" style={{ flex: 1, minWidth: 0 }}>
+                  <View className="mr-1.5 h-7 w-7 items-center justify-center rounded border" style={{ backgroundColor: ui.control, borderColor: ui.border }}>
+                    <Text className="text-[10px] font-medium" style={{ color: ui.text }}>{String(item.symbol || '').slice(0, 2)}</Text>
                   </View>
-                  <Text className="text-[11px]" numberOfLines={1} style={{ color: active ? (ui.accent || '#17B8B2') : ui.muted }}>{item.group || 'Market'}</Text>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text className="text-xs font-medium" numberOfLines={1} ellipsizeMode="tail" style={{ color: active ? (ui.accent || '#17B8B2') : ui.text }}>{item.symbol}</Text>
+                  </View>
                 </View>
               </View>
-              <View style={{ width: 64, alignItems: 'center', justifyContent: 'center' }}>
-                <Text className="text-xs font-semibold" numberOfLines={1} style={{ color: bidTone }}>
+              <View style={{ width: 48, alignItems: 'center', justifyContent: 'center' }}>
+                <Text className="text-[11px] font-semibold" numberOfLines={1} adjustsFontSizeToFit style={{ color: bidTone }}>
                   {quote(item.bid ?? item.price, item.decimals)}
                 </Text>
               </View>
-              <View style={{ width: 64, alignItems: 'center', justifyContent: 'center' }}>
-                <Text className="text-xs font-medium" numberOfLines={1} style={{ color: ui.text }}>
+              <View style={{ width: 48, alignItems: 'center', justifyContent: 'center' }}>
+                <Text className="text-[11px] font-medium" numberOfLines={1} style={{ color: ui.text }}>
                   {Number.isFinite(spread) ? spread.toFixed(1) : '0.0'}
                 </Text>
               </View>
-              <View style={{ width: 64, alignItems: 'center', justifyContent: 'center' }}>
-                <Text className="text-xs font-semibold" numberOfLines={1} style={{ color: askTone }}>
+              <View style={{ width: 48, alignItems: 'center', justifyContent: 'center' }}>
+                <Text className="text-[11px] font-semibold" numberOfLines={1} adjustsFontSizeToFit style={{ color: askTone }}>
                   {quote(item.ask ?? item.price, item.decimals)}
                 </Text>
               </View>
@@ -249,7 +274,7 @@ export default function ChartSymbolPanel({
                   setQuickTradeSymbol((symbol) => symbol === item.symbol ? null : item.symbol);
                 }}
                 className="items-center justify-center rounded-full"
-                style={{ width: 30, height: 30, cursor: 'pointer' }}
+                style={{ width: 22, height: 30, cursor: 'pointer' }}
               >
                 {quickTradeOpen
                   ? <Minus size={18} color={ui.muted} />
@@ -314,6 +339,7 @@ export default function ChartSymbolPanel({
           </View>
         ) : null}
       </ScrollView>
+      </>}
     </View>
   );
 }

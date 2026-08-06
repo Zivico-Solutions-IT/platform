@@ -1598,7 +1598,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                 <Text className="font-medium" style={{ color: priceTone, fontSize: compactToolbar ? 10 : 12 }}>{percent(currentSymbol.change)}</Text>
                 <Text className="text-[10px]" style={{ color: ui.muted }}>Spread: {fixedSpreadText}</Text>
               </Pressable>
-              <View className="min-w-0 flex-1 flex-row flex-wrap items-center" style={{ columnGap: 1, rowGap: 1, minHeight: compactToolbar ? 22 : 28 }}>
+              <View className="min-w-0 flex-1 flex-row flex-wrap items-center justify-end" style={{ columnGap: 1, rowGap: 1, minHeight: compactToolbar ? 22 : 28 }}>
                 {TIMEFRAMES.map((entry) => (
                   <Pressable
                     key={entry}
@@ -1620,7 +1620,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                     <Text className="font-medium" style={{ color: entry === viewRange ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
                   </Pressable>
                 ))}
-                <View className="flex-row items-center" style={{ marginLeft: 'auto', paddingLeft: compactToolbar ? 8 : 12, columnGap: compactToolbar ? 2 : 4 }}>
+                <View className="flex-row items-center" style={{ paddingLeft: compactToolbar ? 8 : 12, columnGap: compactToolbar ? 2 : 4 }}>
                   <IconButton active={chartMenuOpen} bare ui={ui} size={iconButtonSize} onPress={toggleChartMenu}>
                     <ActiveChartIcon size={compactToolbar ? 14 : 17} color={chartMenuOpen ? ui.accent : ui.text} />
                   </IconButton>
@@ -1668,7 +1668,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
       ) : null}
 
       <View className="flex-1 p-2.5" style={{ marginLeft: chartOffsetLeft, backgroundColor: ui.background, zIndex: 0, elevation: 0 }}>
-        <View className="flex-1 overflow-hidden rounded-lg border shadow-2xl" style={{ backgroundColor: ui.menu, borderColor: ui.menuBorder }}>
+        <View className="flex-1 overflow-hidden rounded-lg border" style={{ backgroundColor: ui.menu, borderColor: ui.menuBorder }}>
           {Platform.OS === 'web' ? (
             <iframe
               key={chartRenderKey}

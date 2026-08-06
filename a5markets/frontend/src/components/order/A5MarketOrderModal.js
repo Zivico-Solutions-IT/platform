@@ -74,10 +74,10 @@ export default function A5MarketOrderModal({ visible, onClose }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(16, 22, 29, 0.62)', alignItems: 'center', justifyContent: 'center', padding: compact ? 10 : 24 }}>
-        <Pressable onPress={(event) => event.stopPropagation()} style={{ width: '100%', maxWidth: 620, maxHeight: Math.min(height - 20, 820), borderRadius: compact ? 18 : 14, backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.24, shadowRadius: 30, elevation: 18 }}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: compact ? 18 : 24 }}>
+        <Pressable onPress={(event) => event.stopPropagation()} style={{ width: '100%', maxWidth: 560, maxHeight: Math.min(height - 28, 760), borderRadius: compact ? 18 : 14, backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.24, shadowRadius: 30, elevation: 18 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: compact ? 16 : 20 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: ink, fontSize: compact ? 22 : 25, fontWeight: '800' }}>Create New Market Order</Text>
+              <Text style={{ color: ink, fontSize: compact ? 20 : 22, fontWeight: '500' }}>Create New Market Order</Text>
               <Pressable onPress={onClose} style={{ width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}><X size={21} color="#747b85" /></Pressable>
             </View>
 

@@ -102,6 +102,40 @@ textarea:focus {
   background: #2c79bb;
 }
 
+.a5-blue-scrollbar {
+  scrollbar-color: #20bde2 #eef7fc;
+  scrollbar-width: thin;
+}
+
+.a5-blue-scrollbar::-webkit-scrollbar {
+  width: 7px;
+}
+
+.a5-blue-scrollbar::-webkit-scrollbar-track {
+  background: #eef7fc;
+}
+
+.a5-blue-scrollbar::-webkit-scrollbar-thumb {
+  background: #20bde2;
+  border-radius: 999px;
+}
+
+.a5-blue-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #1477b8;
+}
+
+.dark .a5-blue-scrollbar {
+  scrollbar-color: #2c79bb #0d2239;
+}
+
+.dark .a5-blue-scrollbar::-webkit-scrollbar-track {
+  background: #0d2239;
+}
+
+.dark .a5-blue-scrollbar::-webkit-scrollbar-thumb {
+  background: #2c79bb;
+}
+
 #admin-sidebar-backdrop {
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;

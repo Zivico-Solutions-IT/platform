@@ -115,6 +115,7 @@ export default function TradingLayout() {
 
   const desktop = width >= 1100;
   const mobile = width < 760;
+  const tablet = width >= 760 && width < 1100;
   const chartAreaHeight = desktop
     ? Math.max(560, Math.min(680, height - 150))
     : tablet
