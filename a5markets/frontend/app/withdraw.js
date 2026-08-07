@@ -58,7 +58,7 @@ export default function WithdrawScreen() {
   }, []);
 
   return (
-    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: '#f4f8fc' }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-6 lg:p-8">
+    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-6 lg:p-8">
       <Text className="mb-6 text-3xl font-medium" style={{ color: colors.text }}>New Withdrawal</Text>
 
       <View className="mb-6 flex-row flex-wrap gap-4">

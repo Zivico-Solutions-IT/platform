@@ -2015,7 +2015,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       if (!token || !user) throw new Error('A client session could not be created.');
 
       const localHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-      const configuredOrigin = String(process.env.EXPO_PUBLIC_PLATFORM_URL || 'https://platform.a5markets.com')
+      const configuredOrigin = String(process.env.EXPO_PUBLIC_PLATFORM_URL || 'https://portal.a5markets.com')
         .replace(/\/(login|register|trading)\/?$/, '')
         .replace(/\/$/, '');
       const clientOrigin = localHost ? window.location.origin : configuredOrigin;

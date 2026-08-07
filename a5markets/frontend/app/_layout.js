@@ -20,10 +20,8 @@ function AppStack() {
     if (!pathname) return; // Guard against null/undefined pathname during initialization
 
     const hostname = window.location.hostname.toLowerCase();
-    if (hostname === 'portal.a5markets.com' && (pathname === '/' || pathname === '/trading')) {
+    if (hostname === 'portal.a5markets.com' && pathname === '/') {
       router.replace('/dashboard');
-    } else if (hostname === 'platform.a5markets.com' && pathname === '/') {
-      router.replace('/trading');
     }
   }, [pathname]);
 

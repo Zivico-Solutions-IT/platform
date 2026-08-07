@@ -632,7 +632,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: '#f4f8fc' }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-4 lg:p-8">
+    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-4 lg:p-8">
       <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
         <View className="min-w-0 flex-1">
           <Text className={`${mobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>Account Dashboard</Text>

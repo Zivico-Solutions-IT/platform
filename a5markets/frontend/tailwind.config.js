@@ -9,7 +9,7 @@ module.exports = {
         panel: '#181a20',
         surface: '#1e2329',
         border: '#2b3139',
-        primary: '#D4AF37',
+        primary: '#2c79bb',
         success: '#12cf7a',
         danger: '#f24d58',
         muted: '#8fa0bb',

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import {
   Award, BadgeCheck, ChevronRight, CircleDollarSign, History, Home, LogOut,
-  LockKeyhole, Menu, Moon, PanelLeftClose, UserRound, WalletCards, X,
+  LockKeyhole, Menu, Moon, PanelLeftClose, Sun, UserRound, WalletCards, X,
 } from 'lucide-react-native';
 import NovaLogo from '../brand/NovaLogo';
 import { useAuth } from '../../hooks/useAuth';
@@ -26,7 +26,7 @@ export default function PortalLayout({ children }) {
   const pathname = usePathname();
   const params = useLocalSearchParams();
   const { user, logout } = useAuth();
-  const { colors, toggleTheme } = useAppTheme();
+  const { colors, darkMode, toggleTheme } = useAppTheme();
   const [open, setOpen] = useState(width >= 900);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const desktop = width >= 900;
@@ -48,14 +48,14 @@ export default function PortalLayout({ children }) {
     .join('');
 
   return (
-    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: '#f4f8fc' }}>
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
       {open ? (
-        <View style={{ width: desktop ? 270 : Math.min(width * 0.86, 310), backgroundColor: '#102a46', padding: 20, zIndex: 50 }}>
+        <View style={{ width: desktop ? 270 : Math.min(width * 0.86, 310), backgroundColor: darkMode ? '#091b2e' : '#eef7fc', borderRightWidth: 1, borderRightColor: colors.border, padding: 20, zIndex: 50 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
-            <View style={{ width: 220, height: 82, borderRadius: 16, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
-              <NovaLogo width={194} height={70} />
+            <View style={{ width: 220, height: 82, alignItems: 'center', justifyContent: 'center' }}>
+              <NovaLogo dark={darkMode} width={208} height={78} />
             </View>
-            {!desktop ? <Pressable onPress={() => setOpen(false)}><X color="#fff" size={23} /></Pressable> : null}
+            {!desktop ? <Pressable onPress={() => setOpen(false)}><X color={colors.text} size={23} /></Pressable> : null}
           </View>
           <ScrollView showsVerticalScrollIndicator={false}>
             {nav.map(([label, href, Icon]) => {
@@ -66,8 +66,8 @@ export default function PortalLayout({ children }) {
               );
               return (
                 <Pressable key={label} onPress={() => go(href)} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 13, marginBottom: 7, backgroundColor: active ? '#2c79bb' : 'transparent' }}>
-                  <Icon size={19} color={active ? '#fff' : '#b9d5e8'} />
-                  <Text style={{ color: '#fff', fontWeight: active ? '700' : '500', fontSize: 15, marginLeft: 12, flex: 1 }}>{label}</Text>
+                  <Icon size={19} color={active ? '#fff' : colors.muted} />
+                  <Text style={{ color: active ? '#fff' : colors.text, fontWeight: active ? '700' : '500', fontSize: 15, marginLeft: 12, flex: 1 }}>{label}</Text>
                   {active ? <ChevronRight size={16} color="#fff" /> : null}
                 </Pressable>
               );
@@ -80,50 +80,52 @@ export default function PortalLayout({ children }) {
       ) : null}
 
       <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ height: 78, paddingHorizontal: desktop ? 28 : 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#dbe8f2', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 100 }}>
+        <View style={{ minHeight: 68, paddingVertical: 8, paddingHorizontal: desktop ? 28 : 14, backgroundColor: colors.panel, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 100 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Pressable onPress={() => setOpen((value) => !value)} style={{ width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#eaf4fb' }}>
-              <Menu size={21} color="#163b60" />
+            <Pressable onPress={() => setOpen((value) => !value)} style={{ width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}>
+              <Menu size={21} color={colors.text} />
             </Pressable>
             <View style={{ marginLeft: 13 }}>
-              <Text style={{ fontSize: 18, fontWeight: '800', color: '#102a46' }}>A5 Client Portal</Text>
-              {desktop ? <Text style={{ fontSize: 12, color: '#6d8194' }}>Manage funds, accounts and your profile</Text> : null}
+              <Text style={{ fontSize: desktop ? 18 : 15, fontWeight: '800', color: colors.text }}>A5 Client Portal</Text>
+              {desktop ? <Text style={{ fontSize: 12, color: colors.muted }}>Manage funds, accounts and your profile</Text> : null}
             </View>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
             <Pressable onPress={() => navigateToA5App('platform', '/trading', router)} style={{ paddingHorizontal: 17, height: 44, borderRadius: 13, backgroundColor: '#2c79bb', alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#fff', fontWeight: '800' }}>Platform</Text>
             </Pressable>
-            {desktop ? <Pressable onPress={toggleTheme} style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: '#eaf4fb', alignItems: 'center', justifyContent: 'center' }}><Moon size={19} color="#163b60" /></Pressable> : null}
+            <Pressable onPress={toggleTheme} style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+              {darkMode ? <Sun size={19} color={colors.text} /> : <Moon size={19} color={colors.text} />}
+            </Pressable>
             <View style={{ position: 'relative' }}>
               <Pressable
                 onPress={() => setProfileMenuOpen((value) => !value)}
-                style={{ minHeight: 50, paddingLeft: desktop ? 14 : 5, paddingRight: 6, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: profileMenuOpen ? '#f1f7fb' : '#fff' }}
+                style={{ minHeight: 50, paddingLeft: desktop ? 14 : 5, paddingRight: 6, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: profileMenuOpen ? colors.surface : colors.panel }}
               >
                 {desktop ? (
                   <View style={{ marginRight: 11, maxWidth: 190 }}>
-                    <Text numberOfLines={1} style={{ color: '#102a46', fontWeight: '700', textAlign: 'right' }}>{user?.name || 'A5 Trader'}</Text>
-                    <Text numberOfLines={1} style={{ color: '#6d8194', fontSize: 11, textAlign: 'right' }}>{user?.email || ''}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.text, fontWeight: '700', textAlign: 'right' }}>{user?.name || 'A5 Trader'}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, textAlign: 'right' }}>{user?.email || ''}</Text>
                   </View>
                 ) : null}
-                <View style={{ width: 43, height: 43, borderRadius: 22, overflow: 'hidden', backgroundColor: '#dcecf7', alignItems: 'center', justifyContent: 'center' }}>
-                  {user?.profileImage ? <Image source={{ uri: user.profileImage }} style={{ width: 43, height: 43 }} /> : <Text style={{ color: '#163b60', fontWeight: '800' }}>{initials}</Text>}
+                <View style={{ width: 43, height: 43, borderRadius: 22, overflow: 'hidden', backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+                  {user?.profileImage ? <Image source={{ uri: user.profileImage }} style={{ width: 43, height: 43 }} /> : <Text style={{ color: colors.text, fontWeight: '800' }}>{initials}</Text>}
                 </View>
               </Pressable>
 
               {profileMenuOpen ? (
-                <View style={{ position: 'absolute', right: 0, top: 57, width: 250, borderRadius: 15, padding: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#dbe8f2', shadowColor: '#102a46', shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 12, zIndex: 200 }}>
-                  <View style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e7eff5' }}>
-                    <Text numberOfLines={1} style={{ color: '#102a46', fontWeight: '700' }}>{user?.name || 'A5 Trader'}</Text>
-                    <Text numberOfLines={1} style={{ color: '#6d8194', fontSize: 12, marginTop: 2 }}>{user?.email || ''}</Text>
+                <View style={{ position: 'absolute', right: 0, top: 57, width: 250, borderRadius: 15, padding: 8, backgroundColor: colors.panel, borderWidth: 1, borderColor: colors.border, shadowColor: '#102a46', shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 12, zIndex: 200 }}>
+                  <View style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                    <Text numberOfLines={1} style={{ color: colors.text, fontWeight: '700' }}>{user?.name || 'A5 Trader'}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, marginTop: 2 }}>{user?.email || ''}</Text>
                   </View>
                   <Pressable onPress={() => openSettings('profile')} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10 }}>
-                    <UserRound size={18} color="#315b7d" /><Text style={{ marginLeft: 11, color: '#102a46', fontSize: 15 }}>Profile</Text>
+                    <UserRound size={18} color={colors.muted} /><Text style={{ marginLeft: 11, color: colors.text, fontSize: 15 }}>Profile</Text>
                   </Pressable>
                   <Pressable onPress={() => openSettings('security')} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10 }}>
-                    <LockKeyhole size={18} color="#315b7d" /><Text style={{ marginLeft: 11, color: '#102a46', fontSize: 15 }}>Security</Text>
+                    <LockKeyhole size={18} color={colors.muted} /><Text style={{ marginLeft: 11, color: colors.text, fontSize: 15 }}>Security</Text>
                   </Pressable>
-                  <Pressable onPress={signOut} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, borderTopWidth: 1, borderTopColor: '#e7eff5' }}>
+                  <Pressable onPress={signOut} style={{ flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, borderTopWidth: 1, borderTopColor: colors.border }}>
                     <LogOut size={18} color="#ef5261" /><Text style={{ marginLeft: 11, color: '#ef5261', fontSize: 15 }}>Sign out</Text>
                   </Pressable>
                 </View>

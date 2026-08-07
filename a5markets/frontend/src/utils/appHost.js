@@ -17,13 +17,14 @@ const currentHostname = () => (
 );
 
 export const isPortalHost = () => currentHostname() === 'portal.a5markets.com';
-export const isPlatformHost = () => currentHostname() === 'platform.a5markets.com';
+// Portal hosts both the client dashboard and the trading platform.
+export const isPlatformHost = () => isPortalHost();
 
 const appOrigin = (app) => {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return '';
   const hostname = currentHostname();
   if (hostname === 'localhost' || hostname === '127.0.0.1') return window.location.origin;
-  return app === 'portal' ? 'https://portal.a5markets.com' : 'https://platform.a5markets.com';
+  return 'https://portal.a5markets.com';
 };
 
 export const navigateToA5App = (app, path = '/', localRouter) => {

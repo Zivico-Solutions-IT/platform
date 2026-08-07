@@ -1,23 +1,23 @@
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { CheckCircle2, FileText, ShieldCheck, UploadCloud } from 'lucide-react-native';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import CustomButton from '../src/components/common/CustomButton';
 import PortalLayout from '../src/components/portal/PortalLayout';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
 
-const GOLD = '#dcb42a';
+const GOLD = '#2c79bb';
 const GREEN = '#20c66b';
 const INK = '#151515';
-const SOFT_GOLD = '#f8f1d8';
+const SOFT_GOLD = '#dbeefa';
 const SOFT_GREEN = '#def6e7';
 
 function KycStep({ title, description, status, current, colors }) {
   return (
     <View
       className="rounded-xl border p-6"
-      style={{ backgroundColor: current ? '#fdfbf3' : colors.panel, borderColor: current ? GOLD : colors.border }}
+      style={{ backgroundColor: current ? '#f4f9fd' : colors.panel, borderColor: current ? GOLD : colors.border }}
     >
       <View className="mb-5 flex-row items-start justify-between gap-3">
         <View className="h-[60px] w-[60px] items-center justify-center rounded-xl" style={{ backgroundColor: current ? SOFT_GOLD : '#f4f5f3' }}>
@@ -36,18 +36,39 @@ function KycStep({ title, description, status, current, colors }) {
   );
 }
 
-function DocumentLink({ title, colors }) {
+function fileName(file) {
+  return file?.name || file?.uri?.split('/').pop() || '';
+}
+
+function readFileDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function DocumentLink({ title, file, inputRef, onSelect, colors }) {
+  const openPicker = () => {
+    if (Platform.OS === 'web') inputRef.current?.click();
+  };
+
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={() => router.push('/verification-upload')}
+      onPress={openPicker}
       className="flex-row items-center rounded-xl border p-5"
-      style={{ borderColor: GREEN, backgroundColor: colors.panel }}
+      style={{ borderColor: file ? GOLD : GREEN, backgroundColor: colors.panel }}
     >
+      {Platform.OS === 'web' ? <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(event) => onSelect(event.target.files?.[0] || null)} /> : null}
       <View className="h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: SOFT_GREEN }}>
-        <FileText size={22} color={GREEN} />
+        {file ? <CheckCircle2 size={22} color={GOLD} /> : <FileText size={22} color={GREEN} />}
       </View>
-      <Text className="ml-4 text-lg font-medium" style={{ color: colors.text }}>{title}</Text>
+      <View className="ml-4 flex-1">
+        <Text className="text-lg font-medium" style={{ color: colors.text }}>{title}</Text>
+        <Text className="mt-1 text-xs" style={{ color: file ? GOLD : colors.muted }}>{file ? fileName(file) : 'Click to upload image'}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -66,14 +87,37 @@ function StatusScreen({ title, description, icon, buttonTitle, colors }) {
 }
 
 export default function VerificationScreen() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, submitVerification } = useAuth();
   const { colors } = useAppTheme();
+  const idProofInputRef = useRef(null);
+  const addressProofInputRef = useRef(null);
+  const [idProof, setIdProof] = useState(null);
+  const [addressProof, setAddressProof] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const verificationStatus = user?.verificationStatus || 'unverified';
   const VerificationLayout = String(user?.role || 'user').toLowerCase() === 'user' ? PortalLayout : Fragment;
 
   useEffect(() => {
     refreshUser?.().catch(() => {});
   }, [refreshUser]);
+
+  const submitDocuments = async () => {
+    if (!idProof || !addressProof || submitting) return;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      await submitVerification({
+        idProofImage: await readFileDataUrl(idProof),
+        addressProofImage: await readFileDataUrl(addressProof),
+      });
+      await refreshUser?.();
+    } catch {
+      setSubmitError('Could not submit documents. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (verificationStatus === 'approved' || verificationStatus === 'pending' || verificationStatus === 'rejected') {
     const rejected = verificationStatus === 'rejected';
@@ -110,8 +154,8 @@ export default function VerificationScreen() {
         <View className="rounded-2xl border p-4 sm:p-6" style={{ backgroundColor: '#fcfcf9', borderColor: '#e6e5df' }}>
           <View className="mb-7 flex-row flex-wrap items-start justify-between gap-4">
             <View>
-              <Text className="text-2xl font-medium" style={{ color: INK }}>Unlock full account access</Text>
-              <Text className="mt-1 text-base" style={{ color: '#777777' }}>Upload your documents to enable withdrawals and full account features.</Text>
+              <Text className="text-2xl font-medium" style={{ color: colors.text }}>Unlock full account access</Text>
+              <Text className="mt-1 text-base" style={{ color: colors.muted }}>Upload your documents to enable withdrawals and full account features.</Text>
             </View>
             <View className="rounded-full border px-5 py-3" style={{ borderColor: GOLD }}>
               <Text className="font-medium" style={{ color: GOLD }}>KYC Required</Text>
@@ -131,12 +175,13 @@ export default function VerificationScreen() {
               <Text className="text-2xl font-medium" style={{ color: colors.text }}>Document Requirements</Text>
               <Text className="mt-2 text-base" style={{ color: colors.muted }}>Both files are required before submission.</Text>
               <View className="mt-7 gap-4">
-                <DocumentLink title="ID Proof" colors={colors} />
-                <DocumentLink title="Address Proof" colors={colors} />
+                <DocumentLink title="ID Proof" file={idProof} inputRef={idProofInputRef} onSelect={setIdProof} colors={colors} />
+                <DocumentLink title="Address Proof" file={addressProof} inputRef={addressProofInputRef} onSelect={setAddressProof} colors={colors} />
               </View>
-              <Pressable onPress={() => router.push('/verification-upload')} className="mt-6 h-14 items-center justify-center rounded-xl" style={{ backgroundColor: GOLD }}>
-                <Text className="text-base font-medium" style={{ color: INK }}>Submit Verification</Text>
+              <Pressable disabled={!idProof || !addressProof || submitting} onPress={submitDocuments} className="mt-6 h-14 items-center justify-center rounded-xl" style={{ backgroundColor: GOLD, opacity: idProof && addressProof && !submitting ? 1 : 0.45 }}>
+                <Text className="text-base font-medium" style={{ color: '#fff' }}>{submitting ? 'Submitting...' : 'Submit Verification'}</Text>
               </Pressable>
+              {submitError ? <Text className="mt-3 text-sm" style={{ color: colors.danger }}>{submitError}</Text> : null}
             </View>
           </View>
         </View>

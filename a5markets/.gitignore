@@ -31,7 +31,11 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files (never commit deployment credentials)
+.env
+.env.*
+!.env.example
+!.env.a5.example
 
 # typescript
 *.tsbuildinfo

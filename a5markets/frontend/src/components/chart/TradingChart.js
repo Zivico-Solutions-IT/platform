@@ -247,6 +247,7 @@ const TRADING_CHART_TEAL = '#2bb8a8';
 const QUICK_TRADE_BUY = '#0C9F91';
 
 const chartUiFromTheme = (colors) => ({
+  dark: colors.mode === 'dark',
   background: colors.chartBackground,
   toolbar: colors.background,
   control: colors.panel,

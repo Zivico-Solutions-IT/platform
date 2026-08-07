@@ -7,7 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { quote } from '../../utils/formatters';
 
 function calendarHtml(ui) {
-  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>html,body,.tradingview-widget-container,.tradingview-widget-container__widget{width:100%;height:100%;margin:0;background:${ui.menu};overflow:hidden}</style></head><body><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>{"colorTheme":"light","isTransparent":true,"width":"100%","height":"100%","locale":"en","importanceFilter":"-1,0,1"}</script></div></body></html>`;
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1.0"><style>html,body,.tradingview-widget-container,.tradingview-widget-container__widget{width:100%;height:100%;margin:0;background:${ui.menu};overflow:hidden}</style></head><body><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div><script src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>{"colorTheme":"${ui.dark ? 'dark' : 'light'}","isTransparent":true,"width":"100%","height":"100%","locale":"en","importanceFilter":"-1,0,1"}</script></div></body></html>`;
 }
 
 export default function ChartSymbolPanel({
@@ -31,9 +31,9 @@ export default function ChartSymbolPanel({
   ui,
   isInline = false,
 }) {
-  const categoryBlue = '#1477b8';
-  const categoryBackground = '#d9eaf6';
-  const expandedBackground = '#eef7fc';
+  const categoryBlue = ui.accent;
+  const categoryBackground = ui.dark ? '#153a56' : '#d9eaf6';
+  const expandedBackground = ui.dark ? ui.panel : '#eef7fc';
   const { openPosition } = useDemoTrading();
   const { notify } = useToast();
   const [quickTradeSymbol, setQuickTradeSymbol] = useState(null);
@@ -110,9 +110,9 @@ export default function ChartSymbolPanel({
         ].map(([key, label, Icon]) => {
           const active = panelTab === key;
           return (
-            <Pressable key={key} onPress={() => setPanelTab(key)} className="h-12 flex-1 flex-row items-center justify-center border-b-2" style={{ borderColor: active ? '#1477b8' : 'transparent' }}>
-              <Icon size={18} color={active ? '#1477b8' : ui.muted} />
-              <Text className="ml-2 text-sm font-medium" style={{ color: active ? '#1477b8' : ui.muted }}>{label}</Text>
+            <Pressable key={key} onPress={() => setPanelTab(key)} className="h-12 flex-1 flex-row items-center justify-center border-b-2" style={{ borderColor: active ? categoryBlue : 'transparent' }}>
+              <Icon size={18} color={active ? categoryBlue : ui.muted} />
+              <Text className="ml-2 text-sm font-medium" style={{ color: active ? categoryBlue : ui.muted }}>{label}</Text>
             </Pressable>
           );
         })}
@@ -180,11 +180,11 @@ export default function ChartSymbolPanel({
                 }}
                 className="flex-row items-center h-[50px] px-4"
                 style={{
-                  backgroundColor: expanded ? categoryBackground : categoryIndex % 2 ? '#f7f8fa' : ui.menu,
+                  backgroundColor: expanded ? categoryBackground : categoryIndex % 2 ? (ui.dark ? ui.control : '#f7f8fa') : ui.menu,
                   cursor: 'pointer',
                 }}
               >
-                {expanded ? <ChevronDown size={17} color="#687582" /> : <ChevronRight size={17} color="#687582" />}
+                {expanded ? <ChevronDown size={17} color={ui.muted} /> : <ChevronRight size={17} color={ui.muted} />}
                 <Text className="ml-2 text-xs font-semibold" style={{ color: expanded ? categoryBlue : ui.text }}>{category.toUpperCase()}</Text>
               </Pressable>
               {expanded ? filteredSymbols.map((item) => {
@@ -296,7 +296,7 @@ export default function ChartSymbolPanel({
                   <Text className="mt-1 text-base font-bold text-white">{quote(item.bid ?? item.price, item.decimals)}</Text>
                 </Pressable>
 
-                <View className="overflow-hidden bg-white rounded-xl" style={{ width: 130, minHeight: 66 }}>
+                <View className="overflow-hidden rounded-xl" style={{ width: 130, minHeight: 66, backgroundColor: ui.control }}>
                   <View className="items-center justify-center flex-1 px-2">
                     <Text className="text-sm font-medium" style={{ color: ui.text }}>{quickLots}</Text>
                   </View>

@@ -520,13 +520,13 @@ export default function TopAccountBar({ onNewOrder }) {
       {!mobile && isAdmin ? <View style={{ flex: 1 }} /> : null}
       {!mobile && user && !isAdmin ? (
         <Pressable
-          onPress={() => setMenu(menu === 'profile' ? null : 'profile')}
+          onPress={() => setMenu(menu === 'account' ? null : 'account')}
           className={`${compactDesktop ? 'h-[44px]' : 'h-[54px]'} flex-row items-center rounded-xl border`}
           style={{
             width: compactDesktop ? 170 : 200,
             paddingHorizontal: compactDesktop ? 12 : 16,
             backgroundColor: darkMode ? colors.panel : '#ffffff',
-            borderColor: menu === 'profile' ? '#1f78bd' : '#e1e6eb',
+            borderColor: menu === 'account' ? '#1f78bd' : '#e1e6eb',
             cursor: 'pointer',
           }}
         >
@@ -550,6 +550,16 @@ export default function TopAccountBar({ onNewOrder }) {
       {user && !isAdmin ? (
         <Pressable {...hoverProps('refresh')} onPress={refreshDashboard} className="hidden items-center justify-center rounded-xl border lg:flex" style={iconButtonStyle('refresh', { width: compactDesktop ? 44 : 54, height: compactDesktop ? 44 : 54, backgroundColor: darkMode ? colors.panel : '#ffffff', borderColor: '#e1e6eb' })}>
           <View style={iconHoverStyle('refresh')}><RefreshCw size={21} color={desktopMuted} /></View>
+        </Pressable>
+      ) : null}
+      {user && !isAdmin ? (
+        <Pressable
+          {...hoverProps('account-settings')}
+          onPress={() => setMenu(menu === 'profile' ? null : 'profile')}
+          className="hidden items-center justify-center rounded-xl border lg:flex"
+          style={iconButtonStyle('account-settings', { width: compactDesktop ? 44 : 54, height: compactDesktop ? 44 : 54, backgroundColor: darkMode ? colors.panel : '#ffffff', borderColor: menu === 'profile' ? '#1f78bd' : '#e1e6eb' })}
+        >
+          <View style={iconHoverStyle('account-settings')}><Settings size={compactDesktop ? 18 : 20} color={desktopMuted} /></View>
         </Pressable>
       ) : null}
         </>

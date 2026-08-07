@@ -16,19 +16,21 @@ const labelColors = {
 };
 
 export default function CustomButton({ title, onPress, variant = 'primary', loading = false, className = '', disabled = false, compact = false }) {
-  const { darkMode } = useAppTheme();
-  const labelColor = labelColors[variant] || 'text-white';
+  const { darkMode, colors } = useAppTheme();
+  const labelColor = variant === 'primary' ? 'text-white' : (labelColors[variant] || 'text-white');
 
-  const secondaryStyle = variant === 'secondary'
+  const buttonStyle = variant === 'primary'
+    ? { backgroundColor: colors.primary }
+    : variant === 'secondary'
     ? {
-        backgroundColor: darkMode ? '#1e2329' : '#e8e2cc',
+        backgroundColor: darkMode ? colors.surface : '#e7f2fa',
         borderWidth: 1,
-        borderColor: darkMode ? '#2b3139' : '#c9bc8c',
+        borderColor: colors.primary,
       }
     : {};
 
   const secondaryTextColor = variant === 'secondary'
-    ? (darkMode ? '#ffffff' : '#3a3520')
+    ? (darkMode ? '#ffffff' : colors.primary)
     : null;
 
   return (
@@ -36,10 +38,10 @@ export default function CustomButton({ title, onPress, variant = 'primary', load
       onPress={onPress}
       disabled={disabled || loading}
       className={`${compact ? 'min-h-[36px] py-1.5 px-4' : 'min-h-[46px] px-5'} items-center justify-center rounded-xl ${variants[variant]} ${disabled ? 'opacity-50' : ''} ${className}`}
-      style={secondaryStyle}
+      style={buttonStyle}
     >
       {loading
-        ? <ActivityIndicator color={variant === 'primary' ? '#0B0B0B' : (secondaryTextColor || '#fff')} size={compact ? 'small' : undefined} />
+        ? <ActivityIndicator color={variant === 'primary' ? '#fff' : (secondaryTextColor || '#fff')} size={compact ? 'small' : undefined} />
         : <Text
             className={`font-medium ${secondaryTextColor ? '' : labelColor} ${compact ? 'text-xs' : 'text-sm'}`}
             style={secondaryTextColor ? { color: secondaryTextColor } : undefined}
