@@ -1,32 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, router } from 'expo-router';
 import { Copy, RefreshCcw, UsersRound } from 'lucide-react-native';
-import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import CustomButton from '../src/components/common/CustomButton';
 import LoadingSpinner from '../src/components/common/LoadingSpinner';
 import PortalLayout from '../src/components/portal/PortalLayout';
 import { dashboardService } from '../src/services/dashboardService';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
-
-function Metric({ label, value, hint, colors }) {
-  const { width } = useWindowDimensions();
-  const mobile = width < 640;
-  return (
-    <View
-      className={`${mobile ? 'min-w-[130px] p-3' : 'min-w-[190px] p-4'} flex-1 rounded-2xl border`}
-      style={{ backgroundColor: colors.surface, borderColor: colors.border }}
-    >
-      <Text className={`${mobile ? 'text-[10px]' : 'text-xs'} font-medium uppercase`} style={{ color: colors.muted }} numberOfLines={1}>
-        {label}
-      </Text>
-      <Text className={`${mobile ? 'text-lg mt-1' : 'text-2xl mt-2'} font-medium`} style={{ color: colors.text }} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
-      {hint ? <Text className="mt-1 text-[10px]" style={{ color: colors.muted }} numberOfLines={1}>{hint}</Text> : null}
-    </View>
-  );
-}
 
 function ReferralCard({ referral, colors }) {
   return (
@@ -118,10 +99,6 @@ export default function BrokerRewardsScreen() {
   const referral = dashboard?.referral || {};
   const referrals = referral.referrals || [];
   const referralUrl = useMemo(() => referral.url || '', [referral.url]);
-  const approvedDeposits = Number(referral.approvedDeposits || 0);
-  const pendingDeposits = Number(referral.pendingDeposits || 0);
-  const commission = Number(referral.commission || 0);
-  const commissionRate = Number(referral.commissionRate || 0);
 
   const copyReferral = async () => {
     if (!referralUrl) return;
@@ -171,13 +148,6 @@ export default function BrokerRewardsScreen() {
           style={{ backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }}
         />
         <CustomButton title={copied ? 'Copied' : 'Copy Referral URL'} onPress={copyReferral} className="mt-4 max-w-[240px]" />
-      </View>
-
-      <View className="mb-5 flex-row flex-wrap gap-3">
-        <Metric label="My Referrals" value={String(referral.referralCount || referrals.length || 0)} hint="Users registered through your link" colors={colors} />
-        <Metric label="Pending Deposits" value={`${pendingDeposits.toFixed(2)} USD`} hint="Waiting for approval" colors={colors} />
-        <Metric label="Approved Deposits" value={`${approvedDeposits.toFixed(2)} USD`} hint="Confirmed referral volume" colors={colors} />
-        <Metric label="Commission" value={`${commission.toFixed(2)} USD`} hint={`${(commissionRate * 100).toFixed(2)}% rate`} colors={colors} />
       </View>
 
       <View className="mb-5 rounded-2xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>

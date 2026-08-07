@@ -697,8 +697,6 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
   const tabs = [
     ['profile', 'Profile', 'Edit your profile details', UserRound],
     ['security', 'Security', 'Password and account access', LockKeyhole],
-    ...(!isAdmin ? [['payments', 'Payments', 'Withdrawal methods', CreditCard]] : []),
-    ['session', 'Session', 'Sign out and sessions', LogOut],
   ];
 
   const ContentWrapper = isMobile ? View : ScrollView;

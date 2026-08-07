@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import {
   AlertTriangle,
@@ -622,11 +622,6 @@ export default function DashboardScreen() {
     }
   };
 
-  const signOut = async () => {
-    await logout();
-    router.replace('/login');
-  };
-
   if (authLoading || !user) {
     return null;
   }
@@ -660,8 +655,6 @@ export default function DashboardScreen() {
               </View>
             </Pressable>
           </Modal>
-          <Link href="/trading" asChild><Pressable><Text style={{ color: '#17B8B2' }}>Back to Trading</Text></Pressable></Link>
-          <Pressable onPress={signOut}><Text className="text-danger">Sign Out</Text></Pressable>
         </View>
       </View>
 

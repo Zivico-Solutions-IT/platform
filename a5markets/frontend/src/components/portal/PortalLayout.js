@@ -2,7 +2,7 @@ import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import {
-  Award, BadgeCheck, ChevronRight, CircleDollarSign, History, Home, LogOut,
+  Award, BadgeCheck, CandlestickChart, ChevronRight, CircleDollarSign, History, Home, LogOut,
   LockKeyhole, Menu, Moon, PanelLeftClose, Sun, UserRound, WalletCards, X,
 } from 'lucide-react-native';
 import NovaLogo from '../brand/NovaLogo';
@@ -48,12 +48,18 @@ export default function PortalLayout({ children }) {
     .join('');
 
   return (
-    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
+    <View style={{ flex: 1, flexDirection: 'row', position: 'relative', backgroundColor: colors.background }}>
+      {open && !desktop ? (
+        <Pressable
+          onPress={() => setOpen(false)}
+          style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(9, 27, 46, 0.28)', zIndex: 250 }}
+        />
+      ) : null}
       {open ? (
-        <View style={{ width: desktop ? 270 : Math.min(width * 0.86, 310), backgroundColor: darkMode ? '#091b2e' : '#eef7fc', borderRightWidth: 1, borderRightColor: colors.border, padding: 20, zIndex: 50 }}>
+        <View style={{ width: desktop ? 270 : Math.min(width * 0.86, 310), position: desktop ? 'relative' : 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: darkMode ? '#091b2e' : '#eef7fc', borderRightWidth: 1, borderRightColor: colors.border, padding: 20, zIndex: 300, elevation: 30 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
-            <View style={{ width: 220, height: 82, alignItems: 'center', justifyContent: 'center' }}>
-              <NovaLogo dark={darkMode} width={208} height={78} />
+            <View style={{ flex: 1, minWidth: 0, height: desktop ? 82 : 60, alignItems: 'center', justifyContent: 'center' }}>
+              <NovaLogo dark={darkMode} width={desktop ? 208 : 160} height={desktop ? 78 : 58} />
             </View>
             {!desktop ? <Pressable onPress={() => setOpen(false)}><X color={colors.text} size={23} /></Pressable> : null}
           </View>
@@ -67,7 +73,7 @@ export default function PortalLayout({ children }) {
               return (
                 <Pressable key={label} onPress={() => go(href)} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 13, marginBottom: 7, backgroundColor: active ? '#2c79bb' : 'transparent' }}>
                   <Icon size={19} color={active ? '#fff' : colors.muted} />
-                  <Text style={{ color: active ? '#fff' : colors.text, fontWeight: active ? '700' : '500', fontSize: 15, marginLeft: 12, flex: 1 }}>{label}</Text>
+                  <Text numberOfLines={1} style={{ color: active ? '#fff' : colors.text, fontWeight: active ? '700' : '500', fontSize: 15, marginLeft: 12, flex: 1, flexShrink: 1 }}>{label}</Text>
                   {active ? <ChevronRight size={16} color="#fff" /> : null}
                 </Pressable>
               );
@@ -91,8 +97,9 @@ export default function PortalLayout({ children }) {
             </View>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-            <Pressable onPress={() => navigateToA5App('platform', '/trading', router)} style={{ paddingHorizontal: 17, height: 44, borderRadius: 13, backgroundColor: '#2c79bb', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#fff', fontWeight: '800' }}>Platform</Text>
+            <Pressable onPress={() => navigateToA5App('platform', '/trading', router)} style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 17, height: 44, borderRadius: 13, backgroundColor: darkMode ? '#31253d' : '#fcf4ff', borderWidth: 1, borderColor: '#ba72e3', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: darkMode ? '#f3d5ff' : '#1e1c25', fontWeight: '700', fontSize: 15 }}>Platform</Text>
+              <CandlestickChart size={18} color="#d45677" strokeWidth={2.4} />
             </Pressable>
             <Pressable onPress={toggleTheme} style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
               {darkMode ? <Sun size={19} color={colors.text} /> : <Moon size={19} color={colors.text} />}

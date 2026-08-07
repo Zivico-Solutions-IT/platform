@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, router } from 'expo-router';
 import {
-  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -14,30 +13,8 @@ import { Eye, EyeOff, ArrowLeft, Mail, ShieldCheck, LockKeyhole, CheckCircle2 } 
 import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
 import NovaLogo from '../src/components/brand/NovaLogo';
-import Svg, { Path } from 'react-native-svg';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { landingRouteFor } from '../src/utils/appHost';
-
-const GoogleIcon = () => (
-  <Svg width={22} height={22} viewBox="0 0 24 24">
-    <Path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-    <Path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-    <Path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-    <Path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-  </Svg>
-);
-
-const FacebookIcon = () => (
-  <Svg width={20} height={20} viewBox="0 0 24 24" fill="white">
-    <Path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </Svg>
-);
-
-const XIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="white">
-    <Path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-  </Svg>
-);
 
 export default function LoginScreen() {
   const { login, user } = useAuth();
@@ -546,43 +523,32 @@ export default function LoginScreen() {
 
   // ─── Login View ───
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="min-h-full items-center justify-center px-5 py-10">
-        <View className="mb-5 items-center">
-          <NovaLogo dark={darkMode} width={190} height={68} />
+    <ScrollView className="a5-auth-page flex-1" style={{ backgroundColor: darkMode ? colors.background : '#eaf6fb' }}>
+      <View className="min-h-full items-center justify-center px-5 py-8">
+        <View className="mb-7 items-center">
+          <NovaLogo dark={darkMode} width={160} height={58} />
         </View>
         <View
-          className="a5-auth-shell relative w-full max-w-md rounded-[28px] px-7 py-10"
+          className="a5-auth-shell relative w-full max-w-[370px] rounded-[24px] px-8 py-7"
           style={{
-            backgroundColor: colors.panel, 
-            borderColor: colors.border, 
+            backgroundColor: darkMode ? colors.panel : 'rgba(255,255,255,0.54)',
+            borderColor: darkMode ? colors.border : 'rgba(255,255,255,0.74)',
             borderWidth: 1,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 16 },
-            shadowOpacity: darkMode ? 0.4 : 0.08,
-            shadowRadius: 32,
-            elevation: 24,
+            shadowColor: '#5a7d91',
+            shadowOffset: { width: 0, height: 14 },
+            shadowOpacity: darkMode ? 0.4 : 0.18,
+            shadowRadius: 28,
+            elevation: 12,
           }}
         >
-        {/* Header */}
-        <View className="mb-2">
-          <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
-            Access A5 Markets
-          </Text>
-          <Text className="mt-2 text-center text-[13px] font-medium" style={labelStyle}>
-            Your global markets workspace, secured.
-          </Text>
-        </View>
-
-        <View className="mt-7">
+        <View>
 
           {/* Email Field */}
           <View className="mb-4">
-            <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>Email</Text>
             <TextInput
-              className="w-full rounded-xl border px-4 py-3 text-[14px]"
+              className="w-full rounded-full border px-5 py-2.5 text-xs"
               style={inputStyle}
-              placeholder="example@gmail.com"
+              placeholder="Email Address"
               placeholderTextColor="#9CA3AF"
               autoCapitalize="none"
               autoCorrect={false}
@@ -594,12 +560,11 @@ export default function LoginScreen() {
 
           {/* Password Field */}
           <View className="mb-5">
-            <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>Password</Text>
-            <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
+            <View className="flex-row items-center rounded-full border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
               <TextInput
-                className="flex-1 px-4 py-3 text-[14px]"
+              className="flex-1 px-5 py-2.5 text-xs"
                 style={{ color: colors.text, ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
-                placeholder="****"
+              placeholder="Password"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={Platform.OS !== 'web' && !showPassword}
                 autoCapitalize="none"
@@ -658,46 +623,12 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
-            className="w-full items-center rounded-xl py-3 shadow-md"
-            style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#153f73' }}
+              className="w-full items-center rounded-full py-2.5"
+            style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#064681' }}
           >
-            <Text className="text-sm font-semibold text-white">
-              {loading ? 'Logging in...' : 'Login'}
+            <Text className="text-xs font-semibold text-white">
+              {loading ? 'Logging in...' : 'LOGIN'}
             </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Divider */}
-        <View className="my-6 flex-row items-center gap-3">
-          <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
-          <Text className="text-xs font-medium" style={labelStyle}>or</Text>
-          <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
-        </View>
-
-        {/* Social Login Buttons */}
-        <View className="flex-row justify-center gap-5">
-          <TouchableOpacity
-            onPress={() => Linking.openURL('https://google.com')}
-            className="rounded-full border shadow-md items-center justify-center"
-            style={{ height: 42, width: 42, backgroundColor: '#ffffff', borderColor: colors.border }}
-          >
-            <GoogleIcon />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => Linking.openURL('https://facebook.com')}
-            className="rounded-full bg-[#1877F2] shadow-md items-center justify-center"
-            style={{ height: 42, width: 42 }}
-          >
-            <FacebookIcon />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => Linking.openURL('https://x.com')}
-            className="rounded-full shadow-md items-center justify-center"
-            style={{ height: 42, width: 42, backgroundColor: '#0B0B0B', borderColor: colors.border, borderWidth: 1 }}
-          >
-            <XIcon />
           </TouchableOpacity>
         </View>
 

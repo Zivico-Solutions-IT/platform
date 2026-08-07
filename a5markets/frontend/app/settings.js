@@ -254,8 +254,6 @@ function readFileDataUrl(file) {
 const settingsSections = [
   { key: 'profile', icon: UserRound, title: 'Profile', subtitle: 'Edit your profile details' },
   { key: 'security', icon: Shield, title: 'Security', subtitle: 'Password and 2FA' },
-  { key: 'payments', icon: CreditCard, title: 'Payments', subtitle: 'Payment methods' },
-  { key: 'session', icon: LogOut, title: 'Session', subtitle: 'Sign out and sessions' },
 ];
 
 function SettingsMenuItem({ icon: Icon, title, subtitle, active, onPress }) {
