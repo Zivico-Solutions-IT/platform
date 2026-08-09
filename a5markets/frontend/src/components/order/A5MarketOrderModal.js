@@ -23,7 +23,8 @@ export default function A5MarketOrderModal({ visible, onClose }) {
   const [side, setSide] = useState('BUY');
   const [lots, setLots] = useState('0.01');
   const [entryPrice, setEntryPrice] = useState('');
-  const [riskEnabled, setRiskEnabled] = useState(false);
+  const [stopLossEnabled, setStopLossEnabled] = useState(false);
+  const [takeProfitEnabled, setTakeProfitEnabled] = useState(false);
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
   const [symbolMenu, setSymbolMenu] = useState(false);
@@ -59,7 +60,10 @@ export default function A5MarketOrderModal({ visible, onClose }) {
       setLoading(true);
       if (!user) throw new Error('Please log in to place trades.');
       if (!(Number(lots) > 0)) throw new Error('Enter a valid quantity.');
-      const risk = riskEnabled ? { stopLoss: riskRows.sl, takeProfit: riskRows.tp } : {};
+      const risk = {
+        ...(stopLossEnabled ? { stopLoss: riskRows.sl } : {}),
+        ...(takeProfitEnabled ? { takeProfit: riskRows.tp } : {}),
+      };
       if (orderType === 'spot') await openPosition(side, lots, risk);
       else await createPendingOrder({ side, lots, orderType, entryPrice, ...risk });
       notify({ type: 'success', title: 'Order placed', message: `${side} order placed successfully.` });
@@ -118,9 +122,9 @@ export default function A5MarketOrderModal({ visible, onClose }) {
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: compact ? 6 : 14, marginTop: 28 }}>
-                <View style={{ flex: 1 }}><Pressable onPress={() => setRiskEnabled((active) => !active)} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 10 }}><View style={{ width: 20, height: 20, borderRadius: 5, borderWidth: 1, borderColor: '#8c96a3', alignItems: 'center', justifyContent: 'center', backgroundColor: riskEnabled ? blue : '#fff' }}>{riskEnabled ? <Check size={14} color="#fff" /> : null}</View><Text style={{ color: ink, fontSize: compact ? 14 : 16 }}>Stop Loss</Text></Pressable><View style={{ borderWidth: 1, borderColor: border, borderRadius: 14, overflow: 'hidden' }}><Text style={{ minHeight: 40, padding: 10, color: ink }}>-0.2</Text><TextInput value={stopLoss} onChangeText={setStopLoss} placeholder={quote(riskRows.sl, decimals)} keyboardType="decimal-pad" style={{ minHeight: 40, paddingHorizontal: 10, color: ink, borderTopWidth: 1, borderColor: border }} /><Text style={{ minHeight: 40, padding: 10, color: ink, borderTopWidth: 1, borderColor: border }}>0</Text></View></View>
+                <View style={{ flex: 1 }}><Pressable onPress={() => setStopLossEnabled((active) => !active)} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 10 }}><View style={{ width: 20, height: 20, borderRadius: 5, borderWidth: 1, borderColor: '#8c96a3', alignItems: 'center', justifyContent: 'center', backgroundColor: stopLossEnabled ? blue : '#fff' }}>{stopLossEnabled ? <Check size={14} color="#fff" /> : null}</View><Text style={{ color: ink, fontSize: compact ? 14 : 16 }}>Stop Loss</Text></Pressable><View style={{ borderWidth: 1, borderColor: border, borderRadius: 14, overflow: 'hidden', opacity: stopLossEnabled ? 1 : 0.45 }}><Text style={{ minHeight: 40, padding: 10, color: ink }}>-0.2</Text><TextInput editable={stopLossEnabled} value={stopLoss} onChangeText={setStopLoss} placeholder={quote(riskRows.sl, decimals)} keyboardType="decimal-pad" style={{ minHeight: 40, paddingHorizontal: 10, color: ink, borderTopWidth: 1, borderColor: border }} /><Text style={{ minHeight: 40, padding: 10, color: ink, borderTopWidth: 1, borderColor: border }}>0</Text></View></View>
                 <View style={{ width: compact ? 48 : 70, paddingBottom: 2 }}><Text style={{ height: 41, textAlign: 'center', color: muted }}>Pips</Text><Text style={{ height: 41, textAlign: 'center', color: muted }}>Price</Text><Text style={{ height: 41, textAlign: 'center', color: muted }}>Profit</Text></View>
-                <View style={{ flex: 1 }}><Pressable onPress={() => setRiskEnabled((active) => !active)} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 10 }}><View style={{ width: 20, height: 20, borderRadius: 5, borderWidth: 1, borderColor: '#8c96a3', alignItems: 'center', justifyContent: 'center', backgroundColor: riskEnabled ? blue : '#fff' }}>{riskEnabled ? <Check size={14} color="#fff" /> : null}</View><Text style={{ color: ink, fontSize: compact ? 14 : 16 }}>Take Profit</Text></Pressable><View style={{ borderWidth: 1, borderColor: border, borderRadius: 14, overflow: 'hidden' }}><Text style={{ minHeight: 40, padding: 10, color: ink }}>0.2</Text><TextInput value={takeProfit} onChangeText={setTakeProfit} placeholder={quote(riskRows.tp, decimals)} keyboardType="decimal-pad" style={{ minHeight: 40, paddingHorizontal: 10, color: ink, borderTopWidth: 1, borderColor: border }} /><Text style={{ minHeight: 40, padding: 10, color: ink, borderTopWidth: 1, borderColor: border }}>0</Text></View></View>
+                <View style={{ flex: 1 }}><Pressable onPress={() => setTakeProfitEnabled((active) => !active)} style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 10 }}><View style={{ width: 20, height: 20, borderRadius: 5, borderWidth: 1, borderColor: '#8c96a3', alignItems: 'center', justifyContent: 'center', backgroundColor: takeProfitEnabled ? blue : '#fff' }}>{takeProfitEnabled ? <Check size={14} color="#fff" /> : null}</View><Text style={{ color: ink, fontSize: compact ? 14 : 16 }}>Take Profit</Text></Pressable><View style={{ borderWidth: 1, borderColor: border, borderRadius: 14, overflow: 'hidden', opacity: takeProfitEnabled ? 1 : 0.45 }}><Text style={{ minHeight: 40, padding: 10, color: ink }}>0.2</Text><TextInput editable={takeProfitEnabled} value={takeProfit} onChangeText={setTakeProfit} placeholder={quote(riskRows.tp, decimals)} keyboardType="decimal-pad" style={{ minHeight: 40, paddingHorizontal: 10, color: ink, borderTopWidth: 1, borderColor: border }} /><Text style={{ minHeight: 40, padding: 10, color: ink, borderTopWidth: 1, borderColor: border }}>0</Text></View></View>
               </View>
 
               <Pressable disabled={loading} onPress={submit} style={{ marginTop: 18, height: 54, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: green, opacity: loading ? 0.65 : 1 }}><Text style={{ color: '#fff', fontWeight: '800' }}>{loading ? 'PLACING ORDER...' : 'PLACE ORDER'}</Text></Pressable>

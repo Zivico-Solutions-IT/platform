@@ -14,18 +14,19 @@ const SOFT_GOLD = '#dbeefa';
 const SOFT_GREEN = '#def6e7';
 
 function KycStep({ title, description, status, current, colors }) {
+  const darkMode = colors.mode === 'dark';
   return (
     <View
       className="rounded-xl border p-6"
-      style={{ backgroundColor: current ? '#f4f9fd' : colors.panel, borderColor: current ? GOLD : colors.border }}
+      style={{ backgroundColor: current ? (darkMode ? '#123b5c' : '#f4f9fd') : colors.panel, borderColor: current ? GOLD : colors.border }}
     >
       <View className="mb-5 flex-row items-start justify-between gap-3">
-        <View className="h-[60px] w-[60px] items-center justify-center rounded-xl" style={{ backgroundColor: current ? SOFT_GOLD : '#f4f5f3' }}>
-          {current ? <CheckCircle2 size={28} color={GOLD} /> : <UploadCloud size={28} color={INK} />}
+        <View className="h-[60px] w-[60px] items-center justify-center rounded-xl" style={{ backgroundColor: current ? (darkMode ? '#174d70' : SOFT_GOLD) : (darkMode ? colors.surface : '#f4f5f3') }}>
+          {current ? <CheckCircle2 size={28} color={GOLD} /> : <UploadCloud size={28} color={darkMode ? colors.text : INK} />}
         </View>
         <Text
           className="rounded-full px-3 py-1 text-[10px] font-medium uppercase"
-          style={{ backgroundColor: current ? GOLD : '#f4f4f2', color: current ? INK : '#777777' }}
+          style={{ backgroundColor: current ? GOLD : (darkMode ? colors.surface : '#f4f4f2'), color: current ? '#ffffff' : colors.muted }}
         >
           {status}
         </Text>
@@ -88,7 +89,7 @@ function StatusScreen({ title, description, icon, buttonTitle, colors }) {
 
 export default function VerificationScreen() {
   const { user, refreshUser, submitVerification } = useAuth();
-  const { colors } = useAppTheme();
+  const { colors, darkMode } = useAppTheme();
   const idProofInputRef = useRef(null);
   const addressProofInputRef = useRef(null);
   const [idProof, setIdProof] = useState(null);
@@ -151,7 +152,7 @@ export default function VerificationScreen() {
           </View>
         </View>
 
-        <View className="rounded-2xl border p-4 sm:p-6" style={{ backgroundColor: '#fcfcf9', borderColor: '#e6e5df' }}>
+        <View className="rounded-2xl border p-4 sm:p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
           <View className="mb-7 flex-row flex-wrap items-start justify-between gap-4">
             <View>
               <Text className="text-2xl font-medium" style={{ color: colors.text }}>Unlock full account access</Text>
@@ -168,7 +169,7 @@ export default function VerificationScreen() {
               <KycStep title="Admin Review" description="Admin will review your documents and unlock full account access." status="Up next" colors={colors} />
             </View>
 
-            <View className="flex-1 rounded-xl border p-6" style={{ backgroundColor: colors.panel, borderColor: '#e6e5df' }}>
+            <View className="flex-1 rounded-xl border p-6" style={{ backgroundColor: darkMode ? colors.surface : colors.panel, borderColor: colors.border }}>
               <View className="mb-6 h-[72px] w-[72px] items-center justify-center rounded-xl" style={{ backgroundColor: SOFT_GREEN }}>
                 <FileText size={30} color={GOLD} />
               </View>

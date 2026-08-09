@@ -11,6 +11,7 @@ import { socketBaseUrl } from '../src/services/apiConfig';
 import { marketService } from '../src/services/marketService';
 import CustomButton from '../src/components/common/CustomButton';
 import CustomInput from '../src/components/common/CustomInput';
+import DateTimePickerInput from '../src/components/common/DateTimePickerInput';
 import AdminSidebar from '../src/components/admin/AdminSidebar';
 import AdminUsersTable from '../src/components/admin/AdminUsersTable';
 import UserManagement from '../src/components/admin/UserManagement';
@@ -73,6 +74,13 @@ const payoutTypeFor = (item) => (
 const dateMs = (value) => {
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+const metricDateKey = (value, monthOnly = false) => {
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return monthOnly ? `${year}-${month}` : `${year}-${month}-${String(date.getDate()).padStart(2, '0')}`;
 };
 const isOnlineUser = (user) => dateMs(user?.onlineUntil) > Date.now();
 const NEW_ACCOUNT_LOGIN_WINDOW_MS = 2 * 60 * 1000;
@@ -2664,7 +2672,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       for (let day = 1; day <= daysInMonth; day++) {
         const d = new Date(year, month, day);
         const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const key = d.toISOString().split('T')[0];
+        const key = metricDateKey(d);
         counts[key] = 0;
         depositAmounts[key] = 0;
         withdrawalAmounts[key] = 0;
@@ -2674,34 +2682,38 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       }
     }
 
-    // Populate Daily Registrations (Only real Live users, not admin/staff/demo)
-    data.users.filter(u => u.role === 'user' && u.accountType === 'Live').forEach((u) => {
+    // Registrations include all clients; deposits and trade performance below
+    // remain restricted to Live accounts.
+    data.users.filter((u) => u.role === 'user').forEach((u) => {
       if (u.createdAt) {
-        const key = isYearScale ? u.createdAt.slice(0, 7) : u.createdAt.split('T')[0];
+        const key = metricDateKey(u.createdAt, isYearScale);
         if (counts[key] !== undefined) counts[key]++;
       }
     });
 
     // Populate Deposits vs Withdrawals (Live accounts only)
-    const liveUserIds = new Set(data.users.filter(u => u.role === 'user' && u.accountType === 'Live').map(u => u.id));
-    (data.deposits || []).filter((d) => (d.status === 'approved' || d.status === 'completed') && liveUserIds.has(d.userId)).forEach((d) => {
+    const liveUsers = data.users.filter((u) => u.role === 'user' && (u.tradingAccounts || []).some((account) => account.type === 'Live'));
+    const liveUserIds = new Set(liveUsers.map((u) => String(u.id)));
+    const liveAccountIds = new Set(liveUsers.flatMap((u) => (u.tradingAccounts || []).filter((account) => account.type === 'Live').map((account) => String(account.id))));
+    const belongsToLiveTrading = (item) => item.tradingAccountId ? liveAccountIds.has(String(item.tradingAccountId)) : liveUserIds.has(String(item.userId));
+    (data.deposits || []).filter((d) => (d.status === 'approved' || d.status === 'completed') && belongsToLiveTrading(d)).forEach((d) => {
       if (d.createdAt) {
-        const key = isYearScale ? d.createdAt.slice(0, 7) : d.createdAt.split('T')[0];
+        const key = metricDateKey(d.createdAt, isYearScale);
         if (depositAmounts[key] !== undefined) depositAmounts[key] += Number(d.amount || 0);
       }
     });
-    (data.withdrawals || []).filter((w) => (w.status === 'approved' || w.status === 'completed') && liveUserIds.has(w.userId)).forEach((w) => {
+    (data.withdrawals || []).filter((w) => (w.status === 'approved' || w.status === 'completed') && belongsToLiveTrading(w)).forEach((w) => {
       if (w.createdAt) {
-        const key = isYearScale ? w.createdAt.slice(0, 7) : w.createdAt.split('T')[0];
+        const key = metricDateKey(w.createdAt, isYearScale);
         if (withdrawalAmounts[key] !== undefined) withdrawalAmounts[key] += Number(w.amount || 0);
       }
     });
 
     // Populate Traders Profit vs Loss (Live accounts only)
-    (data.trades || []).filter((t) => t.status === 'closed' && liveUserIds.has(t.userId)).forEach((t) => {
+    (data.trades || []).filter((t) => t.status === 'closed' && belongsToLiveTrading(t)).forEach((t) => {
       const closedAt = t.closedAt || t.updatedAt || t.createdAt;
       if (closedAt) {
-        const key = isYearScale ? closedAt.slice(0, 7) : closedAt.split('T')[0];
+        const key = metricDateKey(closedAt, isYearScale);
         const val = Number(t.profit || 0);
         if (val >= 0) {
           if (profitAmounts[key] !== undefined) profitAmounts[key] += val;
@@ -5652,15 +5664,15 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
  
                 {addTradeForm.type === 'past' ? (
                   <View className={mobile ? 'w-full' : 'min-w-[220px] flex-1'}>
-                    <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Open Date & Time (YYYY-MM-DD HH:MM)</Text>
-                    <CustomInput
+                    <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Open Date & Time</Text>
+                    <DateTimePickerInput
                       value={addTradeForm.openDate}
                       onFocus={() => setActiveSelectionMode('open')}
                       onChangeText={(openDate) => {
                         setAddTradeForm((prev) => ({ ...prev, openDate }));
                         fetchHistoricalPrice('openPrice', addTradeForm.symbol, openDate);
                       }}
-                      placeholder="e.g. 2026-06-15 10:00"
+                      placeholder="Select opening date and time"
                     />
                   </View>
                 ) : null}
@@ -5741,15 +5753,15 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                     />
                   </View>
                   <View className="min-w-[220px] flex-1">
-                    <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Close Date & Time (YYYY-MM-DD HH:MM)</Text>
-                    <CustomInput
+                    <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Close Date & Time</Text>
+                    <DateTimePickerInput
                       value={addTradeForm.closeDate}
                       onFocus={() => setActiveSelectionMode('close')}
                       onChangeText={(closeDate) => {
                         setAddTradeForm((prev) => ({ ...prev, closeDate }));
                         fetchHistoricalPrice('closePrice', addTradeForm.symbol, closeDate);
                       }}
-                      placeholder="e.g. 2026-06-15 14:00"
+                      placeholder="Select closing date and time"
                     />
                   </View>
                 </View>

@@ -264,7 +264,11 @@ export default function AdminSidebar({
               <ChevronDown size={16} color={colors.muted} />
             </Pressable>
             {platformMenuOpen ? <View className="mt-1 overflow-hidden rounded-xl border" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-              <Pressable onPress={() => openCompanyMaster('novafxm')} className="px-3 py-3">
+              <View className="px-3 py-3" style={{ backgroundColor: `${colors.primary}0d` }}>
+                <Text className="text-sm font-semibold" style={{ color: colors.text }}>A5 Markets Master</Text>
+                <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Current company</Text>
+              </View>
+              <Pressable onPress={() => openCompanyMaster('novafxm')} className="border-t px-3 py-3" style={{ borderColor: colors.border }}>
                 <Text className="text-sm font-semibold" style={{ color: colors.text }}>NovaFXM Master</Text>
                 <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>Switch without signing in again</Text>
               </Pressable>

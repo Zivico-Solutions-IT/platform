@@ -26,6 +26,15 @@ body {
     #eaf6fb;
 }
 
+/* Keep public authentication pages deliberately dark when the app theme is dark.
+   The light watermark background above otherwise remains visible behind dark panels. */
+.dark .a5-auth-page {
+  background:
+    radial-gradient(ellipse 42rem 64rem at -15% 50%, transparent 0 42%, rgba(44, 121, 187, .16) 42.2% 43.5%, transparent 43.7%),
+    radial-gradient(ellipse 34rem 56rem at -8% 50%, transparent 0 42%, rgba(23, 184, 178, .10) 42.2% 43.5%, transparent 43.7%),
+    linear-gradient(135deg, #071525, #0d2239 58%, #071525) !important;
+}
+
 @keyframes a5-rise {
   from { opacity: 0; transform: translateY(18px) scale(.985); }
   to { opacity: 1; transform: translateY(0) scale(1); }

@@ -188,6 +188,7 @@ export default function LoginScreen() {
     caretColor: colors.text,
     outlineStyle: 'none',
   };
+  const inputBackground = inputStyle.backgroundColor;
   const labelStyle = { color: colors.muted };
   const linkColor = darkMode ? colors.primary : '#153f73';
 
@@ -523,13 +524,17 @@ export default function LoginScreen() {
 
   // ─── Login View ───
   return (
-    <ScrollView className="a5-auth-page flex-1" style={{ backgroundColor: darkMode ? colors.background : '#eaf6fb' }}>
-      <View className="min-h-full items-center justify-center px-5 py-8">
-        <View className="mb-7 items-center">
-          <NovaLogo dark={darkMode} width={160} height={58} />
+    <ScrollView
+      className="a5-auth-page flex-1"
+      style={{ backgroundColor: darkMode ? colors.background : '#eaf6fb' }}
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
+      <View className="flex-1 items-center justify-center px-5 py-8">
+        <View className="mb-8 items-center">
+          <NovaLogo dark={darkMode} width={232} height={84} />
         </View>
         <View
-          className="a5-auth-shell relative w-full max-w-[370px] rounded-[24px] px-8 py-7"
+          className="a5-auth-shell relative w-full max-w-[420px] rounded-[28px] px-10 py-9"
           style={{
             backgroundColor: darkMode ? colors.panel : 'rgba(255,255,255,0.54)',
             borderColor: darkMode ? colors.border : 'rgba(255,255,255,0.74)',
@@ -546,7 +551,7 @@ export default function LoginScreen() {
           {/* Email Field */}
           <View className="mb-4">
             <TextInput
-              className="w-full rounded-full border px-5 py-2.5 text-xs"
+              className="w-full rounded-full border px-6 py-3 text-sm"
               style={inputStyle}
               placeholder="Email Address"
               placeholderTextColor="#9CA3AF"
@@ -560,10 +565,10 @@ export default function LoginScreen() {
 
           {/* Password Field */}
           <View className="mb-5">
-            <View className="flex-row items-center rounded-full border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
+            <View className="flex-row items-center rounded-full border" style={{ backgroundColor: inputBackground, borderColor: inputStyle.borderColor, overflow: 'hidden' }}>
               <TextInput
-              className="flex-1 px-5 py-2.5 text-xs"
-                style={{ color: colors.text, ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
+              className="flex-1 px-6 py-3 text-sm"
+                style={{ backgroundColor: 'transparent', borderWidth: 0, color: colors.text, caretColor: colors.text, outlineStyle: 'none', ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
               placeholder="Password"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={Platform.OS !== 'web' && !showPassword}
@@ -577,7 +582,7 @@ export default function LoginScreen() {
               />
               <TouchableOpacity
                 onPress={() => setShowPassword((value) => !value)}
-                className="px-3 py-2"
+                className="px-4 py-2.5"
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
@@ -623,10 +628,10 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
-              className="w-full items-center rounded-full py-2.5"
+              className="w-full items-center rounded-full py-3"
             style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#064681' }}
           >
-            <Text className="text-xs font-semibold text-white">
+            <Text className="text-sm font-semibold text-white">
               {loading ? 'Logging in...' : 'LOGIN'}
             </Text>
           </TouchableOpacity>

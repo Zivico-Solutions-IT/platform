@@ -10,9 +10,10 @@ export default function NovaLogo({ dark = false, width = 190, height = 46 }) {
       style={{
         width: width + 12,
         height,
-        // The supplied PNG has a charcoal backdrop. On web dark mode this blends
-        // it into the header while retaining the original blue/teal mark.
-        ...(Platform.OS === 'web' && dark ? { mixBlendMode: 'screen' } : null),
+        // A bright monochrome variant keeps the mark and lettering legible on
+        // dark portal and trading surfaces while the original PNG remains used
+        // throughout light mode.
+        ...(Platform.OS === 'web' && dark ? { filter: 'brightness(0) invert(1)' } : null),
       }}
     />
   );

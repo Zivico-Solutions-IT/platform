@@ -58,8 +58,8 @@ export default function PortalLayout({ children }) {
       {open ? (
         <View style={{ width: desktop ? 270 : Math.min(width * 0.86, 310), position: desktop ? 'relative' : 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: darkMode ? '#091b2e' : '#eef7fc', borderRightWidth: 1, borderRightColor: colors.border, padding: 20, zIndex: 300, elevation: 30 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 26 }}>
-            <View style={{ flex: 1, minWidth: 0, height: desktop ? 82 : 60, alignItems: 'center', justifyContent: 'center' }}>
-              <NovaLogo dark={darkMode} width={desktop ? 208 : 160} height={desktop ? 78 : 58} />
+            <View style={{ flex: 1, minWidth: 0, height: desktop ? 102 : 72, alignItems: 'center', justifyContent: 'center' }}>
+              <NovaLogo dark={darkMode} width={desktop ? 250 : 185} height={desktop ? 100 : 70} />
             </View>
             {!desktop ? <Pressable onPress={() => setOpen(false)}><X color={colors.text} size={23} /></Pressable> : null}
           </View>

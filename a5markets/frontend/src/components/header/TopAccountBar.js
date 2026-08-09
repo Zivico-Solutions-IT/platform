@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Check, ChevronDown, Sun, Moon, UserRound, Wallet, Bell, LayoutDashboard, Activity, Plus, RefreshCw, Settings } from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
@@ -53,6 +53,7 @@ function MetricSettingsMenu({ onClose, colors }) {
 
 export default function TopAccountBar({ onNewOrder }) {
   const { width } = useWindowDimensions();
+  const pathname = usePathname();
   const { currentSymbol, summary, selectedTradingAccount, setSelectedTradingAccount, sidePanel, setSidePanel, transactions } = useDemoTrading();
   const params = useLocalSearchParams();
   const { user, isAdmin } = useAuth();
@@ -312,6 +313,15 @@ export default function TopAccountBar({ onNewOrder }) {
 
   useEffect(() => () => cancelProfileHoverClose(), []);
 
+  // Trading's header stays mounted while Expo changes screens.  Close any
+  // header overlay before the next screen is rendered so it cannot follow the
+  // user from the chart into the client portal/dashboard.
+  useEffect(() => {
+    cancelProfileHoverClose();
+    setMenu(null);
+    setHoveredAction(null);
+  }, [pathname]);
+
   useEffect(() => {
     if (!metricsWidth || maxMetricStep === 0) return undefined;
     let step = 0;
@@ -353,7 +363,7 @@ export default function TopAccountBar({ onNewOrder }) {
           {/* Row 1: Logo & Utility Icons */}
           <View className="flex-row items-center justify-between">
             <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
-              <NovaLogo dark={darkMode} width={narrowPhone ? 120 : 150} height={narrowPhone ? 34 : 42} />
+              <NovaLogo dark={darkMode} width={narrowPhone ? 138 : 170} height={narrowPhone ? 40 : 48} />
             </Pressable>
             <View className="flex-row items-center gap-1.5">
               <Pressable {...hoverProps('mobile-theme')} onPress={toggleTheme} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-theme', { backgroundColor: `${colors.text}08` })}>
@@ -425,7 +435,7 @@ export default function TopAccountBar({ onNewOrder }) {
       ) : (
         <View style={{ marginBottom: mobile ? 12 : 0, marginRight: mobile ? 0 : (compactDesktop ? 4 : 12), justifyContent: 'center' }}>
           <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
-            <NovaLogo dark={darkMode} width={compactDesktop ? 150 : 190} height={compactDesktop ? 42 : 56} />
+            <NovaLogo dark={darkMode} width={compactDesktop ? 180 : 220} height={compactDesktop ? 50 : 66} />
           </Pressable>
         </View>
       )}

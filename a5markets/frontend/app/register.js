@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { Platform, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList, useWindowDimensions } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import { Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react-native';
@@ -10,6 +10,7 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js';
 export default function RegisterScreen() {
   const { register } = useAuth();
   const { darkMode, colors } = useAppTheme();
+  const { width, height } = useWindowDimensions();
   const params = useLocalSearchParams();
   const [form, setForm] = useState({
     name: '',
@@ -500,13 +501,17 @@ export default function RegisterScreen() {
     .toUpperCase()
     .replace(/./g, (character) => String.fromCodePoint(127397 + character.charCodeAt()));
 
+  // The full desktop form fits within one viewport. Keep scrolling only for
+  // narrow phones or genuinely short screens, where clipping would be worse.
+  const allowPageScroll = width < 600 || height < 740;
+
   return (
-    <ScrollView className="a5-auth-page flex-1" style={{ backgroundColor: darkMode ? colors.background : '#eaf6fb' }}>
-      <View className="min-h-full items-center justify-center px-5 py-8">
-        <View className="mb-7 items-center">
-          <NovaLogo dark={darkMode} width={160} height={58} />
+    <ScrollView scrollEnabled={allowPageScroll} showsVerticalScrollIndicator={allowPageScroll} className="a5-auth-page flex-1" style={{ backgroundColor: darkMode ? colors.background : '#eaf6fb' }} contentContainerStyle={{ minHeight: height }}>
+      <View className="min-h-full items-center justify-center px-5 py-5">
+        <View className="mb-4 items-center">
+          <NovaLogo dark={darkMode} width={210} height={76} />
         </View>
-        <View className="a5-auth-shell relative w-full max-w-[370px] rounded-[24px] px-8 py-7 shadow-xl" style={{ backgroundColor: darkMode ? colors.panel : 'rgba(255,255,255,0.54)', borderColor: darkMode ? colors.border : 'rgba(255,255,255,0.74)', borderWidth: 1, shadowColor: '#5a7d91', shadowOffset: { width: 0, height: 14 }, shadowOpacity: darkMode ? 0.35 : 0.18, shadowRadius: 28, elevation: 12 }}>
+        <View className="a5-auth-shell relative w-full max-w-[370px] rounded-[24px] px-8 py-5 shadow-xl" style={{ backgroundColor: darkMode ? colors.panel : 'rgba(255,255,255,0.54)', borderColor: darkMode ? colors.border : 'rgba(255,255,255,0.74)', borderWidth: 1, shadowColor: '#5a7d91', shadowOffset: { width: 0, height: 14 }, shadowOpacity: darkMode ? 0.35 : 0.18, shadowRadius: 28, elevation: 12 }}>
           <View>
 
             {/* First and Last Name Row */}

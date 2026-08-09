@@ -193,8 +193,8 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
         className="flex-row items-center px-5 py-3"
         style={{ cursor: 'pointer' }}
       >
-        <Icon size={20} color="#707780" strokeWidth={1.8} />
-        <Text className="ml-3 flex-1 text-[15px]" style={{ color: '#31343a' }}>{label}</Text>
+        <Icon size={20} color={palette.muted} strokeWidth={1.8} />
+        <Text className="ml-3 flex-1 text-[15px]" style={{ color: palette.text }}>{label}</Text>
         {trailing}
       </Pressable>
     );
@@ -203,14 +203,15 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
       <View
         onPointerEnter={onHoverIn}
         onPointerLeave={onHoverOut}
-        className="overflow-hidden rounded-2xl border bg-white"
+        className="overflow-hidden rounded-2xl border"
         style={{
           position: 'absolute',
           right: 8,
           top: 68,
           zIndex: 80,
           width: 360,
-          borderColor: '#e4e7eb',
+          backgroundColor: palette.panel,
+          borderColor: palette.border,
           shadowColor: '#000',
           shadowOpacity: 0.16,
           shadowRadius: 18,
@@ -223,28 +224,28 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
           {compactAction(TrendingUp, 'Deposit', () => navigateToA5App('portal', '/deposit', router))}
           {compactAction(Award, 'My Rewards', () => navigateToA5App('portal', '/broker-rewards', router))}
           {compactAction(CircleGauge, 'Mode', toggleTheme, (
-            <View className="flex-row items-center rounded-full bg-[#f2f3f5] px-2 py-1">
+            <View className="flex-row items-center rounded-full px-2 py-1" style={{ backgroundColor: palette.tile }}>
               <Text className="text-base">☀️</Text>
               <View className="ml-2 h-5 w-5 rounded-full" style={{ backgroundColor: darkMode ? '#1f78bd' : '#344054' }} />
             </View>
           ))}
           {compactAction(Volume2, 'Sounds', () => setSoundsEnabled((value) => !value), (
-            <Volume2 size={19} color={soundsEnabled ? '#707780' : '#c0c4ca'} />
+            <Volume2 size={19} color={soundsEnabled ? palette.muted : palette.border} />
           ))}
           {compactAction(LogOut, 'Sign Out', signOut)}
         </View>
-        <View className="border-t px-5 py-3" style={{ borderColor: '#eceef1' }}>
+        <View className="border-t px-5 py-3" style={{ borderColor: palette.border }}>
           <View className="mb-2 flex-row items-center">
-            <UserRound size={18} color="#7b8189" />
-            <Text className="ml-3 text-xs" numberOfLines={1} style={{ color: '#7b8189' }}>Email : {user?.email || 'client@a5markets.com'}</Text>
+            <UserRound size={18} color={palette.muted} />
+            <Text className="ml-3 text-xs" numberOfLines={1} style={{ color: palette.muted }}>Email : {user?.email || 'client@a5markets.com'}</Text>
           </View>
           <View className="mb-2 flex-row items-center">
-            <Smartphone size={18} color="#7b8189" />
-            <Text className="ml-3 text-xs" style={{ color: '#7b8189' }}>App Version : v1.0.0</Text>
+            <Smartphone size={18} color={palette.muted} />
+            <Text className="ml-3 text-xs" style={{ color: palette.muted }}>App Version : v1.0.0</Text>
           </View>
           <View className="flex-row items-center">
-            <Download size={18} color="#7b8189" />
-            <Text className="ml-3 text-xs" style={{ color: '#7b8189' }}>Last Data Fetch: {new Date().toLocaleString()}</Text>
+            <Download size={18} color={palette.muted} />
+            <Text className="ml-3 text-xs" style={{ color: palette.muted }}>Last Data Fetch: {new Date().toLocaleString()}</Text>
           </View>
         </View>
       </View>
