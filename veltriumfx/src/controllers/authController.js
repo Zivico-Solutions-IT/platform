@@ -14,6 +14,10 @@ const publicUser = (user) => {
   delete values.password;
   delete values.resetPasswordToken;
   delete values.resetPasswordExpires;
+  // Documents are fetched only by the protected verification endpoints. Sending
+  // multi-megabyte base64 files with every profile refresh delays KYC UI updates.
+  delete values.idProofImage;
+  delete values.addressProofImage;
   return values;
 };
 const DEFAULT_LEVERAGE = 500;
@@ -200,14 +204,11 @@ exports.login = async (req, res, next) => {
 
 exports.me = async (req, res, next) => {
   try {
-    let user = await User.findByPk(req.user.id, { attributes: { exclude: ['password'] }, include: [{ model: Wallet, as: 'wallet' }] });
-    if (!user && req.user) {
-      user = req.user;
-    }
-    if (user) {
-      await ensureReferralCode(user).catch(() => {});
-    }
-    return res.json({ user: user || req.user });
+    // authenticate already loaded the current user record. Do not make a second
+    // database query (or wait for a referral write) before returning KYC status.
+    const user = req.user;
+    if (user) ensureReferralCode(user).catch(() => {});
+    return res.json({ user: publicUser(user) });
   } catch (error) {
     return next(error);
   }

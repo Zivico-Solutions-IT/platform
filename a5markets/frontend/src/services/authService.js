@@ -7,7 +7,10 @@ export const authService = {
   offline: () => api.post('/auth/offline').then((response) => response.data),
   forgotPassword: (values) => api.post('/auth/forgot-password', values).then((response) => response.data),
   resetPassword: (values) => api.post('/auth/reset-password', values).then((response) => response.data),
-  me: () => api.get('/auth/me').then((response) => response.data),
+  // Profile data is small, but a busy shared database can occasionally take
+  // longer than the generic API timeout. Keep the authenticated session
+  // refresh alive instead of silently retaining stale verification status.
+  me: () => api.get('/auth/me', { timeout: 45000 }).then((response) => response.data),
   updateProfile: (values) => api.put('/users/profile', values).then((response) => response.data),
   changePassword: (values) => api.put('/users/password', values).then((response) => response.data),
   updateBankDetails: (values) => api.put('/users/bank-details', values).then((response) => response.data),

@@ -42,7 +42,8 @@ module.exports = async function authMiddleware(req, res, next) {
     }
 
     if (req.path !== '/offline' && typeof user.update === 'function') {
-      await user.update({ onlineUntil: new Date(Date.now() + ONLINE_WINDOW_MS) }).catch(() => {});
+      // Presence must never delay authentication or the profile refresh request.
+      user.update({ onlineUntil: new Date(Date.now() + ONLINE_WINDOW_MS) }).catch(() => {});
     }
 
     req.user = user;
