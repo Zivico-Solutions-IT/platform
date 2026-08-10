@@ -822,7 +822,9 @@ exports.userOverview = async (req, res, next) => {
 exports.userVerification = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id, {
-      attributes: publicAttributes,
+      // Do not serialize the full user record while a master opens KYC files.
+      // The two document payloads can already be large on their own.
+      attributes: ['id', 'name', 'email', 'verificationStatus', 'idProofImage', 'addressProofImage'],
     });
     if (!user) throw apiError('User account not found.', 404);
     return res.json({ user });

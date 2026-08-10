@@ -3359,7 +3359,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     setVerificationImageZoom(null);
     setVerificationUser({ ...user, loading: true });
     try {
-      const result = await api.get(`/admin/users/${user.id}/verification`);
+      const result = await api.get(`/admin/users/${user.id}/verification`, { timeout: 45000 });
       setVerificationUser({ ...result.data.user, loading: false });
     } catch (requestError) {
       setVerificationUser(null);
