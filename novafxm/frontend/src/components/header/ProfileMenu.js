@@ -12,6 +12,7 @@ import { Animated, Pressable, ScrollView, Text, View, useWindowDimensions, Devic
 import { useAuth } from '../../hooks/useAuth';
 import { useAppTheme } from '../../context/ThemeContext';
 import { money } from '../../utils/formatters';
+import { authService } from '../../services/authService';
 
 function initialsFor(user) {
   const name = user?.name || user?.email || 'Nova User';
@@ -80,7 +81,8 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
 }
 
 export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPanel, selectedAccount, deposits = [], transactions = [] }) {
-  const { user, logout, isAdmin } = useAuth();
+  const { user: sessionUser, logout, isAdmin } = useAuth();
+  const [user, setProfileUser] = useState(sessionUser);
   const { colors } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const slideAnim = useRef(new Animated.Value(410)).current;
@@ -128,6 +130,24 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
     progress: colors.border,
     danger: colors.danger,
   };
+
+  // Always render this menu from a fresh profile response. This avoids a
+  // stale session object showing "Unverified" after an admin has approved it.
+  useEffect(() => {
+    let active = true;
+    const loadProfile = () => authService.me()
+      .then((result) => {
+        if (active && result?.user) setProfileUser(result.user);
+      })
+      .catch(() => {});
+    setProfileUser(sessionUser);
+    loadProfile();
+    const timer = setInterval(loadProfile, 15000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [sessionUser?.id]);
 
   useEffect(() => {
     slideAnim.setValue(panelWidth);
