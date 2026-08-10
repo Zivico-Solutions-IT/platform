@@ -128,9 +128,23 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!user || !sessionToken) return undefined;
 
+    const syncCurrentUser = () => authService.me()
+      .then((current) => {
+        const nextUser = mergeUser(current.user);
+        setUser((previous) => {
+          const merged = mergeUser(nextUser, previous);
+          storage.set('user', merged).catch(() => {});
+          return merged;
+        });
+      })
+      .catch(() => {});
     const markOnline = () => authService.presence().catch(() => {});
     markOnline();
-    const interval = setInterval(markOnline, 15000);
+    syncCurrentUser();
+    const interval = setInterval(() => {
+      markOnline();
+      syncCurrentUser();
+    }, 15000);
 
     const markOffline = () => {
       if (typeof fetch !== 'function') return;
@@ -160,7 +174,7 @@ export function AuthProvider({ children }) {
         window.removeEventListener('beforeunload', markOffline);
       }
     };
-  }, [sessionToken, user]);
+  }, [sessionToken, user?.id]);
 
   const updateProfile = useCallback(async (values) => {
     const result = await authService.updateProfile(values);
