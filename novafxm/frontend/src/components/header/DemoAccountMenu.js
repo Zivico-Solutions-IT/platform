@@ -6,7 +6,15 @@ import { useToast } from '../../context/ToastContext';
 import { money } from '../../utils/formatters';
 
 function accountId(account) {
-  return String(Number(account?.id || 0) + 4999).padStart(6, '0');
+  const id = Number(account?.id);
+  return Number.isInteger(id) && id > 0
+    ? String(id + 4999).padStart(6, '0')
+    : null;
+}
+
+function accountReference(account) {
+  const id = accountId(account);
+  return id ? `#${id}` : 'Loading…';
 }
 
 function accountLabel(account) {
@@ -94,7 +102,7 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
             <View className="mt-2 flex-row items-center justify-between rounded-lg px-2 py-1" style={{ backgroundColor: colors.surface }}>
               <Text className="text-[10px] font-semibold" style={{ color: colors.muted }}>Account ID</Text>
               <View className="flex-row items-center">
-                <Text className="mr-1.5 text-[10px] font-semibold" style={{ color: colors.text }}>#{accountId(activeAccount)}</Text>
+                <Text className="mr-1.5 text-[10px] font-semibold" style={{ color: colors.text }}>{accountReference(activeAccount)}</Text>
                 <Copy size={11} color={colors.muted} />
               </View>
             </View>
@@ -137,7 +145,7 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
                   </View>
                   <View className="flex-1">
                     <Text className="font-semibold text-[11px]" style={{ color: colors.text }}>{account.type || 'Demo'} - {accountLabel(account)}</Text>
-                    <Text className="mt-0.5 text-[9px]" style={{ color: colors.muted }}>#{accountId(account)} | {money(account.balance || 0)} {account.currency || 'USD'}</Text>
+                    <Text className="mt-0.5 text-[9px]" style={{ color: colors.muted }}>{accountReference(account)} | {money(account.balance || 0)} {account.currency || 'USD'}</Text>
                   </View>
                   {showStatus ? (
                     <Text className="text-[9px] font-semibold capitalize" style={{ color: statusTone }}>{account.status}</Text>
@@ -175,7 +183,7 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
             <View className="mt-3 flex-row items-center justify-between rounded-xl px-3 py-2" style={{ backgroundColor: colors.surface }}>
               <Text className="text-[11px] font-semibold" style={{ color: colors.muted }}>Account ID</Text>
               <View className="flex-row items-center">
-                <Text className="mr-2 text-xs font-semibold" style={{ color: colors.text }}>#{accountId(activeAccount)}</Text>
+                <Text className="mr-2 text-xs font-semibold" style={{ color: colors.text }}>{accountReference(activeAccount)}</Text>
                 <Copy size={13} color={colors.muted} />
               </View>
             </View>
@@ -218,7 +226,7 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
                   </View>
                   <View className="flex-1">
                     <Text className="font-semibold text-[11px]" numberOfLines={1} style={{ color: colors.text }}>{account.type || 'Demo'} - {accountLabel(account)}</Text>
-                    <Text className="mt-0.5 text-[10px]" numberOfLines={1} style={{ color: colors.muted }}>#{accountId(account)} | {money(account.balance || 0)} {account.currency || 'USD'}</Text>
+                    <Text className="mt-0.5 text-[10px]" numberOfLines={1} style={{ color: colors.muted }}>{accountReference(account)} | {money(account.balance || 0)} {account.currency || 'USD'}</Text>
                   </View>
                   {showStatus ? (
                     <Text className="text-[10px] font-semibold capitalize" style={{ color: statusTone }}>{account.status}</Text>

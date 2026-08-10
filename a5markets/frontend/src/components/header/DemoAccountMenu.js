@@ -8,7 +8,10 @@ import { router } from 'expo-router';
 import { navigateToA5App } from '../../utils/appHost';
 
 function accountId(account) {
-  return String(Number(account?.id || 0) + 4999).padStart(6, '0');
+  const id = Number(account?.id);
+  return Number.isInteger(id) && id > 0
+    ? String(id + 4999).padStart(6, '0')
+    : 'Loading…';
 }
 
 function accountLabel(account) {

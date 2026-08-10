@@ -79,6 +79,23 @@ async function syncExistingAccountBalances(userId, wallet, user) {
   }
 }
 
+// Keep the account selector independent from the heavier dashboard summary.
+async function tradingAccountsForUser(userId) {
+  const user = await User.findByPk(userId, {
+    attributes: ['id', 'projectId', 'accountType', 'tradingStatus', 'leverage'],
+    include: [{ model: Wallet, as: 'wallet' }],
+  });
+  if (!user) throw Object.assign(new Error('User not found.'), { status: 404 });
+
+  await ensureDefaultAccounts(user, user.wallet);
+  await syncExistingAccountBalances(userId, user.wallet, user);
+  await TradingAccount.update(
+    { status: 'active' },
+    { where: { userId, type: 'Live', status: 'pending' } },
+  );
+  return TradingAccount.findAll({ where: { userId }, order: [['createdAt', 'ASC']] });
+}
+
 async function dashboardForUser(userId, origin = '') {
   const user = await User.findByPk(userId, {
     attributes: { exclude: ['password'] },
@@ -292,5 +309,6 @@ async function createTradingAccount(userId, type) {
 module.exports = {
   createTradingAccount,
   dashboardForUser,
+  tradingAccountsForUser,
   ensureReferralCode,
 };

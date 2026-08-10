@@ -1,4 +1,4 @@
-const { createTradingAccount, dashboardForUser } = require('../services/dashboardService');
+const { createTradingAccount, dashboardForUser, tradingAccountsForUser } = require('../services/dashboardService');
 
 exports.dashboard = async (req, res, next) => {
   try {
@@ -12,6 +12,14 @@ exports.dashboard = async (req, res, next) => {
       }
     }
     return res.json(await dashboardForUser(req.user.id, origin));
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.accounts = async (req, res, next) => {
+  try {
+    return res.json({ accounts: await tradingAccountsForUser(req.user.id) });
   } catch (error) {
     return next(error);
   }

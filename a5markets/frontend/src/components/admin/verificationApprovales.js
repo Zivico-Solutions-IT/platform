@@ -14,7 +14,7 @@ const dateMs = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-export default function VerificationApprovales({ users, busyId, onOpenVerification }) {
+export default function VerificationApprovales({ users, busyId, onOpenVerification, onReviewVerification }) {
   const { width } = useWindowDimensions();
   const { darkMode, colors } = useAppTheme();
   const [filter, setFilter] = useState('pending');
@@ -110,6 +110,7 @@ export default function VerificationApprovales({ users, busyId, onOpenVerificati
                   const busy = busyId === user.id;
                   const badge = statusStyle(status);
                   const canOpenVerification = status !== 'unverified';
+                  const canApprove = status === 'pending';
                   return (
                     <View key={user.id} className="rounded-xl border p-4" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
                       <View className="flex-row items-start justify-between gap-3">
@@ -120,14 +121,19 @@ export default function VerificationApprovales({ users, busyId, onOpenVerificati
                         </View>
                         <Text className="rounded-full px-3 py-1 text-xs font-medium capitalize" style={badge}>{statusLabel(status)}</Text>
                       </View>
-                      <View className="mt-4">
+                      <View className="mt-4 flex-row gap-2">
                         {canOpenVerification ? (
-                          <Pressable disabled={busy} onPress={() => onOpenVerification(user)} className={`min-h-[42px] items-center justify-center rounded-2xl border px-4 ${busy ? 'opacity-40' : ''}`} style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
-                            <Text className="text-xs font-medium" style={{ color: colors.text }}>View and Approve</Text>
+                          <Pressable disabled={busy} onPress={() => onOpenVerification(user)} className={`min-h-[42px] flex-1 items-center justify-center rounded-2xl border px-4 ${busy ? 'opacity-40' : ''}`} style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1 }}>
+                            <Text className="text-xs font-medium" style={{ color: colors.text }}>View</Text>
                           </Pressable>
                         ) : (
                           <Text className="text-xs font-medium" style={{ color: colors.muted }}>No details submitted.</Text>
                         )}
+                        {canApprove ? (
+                          <Pressable disabled={busy} onPress={() => onReviewVerification(user, 'approve')} className={`min-h-[42px] flex-1 items-center justify-center rounded-2xl px-4 ${busy ? 'opacity-40' : ''}`} style={{ backgroundColor: colors.success }}>
+                            <Text className="text-xs font-semibold" style={{ color: '#fff' }}>Approve</Text>
+                          </Pressable>
+                        ) : null}
                       </View>
                     </View>
                   );
@@ -156,6 +162,7 @@ export default function VerificationApprovales({ users, busyId, onOpenVerificati
                   const busy = busyId === user.id;
                   const badge = statusStyle(status);
                   const canOpenVerification = status !== 'unverified';
+                  const canApprove = status === 'pending';
                   return (
                     <View key={user.id} className="flex-row items-center border-b p-4" style={{ borderColor: colors.border }}>
                       <View style={{ width: 320 }}>
@@ -169,11 +176,16 @@ export default function VerificationApprovales({ users, busyId, onOpenVerificati
                       <View style={{ width: 180 }} className="flex-row flex-wrap gap-2">
                         {canOpenVerification ? (
                           <Pressable disabled={busy} onPress={() => onOpenVerification(user)} className={`min-h-[36px] justify-center rounded-2xl border px-4 ${busy ? 'opacity-40' : ''}`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-                            <Text className="text-xs font-medium" style={{ color: colors.text }}>View and Approve</Text>
+                            <Text className="text-xs font-medium" style={{ color: colors.text }}>View</Text>
                           </Pressable>
                         ) : (
                           <Text className="text-xs font-medium" style={{ color: colors.muted }}>No details</Text>
                         )}
+                        {canApprove ? (
+                          <Pressable disabled={busy} onPress={() => onReviewVerification(user, 'approve')} className={`min-h-[36px] justify-center rounded-2xl px-4 ${busy ? 'opacity-40' : ''}`} style={{ backgroundColor: colors.success }}>
+                            <Text className="text-xs font-semibold" style={{ color: '#fff' }}>Approve</Text>
+                          </Pressable>
+                        ) : null}
                       </View>
                     </View>
                   );

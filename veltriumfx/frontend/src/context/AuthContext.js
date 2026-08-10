@@ -65,6 +65,9 @@ export function AuthProvider({ children }) {
       if (savedUser && token) {
         setSessionToken(token);
         setUser(savedUser);
+        // Render cached profile details immediately. A slow network refresh
+        // must not keep the entire portal on its loading screen.
+        setLoading(false);
         try {
           const current = await authService.me();
           const restoredUser = mergeUser(current.user, savedUser);

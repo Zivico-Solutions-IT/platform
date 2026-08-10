@@ -26,7 +26,7 @@ export default function TopAccountBar() {
   const { width } = useWindowDimensions();
   const { currentSymbol, summary, selectedTradingAccount, setSelectedTradingAccount, sidePanel, setSidePanel, transactions, orderPanelVisible, setOrderPanelVisible } = useDemoTrading();
   const params = useLocalSearchParams();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, refreshUser } = useAuth();
   const { darkMode, colors, toggleTheme } = useAppTheme();
   const metricsScrollRef = useRef(null);
   const profileHoverCloseRef = useRef(null);
@@ -47,7 +47,7 @@ export default function TopAccountBar() {
   const iconButtonHoverBg = darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(11, 11, 11, 0.04)';
 
   const fallbackAccount = useMemo(() => ({
-    id: `user-${user?.id || 'demo'}`,
+    id: 'loading',
     type: user?.accountType || 'Demo',
     name: user?.accountType === 'Live' ? 'Live account 1' : 'Demo account 1',
     status: user?.tradingStatus === 'frozen' ? 'frozen' : 'active',
@@ -123,17 +123,55 @@ export default function TopAccountBar() {
   const unreadNotificationCount = notificationIds.filter((id) => !readNotificationIds.includes(id)).length;
 
   useEffect(() => {
+    if (!user?.id) return undefined;
     let active = true;
+    const refreshProfile = () => {
+      refreshUser().catch(() => {});
+    };
+    refreshProfile();
+    const retryTimers = [3000, 9000].map((delay) => setTimeout(() => {
+      if (active) refreshProfile();
+    }, delay));
+    return () => {
+      active = false;
+      retryTimers.forEach(clearTimeout);
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    let active = true;
+    let accountsLoaded = false;
+    let accountsRequestInFlight = false;
     if (!user) {
       setAccounts([]);
       setSelectedTradingAccount(null);
       return undefined;
     }
+
+    const loadAccounts = () => {
+      if (accountsLoaded || accountsRequestInFlight) return;
+      accountsRequestInFlight = true;
+      dashboardService.getAccounts()
+        .then((result) => {
+          if (!active || !Array.isArray(result.accounts)) return;
+          accountsLoaded = true;
+          setAccounts(result.accounts);
+        })
+        .catch(() => {})
+        .finally(() => { accountsRequestInFlight = false; });
+    };
+
+    loadAccounts();
+    const retryTimers = [2500, 7000, 15000, 30000].map((delay) => setTimeout(loadAccounts, delay));
+
     dashboardService.getDashboard()
       .then((result) => {
         if (!active) return;
         setDashboard(result);
-        setAccounts(result.accounts || []);
+        if (Array.isArray(result.accounts)) {
+          accountsLoaded = true;
+          setAccounts(result.accounts);
+        }
       })
       .catch(() => {});
     const timer = setInterval(() => {
@@ -141,7 +179,7 @@ export default function TopAccountBar() {
         .then((result) => {
           if (active) {
             setDashboard(result);
-            setAccounts(result.accounts || []);
+            if (Array.isArray(result.accounts)) setAccounts(result.accounts);
           }
         })
         .catch(() => {});
@@ -149,6 +187,7 @@ export default function TopAccountBar() {
     return () => {
       active = false;
       clearInterval(timer);
+      retryTimers.forEach(clearTimeout);
     };
   }, [setSelectedTradingAccount, user]);
 
