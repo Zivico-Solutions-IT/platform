@@ -2242,6 +2242,11 @@ export default function AdminScreen() {
   const [userOverviewModal, setUserOverviewModal] = useState(null);
   const [birthdayBonusUser, setBirthdayBonusUser] = useState(null);
   const [birthdayBonusAmount, setBirthdayBonusAmount] = useState('200');
+  const [bonusPosts, setBonusPosts] = useState([]);
+  const [bonusPostsLoading, setBonusPostsLoading] = useState(false);
+  const [bonusPostTitle, setBonusPostTitle] = useState('');
+  const [bonusPostImage, setBonusPostImage] = useState('');
+  const bonusPostInputRef = useRef(null);
   const [verificationUser, setVerificationUser] = useState(null);
   const [verificationDocumentTab, setVerificationDocumentTab] = useState('all');
   const [verificationImageZoom, setVerificationImageZoom] = useState(null);
@@ -2503,11 +2508,106 @@ export default function AdminScreen() {
     return false;
   };
 
-  const allowedSectionIds = ['overview', 'marginAlerts', 'users', 'userManagement', 'verifications', 'deposits', 'referrals', 'withdrawals', 'userLevels', 'trades', 'addTrading', 'symbols', 'agents'];
+  const allowedSectionIds = ['overview', 'marginAlerts', 'users', 'userManagement', 'verifications', 'deposits', 'referrals', 'withdrawals', 'userLevels', 'trades', 'addTrading', 'bonusPosts', 'symbols', 'agents'];
   const canViewSection = (sectionId) => {
     if (companyStatus === 'suspended' && adminUser?.role !== 'master') return sectionId === 'overview';
     return hasPermission(sectionId);
   };
+
+  const loadBonusPosts = useCallback(async () => {
+    setBonusPostsLoading(true);
+    try {
+      const response = await api.get('/admin/bonus-posts');
+      setBonusPosts(response.data?.posts || []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to load bonus posts.');
+    } finally {
+      setBonusPostsLoading(false);
+    }
+  }, []);
+
+  const selectBonusPostImage = async (file) => {
+    if (!file) return;
+    if (!String(file.type || '').startsWith('image/')) {
+      setError('Please choose a PNG, JPG, or WEBP image.');
+      return;
+    }
+    try {
+      setBonusPostImage(await readFileDataUrl(file));
+    } catch (_) {
+      setError('Unable to read the selected image.');
+    }
+  };
+
+  const createBonusPost = async () => {
+    if (!bonusPostTitle.trim() || !bonusPostImage) {
+      setError('Enter a title and select an image first.');
+      return;
+    }
+    setBusyId('bonus-post-create');
+    try {
+      await api.post('/admin/bonus-posts', { title: bonusPostTitle.trim(), image: bonusPostImage });
+      setBonusPostTitle('');
+      setBonusPostImage('');
+      setMessage('Bonus post published.');
+      await loadBonusPosts();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to publish bonus post.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const deleteBonusPost = async (post) => {
+    setBusyId(`bonus-post-${post.id}`);
+    try {
+      await api.delete(`/admin/bonus-posts/${post.id}`);
+      setMessage('Bonus post removed.');
+      await loadBonusPosts();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to remove bonus post.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const renderBonusPosts = () => (
+    <View className="rounded-2xl border p-4 md:p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
+        <View>
+          <Text className="text-xl font-semibold" style={{ color: colors.text }}>Bonus Posts</Text>
+          <Text className="mt-1 text-sm" style={{ color: colors.muted }}>Publish up to two image offers for clients to view from their profile.</Text>
+        </View>
+        <Text className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: `${colors.primary}18`, color: colors.primary }}>{bonusPosts.length}/2 active</Text>
+      </View>
+      {Platform.OS === 'web' ? <input ref={bonusPostInputRef} accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} type="file" onChange={(event) => { selectBonusPostImage(event.target.files?.[0]); event.target.value = ''; }} /> : null}
+      <View className="mb-6 rounded-xl border p-4" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
+        <Text className="mb-3 text-base font-semibold" style={{ color: colors.text }}>Create bonus post</Text>
+        <CustomInput label="Offer title" value={bonusPostTitle} onChangeText={setBonusPostTitle} placeholder="Example: 20% first deposit bonus" />
+        <View className="mt-3 flex-row flex-wrap items-center gap-3">
+          <Pressable disabled={bonusPosts.length >= 2 || Platform.OS !== 'web'} onPress={() => bonusPostInputRef.current?.click()} className="rounded-lg border px-4 py-3" style={{ borderColor: colors.border, backgroundColor: colors.panel, opacity: bonusPosts.length >= 2 ? 0.55 : 1 }}>
+            <Text className="text-sm font-semibold" style={{ color: colors.text }}>{bonusPostImage ? 'Change image' : 'Choose image'}</Text>
+          </Pressable>
+          {bonusPostImage ? <Image source={{ uri: bonusPostImage }} resizeMode="cover" style={{ width: 76, height: 50, borderRadius: 8 }} /> : <Text className="text-xs" style={{ color: colors.muted }}>PNG, JPG or WEBP</Text>}
+          <Pressable disabled={bonusPosts.length >= 2 || busyId === 'bonus-post-create'} onPress={createBonusPost} className="rounded-lg px-4 py-3" style={{ backgroundColor: colors.primary, opacity: bonusPosts.length >= 2 ? 0.55 : 1 }}>
+            <Text className="text-sm font-semibold" style={{ color: '#111827' }}>{busyId === 'bonus-post-create' ? 'Publishing…' : 'Publish post'}</Text>
+          </Pressable>
+        </View>
+      </View>
+      <View className="flex-row flex-wrap gap-4">
+        {bonusPosts.map((post) => <View key={post.id} className="w-full overflow-hidden rounded-xl border md:w-[48%]" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
+          <Image source={{ uri: post.image }} resizeMode="cover" style={{ width: '100%', height: 180, backgroundColor: colors.card }} />
+          <View className="flex-row items-center justify-between gap-2 p-3"><Text className="flex-1 text-sm font-semibold" style={{ color: colors.text }}>{post.title}</Text><Pressable onPress={() => deleteBonusPost(post)} className="rounded-lg px-3 py-2" style={{ backgroundColor: `${colors.danger}18` }}><Text className="text-xs font-semibold" style={{ color: colors.danger }}>{busyId === `bonus-post-${post.id}` ? 'Removing…' : 'Remove'}</Text></Pressable></View>
+        </View>)}
+        {!bonusPostsLoading && bonusPosts.length === 0 ? <Text className="py-6 text-sm" style={{ color: colors.muted }}>No posts published yet.</Text> : null}
+        {bonusPostsLoading ? <Text className="py-6 text-sm" style={{ color: colors.muted }}>Loading bonus posts…</Text> : null}
+      </View>
+    </View>
+  );
+
+  useEffect(() => {
+    if (section === 'bonusPosts' && canViewSection('bonusPosts')) loadBonusPosts();
+  }, [section, adminUser?.id]);
 
   useEffect(() => {
     if (companyStatus === 'suspended' && adminUser?.role !== 'master') setSection('overview');
@@ -5260,7 +5360,7 @@ export default function AdminScreen() {
     if (selectedImpersonateClient) {
       const userAccounts = selectedImpersonateClient.tradingAccounts || [];
       return (
-        <View className="rounded-2xl border p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
+        <View className="w-full self-center rounded-2xl border p-5 md:p-6" style={{ maxWidth: 1180, backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
           <View className="mb-6 flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
               <Pressable
@@ -5354,7 +5454,7 @@ export default function AdminScreen() {
           <View className="gap-5">
             <View>
               <View className="mb-2 flex-row flex-wrap items-center justify-between gap-2">
-                <Text className="text-sm font-semibold" style={{ color: colors.text }}>Select Trading Account</Text>
+                <Text className="text-sm font-semibold" style={{ color: colors.text }}>1. Choose account</Text>
                 <Pressable
                   disabled={openUserProfileLoading}
                   onPress={openSelectedUserProfile}
@@ -5393,11 +5493,11 @@ export default function AdminScreen() {
             </View>
 
             <View>
-              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Trade Type</Text>
+              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>2. Trade timing</Text>
               <View className="flex-row gap-2">
                 {[
-                  { id: 'live', label: mobile ? 'Live Trade' : 'Current Trade (Live)' },
-                  { id: 'past', label: mobile ? 'Historical' : 'Past Trade (Historical)' },
+                  { id: 'live', label: mobile ? 'Open now' : 'Open trade now' },
+                  { id: 'past', label: mobile ? 'Past trade' : 'Add past trade' },
                 ].map((t) => {
                   const isSelected = addTradeForm.type === t.id;
                   return (
@@ -5409,13 +5509,14 @@ export default function AdminScreen() {
                         setAddTradeForm((prev) => ({
                           ...prev,
                           type: t.id,
-                          status: t.id === 'live' ? 'open' : prev.status,
+                          status: t.id === 'live' ? 'open' : 'closed',
                           openDate: t.id === 'past' && !prev.openDate ? nowStr : prev.openDate,
                           closeDate: t.id === 'past' && !prev.closeDate ? nowStr : prev.closeDate,
                         }));
                       }}
-                      className={`rounded-2xl border px-3 flex-1 justify-center ${mobile ? 'py-1.5' : 'py-2.5'}`}
+                      className={`rounded-xl border px-3 justify-center ${mobile ? 'flex-1 py-2' : 'py-2'}`}
                       style={{
+                        minWidth: mobile ? undefined : 126,
                         backgroundColor: isSelected ? colors.primary : colors.surface,
                         borderColor: isSelected ? colors.primary : colors.border,
                       }}
@@ -5429,11 +5530,11 @@ export default function AdminScreen() {
 
             {addTradeForm.type === 'past' ? (
               <View>
-                <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Position Status</Text>
+                <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Is this past trade still open?</Text>
                 <View className="flex-row gap-2">
                   {[
-                    { id: 'open', label: mobile ? 'Active' : 'Still Open (Active)' },
-                    { id: 'closed', label: mobile ? 'Closed' : 'Already Closed' },
+                    { id: 'open', label: mobile ? 'Still open' : 'Yes, it is still open' },
+                    { id: 'closed', label: mobile ? 'Closed' : 'No, it is already closed' },
                   ].map((s) => {
                     const isSelected = addTradeForm.status === s.id;
                     return (
@@ -5443,8 +5544,9 @@ export default function AdminScreen() {
                           if (s.id !== 'closed' && activeSelectionMode === 'close') setActiveSelectionMode('open');
                           setAddTradeForm((prev) => ({ ...prev, status: s.id }));
                         }}
-                        className={`rounded-2xl border px-3 flex-1 justify-center ${mobile ? 'py-1.5' : 'py-2.5'}`}
-                        style={{
+                      className={`rounded-xl border px-3 justify-center ${mobile ? 'flex-1 py-2' : 'py-2'}`}
+                      style={{
+                        minWidth: mobile ? undefined : 154,
                           backgroundColor: isSelected ? colors.primary : colors.surface,
                           borderColor: isSelected ? colors.primary : colors.border,
                         }}
@@ -5458,7 +5560,7 @@ export default function AdminScreen() {
             ) : null}
 
             <View>
-              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Select Trading Asset (Symbol)</Text>
+              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>3. Select market</Text>
               <View className="mb-3 flex-row flex-wrap gap-2">
                 {availableTradeGroups.map((group) => {
                   const active = tradeSymbolGroup === group.id;
@@ -5621,7 +5723,7 @@ export default function AdminScreen() {
             </View>
             <View className="gap-3 rounded-xl border p-3" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
               <View className={`flex-wrap gap-3 ${mobile ? 'flex-col' : 'flex-row'}`}>
-                <View className={mobile ? 'w-full' : 'min-w-[260px] flex-1'}>
+                <View className={mobile ? 'w-full' : 'w-[300px]'}>
                   <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Side</Text>
                   <View className="flex-row gap-2">
                     {[
@@ -5646,7 +5748,7 @@ export default function AdminScreen() {
                     })}
                   </View>
                 </View>
-                <View className={mobile ? 'w-full' : 'min-w-[180px] flex-1'}>
+                <View className={mobile ? 'w-full' : 'w-[180px]'}>
                   <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Lots</Text>
                   <CustomInput
                     value={addTradeForm.lots}
@@ -5807,7 +5909,7 @@ export default function AdminScreen() {
               <Pressable
                 disabled={addTradeLoading || !addTradeForm.tradingAccountId}
                 onPress={handleAddTradeSubmit}
-                className={`min-h-[38px] md:min-h-[44px] items-center justify-center rounded-2xl px-4 ${mobile ? 'w-[120px]' : 'flex-1'} ${addTradeLoading || !addTradeForm.tradingAccountId ? 'opacity-50' : ''}`}
+                className={`min-h-[38px] items-center justify-center rounded-xl px-4 ${mobile ? 'w-[120px]' : 'w-[260px]'} ${addTradeLoading || !addTradeForm.tradingAccountId ? 'opacity-50' : ''}`}
                 style={{ backgroundColor: colors.primary }}
               >
                 <Text className="font-semibold text-xs md:text-sm" style={{ color: '#0B0B0B' }}>
@@ -5817,7 +5919,7 @@ export default function AdminScreen() {
               <Pressable
                 disabled={addTradeLoading}
                 onPress={() => setSelectedImpersonateClient(null)}
-                className={`min-h-[38px] md:min-h-[44px] items-center justify-center rounded-2xl border px-4 ${mobile ? 'w-[120px]' : 'flex-1'}`}
+                className={`min-h-[38px] items-center justify-center rounded-xl border px-4 ${mobile ? 'w-[120px]' : 'w-[160px]'}`}
                 style={{ backgroundColor: colors.surface, borderColor: colors.border }}
               >
                 <Text className="font-semibold text-xs md:text-sm" style={{ color: colors.text }}>Cancel</Text>
@@ -6186,6 +6288,7 @@ export default function AdminScreen() {
                   : section === 'withdrawals' ? 'Withdrawals'
                   : section === 'userLevels' ? 'User Levels'
                   : section === 'trades' ? 'Trade Monitor'
+                  : section === 'bonusPosts' ? 'Bonus Posts'
                   : section === 'symbols' ? 'Symbol Settings'
                   : section === 'agents' ? 'Staff Management'
                   : 'Add Trading'}
@@ -6557,6 +6660,7 @@ export default function AdminScreen() {
         {section === 'userLevels' && canViewSection('userLevels') ? renderUserLevels() : null}
         {section === 'trades' && canViewSection('trades') ? renderTrades() : null}
         {section === 'addTrading' && canViewSection('addTrading') ? renderAddTrading() : null}
+        {section === 'bonusPosts' && canViewSection('bonusPosts') ? renderBonusPosts() : null}
         {section === 'symbols' && canViewSection('symbols') ? <SymbolSettings /> : null}
         {section === 'accessDenied' ? <View className="rounded-2xl border p-8" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><Text className="text-lg font-semibold" style={{ color: colors.text }}>No dashboard permissions assigned</Text><Text className="mt-2 text-sm" style={{ color: colors.muted }}>Ask your Master administrator to enable one or more company permissions and assign them to your administrator account.</Text></View> : null}
       </ScrollView>

@@ -5291,7 +5291,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     if (selectedImpersonateClient) {
       const userAccounts = selectedImpersonateClient.tradingAccounts || [];
       return (
-        <View className="rounded-2xl border p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
+        <View className="w-full self-center rounded-2xl border p-5 md:p-6" style={{ maxWidth: 1180, backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
           <View className="mb-6 flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
               <Pressable
@@ -5385,7 +5385,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
           <View className="gap-5">
             <View>
               <View className="mb-2 flex-row flex-wrap items-center justify-between gap-2">
-                <Text className="text-sm font-semibold" style={{ color: colors.text }}>Select Trading Account</Text>
+                <Text className="text-sm font-semibold" style={{ color: colors.text }}>1. Choose account</Text>
                 <Pressable
                   disabled={openUserProfileLoading}
                   onPress={openSelectedUserProfile}
@@ -5424,11 +5424,11 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
             </View>
 
             <View>
-              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Trade Type</Text>
+              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>2. Trade timing</Text>
               <View className="flex-row gap-2">
                 {[
-                  { id: 'live', label: mobile ? 'Live Trade' : 'Current Trade (Live)' },
-                  { id: 'past', label: mobile ? 'Historical' : 'Past Trade (Historical)' },
+                  { id: 'live', label: mobile ? 'Open now' : 'Open trade now' },
+                  { id: 'past', label: mobile ? 'Past trade' : 'Add past trade' },
                 ].map((t) => {
                   const isSelected = addTradeForm.type === t.id;
                   return (
@@ -5440,13 +5440,14 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                         setAddTradeForm((prev) => ({
                           ...prev,
                           type: t.id,
-                          status: t.id === 'live' ? 'open' : prev.status,
+                          status: t.id === 'live' ? 'open' : 'closed',
                           openDate: t.id === 'past' && !prev.openDate ? nowStr : prev.openDate,
                           closeDate: t.id === 'past' && !prev.closeDate ? nowStr : prev.closeDate,
                         }));
                       }}
-                      className={`rounded-2xl border px-3 flex-1 justify-center ${mobile ? 'py-1.5' : 'py-2.5'}`}
+                      className={`rounded-xl border px-3 justify-center ${mobile ? 'flex-1 py-2' : 'py-2'}`}
                       style={{
+                        minWidth: mobile ? undefined : 126,
                         backgroundColor: isSelected ? colors.primary : colors.surface,
                         borderColor: isSelected ? colors.primary : colors.border,
                       }}
@@ -5460,11 +5461,11 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
 
             {addTradeForm.type === 'past' ? (
               <View>
-                <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Position Status</Text>
+                <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Is this past trade still open?</Text>
                 <View className="flex-row gap-2">
                   {[
-                    { id: 'open', label: mobile ? 'Active' : 'Still Open (Active)' },
-                    { id: 'closed', label: mobile ? 'Closed' : 'Already Closed' },
+                    { id: 'open', label: mobile ? 'Still open' : 'Yes, it is still open' },
+                    { id: 'closed', label: mobile ? 'Closed' : 'No, it is already closed' },
                   ].map((s) => {
                     const isSelected = addTradeForm.status === s.id;
                     return (
@@ -5474,8 +5475,9 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                           if (s.id !== 'closed' && activeSelectionMode === 'close') setActiveSelectionMode('open');
                           setAddTradeForm((prev) => ({ ...prev, status: s.id }));
                         }}
-                        className={`rounded-2xl border px-3 flex-1 justify-center ${mobile ? 'py-1.5' : 'py-2.5'}`}
-                        style={{
+                      className={`rounded-xl border px-3 justify-center ${mobile ? 'flex-1 py-2' : 'py-2'}`}
+                      style={{
+                        minWidth: mobile ? undefined : 154,
                           backgroundColor: isSelected ? colors.primary : colors.surface,
                           borderColor: isSelected ? colors.primary : colors.border,
                         }}
@@ -5489,7 +5491,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
             ) : null}
 
             <View>
-              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Select Trading Asset (Symbol)</Text>
+              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>3. Select market</Text>
               <View className="mb-3 flex-row flex-wrap gap-2">
                 {availableTradeGroups.map((group) => {
                   const active = tradeSymbolGroup === group.id;
@@ -5652,7 +5654,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
             </View>
             <View className="gap-3 rounded-xl border p-3" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
               <View className={`flex-wrap gap-3 ${mobile ? 'flex-col' : 'flex-row'}`}>
-                <View className={mobile ? 'w-full' : 'min-w-[260px] flex-1'}>
+                <View className={mobile ? 'w-full' : 'w-[300px]'}>
                   <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Side</Text>
                   <View className="flex-row gap-2">
                     {[
@@ -5677,7 +5679,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                     })}
                   </View>
                 </View>
-                <View className={mobile ? 'w-full' : 'min-w-[180px] flex-1'}>
+                <View className={mobile ? 'w-full' : 'w-[180px]'}>
                   <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Lots</Text>
                   <CustomInput
                     value={addTradeForm.lots}
@@ -5838,7 +5840,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
               <Pressable
                 disabled={addTradeLoading || !addTradeForm.tradingAccountId}
                 onPress={handleAddTradeSubmit}
-                className={`min-h-[38px] md:min-h-[44px] items-center justify-center rounded-2xl px-4 ${mobile ? 'w-[120px]' : 'flex-1'} ${addTradeLoading || !addTradeForm.tradingAccountId ? 'opacity-50' : ''}`}
+                className={`min-h-[38px] items-center justify-center rounded-xl px-4 ${mobile ? 'w-[120px]' : 'w-[260px]'} ${addTradeLoading || !addTradeForm.tradingAccountId ? 'opacity-50' : ''}`}
                 style={{ backgroundColor: colors.primary }}
               >
                 <Text className="font-semibold text-xs md:text-sm" style={{ color: '#0B0B0B' }}>
@@ -5848,7 +5850,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
               <Pressable
                 disabled={addTradeLoading}
                 onPress={() => setSelectedImpersonateClient(null)}
-                className={`min-h-[38px] md:min-h-[44px] items-center justify-center rounded-2xl border px-4 ${mobile ? 'w-[120px]' : 'flex-1'}`}
+                className={`min-h-[38px] items-center justify-center rounded-xl border px-4 ${mobile ? 'w-[120px]' : 'w-[160px]'}`}
                 style={{ backgroundColor: colors.surface, borderColor: colors.border }}
               >
                 <Text className="font-semibold text-xs md:text-sm" style={{ color: colors.text }}>Cancel</Text>

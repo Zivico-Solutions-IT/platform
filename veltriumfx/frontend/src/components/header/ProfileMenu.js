@@ -5,17 +5,20 @@ import {
   ArrowDown,
   ArrowUp,
   Clock,
+  Gift,
+  ArrowLeft,
   LogOut,
   Settings2,
   ShieldCheck,
   X,
   HelpCircle,
 } from 'lucide-react-native';
-import { Animated, Pressable, ScrollView, Text, View, useWindowDimensions, DeviceEventEmitter } from 'react-native';
+import { Animated, Image, Pressable, ScrollView, Text, View, useWindowDimensions, DeviceEventEmitter } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppTheme } from '../../context/ThemeContext';
 import { money } from '../../utils/formatters';
 import { authService } from '../../services/authService';
+import api from '../../services/api';
 
 function initialsFor(user) {
   const name = user?.name || user?.email || 'Nova User';
@@ -86,6 +89,9 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette, compa
 export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPanel, selectedAccount, deposits = [], transactions = [] }) {
   const { user: sessionUser, logout, isAdmin } = useAuth();
   const [user, setProfileUser] = useState(sessionUser);
+  const [bonusPosts, setBonusPosts] = useState([]);
+  const [bonusLoading, setBonusLoading] = useState(false);
+  const [showBonusPosts, setShowBonusPosts] = useState(false);
   const { colors } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const slideAnim = useRef(new Animated.Value(410)).current;
@@ -134,6 +140,18 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
     danger: colors.danger,
   };
 
+  const loadBonusPosts = async () => {
+    setBonusLoading(true);
+    try {
+      const response = await api.get('/bonus-posts');
+      setBonusPosts(response.data?.posts || []);
+    } catch (_) {
+      setBonusPosts([]);
+    } finally {
+      setBonusLoading(false);
+    }
+  };
+
   // The profile menu must use the latest verification status, not only the
   // session snapshot created during login.
   useEffect(() => {
@@ -150,6 +168,10 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
       active = false;
       clearInterval(timer);
     };
+  }, [sessionUser?.id]);
+
+  useEffect(() => {
+    loadBonusPosts();
   }, [sessionUser?.id]);
 
   useEffect(() => {
@@ -233,12 +255,54 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
           }}
         >
           <View className={`${mobile ? 'mb-2' : 'mb-5'} flex-row items-center justify-between ${mobile ? '' : 'pl-[18px]'}`}>
-            <Text className={`${mobile ? 'text-xl' : 'text-2xl'} font-medium`} style={{ color: palette.text }}>My Profile</Text>
-            <Pressable onPress={onClose} className="h-10 w-10 items-center justify-center">
-              <X size={mobile ? 24 : 26} color={palette.text} strokeWidth={1.8} />
-            </Pressable>
+            <Text className={`${mobile ? 'text-xl' : 'text-2xl'} font-medium`} style={{ color: palette.text }}>
+              {showBonusPosts ? 'Bonus Offers' : 'My Profile'}
+            </Text>
+            <View className="flex-row items-center">
+              {!showBonusPosts ? (
+                <Pressable
+                  onPress={() => {
+                    setShowBonusPosts(true);
+                    loadBonusPosts();
+                  }}
+                  className="mr-2 h-10 w-10 items-center justify-center rounded-full"
+                  style={{ backgroundColor: `${palette.danger}16` }}
+                  accessibilityLabel="View bonus offers"
+                >
+                  <Gift size={mobile ? 21 : 22} color={palette.danger} strokeWidth={2} />
+                  {bonusPosts.length > 0 ? <View className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: palette.danger }} /> : null}
+                </Pressable>
+              ) : (
+                <Pressable onPress={() => setShowBonusPosts(false)} className="mr-2 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: palette.tile }} accessibilityLabel="Back to profile">
+                  <ArrowLeft size={mobile ? 21 : 22} color={palette.text} strokeWidth={2} />
+                </Pressable>
+              )}
+              <Pressable onPress={onClose} className="h-10 w-10 items-center justify-center">
+                <X size={mobile ? 24 : 26} color={palette.text} strokeWidth={1.8} />
+              </Pressable>
+            </View>
           </View>
 
+          {showBonusPosts ? (
+            <View className={mobile ? '' : 'px-[18px]'}>
+              <Text className="mb-4 text-sm" style={{ color: palette.muted }}>Latest offers from VeltriumFX</Text>
+              {bonusLoading ? <Text className="py-8 text-center text-sm" style={{ color: palette.muted }}>Loading bonus offers…</Text> : null}
+              {!bonusLoading && bonusPosts.length === 0 ? (
+                <View className="rounded-xl border p-5" style={{ borderColor: palette.border, backgroundColor: palette.tile }}>
+                  <Gift size={26} color={palette.danger} strokeWidth={1.8} />
+                  <Text className="mt-3 text-base font-medium" style={{ color: palette.text }}>No bonus offers yet</Text>
+                  <Text className="mt-1 text-sm" style={{ color: palette.muted }}>New offers will appear here.</Text>
+                </View>
+              ) : null}
+              {bonusPosts.map((post) => (
+                <View key={post.id} className="mb-4 overflow-hidden rounded-xl border" style={{ borderColor: palette.border, backgroundColor: palette.tile }}>
+                  <Image source={{ uri: post.image }} resizeMode="cover" style={{ width: '100%', height: mobile ? 185 : 205, backgroundColor: palette.card }} />
+                  <Text className="p-3 text-base font-medium" style={{ color: palette.text }}>{post.title}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <>
           <View className={`${mobile ? 'mb-2' : 'mb-4'} flex-row items-center ${mobile ? '' : 'px-[18px]'}`}>
             <View className={`${mobile ? 'h-[42px] w-[42px]' : 'h-[50px] w-[50px]'} items-center justify-center rounded-full`} style={{ backgroundColor: palette.accent }}>
               <Text className="text-base font-medium text-medium">{initials}</Text>
@@ -376,6 +440,8 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             palette={palette}
             compact={mobile}
           />
+            </>
+          )}
         </Animated.View>
       </ScrollView>
     </Animated.View>

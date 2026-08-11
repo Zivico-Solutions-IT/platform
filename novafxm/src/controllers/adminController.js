@@ -1651,28 +1651,22 @@ exports.reviewWithdrawal = (status) => async (req, res, next) => {
 async function getHistoricalPriceHelper(symbol, date) {
   try {
     const timestamp = Math.floor(new Date(date).getTime() / 1000);
-    
-    // First try daily candles
-    let candle = await Candle.findOne({
-      where: {
-        symbol,
-        timeframe: '1D',
-        time: { [Op.lte]: timestamp }
-      },
-      order: [['time', 'DESC']],
-    });
-    
-    // Fallback to any timeframe
-    if (!candle) {
-      candle = await Candle.findOne({
-        where: {
-          symbol,
-          time: { [Op.lte]: timestamp }
-        },
-        order: [['time', 'DESC']],
-      });
-    }
-    
+    if (!Number.isFinite(timestamp)) return null;
+
+    // NovaFXM is the primary candle store. Resolve the selected minute from
+    // one-minute candles and only use a nearby local row when that minute is absent.
+    const candles = await tradingView.getHistoricalCandles(symbol, '1m', 60, { before: timestamp + 1 });
+    const minuteCandle = [...candles]
+      .filter((candle) => Number(candle?.time) <= timestamp)
+      .sort((a, b) => Number(b.time) - Number(a.time))[0];
+    if (minuteCandle && Number.isFinite(Number(minuteCandle.close))) return Number(minuteCandle.close);
+
+    const [before, after] = await Promise.all([
+      Candle.findOne({ where: { symbol, timeframe: '1m', time: { [Op.lte]: timestamp } }, order: [['time', 'DESC']] }),
+      Candle.findOne({ where: { symbol, timeframe: '1m', time: { [Op.gte]: timestamp } }, order: [['time', 'ASC']] }),
+    ]);
+    const candle = !before ? after : !after ? before
+      : timestamp - Number(before.time) <= Number(after.time) - timestamp ? before : after;
     return candle ? Number(candle.close) : null;
   } catch (err) {
     console.error('Error fetching historical price:', err.message);

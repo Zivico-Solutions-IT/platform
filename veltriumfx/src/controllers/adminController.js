@@ -2,7 +2,7 @@ const sequelize = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification } = require('../models');
+const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification, BonusPost } = require('../models');
 const tradingView = require('../services/tradingViewService');
 const { ensureReferralCode } = require('../services/dashboardService');
 const { getIo } = require('../config/socketIo');
@@ -13,7 +13,7 @@ const DEFAULT_LEVERAGE = 500;
 const MIN_LEVERAGE = 100;
 const MAX_LEVERAGE = 2000;
 const TRADING_LEVELS = ['Standard', 'Silver', 'Gold', 'Platinum'];
-const STAFF_PERMISSIONS = ['overview', 'marginAlerts', 'users', 'userManagement', 'assignUsers', 'userManagementUsers', 'verifications', 'deposits', 'depositAddresses', 'depositsList', 'referrals', 'withdrawals', 'withdrawalsList', 'withdrawalDetails', 'userLevels', 'trades', 'addTrading', 'symbols'];
+const STAFF_PERMISSIONS = ['overview', 'marginAlerts', 'users', 'userManagement', 'assignUsers', 'userManagementUsers', 'verifications', 'deposits', 'depositAddresses', 'depositsList', 'referrals', 'withdrawals', 'withdrawalsList', 'withdrawalDetails', 'userLevels', 'trades', 'addTrading', 'symbols', 'bonusPosts'];
 const publicAttributes = { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires'] };
 const publicListAttributes = {
   exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires', 'profileImage', 'idProofImage', 'addressProofImage'],
@@ -1651,28 +1651,22 @@ exports.reviewWithdrawal = (status) => async (req, res, next) => {
 async function getHistoricalPriceHelper(symbol, date) {
   try {
     const timestamp = Math.floor(new Date(date).getTime() / 1000);
-    
-    // First try daily candles
-    let candle = await Candle.findOne({
-      where: {
-        symbol,
-        timeframe: '1D',
-        time: { [Op.lte]: timestamp }
-      },
-      order: [['time', 'DESC']],
-    });
-    
-    // Fallback to any timeframe
-    if (!candle) {
-      candle = await Candle.findOne({
-        where: {
-          symbol,
-          time: { [Op.lte]: timestamp }
-        },
-        order: [['time', 'DESC']],
-      });
-    }
-    
+    if (!Number.isFinite(timestamp)) return null;
+
+    // The shared chart candle service reads from NovaFXM when central candles
+    // are enabled. Resolve a selected time from one-minute history first.
+    const candles = await tradingView.getHistoricalCandles(symbol, '1m', 60, { before: timestamp + 1 });
+    const minuteCandle = [...candles]
+      .filter((candle) => Number(candle?.time) <= timestamp)
+      .sort((a, b) => Number(b.time) - Number(a.time))[0];
+    if (minuteCandle && Number.isFinite(Number(minuteCandle.close))) return Number(minuteCandle.close);
+
+    const [before, after] = await Promise.all([
+      Candle.findOne({ where: { symbol, timeframe: '1m', time: { [Op.lte]: timestamp } }, order: [['time', 'DESC']] }),
+      Candle.findOne({ where: { symbol, timeframe: '1m', time: { [Op.gte]: timestamp } }, order: [['time', 'ASC']] }),
+    ]);
+    const candle = !before ? after : !after ? before
+      : timestamp - Number(before.time) <= Number(after.time) - timestamp ? before : after;
     return candle ? Number(candle.close) : null;
   } catch (err) {
     console.error('Error fetching historical price:', err.message);
@@ -2214,4 +2208,35 @@ exports.deleteNotification = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+};
+
+exports.bonusPosts = async (req, res, next) => {
+  try {
+    const where = req.projectId ? { projectId: req.projectId } : {};
+    const posts = await BonusPost.findAll({ where, order: [['createdAt', 'DESC']], limit: 2 });
+    return res.json({ posts });
+  } catch (error) { return next(error); }
+};
+
+exports.createBonusPost = async (req, res, next) => {
+  try {
+    const where = req.projectId ? { projectId: req.projectId } : {};
+    const count = await BonusPost.count({ where });
+    if (count >= 2) return res.status(400).json({ message: 'Only two bonus posts can be active. Remove one first.' });
+    const { title, image } = req.body || {};
+    if (!title || !image || !/^data:image\/(png|jpe?g|webp);base64,/i.test(image)) return res.status(400).json({ message: 'A title and PNG, JPG or WEBP image are required.' });
+    const post = await BonusPost.create({ title: String(title).slice(0, 120), image, projectId: req.projectId || null, createdById: req.user.id });
+    return res.status(201).json({ post });
+  } catch (error) { return next(error); }
+};
+
+exports.deleteBonusPost = async (req, res, next) => {
+  try {
+    const where = { id: req.params.id };
+    if (req.projectId) where.projectId = req.projectId;
+    const post = await BonusPost.findOne({ where });
+    if (!post) return res.status(404).json({ message: 'Bonus post not found.' });
+    await post.destroy();
+    return res.json({ message: 'Bonus post removed.' });
+  } catch (error) { return next(error); }
 };

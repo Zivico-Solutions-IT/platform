@@ -1589,9 +1589,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const [addTradeSuccess, setAddTradeSuccess] = useState('');
   const [openUserProfileLoading, setOpenUserProfileLoading] = useState(false);
   // Keep the trade form focused on the fields required to place a trade.
-  // The chart and calculation details remain available when an admin needs them.
+  // The chart remains available when an admin needs it.
   const [showAddTradeChart, setShowAddTradeChart] = useState(false);
-  const [showAddTradeSnapshot, setShowAddTradeSnapshot] = useState(false);
   const historicalPriceRequestRef = useRef({});
 
   const [marketPrices, setMarketPrices] = useState([]);
@@ -5772,19 +5771,6 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                 </View>
               </View>
 
-              <Pressable
-                onPress={() => setShowAddTradeSnapshot((visible) => !visible)}
-                className="flex-row items-center justify-between rounded-xl border px-3 py-3"
-                style={{ backgroundColor: colors.panel, borderColor: colors.border }}
-              >
-                <View>
-                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>Review calculation</Text>
-                  <Text className="mt-0.5 text-xs" style={{ color: colors.muted }}>Balance, margin and estimated profit details.</Text>
-                </View>
-                <Text className="text-xs font-semibold" style={{ color: colors.primary }}>{showAddTradeSnapshot ? 'Hide details' : 'View details'}</Text>
-              </Pressable>
-
-              {showAddTradeSnapshot ? (
               <View className="rounded-2xl border p-3" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
                 <View className="mb-2 flex-row items-center justify-between">
                   <Text className="text-xs font-medium uppercase" style={{ color: colors.muted }}>Trade Snapshot</Text>
@@ -5826,9 +5812,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                   })}
                 </View>
               </View>
-              ) : null}
 
-              {showAddTradeSnapshot && addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
+              {addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
                 <View>
                   <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Profit / Loss (Override)</Text>
                   <CustomInput
@@ -5840,7 +5825,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
               ) : null}
             </View>
 
-            {showAddTradeSnapshot && addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
+            {addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
               <View className="rounded-xl border p-4 font-semibold" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
                 <Text className="text-xs font-medium uppercase" style={{ color: colors.muted }}>Profit / Loss Calculator Preview</Text>
                 <Text className={`mt-2 text-lg font-semibold ${currentPreviewProfit >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -5939,7 +5924,6 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                         tradingAccountId: defaultAccount.id || '',
                       });
                       setShowAddTradeChart(false);
-                      setShowAddTradeSnapshot(false);
                       setAddTradeError('');
                       setAddTradeSuccess('');
                     }}
