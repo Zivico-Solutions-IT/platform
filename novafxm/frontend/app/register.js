@@ -480,7 +480,12 @@ export default function RegisterScreen() {
     });
     router.replace('/trading');
   } catch (requestError) {
-    setError(requestError.response?.data?.message || 'Registration failed. Make sure the backend is running.');
+    setError(
+      requestError.response?.data?.message
+      || (requestError.code === 'ECONNABORTED'
+        ? 'Registration is taking longer than expected. Please try again in a moment.'
+        : 'Registration failed. Please check your connection and try again.'),
+    );
   } finally {
     setLoading(false);
   }

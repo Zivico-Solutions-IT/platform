@@ -8,6 +8,8 @@ const keys = {
   wallet: 'novafxm_wallet',
   transactions: 'novafxm_transactions',
   selectedSymbol: 'novafxm_selected_symbol',
+  rememberedEmail: 'novafxm_remembered_email',
+  rememberMe: 'novafxm_remember_me',
 };
 
 export const storage = {

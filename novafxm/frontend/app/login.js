@@ -15,6 +15,7 @@ import { authService } from '../src/services/authService';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { landingRouteFor } from '../src/utils/appHost';
+import { storage } from '../src/utils/storage';
 
 export default function LoginScreen() {
   const { login, user } = useAuth();
@@ -43,6 +44,18 @@ export default function LoginScreen() {
     if (!user) return;
     router.replace(landingRouteFor(user));
   }, [user]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([storage.get('rememberedEmail', ''), storage.get('rememberMe', false)])
+      .then(([email, remembered]) => {
+        if (!active || !remembered || !email) return;
+        setForm((current) => ({ ...current, email: String(email) }));
+        setRememberMe(true);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -84,6 +97,14 @@ export default function LoginScreen() {
     setError('');
     try {
       const user = await login(form);
+      if (rememberMe) {
+        await Promise.all([
+          storage.set('rememberedEmail', form.email.trim().toLowerCase()),
+          storage.set('rememberMe', true),
+        ]);
+      } else {
+        await Promise.all([storage.remove('rememberedEmail'), storage.remove('rememberMe')]);
+      }
       router.replace(landingRouteFor(user));
     } catch (requestError) {
       const requestUrl = `${requestError.config?.baseURL || ''}${requestError.config?.url || ''}`;

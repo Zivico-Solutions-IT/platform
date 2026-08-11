@@ -8,6 +8,8 @@ const keys = {
   wallet: 'veltriumfx_wallet',
   transactions: 'veltriumfx_transactions',
   selectedSymbol: 'veltriumfx_selected_symbol',
+  rememberedEmail: 'veltriumfx_remembered_email',
+  rememberMe: 'veltriumfx_remember_me',
 };
 
 export const storage = {

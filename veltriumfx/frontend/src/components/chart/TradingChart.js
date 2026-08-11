@@ -226,7 +226,7 @@ const applyLivePriceToCandles = (candles, currentSymbol, timeframe) => {
   return [{ time, open: price, high: price, low: price, close: price }];
 };
 
-const loadCandlesWithRetry = async (symbol, timeframe, limit, options = {}, attempts = 3) => {
+const loadCandlesWithRetry = async (symbol, timeframe, limit, options = {}, attempts = 5) => {
   let lastCandles = [];
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
@@ -237,7 +237,7 @@ const loadCandlesWithRetry = async (symbol, timeframe, limit, options = {}, atte
       lastCandles = [];
     }
     if (attempt < attempts - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 450 * (attempt + 1)));
+      await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
     }
   }
   return lastCandles;
@@ -911,6 +911,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const chartMinHeight = mobile ? Math.min(Math.max(Math.round(height * 0.5), 390), 540) : compactToolbar ? 430 : 520;
   const indicatorPanelHeight = mobile ? Math.min(Math.max(Math.round(height * 0.54), 300), 430) : 330;
   const [timeframe, setTimeframe] = useState('15m');
+  const [timeframeReady, setTimeframeReady] = useState(false);
   const [chartType, setChartType] = useState('candles');
   const [localFullscreen, setLocalFullscreen] = useState(false);
   const chartFullscreen = isFullscreen !== undefined ? isFullscreen : localFullscreen;
@@ -1005,6 +1006,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const olderHistoryExhaustedRef = useRef(false);
   const earliestHistoryTimeRef = useRef(null);
   const timeframeStorageLoadedRef = useRef(false);
+  const historyRetryCountRef = useRef(0);
   const favoriteStorageLoadedRef = useRef(false);
 
   useEffect(() => {
@@ -1014,10 +1016,12 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         if (active && TIMEFRAMES.includes(savedTimeframe)) {
           setTimeframe(savedTimeframe);
         }
-        timeframeStorageLoadedRef.current = true;
       })
-      .catch(() => {
+      .catch(() => {})
+      .finally(() => {
+        if (!active) return;
         timeframeStorageLoadedRef.current = true;
+        setTimeframeReady(true);
       });
     return () => {
       active = false;
@@ -1025,9 +1029,9 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   }, []);
 
   useEffect(() => {
-    if (!timeframeStorageLoadedRef.current) return;
+    if (!timeframeReady) return;
     storage.set('chartTimeframe', timeframe).catch(() => {});
-  }, [timeframe]);
+  }, [timeframe, timeframeReady]);
 
   useEffect(() => {
     if (chartFullscreen) {
@@ -1068,13 +1072,23 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
     olderHistoryLoadingRef.current = false;
     olderHistoryExhaustedRef.current = false;
     earliestHistoryTimeRef.current = null;
+    historyRetryCountRef.current = 0;
     lastGapReloadAtRef.current = 0;
     lastGapReloadKeyRef.current = '';
     setPriceDirection(0);
   }, [currentSymbol.symbol, timeframe, viewRange]);
 
   useEffect(() => {
+    if (!timeframeReady) return undefined;
     let active = true;
+    let retryTimer;
+    const retryInitialHistory = () => {
+      if (!active || historyRetryCountRef.current >= 2) return;
+      historyRetryCountRef.current += 1;
+      retryTimer = setTimeout(() => {
+        if (active) setReloadKey((key) => key + 1);
+      }, 2500 * historyRetryCountRef.current);
+    };
     setHistoryLoading(true);
     setHistory([]);
     liveCandleRef.current = null;
@@ -1090,6 +1104,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
           earliestHistoryTimeRef.current = normalizedCandles[0]?.time || null;
           liveCandleRef.current = normalizedCandles.length > 1 ? normalizedCandles[normalizedCandles.length - 1] : null;
           setHistoryLoading(false);
+          if (normalizedCandles.length < 2) retryInitialHistory();
         }
       })
       .catch(() => {
@@ -1097,12 +1112,14 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
           setHistory([]);
           liveCandleRef.current = null;
           setHistoryLoading(false);
+          retryInitialHistory();
         }
       });
     return () => {
       active = false;
+      if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [currentSymbol.symbol, timeframe, viewRange, reloadKey]);
+  }, [currentSymbol.symbol, timeframe, timeframeReady, viewRange, reloadKey]);
 
   useEffect(() => {
     const price = Number(currentSymbol.price);

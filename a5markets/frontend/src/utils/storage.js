@@ -8,6 +8,8 @@ const keys = {
   wallet: 'a5markets_wallet',
   transactions: 'a5markets_transactions',
   selectedSymbol: 'a5markets_selected_symbol',
+  rememberedEmail: 'a5markets_remembered_email',
+  rememberMe: 'a5markets_remember_me',
 };
 
 export const storage = {
