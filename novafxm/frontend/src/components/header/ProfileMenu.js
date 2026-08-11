@@ -100,7 +100,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const verified = user?.verificationStatus === 'approved';
   const panelWidth = width < 500 ? width : 410;
   const panelHeight = height;
-  const bonusPreviewHeight = mobile ? 155 : 180;
+  const bonusPreviewHeight = mobile ? 170 : 195;
   const displayName = user?.name || 'Nova FXM Client';
   const firstName = displayName.split(/\s+/)[0] || 'Client';
   const accountType = selectedAccount?.type || user?.accountType || 'Demo';

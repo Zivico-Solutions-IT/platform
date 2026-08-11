@@ -150,6 +150,34 @@ function readFileDataUrl(file) {
   });
 }
 
+// Bonus artwork is displayed as a small square card. Resize it before saving
+// so clients never need to download the original multi-megabyte upload.
+function compressBonusImage(file) {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return readFileDataUrl(file);
+  return new Promise((resolve, reject) => {
+    const source = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    source.onload = () => {
+      try {
+        const limit = 720;
+        const scale = Math.min(1, limit / Math.max(source.width, source.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(source.width * scale));
+        canvas.height = Math.max(1, Math.round(source.height * scale));
+        const context = canvas.getContext('2d');
+        context.drawImage(source, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(objectUrl);
+        resolve(canvas.toDataURL('image/webp', 0.72));
+      } catch (error) {
+        URL.revokeObjectURL(objectUrl);
+        reject(error);
+      }
+    };
+    source.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Unable to load image')); };
+    source.src = objectUrl;
+  });
+}
+
 const payoutFieldsFor = (item) => {
   const payoutType = payoutTypeFor(item);
   if (payoutType === 'TRC20') {
@@ -2563,7 +2591,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       setError('Please choose a PNG, JPG, or WEBP image.');
       return;
     }
-    try { setBonusPostImage(await readFileDataUrl(file)); }
+    try { setBonusPostImage(await compressBonusImage(file)); }
     catch (_) { setError('Unable to read the selected image.'); }
   };
 
