@@ -265,12 +265,16 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                     setShowBonusPosts(true);
                     loadBonusPosts();
                   }}
-                  className="mr-2 h-10 w-10 items-center justify-center rounded-full"
-                  style={{ backgroundColor: `${palette.danger}16` }}
+                  className="mr-2 h-11 min-w-11 flex-row items-center justify-center rounded-full px-2"
+                  style={{ backgroundColor: palette.danger }}
                   accessibilityLabel="View bonus offers"
                 >
-                  <Gift size={mobile ? 21 : 22} color={palette.danger} strokeWidth={2} />
-                  {bonusPosts.length > 0 ? <View className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: palette.danger }} /> : null}
+                  <Gift size={mobile ? 20 : 21} color="#ffffff" strokeWidth={2.25} />
+                  {bonusPosts.length > 0 ? (
+                    <View className="absolute -right-1 -top-1 h-5 min-w-5 items-center justify-center rounded-full border-2 px-1" style={{ backgroundColor: '#ef4444', borderColor: palette.panel }}>
+                      <Text className="text-[10px] font-bold text-white">{bonusPosts.length}</Text>
+                    </View>
+                  ) : null}
                 </Pressable>
               ) : (
                 <Pressable onPress={() => setShowBonusPosts(false)} className="mr-2 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: palette.tile }} accessibilityLabel="Back to profile">
@@ -285,19 +289,35 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
 
           {showBonusPosts ? (
             <View className={mobile ? '' : 'px-[18px]'}>
-              <Text className="mb-4 text-sm" style={{ color: palette.muted }}>Latest offers from VeltriumFX</Text>
+              <View className="mb-4 overflow-hidden rounded-2xl border p-4" style={{ borderColor: `${palette.danger}45`, backgroundColor: `${palette.danger}10` }}>
+                <View className="flex-row items-center">
+                  <View className="h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: palette.danger }}>
+                    <Gift size={23} color="#ffffff" strokeWidth={2.2} />
+                  </View>
+                  <View className="ml-3 flex-1">
+                    <Text className="text-base font-semibold" style={{ color: palette.text }}>Exclusive bonus offers</Text>
+                    <Text className="mt-0.5 text-xs" style={{ color: palette.muted }}>Selected offers available for VeltriumFX clients</Text>
+                  </View>
+                </View>
+              </View>
               {bonusLoading ? <Text className="py-8 text-center text-sm" style={{ color: palette.muted }}>Loading bonus offers…</Text> : null}
               {!bonusLoading && bonusPosts.length === 0 ? (
-                <View className="rounded-xl border p-5" style={{ borderColor: palette.border, backgroundColor: palette.tile }}>
-                  <Gift size={26} color={palette.danger} strokeWidth={1.8} />
-                  <Text className="mt-3 text-base font-medium" style={{ color: palette.text }}>No bonus offers yet</Text>
-                  <Text className="mt-1 text-sm" style={{ color: palette.muted }}>New offers will appear here.</Text>
+                <View className="items-center rounded-2xl border p-7" style={{ borderColor: palette.border, backgroundColor: palette.tile }}>
+                  <View className="h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: `${palette.danger}14` }}><Gift size={28} color={palette.danger} strokeWidth={1.9} /></View>
+                  <Text className="mt-4 text-base font-semibold" style={{ color: palette.text }}>No bonus offers yet</Text>
+                  <Text className="mt-1 text-center text-sm" style={{ color: palette.muted }}>Check back soon for new trading rewards.</Text>
                 </View>
               ) : null}
               {bonusPosts.map((post) => (
-                <View key={post.id} className="mb-4 overflow-hidden rounded-xl border" style={{ borderColor: palette.border, backgroundColor: palette.tile }}>
-                  <Image source={{ uri: post.image }} resizeMode="cover" style={{ width: '100%', height: mobile ? 185 : 205, backgroundColor: palette.card }} />
-                  <Text className="p-3 text-base font-medium" style={{ color: palette.text }}>{post.title}</Text>
+                <View key={post.id} className="mb-4 overflow-hidden rounded-2xl border" style={{ borderColor: palette.border, backgroundColor: palette.tile }}>
+                  <View>
+                    <Image source={{ uri: post.image }} resizeMode="cover" style={{ width: '100%', height: mobile ? 205 : 225, backgroundColor: palette.card }} />
+                    <View className="absolute left-3 top-3 rounded-full px-2.5 py-1" style={{ backgroundColor: palette.danger }}><Text className="text-[10px] font-bold text-white">LIMITED OFFER</Text></View>
+                  </View>
+                  <View className="p-4">
+                    <Text className="text-base font-semibold" style={{ color: palette.text }}>{post.title}</Text>
+                    <Text className="mt-1 text-xs" style={{ color: palette.muted }}>Tap back to continue trading whenever you are ready.</Text>
+                  </View>
                 </View>
               ))}
             </View>
