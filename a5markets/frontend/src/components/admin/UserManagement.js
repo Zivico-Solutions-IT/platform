@@ -379,6 +379,7 @@ function ProfileModal({ user, onClose, onEdit }) {
                 <Text className={`${mobile ? 'text-lg' : 'text-2xl'} font-medium`} numberOfLines={1} style={{ color: colors.text }}>{user.name}</Text>
               </View>
               <Text className="mt-0.5 text-xs" numberOfLines={1} style={{ color: colors.muted }}>{user.email}</Text>
+              <Text className="mt-1 text-xs" numberOfLines={1} style={{ color: colors.muted }}>User ID: {user.referralCode || '-'}</Text>
             </View>
             <View className="flex-row items-center gap-1.5">
               <CustomButton title="Edit" variant="secondary" className={mobile ? "min-w-[70px] h-9 px-3" : "min-w-[90px]"} onPress={() => onEdit(user)} />
@@ -726,6 +727,7 @@ export default function UserManagement({ users, loading, busyId, onCreate, onUpd
                         <Text numberOfLines={1} className="font-medium" style={{ color: colors.text }}>{user.name}</Text>
                       </View>
                       <Text numberOfLines={1} className="mt-1 text-xs" style={{ color: colors.muted }}>{user.email}</Text>
+                      <Text numberOfLines={1} className="mt-1 text-xs" style={{ color: colors.muted }}>User ID: {user.referralCode || '-'}</Text>
                       <Text numberOfLines={1} className="mt-1 text-xs" style={{ color: isOnlineUser(user) ? colors.success : colors.muted }}>{lastLogoutLabel(user)}</Text>
                       <Text numberOfLines={1} className="mt-1 text-xs" style={{ color: colors.muted }}>{user.phone || '-'}</Text>
                     </View>
@@ -803,6 +805,7 @@ export default function UserManagement({ users, loading, busyId, onCreate, onUpd
                     <Text numberOfLines={1} className="font-medium" style={{ color: colors.text }}>{user.name}</Text>
                   </View>
                   <Text numberOfLines={1} className="mt-1 text-xs" style={{ color: colors.muted }}>{user.email}</Text>
+                  <Text numberOfLines={1} className="mt-1 text-xs" style={{ color: colors.muted }}>User ID: {user.referralCode || '-'}</Text>
                   <Text numberOfLines={1} className="mt-1 text-xs" style={{ color: isOnlineUser(user) ? colors.success : colors.muted }}>{lastLogoutLabel(user)}</Text>
                 </View>
                 <View style={userTableColumns[1].style}>

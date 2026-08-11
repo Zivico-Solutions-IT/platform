@@ -25,8 +25,8 @@ const navigation = [
 
 const subNavigation = {
   userManagement: [
-    { id: 'assignUsers', label: 'Assign Users', permission: 'assignUsers' },
     { id: 'users', label: 'Users', permission: 'userManagementUsers' },
+    { id: 'assignUsers', label: 'Assign Users', permission: 'assignUsers' },
   ],
   deposits: [
     { id: 'addresses', label: 'Deposit Method Address', permission: 'depositAddresses' },

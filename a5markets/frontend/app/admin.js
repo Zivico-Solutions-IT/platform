@@ -984,6 +984,7 @@ function MiniLineChart({ data, color, height = 150 }) {
 
 function DualLineChart({ data, key1, key2, color1, color2, label1, label2, height = 150 }) {
   const { darkMode, colors } = useAppTheme();
+  const [hoveredIndex, setHoveredIndex] = useState(null);
   if (!data || !data.length) return null;
   const values1 = data.map(d => d[key1] || 0);
   const values2 = data.map(d => d[key2] || 0);
@@ -1048,6 +1049,7 @@ function DualLineChart({ data, key1, key2, color1, color2, label1, label2, heigh
 
   const gradId1 = `grad1-${color1.replace('#', '')}`;
   const gradId2 = `grad2-${color2.replace('#', '')}`;
+  const hovered = hoveredIndex == null ? null : { ...data[hoveredIndex], point1: points1[hoveredIndex], point2: points2[hoveredIndex] };
 
   return (
     <View style={{ height, width: '100%', overflow: 'visible' }}>
@@ -1092,12 +1094,12 @@ function DualLineChart({ data, key1, key2, color1, color2, label1, label2, heigh
         {data.map((d, i) => {
           const showLabel = i % labelInterval === 0 || i === data.length - 1;
           return (
-            <G key={i}>
+            <G key={i} onMouseEnter={() => setHoveredIndex(i)} onMouseLeave={() => setHoveredIndex(null)} onPressIn={() => setHoveredIndex(i)}>
               {/* Circle markers */}
               {!isDense ? (
                 <>
-                  <Circle cx={points1[i].x} cy={points1[i].y} r={3.5} fill={color1} stroke={colors.panel} strokeWidth={1.5} />
-                  <Circle cx={points2[i].x} cy={points2[i].y} r={3.5} fill={color2} stroke={colors.panel} strokeWidth={1.5} />
+                  <Circle cx={points1[i].x} cy={points1[i].y} r={hoveredIndex === i ? 5.5 : 3.5} fill={color1} stroke={colors.panel} strokeWidth={1.5} />
+                  <Circle cx={points2[i].x} cy={points2[i].y} r={hoveredIndex === i ? 5.5 : 3.5} fill={color2} stroke={colors.panel} strokeWidth={1.5} />
                 </>
               ) : null}
               
@@ -1146,6 +1148,7 @@ function DualLineChart({ data, key1, key2, color1, color2, label1, label2, heigh
             </G>
           );
         })}
+        {hovered ? (<G pointerEvents="none"><Line x1={hovered.point1.x} y1={paddingY} x2={hovered.point1.x} y2={chartHeight - paddingY} stroke={colors.muted} strokeWidth={1} strokeDasharray="3 3" opacity={0.65} /><Circle cx={hovered.point1.x} cy={hovered.point1.y} r={5.5} fill={color1} stroke={colors.panel} strokeWidth={2} /><Circle cx={hovered.point2.x} cy={hovered.point2.y} r={5.5} fill={color2} stroke={colors.panel} strokeWidth={2} /><Rect x={Math.min(chartWidth - 150, Math.max(6, hovered.point1.x - 70))} y={6} width={140} height={42} rx={7} fill={colors.panel} stroke={colors.border} strokeWidth={1} /><SvgText x={Math.min(chartWidth - 80, Math.max(76, hovered.point1.x))} y={18} fontSize="9" fontWeight="700" fill={colors.text} textAnchor="middle">{hovered.label}</SvgText><SvgText x={Math.min(chartWidth - 80, Math.max(76, hovered.point1.x))} y={30} fontSize="9" fontWeight="700" fill={color1} textAnchor="middle">{label1}: {hovered.point1.value}</SvgText><SvgText x={Math.min(chartWidth - 80, Math.max(76, hovered.point1.x))} y={41} fontSize="9" fontWeight="700" fill={color2} textAnchor="middle">{label2}: {hovered.point2.value}</SvgText></G>) : null}
       </Svg>
     </View>
   );
@@ -1153,6 +1156,7 @@ function DualLineChart({ data, key1, key2, color1, color2, label1, label2, heigh
 
 function MiniBarChart({ data, color, height = 150 }) {
   const { darkMode, colors } = useAppTheme();
+  const [hoveredIndex, setHoveredIndex] = useState(null);
   if (!data || !data.length) return null;
   const values = data.map(d => d.value);
   const max = Math.max(...values, 10);
@@ -1177,6 +1181,7 @@ function MiniBarChart({ data, color, height = 150 }) {
   const gradientId = `bar-gradient-${color.replace('#', '')}`;
 
   const labelInterval = data.length === 30 ? 5 : Math.max(1, Math.round(data.length / 5));
+  const hovered = hoveredIndex == null ? null : points[hoveredIndex];
 
   return (
     <View style={{ height, width: '100%', overflow: 'visible' }}>
@@ -1210,7 +1215,10 @@ function MiniBarChart({ data, color, height = 150 }) {
               height={Math.max(2, p.h)}
               rx={Math.min(4, p.w / 2)}
               ry={Math.min(4, p.w / 2)}
-              fill={`url(#${gradientId})`}
+              fill={hoveredIndex === i ? color : `url(#${gradientId})`}
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              onPressIn={() => setHoveredIndex(i)}
             />
             
             {/* Value Label */}
@@ -1246,6 +1254,9 @@ function MiniBarChart({ data, color, height = 150 }) {
             ) : null}
           </G>
         ))}
+        {hovered ? (
+          <G pointerEvents="none"><Line x1={hovered.x + hovered.w / 2} y1={paddingY} x2={hovered.x + hovered.w / 2} y2={chartHeight - paddingY} stroke={color} strokeWidth={1} strokeDasharray="3 3" opacity={0.55} /><Rect x={Math.min(chartWidth - 130, Math.max(6, hovered.x + hovered.w / 2 - 60))} y={6} width={120} height={30} rx={7} fill={colors.panel} stroke={color} strokeWidth={1} /><SvgText x={Math.min(chartWidth - 70, Math.max(66, hovered.x + hovered.w / 2))} y={18} fontSize="9" fontWeight="700" fill={colors.text} textAnchor="middle">{hovered.label}</SvgText><SvgText x={Math.min(chartWidth - 70, Math.max(66, hovered.x + hovered.w / 2))} y={29} fontSize="9" fontWeight="700" fill={color} textAnchor="middle">{hovered.value}</SvgText></G>
+        ) : null}
       </Svg>
     </View>
   );
@@ -1253,6 +1264,7 @@ function MiniBarChart({ data, color, height = 150 }) {
 
 function GroupedBarChart({ data, key1, key2, color1, color2, label1, label2, height = 150 }) {
   const { darkMode, colors } = useAppTheme();
+  const [hoveredIndex, setHoveredIndex] = useState(null);
   if (!data || !data.length) return null;
   const values1 = data.map(d => d[key1] || 0);
   const values2 = data.map(d => d[key2] || 0);
@@ -1300,6 +1312,7 @@ function GroupedBarChart({ data, key1, key2, color1, color2, label1, label2, hei
 
   const gradId1 = `gbar1-${color1.replace('#', '')}`;
   const gradId2 = `gbar2-${color2.replace('#', '')}`;
+  const hovered = hoveredIndex == null ? null : points[hoveredIndex];
 
   return (
     <View style={{ height, width: '100%', overflow: 'visible' }}>
@@ -1345,7 +1358,8 @@ function GroupedBarChart({ data, key1, key2, color1, color2, label1, label2, hei
                 height={Math.max(2, p.h1)}
                 rx={Math.min(3, barWidth / 2)}
                 ry={Math.min(3, barWidth / 2)}
-                fill={`url(#${gradId1})`}
+                fill={hoveredIndex === i ? color1 : `url(#${gradId1})`}
+                onMouseEnter={() => setHoveredIndex(i)} onMouseLeave={() => setHoveredIndex(null)} onPressIn={() => setHoveredIndex(i)}
               />
 
               {/* Bar 2 */}
@@ -1356,7 +1370,8 @@ function GroupedBarChart({ data, key1, key2, color1, color2, label1, label2, hei
                 height={Math.max(2, p.h2)}
                 rx={Math.min(3, barWidth / 2)}
                 ry={Math.min(3, barWidth / 2)}
-                fill={`url(#${gradId2})`}
+                fill={hoveredIndex === i ? color2 : `url(#${gradId2})`}
+                onMouseEnter={() => setHoveredIndex(i)} onMouseLeave={() => setHoveredIndex(null)} onPressIn={() => setHoveredIndex(i)}
               />
 
               {/* Value labels */}
@@ -1417,6 +1432,7 @@ function GroupedBarChart({ data, key1, key2, color1, color2, label1, label2, hei
             </G>
           );
         })}
+        {hovered ? (<G pointerEvents="none"><Line x1={hovered.groupX} y1={paddingY} x2={hovered.groupX} y2={chartHeight - paddingY} stroke={colors.muted} strokeWidth={1} strokeDasharray="3 3" opacity={0.65} /><Rect x={Math.min(chartWidth - 150, Math.max(6, hovered.groupX - 70))} y={6} width={140} height={42} rx={7} fill={colors.panel} stroke={colors.border} strokeWidth={1} /><SvgText x={Math.min(chartWidth - 80, Math.max(76, hovered.groupX))} y={18} fontSize="9" fontWeight="700" fill={colors.text} textAnchor="middle">{hovered.label}</SvgText><SvgText x={Math.min(chartWidth - 80, Math.max(76, hovered.groupX))} y={30} fontSize="9" fontWeight="700" fill={color1} textAnchor="middle">{label1}: {hovered.value1}</SvgText><SvgText x={Math.min(chartWidth - 80, Math.max(76, hovered.groupX))} y={41} fontSize="9" fontWeight="700" fill={color2} textAnchor="middle">{label2}: {hovered.value2}</SvgText></G>) : null}
       </Svg>
     </View>
   );

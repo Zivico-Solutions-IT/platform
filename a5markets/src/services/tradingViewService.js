@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const axios = require('axios');
 const {
   aggregateCandles,
   bucketTime,
@@ -157,6 +158,9 @@ const instrumentsByTicker = new Map(instruments.map((item) => [item.ticker, item
 const STREAM_STALE_MS = 15000;
 const STREAM_RECONNECT_MS = 5000;
 const CANDLE_CACHE_MS = 15000;
+const CENTRAL_CANDLE_API_URL = String(process.env.CENTRAL_CANDLE_API_URL || '').replace(/\/$/, '');
+const CENTRAL_CANDLE_API_KEY = String(process.env.CENTRAL_CANDLE_API_KEY || '');
+const USE_CENTRAL_CANDLES = process.env.CENTRAL_CANDLE_SOURCE === 'true';
 const DERIVED_CANDLE_SOURCES = {
   '3m': '1m',
   '5m': '1m',
@@ -946,6 +950,20 @@ async function getHistoricalCandles(symbol, timeframe = '15m', limit = 240, opti
   const key = `${symbol}:${timeframe}:${boundedLimit}:${range.to || 'latest'}`;
   const cached = candleCache.get(key);
   if (cached && Date.now() - cached.at < CANDLE_CACHE_MS) return cached.data;
+
+  if (USE_CENTRAL_CANDLES) {
+    if (!CENTRAL_CANDLE_API_URL || !CENTRAL_CANDLE_API_KEY) {
+      throw new Error('Central candle source is enabled but not configured.');
+    }
+    const response = await axios.get(`${CENTRAL_CANDLE_API_URL}/candles/${encodeURIComponent(symbol)}`, {
+      params: { timeframe, limit: boundedLimit, ...(range.to ? { before: range.to } : {}) },
+      headers: { 'x-market-data-key': CENTRAL_CANDLE_API_KEY },
+      timeout: 20000,
+    });
+    const candles = Array.isArray(response.data?.candles) ? response.data.candles : [];
+    candleCache.set(key, { at: Date.now(), data: candles });
+    return candles;
+  }
 
   const stored = await readCandles(symbol, timeframe, boundedLimit, range).catch((error) => {
     console.warn('Stored candle read failed:', error.message);
