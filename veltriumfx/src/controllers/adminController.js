@@ -2212,7 +2212,10 @@ exports.deleteNotification = async (req, res, next) => {
 
 exports.bonusPosts = async (req, res, next) => {
   try {
-    const where = req.projectId ? { projectId: req.projectId } : {};
+    // A Master using this company's own console has no x-project-id header.
+    // Resolve VeltriumFX's project so its posts are visible to its clients.
+    const projectId = req.projectId || (await symbolProjectFor(req))?.id || null;
+    const where = projectId ? { [Op.or]: [{ projectId }, { projectId: null }] } : {};
     const posts = await BonusPost.findAll({ where, order: [['createdAt', 'DESC']], limit: 2 });
     return res.json({ posts });
   } catch (error) { return next(error); }
@@ -2220,12 +2223,13 @@ exports.bonusPosts = async (req, res, next) => {
 
 exports.createBonusPost = async (req, res, next) => {
   try {
-    const where = req.projectId ? { projectId: req.projectId } : {};
+    const projectId = req.projectId || (await symbolProjectFor(req))?.id || null;
+    const where = projectId ? { [Op.or]: [{ projectId }, { projectId: null }] } : {};
     const count = await BonusPost.count({ where });
     if (count >= 2) return res.status(400).json({ message: 'Only two bonus posts can be active. Remove one first.' });
     const { title, image } = req.body || {};
     if (!title || !image || !/^data:image\/(png|jpe?g|webp);base64,/i.test(image)) return res.status(400).json({ message: 'A title and PNG, JPG or WEBP image are required.' });
-    const post = await BonusPost.create({ title: String(title).slice(0, 120), image, projectId: req.projectId || null, createdById: req.user.id });
+    const post = await BonusPost.create({ title: String(title).slice(0, 120), image, projectId, createdById: req.user.id });
     return res.status(201).json({ post });
   } catch (error) { return next(error); }
 };
@@ -2233,7 +2237,8 @@ exports.createBonusPost = async (req, res, next) => {
 exports.deleteBonusPost = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    if (req.projectId) where.projectId = req.projectId;
+    const projectId = req.projectId || (await symbolProjectFor(req))?.id || null;
+    if (projectId) where[Op.or] = [{ projectId }, { projectId: null }];
     const post = await BonusPost.findOne({ where });
     if (!post) return res.status(404).json({ message: 'Bonus post not found.' });
     await post.destroy();
