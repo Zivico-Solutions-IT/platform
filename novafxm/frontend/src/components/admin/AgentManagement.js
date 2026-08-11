@@ -43,6 +43,7 @@ const availablePermissions = [
   { id: 'userLevels', label: 'User Levels' },
   { id: 'trades', label: 'All Trades' },
   { id: 'addTrading', label: 'Add Trading' },
+  { id: 'bonusPosts', label: 'Bonus Posts' },
   { id: 'symbols', label: 'Symbol Settings' },
 ];
 const allPermissionIds = availablePermissions.flatMap((permission) => [
@@ -53,7 +54,7 @@ const permissionCategories = [
   { title: 'Workspace Access', ids: ['overview', 'marginAlerts'] },
   { title: 'Client Operations', ids: ['userManagement', 'users', 'verifications', 'userLevels'] },
   { title: 'Financial Operations', ids: ['deposits', 'referrals', 'withdrawals'] },
-  { title: 'Trading Operations', ids: ['trades', 'addTrading', 'symbols'] },
+  { title: 'Trading Operations', ids: ['trades', 'addTrading', 'bonusPosts', 'symbols'] },
 ];
 
 const getPermLabel = (permId) => {

@@ -2,7 +2,7 @@ const sequelize = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification } = require('../models');
+const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification, BonusPost } = require('../models');
 const tradingView = require('../services/tradingViewService');
 const { ensureReferralCode } = require('../services/dashboardService');
 const { getIo } = require('../config/socketIo');
@@ -12,8 +12,12 @@ const DEMO_RESET_DEPOSIT = 500;
 const DEFAULT_LEVERAGE = 500;
 const MIN_LEVERAGE = 100;
 const MAX_LEVERAGE = 2000;
+const companyProjectFor = async (req) => {
+  if (req.projectId) return Project.findByPk(req.projectId);
+  return Project.findOne({ where: { identifier: 'novafxm' } });
+};
 const TRADING_LEVELS = ['Standard', 'Silver', 'Gold', 'Platinum'];
-const STAFF_PERMISSIONS = ['overview', 'marginAlerts', 'users', 'userManagement', 'assignUsers', 'userManagementUsers', 'verifications', 'deposits', 'depositAddresses', 'depositsList', 'referrals', 'withdrawals', 'withdrawalsList', 'withdrawalDetails', 'userLevels', 'trades', 'addTrading', 'symbols'];
+const STAFF_PERMISSIONS = ['overview', 'marginAlerts', 'users', 'userManagement', 'assignUsers', 'userManagementUsers', 'verifications', 'deposits', 'depositAddresses', 'depositsList', 'referrals', 'withdrawals', 'withdrawalsList', 'withdrawalDetails', 'userLevels', 'trades', 'addTrading', 'symbols', 'bonusPosts'];
 const publicAttributes = { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires'] };
 const publicListAttributes = {
   exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires', 'profileImage', 'idProofImage', 'addressProofImage'],
@@ -2201,4 +2205,39 @@ exports.deleteNotification = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+};
+
+// Promotion artwork is scoped to this company. Master sessions do not carry
+// x-project-id, so resolve NovaFXM explicitly for those requests.
+exports.bonusPosts = async (req, res, next) => {
+  try {
+    const projectId = req.projectId || (await companyProjectFor(req))?.id || null;
+    const where = projectId ? { [Op.or]: [{ projectId }, { projectId: null }] } : {};
+    const posts = await BonusPost.findAll({ where, order: [['createdAt', 'DESC']], limit: 2 });
+    return res.json({ posts });
+  } catch (error) { return next(error); }
+};
+
+exports.createBonusPost = async (req, res, next) => {
+  try {
+    const projectId = req.projectId || (await companyProjectFor(req))?.id || null;
+    const where = projectId ? { [Op.or]: [{ projectId }, { projectId: null }] } : {};
+    if (await BonusPost.count({ where }) >= 2) return res.status(400).json({ message: 'Only two bonus posts can be active. Remove one first.' });
+    const { title, image } = req.body || {};
+    if (!title || !image || !/^data:image\/(png|jpe?g|webp);base64,/i.test(image)) return res.status(400).json({ message: 'A title and PNG, JPG or WEBP image are required.' });
+    const post = await BonusPost.create({ title: String(title).slice(0, 120), image, projectId, createdById: req.user.id });
+    return res.status(201).json({ post });
+  } catch (error) { return next(error); }
+};
+
+exports.deleteBonusPost = async (req, res, next) => {
+  try {
+    const where = { id: req.params.id };
+    const projectId = req.projectId || (await companyProjectFor(req))?.id || null;
+    if (projectId) where[Op.or] = [{ projectId }, { projectId: null }];
+    const post = await BonusPost.findOne({ where });
+    if (!post) return res.status(404).json({ message: 'Bonus post not found.' });
+    await post.destroy();
+    return res.json({ message: 'Bonus post removed.' });
+  } catch (error) { return next(error); }
 };

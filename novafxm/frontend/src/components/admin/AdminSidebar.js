@@ -18,6 +18,7 @@ const navigation = [
   { id: 'referrals', label: 'Referral Rewards', shortLabel: 'Referral', icon: UsersRound },
   { id: 'trades', label: 'All Trades', shortLabel: 'Trades', icon: BarChart3 },
   { id: 'addTrading', label: 'Add Trading', shortLabel: 'Add', icon: TrendingUp },
+  { id: 'bonusPosts', label: 'Bonus Posts', shortLabel: 'Bonus', icon: Award },
   { id: 'marginAlerts', label: 'Margin Alerts', shortLabel: 'Margin', icon: AlertTriangle },
   { id: 'agents', label: 'Staff & Permissions', shortLabel: 'Staff', icon: ShieldCheck, masterOnly: true },
   { id: 'symbols', label: 'Symbol Settings', shortLabel: 'Symbols', icon: Coins, masterOnly: true },

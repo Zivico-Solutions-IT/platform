@@ -9,6 +9,9 @@ const strictAdmin = (req, res, next) => {
 };
 
 router.use(auth, admin);
+router.get('/bonus-posts', strictAdmin, controller.bonusPosts);
+router.post('/bonus-posts', strictAdmin, controller.createBonusPost);
+router.delete('/bonus-posts/:id', strictAdmin, controller.deleteBonusPost);
 router.get('/agents', strictAdmin, controller.agents);
 router.get('/company-permissions', strictAdmin, controller.companyPermissions);
 router.post('/agents', strictAdmin, controller.createAgent);

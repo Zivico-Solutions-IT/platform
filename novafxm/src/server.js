@@ -152,6 +152,7 @@ app.use('/api/wallet', require('./routes/walletRoutes'));
 app.use('/api/trades', require('./routes/tradeRoutes'));
 app.use('/api/market', require('./routes/marketRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/bonus-posts', require('./routes/bonusRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/master', require('./routes/masterRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));

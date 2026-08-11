@@ -2576,7 +2576,7 @@ export default function AdminScreen() {
       <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
         <View>
           <Text className="text-xl font-semibold" style={{ color: colors.text }}>Bonus Posts</Text>
-          <Text className="mt-1 text-sm" style={{ color: colors.muted }}>Publish up to two image offers for clients to view from their profile.</Text>
+          <Text className="mt-1 text-sm" style={{ color: colors.muted }}>Publish up to two image offers for clients to view from their profile. Square artwork is recommended (1080 × 1080); the full image is shown without cropping.</Text>
         </View>
         <Text className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: `${colors.primary}18`, color: colors.primary }}>{bonusPosts.length}/2 active</Text>
       </View>

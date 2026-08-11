@@ -12,6 +12,7 @@ const DepositMethodAddress = require('./DepositMethodAddress');
 const SymbolVisibility = require('./SymbolVisibility');
 const ReferralReward = require('./ReferralReward');
 const Project = require('./Project');
+const BonusPost = require('./BonusPost');
 
 User.hasOne(Wallet, { foreignKey: 'userId', as: 'wallet' });
 Wallet.belongsTo(User, { foreignKey: 'userId' });
@@ -43,5 +44,4 @@ ReferralReward.belongsTo(User, { foreignKey: 'referrerId', as: 'referrer' });
 ReferralReward.belongsTo(User, { foreignKey: 'refereeId', as: 'referee' });
 ReferralReward.belongsTo(Deposit, { foreignKey: 'depositId', as: 'deposit' });
 
-module.exports = { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification };
-
+module.exports = { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification, BonusPost };

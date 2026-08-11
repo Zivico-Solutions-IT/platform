@@ -2,17 +2,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import {
   Award,
+  Gift,
+  ArrowLeft,
   LogOut,
   Settings2,
   ShieldCheck,
   X,
   HelpCircle,
 } from 'lucide-react-native';
-import { Animated, Pressable, ScrollView, Text, View, useWindowDimensions, DeviceEventEmitter } from 'react-native';
+import { Animated, Image, Pressable, ScrollView, Text, View, useWindowDimensions, DeviceEventEmitter } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppTheme } from '../../context/ThemeContext';
 import { money } from '../../utils/formatters';
 import { authService } from '../../services/authService';
+import api from '../../services/api';
 
 function initialsFor(user) {
   const name = user?.name || user?.email || 'Nova User';
@@ -83,6 +86,10 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
 export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPanel, selectedAccount, deposits = [], transactions = [] }) {
   const { user: sessionUser, logout, isAdmin } = useAuth();
   const [user, setProfileUser] = useState(sessionUser);
+  const [bonusPosts, setBonusPosts] = useState([]);
+  const [bonusCount, setBonusCount] = useState(0);
+  const [bonusLoading, setBonusLoading] = useState(false);
+  const [showBonusPosts, setShowBonusPosts] = useState(false);
   const { colors } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const slideAnim = useRef(new Animated.Value(410)).current;
@@ -93,6 +100,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const verified = user?.verificationStatus === 'approved';
   const panelWidth = width < 500 ? width : 410;
   const panelHeight = height;
+  const bonusPreviewHeight = mobile ? 155 : 180;
   const displayName = user?.name || 'Nova FXM Client';
   const firstName = displayName.split(/\s+/)[0] || 'Client';
   const accountType = selectedAccount?.type || user?.accountType || 'Demo';
@@ -131,6 +139,29 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
     danger: colors.danger,
   };
 
+  const loadBonusPosts = async () => {
+    setBonusLoading(true);
+    try {
+      const response = await api.get('/bonus-posts');
+      const posts = response.data?.posts || [];
+      setBonusPosts(posts);
+      setBonusCount(posts.length);
+    } catch (_) {
+      setBonusPosts([]);
+    } finally {
+      setBonusLoading(false);
+    }
+  };
+
+  const loadBonusCount = async () => {
+    try {
+      const response = await api.get('/bonus-posts/count');
+      setBonusCount(Number(response.data?.count || 0));
+    } catch (_) {
+      setBonusCount(0);
+    }
+  };
+
   // Always render this menu from a fresh profile response. This avoids a
   // stale session object showing "Unverified" after an admin has approved it.
   useEffect(() => {
@@ -147,6 +178,10 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
       active = false;
       clearInterval(timer);
     };
+  }, [sessionUser?.id]);
+
+  useEffect(() => {
+    loadBonusCount();
   }, [sessionUser?.id]);
 
   useEffect(() => {
@@ -230,11 +265,48 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
           }}
         >
           <View className={`mb-5 flex-row items-center justify-between ${mobile ? '' : 'pl-[18px]'}`}>
-            <Text className={`${mobile ? 'text-2xl' : 'text-2xl'} font-medium`} style={{ color: palette.text }}>My Profile</Text>
-            <Pressable onPress={onClose} className="h-10 w-10 items-center justify-center">
-              <X size={mobile ? 24 : 26} color={palette.text} strokeWidth={1.8} />
-            </Pressable>
+            <Text className={`${mobile ? 'text-2xl' : 'text-2xl'} font-medium`} style={{ color: palette.text }}>{showBonusPosts ? 'Bonus Offers' : 'My Profile'}</Text>
+            <View className="flex-row items-center">
+              {!showBonusPosts ? (
+                <Pressable onPress={() => { setShowBonusPosts(true); loadBonusPosts(); }} className="mr-2 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: `${palette.danger}16` }} accessibilityLabel="View bonus offers">
+                  <Gift size={mobile ? 21 : 22} color={palette.danger} strokeWidth={2} />
+                  {bonusCount > 0 ? (
+                    <View className="absolute -right-1 -top-1 h-[18px] min-w-[18px] items-center justify-center rounded-full px-1" style={{ backgroundColor: palette.danger, borderWidth: 2, borderColor: palette.panel }}>
+                      <Text className="text-[10px] font-bold text-white">{bonusCount > 9 ? '9+' : bonusCount}</Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+              ) : (
+                <Pressable onPress={() => setShowBonusPosts(false)} className="mr-2 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: palette.tile }} accessibilityLabel="Back to profile">
+                  <ArrowLeft size={mobile ? 21 : 22} color={palette.text} strokeWidth={2} />
+                </Pressable>
+              )}
+              <Pressable onPress={onClose} className="h-10 w-10 items-center justify-center">
+                <X size={mobile ? 24 : 26} color={palette.text} strokeWidth={1.8} />
+              </Pressable>
+            </View>
           </View>
+
+          {showBonusPosts ? (
+            <View className={mobile ? '' : 'px-[18px]'}>
+              <Text className="mb-4 text-sm" style={{ color: palette.muted }}>Latest offers from NovaFXM</Text>
+              {bonusLoading ? <Text className="py-8 text-center text-sm" style={{ color: palette.muted }}>Loading bonus offers…</Text> : null}
+              {!bonusLoading && bonusPosts.length === 0 ? (
+                <View className="rounded-xl border p-5" style={{ borderColor: palette.border, backgroundColor: palette.tile }}>
+                  <Gift size={26} color={palette.danger} strokeWidth={1.8} />
+                  <Text className="mt-3 text-base font-medium" style={{ color: palette.text }}>No bonus offers yet</Text>
+                  <Text className="mt-1 text-sm" style={{ color: palette.muted }}>New offers will appear here.</Text>
+                </View>
+              ) : null}
+              {bonusPosts.map((post) => (
+                <View key={post.id} className="mb-5 overflow-hidden rounded-xl border" style={{ alignSelf: 'center', width: '84%', borderColor: palette.border, backgroundColor: palette.tile }}>
+                  <Image source={{ uri: post.image }} resizeMode="contain" style={{ width: '100%', height: bonusPreviewHeight, backgroundColor: palette.card }} />
+                  <Text className="p-3 text-base font-medium" style={{ color: palette.text }}>{post.title}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <>
 
           <View className={`mb-4 flex-row items-center ${mobile ? '' : 'px-[18px]'}`}>
             <View className="h-[50px] w-[50px] items-center justify-center rounded-full" style={{ backgroundColor: palette.accent }}>
@@ -342,6 +414,8 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             danger
             palette={palette}
           />
+            </>
+          )}
         </Animated.View>
       </ScrollView>
     </Animated.View>

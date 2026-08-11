@@ -90,6 +90,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const { user: sessionUser, logout, isAdmin } = useAuth();
   const [user, setProfileUser] = useState(sessionUser);
   const [bonusPosts, setBonusPosts] = useState([]);
+  const [bonusCount, setBonusCount] = useState(0);
   const [bonusLoading, setBonusLoading] = useState(false);
   const [showBonusPosts, setShowBonusPosts] = useState(false);
   const { colors } = useAppTheme();
@@ -102,6 +103,9 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const verified = user?.verificationStatus === 'approved';
   const panelWidth = width < 500 ? width : 410;
   const panelHeight = height;
+  // Keep two bonus posts visible in a short mobile profile panel. Artwork is
+  // still shown in full (contain), but its preview box is intentionally short.
+  const bonusPreviewHeight = mobile ? 155 : 180;
   const displayName = user?.name || 'Nova FXM Client';
   const firstName = displayName.split(/\s+/)[0] || 'Client';
   const accountType = selectedAccount?.type || user?.accountType || 'Demo';
@@ -144,11 +148,22 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
     setBonusLoading(true);
     try {
       const response = await api.get('/bonus-posts');
-      setBonusPosts(response.data?.posts || []);
+      const posts = response.data?.posts || [];
+      setBonusPosts(posts);
+      setBonusCount(posts.length);
     } catch (_) {
       setBonusPosts([]);
     } finally {
       setBonusLoading(false);
+    }
+  };
+
+  const loadBonusCount = async () => {
+    try {
+      const response = await api.get('/bonus-posts/count');
+      setBonusCount(Number(response.data?.count || 0));
+    } catch (_) {
+      setBonusCount(0);
     }
   };
 
@@ -171,7 +186,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   }, [sessionUser?.id]);
 
   useEffect(() => {
-    loadBonusPosts();
+    loadBonusCount();
   }, [sessionUser?.id]);
 
   useEffect(() => {
@@ -270,7 +285,14 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                   accessibilityLabel="View bonus offers"
                 >
                   <Gift size={mobile ? 21 : 22} color={palette.danger} strokeWidth={2} />
-                  {bonusPosts.length > 0 ? <View className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: palette.danger }} /> : null}
+                  {bonusCount > 0 ? (
+                    <View
+                      className="absolute -right-1 -top-1 h-[18px] min-w-[18px] items-center justify-center rounded-full px-1"
+                      style={{ backgroundColor: palette.danger, borderWidth: 2, borderColor: palette.panel }}
+                    >
+                      <Text className="text-[10px] font-bold text-white">{bonusCount > 9 ? '9+' : bonusCount}</Text>
+                    </View>
+                  ) : null}
                 </Pressable>
               ) : (
                 <Pressable onPress={() => setShowBonusPosts(false)} className="mr-2 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: palette.tile }} accessibilityLabel="Back to profile">
@@ -295,8 +317,12 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                 </View>
               ) : null}
               {bonusPosts.map((post) => (
-                <View key={post.id} className="mb-4 overflow-hidden rounded-xl border" style={{ borderColor: palette.border, backgroundColor: palette.tile }}>
-                  <Image source={{ uri: post.image }} resizeMode="cover" style={{ width: '100%', height: mobile ? 185 : 205, backgroundColor: palette.card }} />
+                <View
+                  key={post.id}
+                  className="mb-5 overflow-hidden rounded-xl border"
+                  style={{ alignSelf: 'center', width: '84%', borderColor: palette.border, backgroundColor: palette.tile }}
+                >
+                  <Image source={{ uri: post.image }} resizeMode="contain" style={{ width: '100%', height: bonusPreviewHeight, backgroundColor: palette.card }} />
                   <Text className="p-3 text-base font-medium" style={{ color: palette.text }}>{post.title}</Text>
                 </View>
               ))}
