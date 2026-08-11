@@ -1651,28 +1651,51 @@ exports.reviewWithdrawal = (status) => async (req, res, next) => {
 async function getHistoricalPriceHelper(symbol, date) {
   try {
     const timestamp = Math.floor(new Date(date).getTime() / 1000);
-    
-    // First try daily candles
-    let candle = await Candle.findOne({
-      where: {
-        symbol,
-        timeframe: '1D',
-        time: { [Op.lte]: timestamp }
-      },
-      order: [['time', 'DESC']],
-    });
-    
-    // Fallback to any timeframe
-    if (!candle) {
-      candle = await Candle.findOne({
-        where: {
-          symbol,
-          time: { [Op.lte]: timestamp }
-        },
-        order: [['time', 'DESC']],
+    if (!Number.isFinite(timestamp)) return null;
+
+    // Use the same candle service as the chart. When CENTRAL_CANDLE_SOURCE is
+    // enabled this reads from NovaFXM, rather than bypassing it with A5's local
+    // candle table. `before: timestamp + 1` includes the selected minute.
+    const sourceCandles = await tradingView
+      .getHistoricalCandles(symbol, '1m', 60, { before: timestamp + 1 })
+      .catch((error) => {
+        console.warn('Historical minute candle service failed:', error.message);
+        return [];
       });
+    const minuteCandle = [...sourceCandles]
+      .filter((candle) => Number(candle?.time) <= timestamp)
+      .sort((a, b) => Number(b.time) - Number(a.time))[0];
+    if (minuteCandle && Number.isFinite(Number(minuteCandle.close))) {
+      return Number(minuteCandle.close);
     }
-    
+
+    // A daily candle makes every selected time within the same day return the
+    // same value. Instead, find the closest stored candle around the requested
+    // timestamp; this also handles small gaps in the 1-minute history.
+    const findClosestCandle = async (baseWhere) => {
+      const [before, after] = await Promise.all([
+        Candle.findOne({
+          where: { ...baseWhere, time: { [Op.lte]: timestamp } },
+          order: [['time', 'DESC']],
+        }),
+        Candle.findOne({
+          where: { ...baseWhere, time: { [Op.gte]: timestamp } },
+          order: [['time', 'ASC']],
+        }),
+      ]);
+
+      if (!before) return after;
+      if (!after) return before;
+      return (timestamp - Number(before.time)) <= (Number(after.time) - timestamp)
+        ? before
+        : after;
+    };
+
+    // Always use the nearest one-minute candle first. This makes changing a
+    // selected minute change the price, instead of accidentally using a 1D bar.
+    let candle = await findClosestCandle({ symbol, timeframe: '1m' });
+    if (!candle) candle = await findClosestCandle({ symbol });
+
     return candle ? Number(candle.close) : null;
   } catch (err) {
     console.error('Error fetching historical price:', err.message);

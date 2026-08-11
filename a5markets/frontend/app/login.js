@@ -579,6 +579,9 @@ export default function LoginScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
+              autoComplete="email"
+              textContentType="username"
+              importantForAutofill="yes"
               value={form.email}
               onChangeText={(email) => setForm((value) => ({ ...value, email }))}
             />
@@ -592,7 +595,7 @@ export default function LoginScreen() {
                 style={{ backgroundColor: 'transparent', borderWidth: 0, color: colors.text, caretColor: colors.text, outlineStyle: 'none', ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
               placeholder="Password"
                 placeholderTextColor="#9CA3AF"
-                secureTextEntry={Platform.OS !== 'web' && !showPassword}
+                secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
                 autoComplete="current-password"

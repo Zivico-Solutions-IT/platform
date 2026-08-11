@@ -1588,6 +1588,11 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const [addTradeError, setAddTradeError] = useState('');
   const [addTradeSuccess, setAddTradeSuccess] = useState('');
   const [openUserProfileLoading, setOpenUserProfileLoading] = useState(false);
+  // Keep the trade form focused on the fields required to place a trade.
+  // The chart and calculation details remain available when an admin needs them.
+  const [showAddTradeChart, setShowAddTradeChart] = useState(false);
+  const [showAddTradeSnapshot, setShowAddTradeSnapshot] = useState(false);
+  const historicalPriceRequestRef = useRef({});
 
   const [marketPrices, setMarketPrices] = useState([]);
   const [tradeSymbolGroup, setTradeSymbolGroup] = useState('POPULAR');
@@ -1668,7 +1673,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   }, []);
 
   useEffect(() => {
-    if (!selectedImpersonateClient || !addTradeForm.symbol) return;
+    if (!showAddTradeChart || !selectedImpersonateClient || !addTradeForm.symbol) return;
     const loadChartCandles = async () => {
       setChartLoading(true);
       try {
@@ -1686,7 +1691,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       }
     };
     loadChartCandles();
-  }, [addTradeForm.symbol, chartTimeframe, selectedImpersonateClient]);
+  }, [addTradeForm.symbol, chartTimeframe, selectedImpersonateClient, showAddTradeChart]);
 
   const handleAdminChartMessage = useCallback((event) => {
     let payload = event?.nativeEvent?.data ?? event?.data;
@@ -1994,6 +1999,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
 
   const fetchHistoricalPrice = async (field, symbol, dateStr) => {
     if (!symbol || !dateStr) return;
+    const requestId = (historicalPriceRequestRef.current[field] || 0) + 1;
+    historicalPriceRequestRef.current[field] = requestId;
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return;
@@ -2001,6 +2008,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       const response = await api.get('/admin/historical-price', {
         params: { symbol, date: d.toISOString() }
       });
+      if (historicalPriceRequestRef.current[field] !== requestId) return;
       if (response.data && response.data.price !== null) {
         setAddTradeForm(prev => {
           const nextForm = { ...prev, [field]: String(response.data.price) };
@@ -5266,7 +5274,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     if (selectedImpersonateClient) {
       const userAccounts = selectedImpersonateClient.tradingAccounts || [];
       return (
-        <View className="rounded-2xl border p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
+        <View className="w-full self-center rounded-2xl border p-5 md:p-6" style={{ maxWidth: 1180, backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
           <View className="mb-6 flex-row items-center justify-between">
             <View className="flex-row items-center gap-3">
               <Pressable
@@ -5360,7 +5368,10 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
           <View className="gap-5">
             <View>
               <View className="mb-2 flex-row flex-wrap items-center justify-between gap-2">
-                <Text className="text-sm font-semibold" style={{ color: colors.text }}>Select Trading Account</Text>
+                <View>
+                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>1. Choose account</Text>
+                  <Text className="mt-0.5 text-xs" style={{ color: colors.muted }}>Select the client account that will receive this trade.</Text>
+                </View>
                 <Pressable
                   disabled={openUserProfileLoading}
                   onPress={openSelectedUserProfile}
@@ -5399,11 +5410,11 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
             </View>
 
             <View>
-              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Trade Type</Text>
+              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>2. Trade timing</Text>
               <View className="flex-row gap-2">
                 {[
-                  { id: 'live', label: mobile ? 'Live Trade' : 'Current Trade (Live)' },
-                  { id: 'past', label: mobile ? 'Historical' : 'Past Trade (Historical)' },
+                  { id: 'live', label: mobile ? 'Open now' : 'Open trade now' },
+                  { id: 'past', label: mobile ? 'Past trade' : 'Add past trade' },
                 ].map((t) => {
                   const isSelected = addTradeForm.type === t.id;
                   return (
@@ -5415,13 +5426,14 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                         setAddTradeForm((prev) => ({
                           ...prev,
                           type: t.id,
-                          status: t.id === 'live' ? 'open' : prev.status,
+                        status: t.id === 'live' ? 'open' : 'closed',
                           openDate: t.id === 'past' && !prev.openDate ? nowStr : prev.openDate,
                           closeDate: t.id === 'past' && !prev.closeDate ? nowStr : prev.closeDate,
                         }));
                       }}
-                      className={`rounded-2xl border px-3 flex-1 justify-center ${mobile ? 'py-1.5' : 'py-2.5'}`}
+                      className={`rounded-xl border px-3 justify-center ${mobile ? 'flex-1 py-2' : 'py-2'}`}
                       style={{
+                        minWidth: mobile ? undefined : 126,
                         backgroundColor: isSelected ? colors.primary : colors.surface,
                         borderColor: isSelected ? colors.primary : colors.border,
                       }}
@@ -5435,11 +5447,11 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
 
             {addTradeForm.type === 'past' ? (
               <View>
-                <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Position Status</Text>
+                <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Is this past trade still open?</Text>
                 <View className="flex-row gap-2">
                   {[
-                    { id: 'open', label: mobile ? 'Active' : 'Still Open (Active)' },
-                    { id: 'closed', label: mobile ? 'Closed' : 'Already Closed' },
+                    { id: 'open', label: mobile ? 'Still open' : 'Yes, it is still open' },
+                    { id: 'closed', label: mobile ? 'Closed' : 'No, it is already closed' },
                   ].map((s) => {
                     const isSelected = addTradeForm.status === s.id;
                     return (
@@ -5449,8 +5461,9 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                           if (s.id !== 'closed' && activeSelectionMode === 'close') setActiveSelectionMode('open');
                           setAddTradeForm((prev) => ({ ...prev, status: s.id }));
                         }}
-                        className={`rounded-2xl border px-3 flex-1 justify-center ${mobile ? 'py-1.5' : 'py-2.5'}`}
+                        className={`rounded-xl border px-3 justify-center ${mobile ? 'flex-1 py-2' : 'py-2'}`}
                         style={{
+                          minWidth: mobile ? undefined : 154,
                           backgroundColor: isSelected ? colors.primary : colors.surface,
                           borderColor: isSelected ? colors.primary : colors.border,
                         }}
@@ -5464,7 +5477,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
             ) : null}
 
             <View>
-              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Select Trading Asset (Symbol)</Text>
+              <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>3. Select market</Text>
               <View className="mb-3 flex-row flex-wrap gap-2">
                 {availableTradeGroups.map((group) => {
                   const active = tradeSymbolGroup === group.id;
@@ -5505,6 +5518,20 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
             </View>
 
             <View className="mb-1.5">
+              <Pressable
+                onPress={() => setShowAddTradeChart((visible) => !visible)}
+                className="mb-2 flex-row items-center justify-between rounded-xl border px-3 py-3"
+                style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+              >
+                <View>
+                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>Price chart</Text>
+                  <Text className="mt-0.5 text-xs" style={{ color: colors.muted }}>Optional — use it only to pick exact entry, stop loss or take profit prices.</Text>
+                </View>
+                <Text className="text-xs font-semibold" style={{ color: colors.primary }}>{showAddTradeChart ? 'Hide chart' : 'Open chart'}</Text>
+              </Pressable>
+
+              {showAddTradeChart ? (
+                <>
               <View className={mobile ? 'gap-2 mb-2' : 'mb-1.5 flex-row items-center justify-between'}>
                 <View>
                   <Text className="text-xs font-semibold" style={{ color: colors.text }}>Chart selector</Text>
@@ -5624,10 +5651,12 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                   </View>
                 )}
               </View>
+                </>
+              ) : null}
             </View>
             <View className="gap-3 rounded-xl border p-3" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
               <View className={`flex-wrap gap-3 ${mobile ? 'flex-col' : 'flex-row'}`}>
-                <View className={mobile ? 'w-full' : 'min-w-[260px] flex-1'}>
+                <View className={mobile ? 'w-full' : 'w-[300px]'}>
                   <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Side</Text>
                   <View className="flex-row gap-2">
                     {[
@@ -5652,7 +5681,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                     })}
                   </View>
                 </View>
-                <View className={mobile ? 'w-full' : 'min-w-[180px] flex-1'}>
+                <View className={mobile ? 'w-full' : 'w-[180px]'}>
                   <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Lots</Text>
                   <CustomInput
                     value={addTradeForm.lots}
@@ -5695,6 +5724,32 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                   </View>
                 ) : null}
               </View>
+
+              {addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
+                <View className={`flex-wrap gap-3 ${mobile ? 'flex-col' : 'flex-row'}`}>
+                  <View className={mobile ? 'w-full' : 'min-w-[220px] flex-1'}>
+                    <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Close Price</Text>
+                    <CustomInput
+                      value={addTradeForm.closePrice}
+                      onFocus={() => setActiveSelectionMode('close')}
+                      onChangeText={(closePrice) => setAddTradeForm((prev) => ({ ...prev, closePrice }))}
+                      placeholder="Leave blank to auto-fetch or enter price"
+                    />
+                  </View>
+                  <View className={mobile ? 'w-full' : 'min-w-[220px] flex-1'}>
+                    <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Close Date & Time</Text>
+                    <DateTimePickerInput
+                      value={addTradeForm.closeDate}
+                      onFocus={() => setActiveSelectionMode('close')}
+                      onChangeText={(closeDate) => {
+                        setAddTradeForm((prev) => ({ ...prev, closeDate }));
+                        fetchHistoricalPrice('closePrice', addTradeForm.symbol, closeDate);
+                      }}
+                      placeholder="Select closing date and time"
+                    />
+                  </View>
+                </View>
+              ) : null}
  
               <View className={`flex-wrap gap-3 ${mobile ? 'flex-col' : 'flex-row'}`}>
                 <View className={mobile ? 'w-full' : 'min-w-[220px] flex-1'}>
@@ -5717,6 +5772,19 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                 </View>
               </View>
 
+              <Pressable
+                onPress={() => setShowAddTradeSnapshot((visible) => !visible)}
+                className="flex-row items-center justify-between rounded-xl border px-3 py-3"
+                style={{ backgroundColor: colors.panel, borderColor: colors.border }}
+              >
+                <View>
+                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>Review calculation</Text>
+                  <Text className="mt-0.5 text-xs" style={{ color: colors.muted }}>Balance, margin and estimated profit details.</Text>
+                </View>
+                <Text className="text-xs font-semibold" style={{ color: colors.primary }}>{showAddTradeSnapshot ? 'Hide details' : 'View details'}</Text>
+              </Pressable>
+
+              {showAddTradeSnapshot ? (
               <View className="rounded-2xl border p-3" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
                 <View className="mb-2 flex-row items-center justify-between">
                   <Text className="text-xs font-medium uppercase" style={{ color: colors.muted }}>Trade Snapshot</Text>
@@ -5758,34 +5826,9 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                   })}
                 </View>
               </View>
-
-              {addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
-                <View className="flex-row flex-wrap gap-3">
-                  <View className="min-w-[220px] flex-1">
-                    <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Close Price</Text>
-                    <CustomInput
-                      value={addTradeForm.closePrice}
-                      onFocus={() => setActiveSelectionMode('close')}
-                      onChangeText={(closePrice) => setAddTradeForm((prev) => ({ ...prev, closePrice }))}
-                      placeholder="Leave blank to auto-fetch or enter price"
-                    />
-                  </View>
-                  <View className="min-w-[220px] flex-1">
-                    <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Close Date & Time</Text>
-                    <DateTimePickerInput
-                      value={addTradeForm.closeDate}
-                      onFocus={() => setActiveSelectionMode('close')}
-                      onChangeText={(closeDate) => {
-                        setAddTradeForm((prev) => ({ ...prev, closeDate }));
-                        fetchHistoricalPrice('closePrice', addTradeForm.symbol, closeDate);
-                      }}
-                      placeholder="Select closing date and time"
-                    />
-                  </View>
-                </View>
               ) : null}
 
-              {addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
+              {showAddTradeSnapshot && addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
                 <View>
                   <Text className="mb-2 text-xs font-medium uppercase" style={{ color: colors.muted }}>Profit / Loss (Override)</Text>
                   <CustomInput
@@ -5797,7 +5840,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
               ) : null}
             </View>
 
-            {addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
+            {showAddTradeSnapshot && addTradeForm.type === 'past' && addTradeForm.status === 'closed' ? (
               <View className="rounded-xl border p-4 font-semibold" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
                 <Text className="text-xs font-medium uppercase" style={{ color: colors.muted }}>Profit / Loss Calculator Preview</Text>
                 <Text className={`mt-2 text-lg font-semibold ${currentPreviewProfit >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -5813,7 +5856,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
               <Pressable
                 disabled={addTradeLoading || !addTradeForm.tradingAccountId}
                 onPress={handleAddTradeSubmit}
-                className={`min-h-[38px] md:min-h-[44px] items-center justify-center rounded-2xl px-4 ${mobile ? 'w-[120px]' : 'flex-1'} ${addTradeLoading || !addTradeForm.tradingAccountId ? 'opacity-50' : ''}`}
+                className={`min-h-[38px] items-center justify-center rounded-xl px-4 ${mobile ? 'w-[120px]' : 'w-[260px]'} ${addTradeLoading || !addTradeForm.tradingAccountId ? 'opacity-50' : ''}`}
                 style={{ backgroundColor: colors.primary }}
               >
                 <Text className="font-semibold text-xs md:text-sm" style={{ color: '#0B0B0B' }}>
@@ -5823,7 +5866,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
               <Pressable
                 disabled={addTradeLoading}
                 onPress={() => setSelectedImpersonateClient(null)}
-                className={`min-h-[38px] md:min-h-[44px] items-center justify-center rounded-2xl border px-4 ${mobile ? 'w-[120px]' : 'flex-1'}`}
+                className={`min-h-[38px] items-center justify-center rounded-xl border px-4 ${mobile ? 'w-[120px]' : 'w-[160px]'}`}
                 style={{ backgroundColor: colors.surface, borderColor: colors.border }}
               >
                 <Text className="font-semibold text-xs md:text-sm" style={{ color: colors.text }}>Cancel</Text>
@@ -5895,6 +5938,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                         profit: '',
                         tradingAccountId: defaultAccount.id || '',
                       });
+                      setShowAddTradeChart(false);
+                      setShowAddTradeSnapshot(false);
                       setAddTradeError('');
                       setAddTradeSuccess('');
                     }}
