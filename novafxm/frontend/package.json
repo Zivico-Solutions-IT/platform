@@ -32,7 +32,7 @@
     "android": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli start --android",
     "ios": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli start --ios",
     "web": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli start --web",
-    "export:web": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli export --platform web --output-dir web_build"
+    "export:web": "node --require ./scripts/node-undafined-workaround.js ./node_modules/expo/bin/cli export --platform web --output-dir web_build_new"
   },
   "private": true,
   "devDependencies": {
