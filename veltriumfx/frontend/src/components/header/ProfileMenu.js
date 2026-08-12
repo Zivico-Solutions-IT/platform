@@ -287,7 +287,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                   <Gift size={mobile ? 21 : 22} color={palette.danger} strokeWidth={2} />
                   {bonusCount > 0 ? (
                     <View
-                      className="absolute -right-1 -top-1 h-[18px] min-w-[18px] items-center justify-center rounded-full px-1"
+                      className="absolute right-0 top-0 h-[18px] min-w-[18px] items-center justify-center rounded-full px-1"
                       style={{ backgroundColor: palette.danger, borderWidth: 2, borderColor: palette.panel }}
                     >
                       <Text className="text-[10px] font-bold text-white">{bonusCount > 9 ? '9+' : bonusCount}</Text>
@@ -320,9 +320,9 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                 <View
                   key={post.id}
                   className="mb-5 overflow-hidden rounded-xl border"
-                  style={{ alignSelf: 'center', width: '84%', borderColor: palette.border, backgroundColor: palette.tile }}
+                  style={{ alignSelf: 'center', width: bonusPosts.length === 1 ? '94%' : '84%', borderColor: palette.border, backgroundColor: palette.tile }}
                 >
-                  <Image source={{ uri: post.image }} resizeMode="contain" style={{ width: '100%', height: bonusPreviewHeight, backgroundColor: palette.card }} />
+                  <Image source={{ uri: post.image }} resizeMode="contain" style={{ width: '100%', height: bonusPosts.length === 1 ? (mobile ? 270 : 310) : bonusPreviewHeight, backgroundColor: palette.card }} />
                   <Text className="p-3 text-base font-medium" style={{ color: palette.text }}>{post.title}</Text>
                 </View>
               ))}
