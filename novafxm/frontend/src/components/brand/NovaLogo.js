@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Image } from 'react-native';
+import { Image, Platform } from 'react-native';
 import { storage } from '../../utils/storage';
 
 const logoImage = require('../../../assets/novafxm logo cropped.png');
@@ -13,8 +13,8 @@ export default function NovaLogo({ dark = false, width = 190, height = 46 }) {
   useEffect(() => {
     const checkProject = async () => {
       let name = null;
-      if (typeof window !== 'undefined') {
-        name = localStorage.getItem('x-project-name');
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        name = window.localStorage.getItem('x-project-name');
       }
       if (!name) {
         name = await storage.get('x-project-name');

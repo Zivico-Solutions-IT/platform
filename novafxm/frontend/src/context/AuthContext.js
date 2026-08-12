@@ -1,4 +1,5 @@
 import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 import { authService } from '../services/authService';
 import { apiBaseUrl } from '../services/apiConfig';
 import { storage } from '../utils/storage';
@@ -7,7 +8,7 @@ import { hasConsoleUi } from '../utils/appHost';
 export const AuthContext = createContext(null);
 
 const transferredSession = (() => {
-  if (typeof window === 'undefined') return null;
+  if (Platform.OS !== 'web' || typeof window === 'undefined' || !window.localStorage) return null;
 
   if (window.name) {
     try {
@@ -16,8 +17,8 @@ const transferredSession = (() => {
           handoff.targetOrigin === window.location.origin &&
           handoff.token && handoff.user) {
         window.name = '';
-        localStorage.setItem('novafxm_token', JSON.stringify(handoff.token));
-        localStorage.setItem('novafxm_user', JSON.stringify(handoff.user));
+        window.localStorage.setItem('novafxm_token', JSON.stringify(handoff.token));
+        window.localStorage.setItem('novafxm_user', JSON.stringify(handoff.user));
         return { token: handoff.token, user: handoff.user };
       }
     } catch {
@@ -32,8 +33,8 @@ const transferredSession = (() => {
   if (!token || !encodedUser) return null;
   try {
     const user = JSON.parse(encodedUser);
-    localStorage.setItem('novafxm_token', JSON.stringify(token));
-    localStorage.setItem('novafxm_user', encodedUser);
+    window.localStorage.setItem('novafxm_token', JSON.stringify(token));
+    window.localStorage.setItem('novafxm_user', encodedUser);
     window.history.replaceState(null, '', `${window.location.pathname}${window.location.hash}`);
     return { token, user };
   } catch {

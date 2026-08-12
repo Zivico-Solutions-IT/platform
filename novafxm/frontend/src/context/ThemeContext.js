@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 
 const LEGACY_THEME_STORAGE_KEY = 'novafxm.theme';
 const THEME_STORAGE_KEY = 'novafxm.theme.v2';
@@ -61,8 +62,8 @@ export function ThemeProvider({ children }) {
       .catch(() => {});
 
     const checkProject = () => {
-      if (typeof window !== 'undefined') {
-        const storedName = localStorage.getItem('x-project-name');
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.localStorage) {
+        const storedName = window.localStorage.getItem('x-project-name');
         if (storedName && storedName !== projectName) {
           setProjectName(storedName);
         }
