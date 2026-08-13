@@ -2265,6 +2265,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const [depositAddressForm, setDepositAddressForm] = useState({ id: null, paymentMethod: 'TRC20', label: '', address: '', qrData: '', isActive: true });
   const [depositAddressEditForm, setDepositAddressEditForm] = useState(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [todayRegistrationsOpen, setTodayRegistrationsOpen] = useState(false);
+  const [registrationDateFilter, setRegistrationDateFilter] = useState('');
   const [adminProfileOpen, setAdminProfileOpen] = useState(false);
   const [adminProfileError, setAdminProfileError] = useState('');
   const [companyStatus, setCompanyStatus] = useState('active');
@@ -2780,6 +2782,19 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const dailyWithdrawals = chartTimeframeData.dailyWithdrawals;
   const dailyCashflow = chartTimeframeData.dailyCashflow;
   const dailyProfitLoss = chartTimeframeData.dailyProfitLoss;
+
+  const todayRegistrations = useMemo(() => {
+    const selectedDate = registrationDateFilter.trim();
+    return data.users
+      .filter((user) => {
+        if (user.role !== 'user') return false;
+        if (!selectedDate) return true;
+        const registeredAt = new Date(user.createdAt || 0);
+        const localDate = `${registeredAt.getFullYear()}-${String(registeredAt.getMonth() + 1).padStart(2, '0')}-${String(registeredAt.getDate()).padStart(2, '0')}`;
+        return !Number.isNaN(registeredAt.getTime()) && localDate === selectedDate;
+      })
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  }, [data.users, registrationDateFilter]);
 
   const topEarners = useMemo(() => {
     const now = new Date();
@@ -6390,9 +6405,20 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
             <View className="flex-col lg:flex-row flex-wrap gap-4">
               {/* Card 1: User Registrations */}
               <View className="w-full lg:flex-1 lg:min-w-[280px] rounded-2xl p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: darkMode ? 1 : 0, shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: darkMode ? 0.2 : 0.06, shadowRadius: 24, elevation: 8 }}>
-                <View className="mb-4" style={{ height: 60, justifyContent: 'flex-start' }}>
-                  <Text className="text-base font-bold" style={{ color: colors.text }}>Daily Registrations</Text>
-                  <Text className="text-xs" style={{ color: colors.muted }}>New users joined over selected timeframe</Text>
+                <View className="mb-4 flex-row items-start justify-between" style={{ height: 60 }}>
+                  <View className="flex-1 pr-3">
+                    <Text className="text-base font-bold" style={{ color: colors.text }}>Daily Registrations</Text>
+                    <Text className="text-xs" style={{ color: colors.muted }}>New users joined over selected timeframe</Text>
+                  </View>
+                  <Pressable
+                    onPress={() => setTodayRegistrationsOpen(true)}
+                    className="h-10 w-10 items-center justify-center rounded-xl border"
+                    style={{ backgroundColor: `${colors.primary}16`, borderColor: `${colors.primary}40` }}
+                    accessibilityRole="button"
+                    accessibilityLabel="View today's registrations"
+                  >
+                    <ArrowUpRight size={19} color={colors.primary} strokeWidth={2.4} />
+                  </Pressable>
                 </View>
                 <MiniBarChart
                   data={dailyNewUsers}
@@ -7052,6 +7078,89 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
           ) : null}
         </View>
       ) : null}
+      <Modal visible={todayRegistrationsOpen} transparent animationType="fade" onRequestClose={() => setTodayRegistrationsOpen(false)}>
+        <View className="flex-1" style={{ paddingLeft: mobile ? 0 : 360 }}>
+          <Pressable className="absolute inset-0" style={{ backgroundColor: 'rgba(7, 21, 38, 0.24)' }} onPress={() => setTodayRegistrationsOpen(false)} />
+          <View className="flex-1 items-center justify-center p-4" pointerEvents="box-none">
+            <Pressable
+              onPress={(event) => event.stopPropagation?.()}
+              className="w-full max-w-lg rounded-3xl border p-5"
+              style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: darkMode ? 0.35 : 0.16, shadowRadius: 28, elevation: 16 }}
+            >
+              <View className="mb-5 flex-row items-start justify-between">
+                <View className="flex-1 pr-3">
+                  <View className="flex-row items-center gap-2">
+                    <Text className="text-xl font-bold" style={{ color: colors.text }}>Registrations</Text>
+                    <View className="rounded-full px-2 py-1" style={{ backgroundColor: `${colors.primary}18` }}>
+                      <Text className="text-xs font-bold" style={{ color: colors.primary }}>{todayRegistrations.length}</Text>
+                    </View>
+                  </View>
+                  <Text className="mt-1 text-sm" style={{ color: colors.muted }}>All clients, newest registration first</Text>
+                </View>
+                <Pressable onPress={() => setTodayRegistrationsOpen(false)} className="h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: colors.surface }} accessibilityLabel="Close registrations list">
+                  <X size={20} color={colors.text} />
+                </Pressable>
+              </View>
+              <View className="mb-4 flex-row items-center gap-2">
+                {Platform.OS === 'web' ? (
+                  <input
+                    type="date"
+                    value={registrationDateFilter}
+                    onChange={(event) => setRegistrationDateFilter(event.target.value)}
+                    aria-label="Filter registrations by date"
+                    style={{ flex: 1, height: 44, borderRadius: 12, border: `1px solid ${colors.border}`, backgroundColor: colors.surface, color: colors.text, padding: '0 12px', outline: 'none', colorScheme: darkMode ? 'dark' : 'light' }}
+                  />
+                ) : (
+                  <TextInput value={registrationDateFilter} onChangeText={setRegistrationDateFilter} placeholder="YYYY-MM-DD" placeholderTextColor={colors.muted} className="h-11 flex-1 rounded-xl border px-3 text-sm" style={{ color: colors.text, borderColor: colors.border, backgroundColor: colors.surface }} />
+                )}
+                <Pressable onPress={() => setRegistrationDateFilter('')} className="h-11 items-center justify-center rounded-xl border px-3" style={{ borderColor: colors.border, backgroundColor: registrationDateFilter ? `${colors.primary}15` : colors.surface }}>
+                  <Text className="text-xs font-semibold" style={{ color: registrationDateFilter ? colors.primary : colors.muted }}>{registrationDateFilter ? 'All dates' : 'Latest first'}</Text>
+                </Pressable>
+              </View>
+              <ScrollView showsVerticalScrollIndicator contentContainerStyle={{ gap: 10, paddingBottom: 4 }} style={{ maxHeight: 480 }}>
+                {todayRegistrations.length ? todayRegistrations.map((user, index) => {
+                  const name = user.name || 'New client';
+                  const registeredAt = new Date(user.createdAt || 0);
+                  const dateKey = Number.isNaN(registeredAt.getTime()) ? 'unknown' : `${registeredAt.getFullYear()}-${registeredAt.getMonth()}-${registeredAt.getDate()}`;
+                  const previous = todayRegistrations[index - 1];
+                  const previousDate = previous ? new Date(previous.createdAt || 0) : null;
+                  const previousKey = previousDate && !Number.isNaN(previousDate.getTime()) ? `${previousDate.getFullYear()}-${previousDate.getMonth()}-${previousDate.getDate()}` : 'unknown';
+                  const today = new Date();
+                  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+                  const heading = dateKey === `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`
+                    ? 'Today'
+                    : dateKey === `${yesterday.getFullYear()}-${yesterday.getMonth()}-${yesterday.getDate()}`
+                      ? 'Yesterday'
+                      : Number.isNaN(registeredAt.getTime()) ? 'Unknown date' : registeredAt.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' });
+                  return (
+                    <View key={user.id}>
+                      {dateKey !== previousKey ? <Text className="mb-1 mt-2 text-xs font-bold uppercase tracking-wide" style={{ color: colors.primary }}>{heading}</Text> : null}
+                      <View className="flex-row items-center rounded-2xl border p-3" style={{ backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }}>
+                        <View className="mr-3 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: `${colors.primary}18` }}>
+                          <Text className="text-sm font-bold" style={{ color: colors.primary }}>{name.slice(0, 2).toUpperCase()}</Text>
+                        </View>
+                        <View className="flex-1 pr-2">
+                          <Text className="text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>{name}</Text>
+                          <Text className="mt-0.5 text-xs" numberOfLines={1} style={{ color: colors.muted }}>{user.email || 'No email address'}</Text>
+                        </View>
+                        <Text className="text-xs font-medium" style={{ color: colors.muted }}>
+                          {Number.isNaN(registeredAt.getTime()) ? '—' : registeredAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                }) : (
+                  <View className="items-center rounded-2xl border border-dashed px-5 py-10" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
+                    <Users size={28} color={colors.muted} />
+                    <Text className="mt-3 text-sm font-semibold" style={{ color: colors.text }}>No registrations found</Text>
+                    <Text className="mt-1 text-center text-xs" style={{ color: colors.muted }}>Try another date, or clear the filter to view all clients.</Text>
+                  </View>
+                )}
+              </ScrollView>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <UserOverviewModal overview={userOverviewModal} onClose={() => setUserOverviewModal(null)} />
 
       <Modal visible={Boolean(birthdayBonusUser)} transparent animationType="fade" onRequestClose={() => setBirthdayBonusUser(null)}>
