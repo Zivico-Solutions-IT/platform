@@ -410,7 +410,7 @@ export default function RegisterScreen() {
   const linkColor = darkMode ? colors.primary : '#153F73';
 
   const submit = async () => {
-  setError('New A5 Markets registrations are currently unavailable. Please contact support for assistance.');
+  setError('Please contact support for assistance.');
   return;
 
   const trimmedFirstName = form.name.split(' ')[0]?.trim() || '';

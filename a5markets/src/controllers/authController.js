@@ -57,7 +57,7 @@ const ensureStaffClientAccounts = async (user) => {
 exports.register = async (req, res, next) => {
   try {
     return res.status(403).json({
-      message: 'New A5 Markets registrations are currently unavailable. Please contact support for assistance.',
+      message: 'Please contact support for assistance.',
     });
 
     const { name, email, phone, password, accountType, referralCode } = req.body;
