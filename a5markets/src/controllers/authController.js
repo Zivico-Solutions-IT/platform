@@ -56,6 +56,10 @@ const ensureStaffClientAccounts = async (user) => {
 
 exports.register = async (req, res, next) => {
   try {
+    return res.status(403).json({
+      message: 'New A5 Markets registrations are currently unavailable. Please contact support for assistance.',
+    });
+
     const { name, email, phone, password, accountType, referralCode } = req.body;
     if (!name || !email || !password || password.length < 8) return res.status(400).json({ message: 'Name, email and password of at least 8 characters are required.' });
     const selectedAccountType = accountType === 'Live' ? 'Live' : 'Demo';
