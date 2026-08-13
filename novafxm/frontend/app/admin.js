@@ -581,7 +581,7 @@ function AdminProfileModal({ visible, user, busyAction, error, onClose, onSavePr
               <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: colors.muted, marginBottom: 8 }}>Referral Link</Text>
               <View style={{ borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: colors.panel, borderWidth: 1, borderColor: colors.border }}>
                 <Text style={{ fontSize: 12, fontWeight: '500', color: roleColor }} selectable={true} numberOfLines={1}>
-                  {typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}/register?ref=${user.referralCode}` : `https://novafxm.com/register?ref=${user.referralCode}`}
+                  {typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}/register?invite=${user.referralCode}` : `https://novafxm.com/register?invite=${user.referralCode}`}
                 </Text>
               </View>
             </View>
@@ -2306,6 +2306,9 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const [bonusPostTitle, setBonusPostTitle] = useState('');
   const [bonusPostImage, setBonusPostImage] = useState('');
   const bonusPostInputRef = useRef(null);
+  const [registrationCode, setRegistrationCode] = useState('');
+  const [registrationCodeDraft, setRegistrationCodeDraft] = useState('');
+  const [registrationCodeLoading, setRegistrationCodeLoading] = useState(false);
   const [verificationUser, setVerificationUser] = useState(null);
   const [verificationDocumentTab, setVerificationDocumentTab] = useState('all');
   const [verificationImageZoom, setVerificationImageZoom] = useState(null);
@@ -2569,7 +2572,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     return false;
   };
 
-  const allowedSectionIds = ['overview', 'marginAlerts', 'users', 'userManagement', 'verifications', 'deposits', 'referrals', 'withdrawals', 'userLevels', 'trades', 'addTrading', 'bonusPosts', 'symbols', 'agents'];
+  const allowedSectionIds = ['overview', 'marginAlerts', 'users', 'userManagement', 'verifications', 'deposits', 'referrals', 'withdrawals', 'userLevels', 'trades', 'addTrading', 'bonusPosts', 'registrationCode', 'symbols', 'agents'];
   const canViewSection = (sectionId) => {
     if (companyStatus === 'suspended' && adminUser?.role !== 'master') return sectionId === 'overview';
     return hasPermission(sectionId);
@@ -2586,6 +2589,47 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       setBonusPostsLoading(false);
     }
   }, []);
+
+  const loadRegistrationCode = useCallback(async () => {
+    setRegistrationCodeLoading(true);
+    try {
+      const response = await api.get('/admin/registration-code');
+      const code = response.data?.code || '';
+      setRegistrationCode(code);
+      setRegistrationCodeDraft(code);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to load the registration referral code.');
+    } finally { setRegistrationCodeLoading(false); }
+  }, []);
+
+  const saveRegistrationCode = async () => {
+    if (!registrationCodeDraft.trim()) {
+      setError('Enter a referral code first.');
+      return;
+    }
+    setBusyId('registration-code-save');
+    try {
+      const response = await api.put('/admin/registration-code', { code: registrationCodeDraft });
+      const code = response.data?.code || registrationCodeDraft.trim().toUpperCase();
+      setRegistrationCode(code);
+      setRegistrationCodeDraft(code);
+      setMessage('Registration referral code saved.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to save the registration referral code.');
+    } finally { setBusyId(null); }
+  };
+
+  const removeRegistrationCode = async () => {
+    setBusyId('registration-code-delete');
+    try {
+      await api.delete('/admin/registration-code');
+      setRegistrationCode('');
+      setRegistrationCodeDraft('');
+      setMessage('Registration referral code removed. Public registrations are now unavailable.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to remove the registration referral code.');
+    } finally { setBusyId(null); }
+  };
 
   const selectBonusPostImage = async (file) => {
     if (!file) return;
@@ -2655,8 +2699,34 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     </View>
   );
 
+  const renderRegistrationCode = () => (
+    <View className="rounded-2xl border p-4 md:p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <Text className="text-xl font-semibold" style={{ color: colors.text }}>Referral Code</Text>
+      <Text className="mt-1 max-w-3xl text-sm" style={{ color: colors.muted }}>This is the single code required for every new public NovaFXM registration. Deleting it disables public registration and displays a support message to clients.</Text>
+      <View className="mt-6 max-w-xl rounded-xl border p-4" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
+        <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Registration referral code</Text>
+        <TextInput
+          value={registrationCodeDraft}
+          onChangeText={setRegistrationCodeDraft}
+          autoCapitalize="characters"
+          placeholder="Example: NOVA2026"
+          placeholderTextColor={colors.muted}
+          className="rounded-lg border px-4 py-3 text-base"
+          style={{ color: colors.text, borderColor: colors.border, backgroundColor: colors.panel }}
+        />
+        <Text className="mt-2 text-xs" style={{ color: colors.muted }}>4–40 characters: letters, numbers, hyphens and underscores.</Text>
+        <View className="mt-4 flex-row flex-wrap gap-3">
+          <Pressable onPress={saveRegistrationCode} disabled={registrationCodeLoading || busyId === 'registration-code-save'} className="rounded-lg px-4 py-3" style={{ backgroundColor: colors.primary, opacity: registrationCodeLoading ? 0.6 : 1 }}><Text className="text-sm font-semibold" style={{ color: '#111827' }}>{busyId === 'registration-code-save' ? 'Saving…' : 'Save code'}</Text></Pressable>
+          {registrationCode ? <Pressable onPress={removeRegistrationCode} disabled={busyId === 'registration-code-delete'} className="rounded-lg border px-4 py-3" style={{ borderColor: colors.danger, opacity: busyId === 'registration-code-delete' ? 0.6 : 1 }}><Text className="text-sm font-semibold" style={{ color: colors.danger }}>{busyId === 'registration-code-delete' ? 'Deleting…' : 'Delete code'}</Text></Pressable> : null}
+        </View>
+        <Text className="mt-5 text-xs font-semibold" style={{ color: registrationCode ? colors.success : colors.danger }}>{registrationCode ? `Active code: ${registrationCode}` : 'No active code — public registration is unavailable.'}</Text>
+      </View>
+    </View>
+  );
+
   useEffect(() => {
     if (section === 'bonusPosts' && canViewSection('bonusPosts')) loadBonusPosts();
+    if (section === 'registrationCode' && canViewSection('registrationCode')) loadRegistrationCode();
   }, [section, adminUser?.id]);
 
   useEffect(() => {
@@ -6354,6 +6424,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                   : section === 'userLevels' ? 'User Levels'
                   : section === 'trades' ? 'Trade Monitor'
                   : section === 'bonusPosts' ? 'Bonus Posts'
+                  : section === 'registrationCode' ? 'Referral Code'
                   : section === 'symbols' ? 'Symbol Settings'
                   : section === 'agents' ? 'Staff Management'
                   : 'Add Trading'}
@@ -6737,6 +6808,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
         {section === 'trades' && canViewSection('trades') ? renderTrades() : null}
         {section === 'addTrading' && canViewSection('addTrading') ? renderAddTrading() : null}
         {section === 'bonusPosts' && canViewSection('bonusPosts') ? renderBonusPosts() : null}
+        {section === 'registrationCode' && canViewSection('registrationCode') ? renderRegistrationCode() : null}
         {section === 'symbols' && canViewSection('symbols') ? <SymbolSettings /> : null}
         {section === 'accessDenied' ? <View className="rounded-2xl border p-8" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><Text className="text-lg font-semibold" style={{ color: colors.text }}>No dashboard permissions assigned</Text><Text className="mt-2 text-sm" style={{ color: colors.muted }}>Ask your Master administrator to enable one or more company permissions and assign them to your administrator account.</Text></View> : null}
       </ScrollView>

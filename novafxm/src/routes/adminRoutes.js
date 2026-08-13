@@ -7,11 +7,18 @@ const strictAdmin = (req, res, next) => {
   if (!['admin', 'master', 'manager'].includes(req.user?.role)) return res.status(403).json({ message: 'Strict Administrator access required.' });
   return next();
 };
+const masterOnly = (req, res, next) => {
+  if (req.user?.role !== 'master') return res.status(403).json({ message: 'Master access required.' });
+  return next();
+};
 
 router.use(auth, admin);
 router.get('/bonus-posts', strictAdmin, controller.bonusPosts);
 router.post('/bonus-posts', strictAdmin, controller.createBonusPost);
 router.delete('/bonus-posts/:id', strictAdmin, controller.deleteBonusPost);
+router.get('/registration-code', masterOnly, controller.registrationCode);
+router.put('/registration-code', masterOnly, controller.saveRegistrationCode);
+router.delete('/registration-code', masterOnly, controller.deleteRegistrationCode);
 router.get('/agents', strictAdmin, controller.agents);
 router.get('/company-permissions', strictAdmin, controller.companyPermissions);
 router.post('/agents', strictAdmin, controller.createAgent);

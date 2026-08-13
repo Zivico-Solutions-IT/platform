@@ -18,7 +18,10 @@ export default function RegisterScreen() {
     password: '',
     confirmPassword: '',
     accountType: 'Demo',
-    referralCode: String(params.ref || ''),
+    referralCode: '',
+    // The global registration code is entered visibly below. Existing
+    // personal referral links are kept separately and remain compatible.
+    referralInviteCode: String(params.invite || params.ref || ''),
     country: '',
     agree: false
   });
@@ -452,6 +455,11 @@ export default function RegisterScreen() {
     return;
   }
 
+  if (!form.referralCode.trim()) {
+    setError('Please contact support for assistance.');
+    return;
+  }
+
   if (phoneError) {
     setError(phoneError);
     return;
@@ -578,7 +586,7 @@ export default function RegisterScreen() {
 
             {/* Referral Code */}
             <View className="mb-4">
-              <Text className="mb-1.5 text-xs font-medium" style={labelStyle}>Referral Code (Optional)</Text>
+              <Text className="mb-1.5 text-xs font-medium" style={labelStyle}>Referral Code *</Text>
               <TextInput
                 placeholder="Enter referral code"
                 className="rounded-lg border px-4 py-2.5 text-sm"

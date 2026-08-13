@@ -39,6 +39,28 @@ const paymentMethodGroups = [
 }));
 const paymentPanelAccent = '#38BDF8';
 
+const bankMethodNames = ['bank', 'bank transfer', 'rtgs', 'neft', 'imps', 'net banking'];
+const cryptoMethodNames = ['usdt', 'trc20', 'bep20', 'erc20', 'crypto'];
+
+const methodMeta = (label) => {
+  const normalized = String(label || '').trim().toLowerCase();
+  const known = paymentMethods.find((method) => method.label.toLowerCase() === normalized);
+  if (known) return known;
+  return {
+    label,
+    description: bankMethodNames.includes(normalized) ? 'Direct bank transfer' : 'Payment transfer',
+    icon: bankMethodNames.includes(normalized) ? Landmark : WalletCards,
+    accent: bankMethodNames.includes(normalized) ? '#38BDF8' : '#17B8B2',
+  };
+};
+
+const groupForMethod = (label) => {
+  const normalized = String(label || '').trim().toLowerCase();
+  if (bankMethodNames.includes(normalized)) return 'Bank';
+  if (cryptoMethodNames.includes(normalized)) return 'Crypto';
+  return 'Other Methods';
+};
+
 const depositRules = {
   USD: {
     minimum: 100,
@@ -157,10 +179,33 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
     }
     return null;
   }, [receipt]);
-  const selectedMethod = paymentMethods.find((method) => method.label === form.paymentMethod) || paymentMethods[0];
-  const activePaymentGroup = paymentMethodGroups.find((group) => group.title === selectedPaymentGroup) || paymentMethodGroups[0];
+  const availablePaymentMethodGroups = useMemo(() => {
+    const configuredLabels = [...new Set(
+      depositAddresses
+        .filter((item) => item.isActive !== false && String(item.paymentMethod || '').trim())
+        .map((item) => String(item.paymentMethod).trim()),
+    )];
+    if (!configuredLabels.length) return paymentMethodGroups;
+
+    const groupDefinitions = [
+      { title: 'Crypto', subtitle: 'Wallet and chain transfers', icon: WalletCards, accent: '#17B8B2' },
+      { title: 'Bank', subtitle: 'Direct bank rails', icon: Landmark, accent: '#38BDF8' },
+      { title: 'Other Methods', subtitle: 'Additional payment options', icon: Wallet, accent: '#8B5CF6' },
+    ];
+    return groupDefinitions
+      .map((group) => ({
+        ...group,
+        methods: configuredLabels.filter((label) => groupForMethod(label) === group.title).map(methodMeta),
+      }))
+      .filter((group) => group.methods.length);
+  }, [depositAddresses]);
+
+  const selectedMethod = availablePaymentMethodGroups
+    .flatMap((group) => group.methods)
+    .find((method) => method.label === form.paymentMethod) || availablePaymentMethodGroups[0]?.methods[0] || paymentMethods[0];
+  const activePaymentGroup = availablePaymentMethodGroups.find((group) => group.title === selectedPaymentGroup) || availablePaymentMethodGroups[0] || paymentMethodGroups[0];
   const ActivePaymentGroupIcon = activePaymentGroup.icon;
-  const isBankMethod = form.paymentMethod === 'Bank Transfer' || activePaymentGroup.title === 'Bank';
+  const isBankMethod = groupForMethod(form.paymentMethod) === 'Bank';
   const selectedDepositRule = depositRules[selectedCurrency.code] || depositRules.USD;
   const selectedSymbol = selectedCurrency.symbol;
   const selectedMethodAddresses = depositAddresses.filter((item) => {
@@ -203,6 +248,18 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const selectedGroup = availablePaymentMethodGroups.find((group) => group.title === selectedPaymentGroup);
+    const currentMethodExists = availablePaymentMethodGroups.some((group) => group.methods.some((method) => method.label === form.paymentMethod));
+    if (!selectedGroup || !currentMethodExists) {
+      const firstGroup = availablePaymentMethodGroups[0];
+      if (firstGroup) {
+        setSelectedPaymentGroup(firstGroup.title);
+        setForm((current) => ({ ...current, paymentMethod: firstGroup.methods[0]?.label || current.paymentMethod }));
+      }
+    }
+  }, [availablePaymentMethodGroups, form.paymentMethod, selectedPaymentGroup]);
 
   const chooseAddress = () => {
     const rawVal = String(form.amount || '').trim();
@@ -348,7 +405,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
               <View className={`${mobile ? 'mb-2' : 'mb-3'}`}>
                 {mobile ? (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                    {paymentMethodGroups.map((group) => {
+                    {availablePaymentMethodGroups.map((group) => {
                       const GroupIcon = group.icon;
                       const active = activePaymentGroup.title === group.title;
                       return (
@@ -371,7 +428,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                   </ScrollView>
                 ) : (
                   <View className="flex-row flex-wrap gap-2">
-                    {paymentMethodGroups.map((group) => {
+                    {availablePaymentMethodGroups.map((group) => {
                       const GroupIcon = group.icon;
                       const active = activePaymentGroup.title === group.title;
                       return (

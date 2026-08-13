@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const sequelize = require('../config/db');
-const { User, Wallet, TradingAccount, Project, AdminNotification } = require('../models');
+const { User, Wallet, TradingAccount, Project, AdminNotification, RegistrationCode } = require('../models');
 const { ensureReferralCode } = require('../services/dashboardService');
 const { sendPasswordResetCode } = require('../services/mailSevice');
 const { getIo } = require('../config/socketIo');
@@ -56,23 +56,30 @@ const ensureStaffClientAccounts = async (user) => {
 
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, phone, password, accountType, referralCode } = req.body;
+    const { name, email, phone, password, accountType, referralCode, referralInviteCode } = req.body;
     if (!name || !email || !password || password.length < 8) return res.status(400).json({ message: 'Name, email and password of at least 8 characters are required.' });
     const selectedAccountType = accountType === 'Live' ? 'Live' : 'Demo';
     const startingBalance = selectedAccountType === 'Demo' ? 5000 : 0;
     const normalizedEmail = email.trim().toLowerCase();
     if (await User.findOne({ where: { email: normalizedEmail } })) return res.status(409).json({ message: 'Email already registered.' });
-    const referrer = referralCode
-      ? await User.findOne({ where: { referralCode: String(referralCode).trim() } })
-      : null;
-      
-    // Extract project ID from headers if frontend is on a subdomain
-    const headerProjectId = req.headers['x-project-id'];
-    const projectId = headerProjectId ? parseInt(headerProjectId, 10) : (referrer ? referrer.projectId : null);
-    if (projectId) {
-      const project = await Project.findByPk(projectId);
-      if (!project || project.status === 'inactive') return res.status(403).json({ message: 'This company is inactive. Registration is unavailable.' });
+    // NovaFXM public registrations are controlled by the one code configured
+    // in CRM. Personal referral links use referralInviteCode separately.
+    const headerProjectId = Number.parseInt(req.headers['x-project-id'], 10);
+    const project = Number.isInteger(headerProjectId)
+      ? await Project.findByPk(headerProjectId)
+      : await Project.findOne({ where: { identifier: 'novafxm' } });
+    if (!project || project.status === 'inactive') return res.status(403).json({ message: 'Please contact support for assistance.' });
+
+    const configuredCode = await RegistrationCode.findOne({ where: { projectId: project.id } });
+    const suppliedCode = String(referralCode || '').trim().toUpperCase();
+    if (!configuredCode || suppliedCode !== String(configuredCode.code).trim().toUpperCase()) {
+      return res.status(403).json({ message: 'Please contact support for assistance.' });
     }
+
+    const referrer = referralInviteCode
+      ? await User.findOne({ where: { referralCode: String(referralInviteCode).trim(), projectId: project.id } })
+      : null;
+    const projectId = project.id;
 
     const user = await sequelize.transaction(async (transaction) => {
       const created = await User.create({
