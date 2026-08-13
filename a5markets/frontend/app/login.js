@@ -14,7 +14,7 @@ import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import { useAppTheme } from '../src/context/ThemeContext';
-import { landingRouteFor } from '../src/utils/appHost';
+import { isCrmHost, landingRouteFor } from '../src/utils/appHost';
 import { storage } from '../src/utils/storage';
 
 export default function LoginScreen() {
@@ -635,12 +635,13 @@ export default function LoginScreen() {
               <Text className="text-sm" style={labelStyle}>Remember me</Text>
             </TouchableOpacity>
 
-            {/* Forgot Password Button */}
-            <TouchableOpacity onPress={() => setView('forgot-email')}>
-              <Text className="text-sm font-medium" style={{ color: linkColor }}>
-                Forgot password?
-              </Text>
-            </TouchableOpacity>
+            {!isCrmHost() && (
+              <TouchableOpacity onPress={() => setView('forgot-email')}>
+                <Text className="text-sm font-medium" style={{ color: linkColor }}>
+                  Forgot password?
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Error Message */}
@@ -661,15 +662,16 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Footer Links */}
-        <Link href="/register" asChild>
-          <Pressable className="mt-6">
-            <Text className="text-center text-sm" style={labelStyle}>
-              Don&apos;t have an account?{' '}
-              <Text className="font-semibold" style={{ color: linkColor }}>Sign up</Text>
-            </Text>
-          </Pressable>
-        </Link>
+        {!isCrmHost() && (
+          <Link href="/register" asChild>
+            <Pressable className="mt-6">
+              <Text className="text-center text-sm" style={labelStyle}>
+                Don&apos;t have an account?{' '}
+                <Text className="font-semibold" style={{ color: linkColor }}>Sign up</Text>
+              </Text>
+            </Pressable>
+          </Link>
+        )}
 
       </View>
       </View>

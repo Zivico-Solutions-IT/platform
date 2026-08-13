@@ -4,7 +4,7 @@ const { User, Wallet, Transaction, TradingAccount, Trade, BankAccount, Deposit, 
 const money = (value) => Number(Number(value || 0).toFixed(2));
 
 const publicNumberFor = (id) => String(Number(id) + 2099).padStart(6, '0');
-const referralCodeFor = (user) => `NVX${publicNumberFor(user.id)}`;
+const referralCodeFor = (user) => `VFX${publicNumberFor(user.id)}`;
 const ACCOUNT_LIMITS = {
   Demo: 2,
   Live: 5,
