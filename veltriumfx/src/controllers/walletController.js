@@ -282,6 +282,14 @@ exports.withdraw = async (req, res, next) => {
     let withdrawal;
     await sequelize.transaction(async (transaction) => {
       const wallet = await Wallet.findOne({ where: { userId: req.user.id }, transaction, lock: transaction.LOCK.UPDATE });
+      const existingPendingWithdrawal = await Withdrawal.findOne({
+        where: { userId: req.user.id, status: 'pending' },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (existingPendingWithdrawal) {
+        throw Object.assign(new Error('Another withdrawal request is pending. Please wait for it to be approved or rejected before submitting a new withdrawal.'), { status: 409 });
+      }
       const pending = await Withdrawal.sum('amount', { where: { userId: req.user.id, status: 'pending' }, transaction });
       if (Number(amount) > Number(wallet.balance) - Number(pending || 0)) {
         throw Object.assign(new Error('Insufficient withdrawable balance.'), { status: 400 });
