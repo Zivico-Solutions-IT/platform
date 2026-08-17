@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Animated,
   ActivityIndicator,
-  Image // <-- Added Image component
+  Image
 } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
@@ -523,14 +523,11 @@ export default function RegisterScreen() {
                   >
                     <View className="flex-row items-center mr-1">
                       {selectedCountry ? (
-                        <>
-                          <Image
-                            source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code.toLowerCase()}.png` }}
-                            style={{ width: 20, height: 15, marginRight: 6, borderRadius: 2 }}
-                            resizeMode="cover"
-                          />
-                          <Text style={{ color: '#012b15', fontSize: 14 }}>{selectedCountry.dialCode}</Text>
-                        </>
+                        <Image
+                          source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code.toLowerCase()}.png` }}
+                          style={{ width: 20, height: 15, borderRadius: 2 }}
+                          resizeMode="cover"
+                        />
                       ) : (
                         <Text style={{ color: '#012b15', fontSize: 14 }}>🌐 Select</Text>
                       )}
