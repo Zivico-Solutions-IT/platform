@@ -13,13 +13,11 @@ import { Eye, EyeOff, ArrowLeft, Mail, ShieldCheck, LockKeyhole, CheckCircle2 } 
 import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
 import NovaLogo from '../src/components/brand/NovaLogo';
-import { useAppTheme } from '../src/context/ThemeContext';
 import { isCrmHost, landingRouteFor } from '../src/utils/appHost';
 import { storage } from '../src/utils/storage';
 
 export default function LoginScreen() {
   const { login, user } = useAuth();
-  const { darkMode, colors } = useAppTheme();
 
   // View: 'login' | 'forgot-email' | 'forgot-code' | 'forgot-newpass' | 'forgot-success'
   const [view, setView] = useState('login');
@@ -81,16 +79,16 @@ export default function LoginScreen() {
         input:-webkit-autofill:hover,
         input:-webkit-autofill:focus,
         input:-webkit-autofill:active {
-          -webkit-box-shadow: 0 0 0 1000px ${colors.surface} inset !important;
-          -webkit-text-fill-color: ${colors.text} !important;
-          caret-color: ${colors.text} !important;
+          -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+          -webkit-text-fill-color: #012b15 !important;
+          caret-color: #012b15 !important;
           transition: background-color 9999s ease-out 0s;
         }
       `;
       document.head.appendChild(style);
       return () => { document.head.removeChild(style); };
     }
-  }, [colors.surface, colors.text]);
+  }, []);
 
   const submit = async () => {
     setLoading(true);
@@ -203,14 +201,15 @@ export default function LoginScreen() {
   };
 
   const inputStyle = {
-    backgroundColor: darkMode ? colors.surface : '#ffffff',
-    borderColor: colors.border,
-    color: colors.text,
-    caretColor: colors.text,
+    backgroundColor: '#ffffff',
+    borderColor: 'rgba(1, 69, 33, 0.15)',
+    borderWidth: 1.5,
+    color: '#012b15',
+    caretColor: '#012b15',
     outlineStyle: 'none',
   };
-  const labelStyle = { color: colors.muted };
-  const linkColor = darkMode ? colors.primary : '#014421';
+  const labelStyle = { color: '#4e6b5a', fontSize: 11.5, fontWeight: '600', letterSpacing: 0.2 };
+  const linkColor = '#026331';
 
   // Step indicator dots for forgot password flow
   const StepIndicator = ({ currentStep }) => {
@@ -224,7 +223,7 @@ export default function LoginScreen() {
             style={{
               width: currentStep === step ? 24 : 8,
               height: 8,
-              backgroundColor: currentStep >= step ? '#014421' : (darkMode ? colors.border : '#E5E7EB'),
+              backgroundColor: currentStep >= step ? '#014421' : 'rgba(1, 69, 33, 0.08)',
               borderRadius: 4,
             }}
           />
@@ -233,6 +232,53 @@ export default function LoginScreen() {
     );
   };
 
+  const cardStyle = {
+    backgroundColor: '#ffffff',
+    borderColor: 'rgba(1, 69, 33, 0.08)',
+    borderWidth: 1,
+    borderRadius: 18,
+    shadowColor: '#014521',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+    paddingTop: 30,
+    paddingHorizontal: 28,
+    paddingBottom: 24,
+    width: '100%',
+    maxWidth: 376,
+  };
+
+  const TopControls = () => (
+    <View style={{ position: 'absolute', top: Platform.OS === 'web' ? 22 : 60, right: 24, zIndex: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderColor: 'rgba(1, 69, 33, 0.15)', borderWidth: 1, borderRadius: 100, paddingHorizontal: 12, paddingVertical: 6, gap: 6 }}>
+        <Text style={{ fontSize: 11.5, color: '#4e6b5a', fontWeight: '500' }}>EN</Text>
+      </View>
+    </View>
+  );
+
+  const PrimaryButton = ({ onPress, disabled, loading, title }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      className="w-full items-center py-[12.5px]"
+      style={{
+        borderRadius: 9,
+        backgroundColor: '#d4af37',
+        shadowColor: '#d4af37',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.5,
+        shadowRadius: 18,
+        elevation: 6,
+        opacity: disabled ? 0.7 : 1,
+      }}
+    >
+      <Text style={{ color: '#231902', fontWeight: '700', fontSize: 14.5, letterSpacing: 0.1 }}>
+        {loading ? 'Processing...' : title}
+      </Text>
+    </TouchableOpacity>
+  );
+
   // ─── Forgot Password Views (inline, no modal) ───
   const isForgotView = view.startsWith('forgot-');
 
@@ -240,52 +286,36 @@ export default function LoginScreen() {
     const forgotStepNum = view === 'forgot-email' ? 1 : view === 'forgot-code' ? 2 : view === 'forgot-newpass' ? 2 : 3;
 
     return (
-      <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
-        <View className="min-h-full items-center justify-center px-5 py-10">
-          <View
-            className="relative w-full max-w-md rounded-[24px] px-7 py-10"
-            style={{
-              backgroundColor: colors.panel,
-              borderColor: colors.border,
-              borderWidth: 1,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 16 },
-              shadowOpacity: darkMode ? 0.4 : 0.08,
-              shadowRadius: 32,
-              elevation: 24,
-            }}
-          >
-            {/* Logo Badge */}
-            <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-              <View className="rounded-2xl px-4 py-2" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
-                <NovaLogo dark={darkMode} width={130} height={38} />
-              </View>
+      <View className="flex-1" style={{ backgroundColor: '#f0f5f2' }}>
+        <TopControls />
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
+          <View style={cardStyle}>
+            {/* Logo */}
+            <View className="mb-8">
+              <NovaLogo dark={false} width={110} height={32} />
             </View>
 
             {view === 'forgot-success' ? (
               /* ─── Success View ─── */
               <>
-                <View className="mt-6 items-center">
+                <View className="items-center">
                   <View
                     className="mb-4 h-16 w-16 items-center justify-center rounded-full"
-                    style={{ backgroundColor: darkMode ? '#064E3B' : '#D1FAE5' }}
+                    style={{ backgroundColor: '#f5f9f6' }}
                   >
-                    <CheckCircle2 size={32} color={darkMode ? '#34D399' : '#059669'} />
+                    <CheckCircle2 size={32} color="#026331" />
                   </View>
-                  <Text className="text-center text-[22px] font-bold" style={{ color: colors.text }}>
+                  <Text className="text-center text-[22px] font-bold" style={{ color: '#012b15' }}>
                     Password Updated!
                   </Text>
-                  <Text className="mt-2 text-center text-[13px]" style={labelStyle}>
+                  <Text className="mt-2 text-center text-[13px]" style={{ color: '#4e6b5a' }}>
                     Your password has been reset successfully.{'\n'}You can now log in with your new password.
                   </Text>
                 </View>
 
-                <TouchableOpacity
-                  onPress={resetForgotState}
-                  className="mt-8 w-full items-center rounded-xl bg-[#014421] py-3"
-                >
-                  <Text className="text-[14px] font-semibold text-white">Back to Login</Text>
-                </TouchableOpacity>
+                <View className="mt-8">
+                  <PrimaryButton onPress={resetForgotState} title="Back to Login" />
+                </View>
               </>
             ) : view === 'forgot-email' ? (
               /* ─── Step 1: Enter Email ─── */
@@ -303,15 +333,15 @@ export default function LoginScreen() {
                 <View className="mb-1 flex-row items-center gap-3">
                   <View
                     className="h-11 w-11 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: darkMode ? '#064E3B' : '#D1FAE5' }}
+                    style={{ backgroundColor: '#f5f9f6' }}
                   >
-                    <Mail size={20} color={darkMode ? '#34D399' : '#059669'} />
+                    <Mail size={20} color="#026331" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-[20px] font-bold" style={{ color: colors.text }}>
+                    <Text className="text-[20px] font-bold" style={{ color: '#012b15' }}>
                       Forgot Password
                     </Text>
-                    <Text className="text-[12px]" style={labelStyle}>
+                    <Text className="text-[12px]" style={{ color: '#4e6b5a' }}>
                       Enter your email to receive a reset code
                     </Text>
                   </View>
@@ -321,12 +351,12 @@ export default function LoginScreen() {
 
                 {/* Email Input */}
                 <View className="mb-5">
-                  <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>Email Address</Text>
+                  <Text style={[labelStyle, { marginBottom: 6 }]}>Email Address</Text>
                   <TextInput
-                    className="w-full rounded-xl border px-4 py-3 text-[14px]"
+                    className="w-full rounded-[9px] px-[13px] py-[11px] text-[14px]"
                     style={inputStyle}
-                    placeholder="example@gmail.com"
-                    placeholderTextColor="#9CA3AF"
+                    placeholder="you@example.com"
+                    placeholderTextColor="#9ab5a5"
                     autoCapitalize="none"
                     autoCorrect={false}
                     keyboardType="email-address"
@@ -336,21 +366,17 @@ export default function LoginScreen() {
                 </View>
 
                 {forgotError ? (
-                  <View className="mb-4 rounded-lg px-3 py-2" style={{ backgroundColor: darkMode ? '#451A1A' : '#FEF2F2' }}>
+                  <View className="mb-4 rounded-lg px-3 py-2" style={{ backgroundColor: '#FEF2F2' }}>
                     <Text className="text-xs" style={{ color: '#EF4444' }}>{forgotError}</Text>
                   </View>
                 ) : null}
 
-                <TouchableOpacity
-                  onPress={handleSendResetCode}
-                  disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#014421] py-3"
-                  style={{ opacity: forgotLoading ? 0.7 : 1 }}
-                >
-                  <Text className="text-[14px] font-semibold text-white">
-                    {forgotLoading ? 'Sending Code...' : 'Send Reset Code'}
-                  </Text>
-                </TouchableOpacity>
+                <PrimaryButton 
+                  onPress={handleSendResetCode} 
+                  disabled={forgotLoading} 
+                  loading={forgotLoading} 
+                  title="Send Reset Code" 
+                />
               </>
             ) : view === 'forgot-code' ? (
               /* ─── Step 2: Enter Verification Code ─── */
@@ -368,15 +394,15 @@ export default function LoginScreen() {
                 <View className="mb-1 flex-row items-center gap-3">
                   <View
                     className="h-11 w-11 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: darkMode ? '#1E3A5F' : '#DBEAFE' }}
+                    style={{ backgroundColor: '#f5f9f6' }}
                   >
-                    <ShieldCheck size={20} color={darkMode ? '#60A5FA' : '#2563EB'} />
+                    <ShieldCheck size={20} color="#026331" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-[20px] font-bold" style={{ color: colors.text }}>
+                    <Text className="text-[20px] font-bold" style={{ color: '#012b15' }}>
                       Verify Code
                     </Text>
-                    <Text className="text-[12px]" style={labelStyle}>
+                    <Text className="text-[12px]" style={{ color: '#4e6b5a' }}>
                       Enter the 6-digit code sent to
                     </Text>
                     <Text className="text-[12px] font-semibold" style={{ color: linkColor }}>
@@ -389,12 +415,12 @@ export default function LoginScreen() {
 
                 {/* Code Input */}
                 <View className="mb-5">
-                  <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>Verification Code</Text>
+                  <Text style={[labelStyle, { marginBottom: 6 }]}>Verification Code</Text>
                   <TextInput
-                    className="w-full rounded-xl border px-4 py-3 text-center text-[20px] font-bold tracking-[8px]"
+                    className="w-full rounded-[9px] px-[13px] py-[11px] text-center text-[20px] font-bold tracking-[8px]"
                     style={inputStyle}
                     placeholder="• • • • • •"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#9ab5a5"
                     autoCapitalize="none"
                     autoCorrect={false}
                     keyboardType="number-pad"
@@ -405,21 +431,17 @@ export default function LoginScreen() {
                 </View>
 
                 {forgotError ? (
-                  <View className="mb-4 rounded-lg px-3 py-2" style={{ backgroundColor: darkMode ? '#451A1A' : '#FEF2F2' }}>
+                  <View className="mb-4 rounded-lg px-3 py-2" style={{ backgroundColor: '#FEF2F2' }}>
                     <Text className="text-xs" style={{ color: '#EF4444' }}>{forgotError}</Text>
                   </View>
                 ) : null}
 
-                <TouchableOpacity
-                  onPress={handleVerifyCode}
-                  disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#014421] py-3"
-                  style={{ opacity: forgotLoading ? 0.7 : 1 }}
-                >
-                  <Text className="text-[14px] font-semibold text-white">
-                    Verify Code
-                  </Text>
-                </TouchableOpacity>
+                <PrimaryButton 
+                  onPress={handleVerifyCode} 
+                  disabled={forgotLoading} 
+                  loading={forgotLoading} 
+                  title="Verify Code" 
+                />
 
                 {/* Resend Code */}
                 <TouchableOpacity
@@ -427,7 +449,7 @@ export default function LoginScreen() {
                   disabled={forgotLoading}
                   className="mt-4 items-center"
                 >
-                  <Text className="text-xs" style={labelStyle}>
+                  <Text className="text-xs" style={{ color: '#4e6b5a' }}>
                     Didn&apos;t receive the code?{' '}
                     <Text className="font-semibold" style={{ color: linkColor }}>Resend</Text>
                   </Text>
@@ -449,15 +471,15 @@ export default function LoginScreen() {
                 <View className="mb-1 flex-row items-center gap-3">
                   <View
                     className="h-11 w-11 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: darkMode ? '#3B1F64' : '#EDE9FE' }}
+                    style={{ backgroundColor: '#f5f9f6' }}
                   >
-                    <LockKeyhole size={20} color={darkMode ? '#A78BFA' : '#7C3AED'} />
+                    <LockKeyhole size={20} color="#026331" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-[20px] font-bold" style={{ color: colors.text }}>
+                    <Text className="text-[20px] font-bold" style={{ color: '#012b15' }}>
                       New Password
                     </Text>
-                    <Text className="text-[12px]" style={labelStyle}>
+                    <Text className="text-[12px]" style={{ color: '#4e6b5a' }}>
                       Set a strong password for your account
                     </Text>
                   </View>
@@ -467,13 +489,13 @@ export default function LoginScreen() {
 
                 {/* New Password */}
                 <View className="mb-4">
-                  <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>New Password</Text>
-                  <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
+                  <Text style={[labelStyle, { marginBottom: 6 }]}>New Password</Text>
+                  <View className="flex-row items-center rounded-[9px]" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor, borderWidth: 1.5 }}>
                     <TextInput
-                      className="flex-1 px-4 py-3 text-[14px]"
-                      style={{ color: colors.text, ...(Platform.OS === 'web' && !showNewPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
+                      className="flex-1 px-[13px] py-[11px] text-[14px]"
+                      style={{ color: '#012b15', ...(Platform.OS === 'web' && !showNewPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
                       placeholder="At least 8 characters"
-                      placeholderTextColor="#9CA3AF"
+                      placeholderTextColor="#9ab5a5"
                       secureTextEntry={Platform.OS !== 'web' && !showNewPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -485,9 +507,9 @@ export default function LoginScreen() {
                       className="px-3 py-2"
                     >
                       {showNewPassword ? (
-                        <Eye size={18} color={colors.muted} />
+                        <Eye size={18} color="#849e8f" />
                       ) : (
-                        <EyeOff size={18} color={colors.muted} />
+                        <EyeOff size={18} color="#849e8f" />
                       )}
                     </TouchableOpacity>
                   </View>
@@ -495,13 +517,13 @@ export default function LoginScreen() {
 
                 {/* Confirm Password */}
                 <View className="mb-5">
-                  <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>Confirm Password</Text>
-                  <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
+                  <Text style={[labelStyle, { marginBottom: 6 }]}>Confirm Password</Text>
+                  <View className="flex-row items-center rounded-[9px]" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor, borderWidth: 1.5 }}>
                     <TextInput
-                      className="flex-1 px-4 py-3 text-[14px]"
-                      style={{ color: colors.text, ...(Platform.OS === 'web' && !showConfirmPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
+                      className="flex-1 px-[13px] py-[11px] text-[14px]"
+                      style={{ color: '#012b15', ...(Platform.OS === 'web' && !showConfirmPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
                       placeholder="Confirm your password"
-                      placeholderTextColor="#9CA3AF"
+                      placeholderTextColor="#9ab5a5"
                       secureTextEntry={Platform.OS !== 'web' && !showConfirmPassword}
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -513,104 +535,91 @@ export default function LoginScreen() {
                       className="px-3 py-2"
                     >
                       {showConfirmPassword ? (
-                        <Eye size={18} color={colors.muted} />
+                        <Eye size={18} color="#849e8f" />
                       ) : (
-                        <EyeOff size={18} color={colors.muted} />
+                        <EyeOff size={18} color="#849e8f" />
                       )}
                     </TouchableOpacity>
                   </View>
                 </View>
 
                 {forgotError ? (
-                  <View className="mb-4 rounded-lg px-3 py-2" style={{ backgroundColor: darkMode ? '#451A1A' : '#FEF2F2' }}>
+                  <View className="mb-4 rounded-lg px-3 py-2" style={{ backgroundColor: '#FEF2F2' }}>
                     <Text className="text-xs" style={{ color: '#EF4444' }}>{forgotError}</Text>
                   </View>
                 ) : null}
 
-                <TouchableOpacity
-                  onPress={handleResetPassword}
-                  disabled={forgotLoading}
-                  className="w-full items-center rounded-xl bg-[#014421] py-3"
-                  style={{ opacity: forgotLoading ? 0.7 : 1 }}
-                >
-                  <Text className="text-[14px] font-semibold text-white">
-                    {forgotLoading ? 'Resetting Password...' : 'Reset Password'}
-                  </Text>
-                </TouchableOpacity>
+                <PrimaryButton 
+                  onPress={handleResetPassword} 
+                  disabled={forgotLoading} 
+                  loading={forgotLoading} 
+                  title="Reset Password" 
+                />
               </>
             ) : null}
 
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     );
   }
 
   // ─── Login View ───
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <View className="min-h-full items-center justify-center px-5 py-10">
-        <View 
-          className="relative w-full max-w-md rounded-[24px] px-7 py-10" 
-          style={{ 
-            backgroundColor: colors.panel, 
-            borderColor: colors.border, 
-            borderWidth: 1,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 16 },
-            shadowOpacity: darkMode ? 0.4 : 0.08,
-            shadowRadius: 32,
-            elevation: 24,
-          }}
-        >
+    <View className="flex-1" style={{ backgroundColor: '#f0f5f2' }}>
+      <TopControls />
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
+        <View style={cardStyle}>
 
-        {/* Logo Badge */}
-        <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-          <View className="rounded-2xl px-4 py-2" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }}>
-            <NovaLogo dark={darkMode} width={130} height={38} />
-          </View>
+        {/* Logo */}
+        <View className="mb-[32px]">
+          <NovaLogo dark={false} width={110} height={32} />
         </View>
 
-        {/* Header */}
-        <View className="mt-6 mb-2">
-          <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
-            Welcome Back
-          </Text>
-          <Text className="mt-2 text-center text-[13px] font-medium" style={labelStyle}>
-            Login to continue to your account
-          </Text>
-        </View>
+        <Text className="text-[13px] mb-[32px]" style={{ color: '#4e6b5a' }}>
+          New to NOVAFXM?{' '}
+          {/* Client registration belongs to the trading portal, not the staff CRM. */}
+          {!isCrmHost() ? (
+            <Link href="/register" asChild>
+              <Text className="font-semibold" style={{ color: linkColor, textDecorationLine: 'underline' }}>Open an Account</Text>
+            </Link>
+          ) : (
+            <Text className="font-semibold" style={{ color: linkColor, textDecorationLine: 'underline' }}>Contact Admin</Text>
+          )}
+        </Text>
 
-        <View className="mt-7">
+        <View>
 
           {/* Email Field */}
-          <View className="mb-4">
-            <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>Email</Text>
-            <TextInput
-              className="w-full rounded-xl border px-4 py-3 text-[14px]"
-              style={inputStyle}
-              placeholder="example@gmail.com"
-              placeholderTextColor="#9CA3AF"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              autoComplete="email"
-              textContentType="username"
-              importantForAutofill="yes"
-              value={form.email}
-              onChangeText={(email) => setForm((value) => ({ ...value, email }))}
-            />
+          <View className="mb-[12px]">
+            <Text style={[labelStyle, { marginBottom: 6 }]}>Email address</Text>
+            <View className="rounded-[9px]" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor, borderWidth: 1.5 }}>
+              <TextInput
+                className="w-full px-[13px] py-[11px] text-[14px]"
+                style={{ color: '#012b15' }}
+                placeholder="you@example.com"
+                placeholderTextColor="#9ab5a5"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                autoComplete="email"
+                textContentType="username"
+                importantForAutofill="yes"
+                value={form.email}
+                onChangeText={(email) => setForm((value) => ({ ...value, email }))}
+              />
+            </View>
           </View>
 
           {/* Password Field */}
-          <View className="mb-5">
-            <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>Password</Text>
-            <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
+          <View className="mb-[12px]">
+            <Text style={[labelStyle, { marginBottom: 6 }]}>Password</Text>
+            <View className="flex-row items-center rounded-[9px]" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor, borderWidth: 1.5 }}>
               <TextInput
-                className="flex-1 px-4 py-3 text-[14px]"
-                style={{ color: colors.text, ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
-                placeholder="****"
-                placeholderTextColor="#9CA3AF"
+                className="flex-1 px-[13px] py-[11px] text-[14px]"
+                style={{ color: '#012b15', ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
+                placeholder="Enter your password"
+                placeholderTextColor="#9ab5a5"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -622,39 +631,39 @@ export default function LoginScreen() {
               />
               <TouchableOpacity
                 onPress={() => setShowPassword((value) => !value)}
-                className="px-3 py-2"
+                className="px-[13px] py-[11px]"
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
-                  <Eye size={18} color={colors.muted} />
+                  <Eye size={19} color="#849e8f" />
                 ) : (
-                  <EyeOff size={18} color={colors.muted} />
+                  <EyeOff size={19} color="#849e8f" />
                 )}
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Remember Me & Forgot Password */}
-          <View className="mb-5 flex-row items-center justify-between">
+          <View className="mb-[18px] flex-row items-center justify-between mt-[2px]">
             <TouchableOpacity
               onPress={() => setRememberMe((value) => !value)}
               className="flex-row items-center gap-2"
             >
               <View
-                className="h-4 w-4 items-center justify-center rounded border"
-                style={{ borderColor: rememberMe ? linkColor : colors.border, backgroundColor: rememberMe ? linkColor : inputStyle.backgroundColor }}
+                className="h-[15px] w-[15px] items-center justify-center rounded-[3px] border"
+                style={{ borderColor: rememberMe ? linkColor : '#9ab5a5', backgroundColor: rememberMe ? linkColor : inputStyle.backgroundColor }}
               >
                 {rememberMe ? (
                   <Text className="text-[10px] font-bold text-white">✓</Text>
                 ) : null}
               </View>
-              <Text className="text-sm" style={labelStyle}>Remember me</Text>
+              <Text className="text-[12.5px]" style={{ color: '#4e6b5a' }}>Remember me</Text>
             </TouchableOpacity>
 
             {/* Password recovery is available to client portal users only. */}
             {!isCrmHost() && (
               <TouchableOpacity onPress={() => setView('forgot-email')}>
-                <Text className="text-sm font-medium" style={{ color: linkColor }}>
+                <Text className="text-[12.5px] font-semibold" style={{ color: linkColor, textDecorationLine: 'underline' }}>
                   Forgot password?
                 </Text>
               </TouchableOpacity>
@@ -663,37 +672,27 @@ export default function LoginScreen() {
 
           {/* Error Message */}
           {error ? (
-            <Text className="mb-4 text-xs text-red-600">{error}</Text>
+            <Text className="mb-[12px] text-xs text-red-600">{error}</Text>
           ) : null}
 
           {/* Login Button */}
-          <TouchableOpacity
-            onPress={submit}
-            disabled={loading}
-            className="w-full items-center rounded-lg bg-[#014421] py-2.5 shadow-md"
-            style={{ opacity: loading ? 0.7 : 1 }}
-          >
-            <Text className="text-sm font-semibold text-white">
-              {loading ? 'Logging in...' : 'Login'}
-            </Text>
-          </TouchableOpacity>
+          <PrimaryButton 
+            onPress={submit} 
+            disabled={loading} 
+            loading={loading} 
+            title="Login" 
+          />
         </View>
 
-        {/* Client registration belongs to the trading portal, not the staff CRM. */}
-        {!isCrmHost() && (
-          <Link href="/register" asChild>
-            <Pressable className="mt-6">
-              <Text className="text-center text-sm" style={labelStyle}>
-                Don&apos;t have an account?{' '}
-                <Text className="font-semibold" style={{ color: linkColor }}>Sign up</Text>
-              </Text>
-            </Pressable>
-          </Link>
-        )}
+        <Text className="text-center text-[11.5px] mt-[18px]" style={{ color: '#4e6b5a' }}>
+          By continuing, you agree to NOVAFXM's{' '}
+          <Text className="font-semibold" style={{ color: linkColor, textDecorationLine: 'underline' }}>Terms</Text>
+          {' '}and{' '}
+          <Text className="font-semibold" style={{ color: linkColor, textDecorationLine: 'underline' }}>Risk Disclosure</Text>.
+        </Text>
 
-      </View>
-      </View>
-
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
