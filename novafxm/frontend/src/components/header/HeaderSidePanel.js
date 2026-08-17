@@ -1164,7 +1164,7 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
         if (active) setLoading(false);
       });
     return () => { active = false; };
-  }, [activePanelType, user]);
+  }, [activePanelType, user?.id]);
 
   useEffect(() => {
     const nextPanelType = panelTypeFrom(type);
@@ -1358,7 +1358,7 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
         .catch(() => {});
     }, 60000);
     return () => clearInterval(timer);
-  }, [activePanelType, updateAccounts, user]);
+  }, [activePanelType, updateAccounts, user?.id]);
 
   return (
     <View

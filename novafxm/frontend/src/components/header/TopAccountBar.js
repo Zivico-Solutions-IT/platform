@@ -203,7 +203,9 @@ export default function TopAccountBar() {
       clearInterval(timer);
       retryTimers.forEach(clearTimeout);
     };
-  }, [setSelectedTradingAccount, user]);
+  // `user` is refreshed for presence/profile updates. Key this bootstrap by
+  // identity so those updates do not restart dashboard/account requests.
+  }, [setSelectedTradingAccount, user?.id]);
 
   useEffect(() => {
     let active = true;
@@ -224,7 +226,7 @@ export default function TopAccountBar() {
       active = false;
       clearInterval(timer);
     };
-  }, [isAdmin, user]);
+  }, [isAdmin, user?.id]);
 
   useEffect(() => {
     if (!user?.id) {
