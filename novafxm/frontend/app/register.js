@@ -11,22 +11,13 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Animated,
-  ActivityIndicator
+  ActivityIndicator,
+  Image // <-- Added Image component
 } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import { Eye, EyeOff, ChevronDown, Search, X, CheckCircle2 } from 'lucide-react-native';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
-
-// Helper to convert 2-letter country code to flag emoji
-const getFlagEmoji = (countryCode) => {
-  if (!countryCode) return '🌐';
-  const codePoints = countryCode
-    .toUpperCase()
-    .split('')
-    .map(char => 127397 + char.charCodeAt(0));
-  return String.fromCodePoint(...codePoints);
-};
 
 export default function RegisterScreen() {
   const { register } = useAuth();
@@ -530,9 +521,20 @@ export default function RegisterScreen() {
                     className="flex-row items-center justify-between px-[12px] py-[11px] border-r"
                     style={{ borderColor: 'rgba(1, 69, 33, 0.15)' }}
                   >
-                    <Text style={{ color: '#012b15', fontSize: 14, marginRight: 4 }}>
-                      {selectedCountry ? `${getFlagEmoji(selectedCountry.code)} ${selectedCountry.dialCode}` : '🌐 Select'}
-                    </Text>
+                    <View className="flex-row items-center mr-1">
+                      {selectedCountry ? (
+                        <>
+                          <Image
+                            source={{ uri: `https://flagcdn.com/w40/${selectedCountry.code.toLowerCase()}.png` }}
+                            style={{ width: 20, height: 15, marginRight: 6, borderRadius: 2 }}
+                            resizeMode="cover"
+                          />
+                          <Text style={{ color: '#012b15', fontSize: 14 }}>{selectedCountry.dialCode}</Text>
+                        </>
+                      ) : (
+                        <Text style={{ color: '#012b15', fontSize: 14 }}>🌐 Select</Text>
+                      )}
+                    </View>
                     <ChevronDown size={14} color="#849e8f" />
                   </TouchableOpacity>
 
@@ -579,7 +581,11 @@ export default function RegisterScreen() {
                             style={{ borderColor: 'rgba(1, 69, 33, 0.08)' }}
                           >
                             <View className="flex-row items-center flex-1">
-                              <Text className="mr-3 text-[16px]">{getFlagEmoji(item.code)}</Text>
+                              <Image
+                                source={{ uri: `https://flagcdn.com/w40/${item.code.toLowerCase()}.png` }}
+                                style={{ width: 24, height: 18, marginRight: 12, borderRadius: 2 }}
+                                resizeMode="cover"
+                              />
                               <Text className="text-[13.5px] font-medium" style={{ color: '#012b15' }} numberOfLines={1}>
                                 {item.name}
                               </Text>
@@ -640,7 +646,7 @@ export default function RegisterScreen() {
                 </View>
               </View>
 
-              {/* Confirm Password Field (Only shows if password is typed) */}
+              {/* Confirm Password Field */}
               {form.password.length > 0 && (
                 <View className="mb-[12px] z-10">
                   <Text style={[labelStyle, { marginBottom: 6 }]}>Confirm Password *</Text>
