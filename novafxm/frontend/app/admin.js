@@ -2625,7 +2625,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       await api.delete('/admin/registration-code');
       setRegistrationCode('');
       setRegistrationCodeDraft('');
-      setMessage('Registration referral code removed. Public registrations are now unavailable.');
+      setMessage('Registration referral code removed. Public registration is now open without a code.');
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to remove the registration referral code.');
     } finally { setBusyId(null); }
@@ -2702,7 +2702,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const renderRegistrationCode = () => (
     <View className="rounded-2xl border p-4 md:p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
       <Text className="text-xl font-semibold" style={{ color: colors.text }}>Referral Code</Text>
-      <Text className="mt-1 max-w-3xl text-sm" style={{ color: colors.muted }}>This is the single code required for every new public NovaFXM registration. Deleting it disables public registration and displays a support message to clients.</Text>
+      <Text className="mt-1 max-w-3xl text-sm" style={{ color: colors.muted }}>When a code is active, every new public NovaFXM registration must enter it. Deleting the code reopens normal public registration without a code.</Text>
       <View className="mt-6 max-w-xl rounded-xl border p-4" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
         <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Registration referral code</Text>
         <TextInput
@@ -2719,7 +2719,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
           <Pressable onPress={saveRegistrationCode} disabled={registrationCodeLoading || busyId === 'registration-code-save'} className="rounded-lg px-4 py-3" style={{ backgroundColor: colors.primary, opacity: registrationCodeLoading ? 0.6 : 1 }}><Text className="text-sm font-semibold" style={{ color: '#111827' }}>{busyId === 'registration-code-save' ? 'Saving…' : 'Save code'}</Text></Pressable>
           {registrationCode ? <Pressable onPress={removeRegistrationCode} disabled={busyId === 'registration-code-delete'} className="rounded-lg border px-4 py-3" style={{ borderColor: colors.danger, opacity: busyId === 'registration-code-delete' ? 0.6 : 1 }}><Text className="text-sm font-semibold" style={{ color: colors.danger }}>{busyId === 'registration-code-delete' ? 'Deleting…' : 'Delete code'}</Text></Pressable> : null}
         </View>
-        <Text className="mt-5 text-xs font-semibold" style={{ color: registrationCode ? colors.success : colors.danger }}>{registrationCode ? `Active code: ${registrationCode}` : 'No active code — public registration is unavailable.'}</Text>
+        <Text className="mt-5 text-xs font-semibold" style={{ color: colors.success }}>{registrationCode ? `Active code: ${registrationCode}` : 'No active code — public registration is open.'}</Text>
       </View>
     </View>
   );
