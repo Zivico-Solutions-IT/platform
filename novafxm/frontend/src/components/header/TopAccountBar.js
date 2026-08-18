@@ -34,6 +34,7 @@ export default function TopAccountBar() {
   const profileHoverCloseRef = useRef(null);
   const [metricsWidth, setMetricsWidth] = useState(0);
   const [menu, setMenu] = useState(null);
+  const [accountMenuAnchor, setAccountMenuAnchor] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [dashboard, setDashboard] = useState(null);
   const [adminNotificationData, setAdminNotificationData] = useState(emptyAdminNotificationData);
@@ -43,7 +44,8 @@ export default function TopAccountBar() {
   const mobile = width < 1024;
   const narrowPhone = width < 380;
   const compactDesktop = !mobile && width < 1450;
-  const twoRowDesktop = !mobile && width < 1200;
+  // Keep the account selector and trading metrics on one desktop header row.
+  const twoRowDesktop = false;
   const isMobileLayout = width < 760;
   const showHeaderContent = !(isMobileLayout && sidePanel);
   const iconButtonHoverBg = darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(11, 11, 11, 0.04)';
@@ -403,13 +405,15 @@ export default function TopAccountBar() {
             </View>
           </View>
           {/* Row 2: Account Select & Action Buttons */}
-          <View className="flex-row items-center gap-2">
+          <View className="w-full flex-row items-center gap-2" style={{ marginHorizontal: -4 }}>
             {user ? (
               <Pressable
                 onPress={() => setMenu(menu === 'account' ? null : 'account')}
-                className="h-[40px] flex-1 flex-row items-center justify-between rounded-xl px-3"
+                className="h-[40px] w-full flex-row items-center justify-between rounded-xl px-3"
                 style={{
-                  backgroundColor: darkMode ? '#1E232A' : '#F1F3F6',
+                  backgroundColor: '#FFFFFF',
+                  borderWidth: 1,
+                  borderColor: '#E2E5E9',
                   shadowColor: '#111827',
                   shadowOpacity: menu === 'account' ? 0.14 : 0.04,
                   shadowRadius: 8,
@@ -417,16 +421,16 @@ export default function TopAccountBar() {
                 }}
               >
                 <View className="flex-row items-center">
-                  <View className="mr-2 rounded-lg px-2 py-1" style={{ backgroundColor: accountBadgeColor }}>
-                    <Text className="text-[11px] font-bold" style={{ color: '#FFFFFF' }}>
+                  <View className="mr-2 rounded-full px-2.5 py-1" style={{ backgroundColor: accountBadgeColor }}>
+                    <Text className="text-[11px] font-bold" style={{ color: selectedAccountIsLive ? '#FFFFFF' : '#5F4300' }}>
                       {accountBadgeLabel}
                     </Text>
                   </View>
-                  <Text className="text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>
+                  <Text className="text-sm font-bold" numberOfLines={1} style={{ color: '#1B2532' }}>
                     ${money(selectedAccountBalance)}
                   </Text>
                 </View>
-                <ChevronDown size={16} color={colors.muted} style={{ transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }] }} />
+                <ChevronDown size={16} color="#8A949F" style={{ transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }] }} />
               </Pressable>
             ) : null}
             
@@ -553,27 +557,31 @@ export default function TopAccountBar() {
       {!mobile && user && !isAdmin ? (
         <Pressable
           onPress={() => setMenu(menu === 'account' ? null : 'account')}
+          onLayout={(event) => setAccountMenuAnchor(event.nativeEvent.layout)}
           className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center rounded-xl`}
           style={{
             paddingHorizontal: compactDesktop ? 10 : 12,
-            backgroundColor: darkMode ? '#1E232A' : '#F1F3F6',
+            backgroundColor: '#FFFFFF',
+            borderWidth: 1,
+            borderColor: '#E2E5E9',
             shadowColor: '#111827',
             shadowOpacity: menu === 'account' ? 0.14 : 0.04,
             shadowRadius: 8,
             shadowOffset: { width: 0, height: 3 },
             elevation: menu === 'account' ? 2 : 1,
             cursor: 'pointer',
+            transform: [{ translateX: -26 }],
           }}
         >
-          <View className="mr-2 rounded-lg px-2 py-1" style={{ backgroundColor: accountBadgeColor }}>
-            <Text className="text-[11px] font-bold" style={{ color: '#FFFFFF' }}>
+          <View className="mr-2 rounded-full px-2.5 py-1" style={{ backgroundColor: accountBadgeColor }}>
+            <Text className="text-[11px] font-bold" style={{ color: selectedAccountIsLive ? '#FFFFFF' : '#5F4300' }}>
               {accountBadgeLabel}
             </Text>
           </View>
-          <Text className="mr-2 text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>${money(selectedAccountBalance)}</Text>
+          <Text className="mr-2 text-sm font-bold" numberOfLines={1} style={{ color: '#1B2532' }}>${money(selectedAccountBalance)}</Text>
           <ChevronDown
             size={14}
-            color={colors.muted}
+            color="#8A949F"
             style={{
               transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }],
             }}
@@ -621,6 +629,7 @@ export default function TopAccountBar() {
                   onSelectAccount={selectAccount}
                   onClose={() => setMenu(null)}
                   onOpenPanel={openSidePanel}
+                  anchor={accountMenuAnchor}
                 />
               </Pressable>
             ) : null}
