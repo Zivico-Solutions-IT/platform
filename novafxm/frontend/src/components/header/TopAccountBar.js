@@ -411,9 +411,9 @@ export default function TopAccountBar() {
                 onPress={() => setMenu(menu === 'account' ? null : 'account')}
                 className="h-[40px] w-full flex-row items-center justify-between rounded-xl px-3"
                 style={{
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: darkMode ? '#1E232A' : '#FFFFFF',
                   borderWidth: 1,
-                  borderColor: '#E2E5E9',
+                  borderColor: darkMode ? '#353C45' : '#E2E5E9',
                   shadowColor: '#111827',
                   shadowOpacity: menu === 'account' ? 0.14 : 0.04,
                   shadowRadius: 8,
@@ -426,11 +426,11 @@ export default function TopAccountBar() {
                       {accountBadgeLabel}
                     </Text>
                   </View>
-                  <Text className="text-sm font-bold" numberOfLines={1} style={{ color: '#1B2532' }}>
+                  <Text className="text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>
                     ${money(selectedAccountBalance)}
                   </Text>
                 </View>
-                <ChevronDown size={16} color="#8A949F" style={{ transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }] }} />
+                <ChevronDown size={16} color={colors.muted} style={{ transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }] }} />
               </Pressable>
             ) : null}
             
@@ -558,12 +558,13 @@ export default function TopAccountBar() {
         <Pressable
           onPress={() => setMenu(menu === 'account' ? null : 'account')}
           onLayout={(event) => setAccountMenuAnchor(event.nativeEvent.layout)}
-          className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center rounded-xl`}
+          className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center justify-between rounded-xl`}
           style={{
+            width: compactDesktop ? 136 : 145,
             paddingHorizontal: compactDesktop ? 10 : 12,
-            backgroundColor: '#FFFFFF',
+            backgroundColor: darkMode ? '#1E232A' : '#FFFFFF',
             borderWidth: 1,
-            borderColor: '#E2E5E9',
+            borderColor: darkMode ? '#353C45' : '#E2E5E9',
             shadowColor: '#111827',
             shadowOpacity: menu === 'account' ? 0.14 : 0.04,
             shadowRadius: 8,
@@ -578,10 +579,10 @@ export default function TopAccountBar() {
               {accountBadgeLabel}
             </Text>
           </View>
-          <Text className="mr-2 text-sm font-bold" numberOfLines={1} style={{ color: '#1B2532' }}>${money(selectedAccountBalance)}</Text>
+          <Text className="mr-2 text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>${money(selectedAccountBalance)}</Text>
           <ChevronDown
             size={14}
-            color="#8A949F"
+            color={colors.muted}
             style={{
               transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }],
             }}
