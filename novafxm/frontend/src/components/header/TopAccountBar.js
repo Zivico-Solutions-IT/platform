@@ -28,7 +28,7 @@ export default function TopAccountBar() {
   const { width } = useWindowDimensions();
   const { currentSymbol, summary, selectedTradingAccount, setSelectedTradingAccount, sidePanel, setSidePanel, transactions } = useDemoTrading();
   const params = useLocalSearchParams();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, refreshUser } = useAuth();
   const { darkMode, colors, toggleTheme } = useAppTheme();
   const metricsScrollRef = useRef(null);
   const profileHoverCloseRef = useRef(null);
@@ -131,6 +131,24 @@ export default function TopAccountBar() {
     return ids.filter(Boolean);
   }, [adminNotificationData, colors, dashboard, isAdmin, transactions, user]);
   const unreadNotificationCount = notificationIds.filter((id) => !readNotificationIds.includes(id)).length;
+
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let active = true;
+    const refreshProfile = () => {
+      refreshUser().catch(() => {});
+    };
+    // Profile and verification state are deliberately refreshed separately
+    // from the heavy dashboard response.
+    refreshProfile();
+    const retryTimers = [3000, 9000].map((delay) => setTimeout(() => {
+      if (active) refreshProfile();
+    }, delay));
+    return () => {
+      active = false;
+      retryTimers.forEach(clearTimeout);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     let active = true;

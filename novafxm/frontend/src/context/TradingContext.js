@@ -54,13 +54,10 @@ export function TradingProvider({ children }) {
     const id = selectedTradingAccount?.id;
     return id && /^\d+$/.test(String(id)) ? id : undefined;
   }, [selectedTradingAccount?.id]);
-  // The authenticated profile is refreshed for presence and verification
-  // changes. Those updates must not restart the full trading-data batch.
-  const userId = user?.id || null;
-  const serverAccount = Boolean(userId && selectedAccountId);
+  const serverAccount = user && selectedAccountId;
 
   const syncAccount = useCallback(async () => {
-    if (!serverAccount) return;
+    if (!user || !serverAccount) return;
     // A dashboard can trigger syncs from the header, wallet flows, and the
     // interval. Never start another five-request batch while one is pending.
     if (syncRequestRef.current) return syncRequestRef.current;
@@ -84,13 +81,7 @@ export function TradingProvider({ children }) {
       if (account.tradingAccount) {
         setSelectedTradingAccount((current) => (
           current && String(current.id) === String(account.tradingAccount.id)
-            // Keep the existing state object when the account did not change.
-            // Replacing it on every poll causes avoidable layout re-renders.
-            ? (current.balance === account.tradingAccount.balance &&
-              current.leverage === account.tradingAccount.leverage &&
-              current.status === account.tradingAccount.status
-                ? current
-                : { ...current, ...account.tradingAccount })
+            ? { ...current, ...account.tradingAccount }
             : current
         ));
       }
@@ -102,19 +93,19 @@ export function TradingProvider({ children }) {
     } finally {
       if (syncRequestRef.current === request) syncRequestRef.current = null;
     }
-  }, [selectedAccountId, serverAccount]);
+  }, [selectedAccountId, serverAccount, user]);
 
   useEffect(() => {
     syncAccount().catch(() => {});
   }, [syncAccount]);
 
   useEffect(() => {
-    if (!serverAccount) return;
+    if (!user || !serverAccount) return;
     const interval = setInterval(() => {
       syncAccount().catch(() => {});
-    }, 10000);
+    }, 4000);
     return () => clearInterval(interval);
-  }, [syncAccount, serverAccount]);
+  }, [syncAccount, user, serverAccount]);
 
   useEffect(() => {
     if (authLoading || user) return;
