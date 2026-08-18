@@ -14,4 +14,6 @@ const TradingAccount = sequelize.define('TradingAccount', {
   isPrimary: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_primary' },
 }, { tableName: 'trading_accounts' });
 
+
+
 module.exports = TradingAccount;
