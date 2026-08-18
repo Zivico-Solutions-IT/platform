@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { ChevronDown, Sun, Moon, UserRound, Wallet, ArrowUp, Bell, LayoutDashboard, Activity } from 'lucide-react-native';
+import { ChevronDown, Sun, Moon, UserRound, Wallet, ArrowUp, Bell, LayoutDashboard } from 'lucide-react-native';
 import Svg, { Polyline, Defs, LinearGradient, Stop, Polygon, Circle, RadialGradient } from 'react-native-svg';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
@@ -70,6 +70,9 @@ export default function TopAccountBar() {
   }, [accounts, fallbackAccount, selectedTradingAccount]);
   const selectedAccount = tradingAccounts.find((account) => String(account.id) === String(selectedTradingAccount?.id)) || selectedTradingAccount || tradingAccounts[0];
   const selectedAccountBalance = Number.isFinite(Number(selectedAccount?.balance)) ? Number(selectedAccount.balance) : summary.balance;
+  const selectedAccountIsLive = String(selectedAccount?.type || '').toLowerCase() === 'live';
+  const accountBadgeColor = selectedAccountIsLive ? colors.success : '#F59E0B';
+  const accountBadgeLabel = selectedAccountIsLive ? 'Live' : 'Demo';
   const routeAccountId = params.accountId ? String(params.accountId) : '';
 
   const summaryBalance = Number(summary.balance || 0);
@@ -404,28 +407,26 @@ export default function TopAccountBar() {
             {user ? (
               <Pressable
                 onPress={() => setMenu(menu === 'account' ? null : 'account')}
-                className="h-[40px] flex-1 flex-row items-center justify-between rounded-xl border px-3"
+                className="h-[40px] flex-1 flex-row items-center justify-between rounded-xl px-3"
                 style={{
-                  backgroundColor: menu === 'account' ? (darkMode ? '#1E232A' : '#FAFAFA') : colors.panel,
-                  borderColor: menu === 'account' ? colors.primary : colors.border,
-                  shadowColor: colors.primary,
-                  shadowOpacity: menu === 'account' ? (darkMode ? 0.3 : 0.2) : 0,
+                  backgroundColor: darkMode ? '#1E232A' : '#F1F3F6',
+                  shadowColor: '#111827',
+                  shadowOpacity: menu === 'account' ? 0.14 : 0.04,
                   shadowRadius: 8,
-                  elevation: menu === 'account' ? 2 : 0,
+                  elevation: menu === 'account' ? 2 : 1,
                 }}
               >
                 <View className="flex-row items-center">
-                  <View className="mr-2 flex-row items-center justify-center rounded px-1.5 py-1" style={{ backgroundColor: `${colors.primary}1A` }}>
-                    <Activity size={10} color={colors.primary} className="mr-1" />
-                    <Text className="text-[9px] font-bold uppercase tracking-wider" style={{ color: colors.primary }}>
-                      {selectedAccount?.type || 'Demo'}
+                  <View className="mr-2 rounded-lg px-2 py-1" style={{ backgroundColor: accountBadgeColor }}>
+                    <Text className="text-[11px] font-bold" style={{ color: '#FFFFFF' }}>
+                      {accountBadgeLabel}
                     </Text>
                   </View>
-                  <Text className="text-xs font-bold" numberOfLines={1} style={{ color: colors.text }}>
-                    {money(selectedAccountBalance)} <Text className="text-[9px] font-bold" style={{ color: colors.muted }}>USD</Text>
+                  <Text className="text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>
+                    ${money(selectedAccountBalance)}
                   </Text>
                 </View>
-                <ChevronDown size={14} color={colors.muted} />
+                <ChevronDown size={16} color={colors.muted} style={{ transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }] }} />
               </Pressable>
             ) : null}
             
@@ -552,25 +553,24 @@ export default function TopAccountBar() {
       {!mobile && user && !isAdmin ? (
         <Pressable
           onPress={() => setMenu(menu === 'account' ? null : 'account')}
-          className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center rounded-lg border`}
+          className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center rounded-xl`}
           style={{
             paddingHorizontal: compactDesktop ? 10 : 12,
-            backgroundColor: menu === 'account' ? colors.surface : colors.panel,
-            borderColor: menu === 'account' ? colors.primary : colors.border,
-            shadowColor: colors.primary,
-            shadowOpacity: menu === 'account' ? (darkMode ? 0.3 : 0.2) : 0,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: menu === 'account' ? 3 : 0,
+            backgroundColor: darkMode ? '#1E232A' : '#F1F3F6',
+            shadowColor: '#111827',
+            shadowOpacity: menu === 'account' ? 0.14 : 0.04,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 3 },
+            elevation: menu === 'account' ? 2 : 1,
             cursor: 'pointer',
           }}
         >
-          <View className="mr-2 flex-row items-center justify-center rounded px-2 py-1" style={{ backgroundColor: `${colors.primary}1A` }}>
-            <Activity size={12} color={colors.primary} className="mr-1.5" />
-            <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.primary }}>
-              {selectedAccount?.type || 'Demo'}
+          <View className="mr-2 rounded-lg px-2 py-1" style={{ backgroundColor: accountBadgeColor }}>
+            <Text className="text-[11px] font-bold" style={{ color: '#FFFFFF' }}>
+              {accountBadgeLabel}
             </Text>
           </View>
+          <Text className="mr-2 text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>${money(selectedAccountBalance)}</Text>
           <ChevronDown
             size={14}
             color={colors.muted}
