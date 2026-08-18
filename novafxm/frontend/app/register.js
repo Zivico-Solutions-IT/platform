@@ -341,6 +341,7 @@ export default function RegisterScreen() {
     if (!trimmedEmail) return setError('Email is required.');
     if (!emailPattern.test(trimmedEmail)) return setError('Enter a valid email address.');
     if (!trimmedCountry) return setError('Country code selection is required via phone input.');
+    if (!form.referralCode.trim()) return setError('Referral code is required.');
     if (phoneError) return setError(phoneError);
     if (!form.agree) return setError('You must agree to the Terms of service and Privacy policies.');
     if (form.password !== form.confirmPassword) return setError('Passwords do not match.');
@@ -493,12 +494,12 @@ export default function RegisterScreen() {
 
               {/* Referral Code Field */}
               <View className="mb-[12px]">
-                <Text style={[labelStyle, { marginBottom: 6 }]}>Referral Code (if provided)</Text>
+                <Text style={[labelStyle, { marginBottom: 6 }]}>Referral Code *</Text>
                 <View className="rounded-[9px]" style={getDynamicInputStyle('referralCode')}>
                   <TextInput
                     className="w-full px-[13px] py-[11px] text-[14px]"
                     style={{ color: '#012b15' }}
-                    placeholder="Enter referral code if required"
+                    placeholder="Enter referral code"
                     placeholderTextColor="#9ab5a5"
                     autoCapitalize="none"
                     autoCorrect={false}
