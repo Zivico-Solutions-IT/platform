@@ -1,25 +1,47 @@
-import { ScrollView, Text } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { X } from 'lucide-react-native';
+import RequireAuth from '../src/components/auth/RequireAuth';
 import WithdrawForm from '../src/components/wallet/WithdrawForm';
-import { useWallet } from '../src/hooks/useWallet';
-import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
+import { useAuth } from '../src/hooks/useAuth';
+import { useDemoTrading } from '../src/hooks/useDemoTrading';
+import { useWallet } from '../src/hooks/useWallet';
 
-export default function WithdrawScreen() {
-  const { user } = useAuth();
+function WithdrawScreen() {
   const { colors } = useAppTheme();
+  const { user } = useAuth();
+  const { selectedTradingAccount } = useDemoTrading();
   const { summary, transactions, withdraw, loading } = useWallet();
-  const fundingLocked = Boolean(user && user.verificationStatus !== 'approved');
+  const locked = user?.verificationStatus !== 'approved';
+
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[650px] p-3 sm:p-6">
-      <Text className="mb-5 text-2xl font-medium" style={{ color: colors.text }}>New Withdrawal</Text>
-      <WithdrawForm
-        onSubmit={(values) => withdraw(values, Boolean(user))}
-        loading={loading}
-        disabled={fundingLocked}
-        disabledMessage="Verification approval is required before withdrawals."
-        summary={summary}
-        transactions={transactions}
-      />
-    </ScrollView>
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
+        <View className="mb-6 flex-row items-center justify-between">
+          <View>
+            <Text className="text-2xl font-semibold" style={{ color: colors.text }}>Withdraw</Text>
+            <Text className="mt-1 text-sm" style={{ color: colors.muted }}>Request funds from your live account.</Text>
+          </View>
+          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: colors.surface }}>
+            <X size={24} color={colors.text} strokeWidth={1.8} />
+          </Pressable>
+        </View>
+        <WithdrawForm
+          onSubmit={(values) => withdraw(values, true)}
+          loading={loading}
+          disabled={locked}
+          disabledMessage={locked ? 'Verification approval is required before withdrawals.' : ''}
+          summary={summary}
+          transactions={transactions}
+          selectedAccount={selectedTradingAccount}
+          onMissingDetailsPress={() => router.push({ pathname: '/settings', params: { section: 'payments', returnTo: 'withdraw' } })}
+        />
+      </ScrollView>
+    </View>
   );
+}
+
+export default function WithdrawPage() {
+  return <RequireAuth><WithdrawScreen /></RequireAuth>;
 }

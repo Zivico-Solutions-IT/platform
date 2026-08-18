@@ -380,11 +380,6 @@ export default function TopAccountBar() {
                   <View style={iconHoverStyle('mobile-admin-dashboard')}><LayoutDashboard color={iconColor('mobile-admin-dashboard')} size={16} /></View>
                 </Pressable>
               ) : null}
-              {user && !isAdmin ? (
-                <Pressable {...hoverProps('mobile-wallet')} onPress={openWalletMenu} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-wallet', { backgroundColor: `${colors.success}1A` })}>
-                  <View style={iconHoverStyle('mobile-wallet')}><Wallet color={colors.success} size={16} /></View>
-                </Pressable>
-              ) : null}
               {user ? (
                 <Pressable {...hoverProps('mobile-notifications')} onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-notifications', { backgroundColor: `${colors.text}08` })}>
                   <View style={iconHoverStyle('mobile-notifications')}><Bell color={iconColor('mobile-notifications')} size={16} /></View>

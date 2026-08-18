@@ -46,7 +46,10 @@ export default function FundingMenu({ selectedAccount, summary, onClose, onSwitc
   const contentAnim = useRef(new Animated.Value(0)).current;
   const mobile = width < 760;
   const panelWidth = mobile ? width : 410;
-  const panelHeight = height;
+  // On phones, funding is a bottom sheet rather than a full-screen page.
+  // Leave a visible strip of the trading screen above it for context.
+  const panelHeight = mobile ? Math.min(height - 88, 680) : height;
+  const entranceDistance = mobile ? panelHeight : panelWidth;
   const balance = Number.isFinite(Number(selectedAccount?.balance))
     ? Number(selectedAccount.balance)
     : Number(summary?.balance || 0);
@@ -60,7 +63,7 @@ export default function FundingMenu({ selectedAccount, summary, onClose, onSwitc
   };
 
   useEffect(() => {
-    slideAnim.setValue(panelWidth);
+    slideAnim.setValue(entranceDistance);
     fadeAnim.setValue(0);
     contentAnim.setValue(0);
 
@@ -83,7 +86,7 @@ export default function FundingMenu({ selectedAccount, summary, onClose, onSwitc
         useNativeDriver: true,
       }),
     ]).start();
-  }, [fadeAnim, slideAnim, contentAnim, panelWidth]);
+  }, [fadeAnim, slideAnim, contentAnim, entranceDistance]);
 
   return (
     <Animated.View
@@ -91,25 +94,26 @@ export default function FundingMenu({ selectedAccount, summary, onClose, onSwitc
       style={{
         position: 'absolute',
         right: 0,
-        top: 0,
-        bottom: mobile ? 0 : undefined,
+        top: mobile ? undefined : 0,
+        bottom: 0,
         left: mobile ? 0 : undefined,
         zIndex: 50,
         width: mobile ? '100%' : panelWidth,
         height: panelHeight,
-        paddingTop: mobile ? 28 : 24,
+        paddingTop: mobile ? 24 : 24,
         paddingBottom: mobile ? 24 : 20,
         paddingHorizontal: mobile ? 20 : 20,
         backgroundColor: colors.panel,
         borderLeftWidth: mobile ? 0 : 1,
         borderLeftColor: colors.border,
-        borderTopLeftRadius: mobile ? 0 : 20,
+        borderTopLeftRadius: mobile ? 24 : 20,
+        borderTopRightRadius: mobile ? 24 : 0,
         borderBottomLeftRadius: mobile ? 0 : 20,
         shadowColor: '#000',
         shadowOpacity: 0.3,
         shadowRadius: 28,
         opacity: fadeAnim,
-        transform: [{ translateX: slideAnim }],
+        transform: [mobile ? { translateY: slideAnim } : { translateX: slideAnim }],
       }}
     >
       <ScrollView showsVerticalScrollIndicator={false}>

@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
-import { Briefcase, CandlestickChart, ListFilter } from 'lucide-react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, Clock3, ListFilter, Wallet } from 'lucide-react-native';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
 import OrderPanel from '../order/OrderPanel';
@@ -118,6 +118,31 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
   );
 }
 
+function MobileFundingOptions({ colors, onDeposit, onWithdraw, onHistory }) {
+  const actions = [
+    { label: 'Deposit', icon: ArrowUp, onPress: onDeposit },
+    { label: 'Withdraw', icon: ArrowDown, onPress: onWithdraw },
+    { label: 'Transactions History', icon: Clock3, onPress: onHistory },
+  ];
+
+  return (
+    <View className="rounded-xl border p-2" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <Text className="px-1 pb-3 pt-1 text-lg font-semibold" style={{ color: colors.text }}>Funding Options</Text>
+      {actions.map(({ label, icon: Icon, onPress }) => (
+        <Pressable
+          key={label}
+          onPress={onPress}
+          className="mb-2 flex-row items-center rounded-xl border px-4 py-4"
+          style={{ backgroundColor: colors.panel, borderColor: colors.border }}
+        >
+          <Icon size={21} color={colors.text} strokeWidth={1.8} />
+          <Text className="ml-4 text-base font-medium" style={{ color: colors.text }}>{label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export default function TradingLayout() {
   const params = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
@@ -161,6 +186,15 @@ export default function TradingLayout() {
             <ScrollView className="flex-1 p-2" contentContainerStyle={{ paddingBottom: 16 }}>
               <OpenPositions />
             </ScrollView>
+          ) : mobileTab === 'wallet' ? (
+            <View className="flex-1 p-2">
+              <MobileFundingOptions
+                colors={colors}
+                onDeposit={() => router.push('/deposit')}
+                onWithdraw={() => router.push('/withdraw')}
+                onHistory={() => router.push({ pathname: '/trading', params: { panel: 'history' } })}
+              />
+            </View>
           ) : (
             <View className="flex-1 flex-col min-h-0">
               <View className="flex-1 min-h-[340px] min-w-0">
@@ -242,6 +276,15 @@ export default function TradingLayout() {
               >
                 Position
               </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setMobileTab('wallet')}
+              className="items-center justify-center flex-1 py-0.5"
+            >
+              <View className="h-5 w-10 items-center justify-center rounded-full" style={{ backgroundColor: mobileTab === 'wallet' ? `${colors.success}22` : 'transparent' }}>
+                <Wallet size={16} color={mobileTab === 'wallet' ? colors.success : colors.muted} />
+              </View>
+              <Text className="text-[9px] mt-0.5 font-medium" style={{ color: mobileTab === 'wallet' ? colors.success : colors.text }}>Wallet</Text>
             </Pressable>
           </View>
         ) : null}
