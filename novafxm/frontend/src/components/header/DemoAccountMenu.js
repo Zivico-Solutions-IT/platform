@@ -1,6 +1,7 @@
 import { Check, Circle, Monitor, Repeat2 } from 'lucide-react-native';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
+import { useAppTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
 import { money } from '../../utils/formatters';
 
@@ -22,6 +23,7 @@ function accountLabel(account) {
 
 export default function DemoAccountMenu({ accounts = [], selectedAccount, onSelectAccount, onClose, onOpenPanel, anchor }) {
   const { user } = useAuth();
+  const { darkMode, colors } = useAppTheme();
   const { notify } = useToast();
   const { width } = useWindowDimensions();
   
@@ -52,9 +54,9 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
         maxWidth: isMobile ? undefined : 382,
         top: isMobile ? 96 : 60,
         left: isMobile ? 4 : (anchor ? Math.max(12, anchor.x - 26) : 'auto'),
-        right: isMobile ? 4 : (anchor ? 'auto' : 190),
-        backgroundColor: '#FFFFFF',
-        borderColor: '#E7E9ED',
+        right: isMobile ? 12 : (anchor ? 'auto' : 190),
+        backgroundColor: darkMode ? '#1E232A' : '#FFFFFF',
+        borderColor: darkMode ? '#353C45' : '#E7E9ED',
         shadowColor: '#000',
         shadowOpacity: 0.13,
         shadowRadius: 22,
@@ -81,22 +83,22 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
             }}
             className="mb-2 flex-row items-center rounded-xl border px-3 py-2.5"
             style={{
-              backgroundColor: selected ? '#F4FCF7' : '#FFFFFF',
-              borderColor: selected ? '#BFE5CC' : '#E3E5E8',
+              backgroundColor: selected ? (darkMode ? '#1C3024' : '#F4FCF7') : (darkMode ? '#242B33' : '#FFFFFF'),
+              borderColor: selected ? (darkMode ? '#3C8055' : '#BFE5CC') : (darkMode ? '#353C45' : '#E3E5E8'),
             }}
           >
             <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: live ? '#FCF5E5' : '#EAF8EF' }}>
               {live ? <Repeat2 size={18} color={accent} /> : <Monitor size={18} color={accent} />}
             </View>
             <View className="min-w-0 flex-1">
-              <Text className="text-sm font-bold" numberOfLines={1} style={{ color: '#1B2532' }}>{accountLabel(account)}</Text>
-              <Text className="mt-0.5 text-xs font-medium" numberOfLines={1} style={{ color: '#66707D' }}>
+              <Text className="text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>{accountLabel(account)}</Text>
+              <Text className="mt-0.5 text-xs font-medium" numberOfLines={1} style={{ color: colors.muted }}>
                 {accountReference(account)} · {account.type || 'Demo'}
               </Text>
             </View>
             <View className="ml-2 items-end">
-              <Text className="text-base font-bold" style={{ color: selected ? '#1B2532' : '#9AA2AC' }}>{money(account.balance || 0)}</Text>
-              <Text className="text-xs" style={{ color: '#737D89' }}>{account.currency || 'USD'}</Text>
+              <Text className="text-base font-bold" style={{ color: selected ? colors.text : (darkMode ? '#8F99A5' : '#9AA2AC') }}>{money(account.balance || 0)}</Text>
+              <Text className="text-xs" style={{ color: colors.muted }}>{account.currency || 'USD'}</Text>
             </View>
             <View className="ml-3">
               {selected ? (
