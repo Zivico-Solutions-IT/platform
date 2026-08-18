@@ -62,8 +62,9 @@ exports.register = async (req, res, next) => {
     const startingBalance = selectedAccountType === 'Demo' ? 5000 : 0;
     const normalizedEmail = email.trim().toLowerCase();
     if (await User.findOne({ where: { email: normalizedEmail } })) return res.status(409).json({ message: 'Email already registered.' });
-    // NovaFXM public registrations are controlled by the one code configured
-    // in CRM. Personal referral links use referralInviteCode separately.
+    // A master-configured code optionally protects public registrations.
+    // If it is deleted, ordinary public registration remains available.
+    // Personal referral links use referralInviteCode separately.
     const headerProjectId = Number.parseInt(req.headers['x-project-id'], 10);
     const project = Number.isInteger(headerProjectId)
       ? await Project.findByPk(headerProjectId)
@@ -72,7 +73,7 @@ exports.register = async (req, res, next) => {
 
     const configuredCode = await RegistrationCode.findOne({ where: { projectId: project.id } });
     const suppliedCode = String(referralCode || '').trim().toUpperCase();
-    if (!configuredCode || suppliedCode !== String(configuredCode.code).trim().toUpperCase()) {
+    if (configuredCode && suppliedCode !== String(configuredCode.code).trim().toUpperCase()) {
       return res.status(403).json({ message: 'Please contact support for assistance.' });
     }
 
