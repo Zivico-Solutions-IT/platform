@@ -428,24 +428,7 @@ export default function TopAccountBar() {
                 <ChevronDown size={14} color={colors.muted} />
               </Pressable>
             ) : null}
-            {/* {user && !isAdmin ? (
-              <Pressable
-                {...hoverProps('mobile-deposit')}
-                onPress={() => openSidePanel('deposit')}
-                className="h-[40px] flex-row items-center justify-center rounded-xl px-3"
-                style={[
-                  {
-                    backgroundColor: 'transparent',
-                    borderWidth: 1.5,
-                    borderColor: colors.success,
-                  },
-                  hoveredAction === 'mobile-deposit' ? { backgroundColor: `${colors.success}1A` } : null
-                ]}
-              >
-                <ArrowUp color={colors.success} size={14} strokeWidth={2.5} />
-                <Text className="ml-1 text-xs font-bold" style={{ color: colors.success }}>Deposit</Text>
-              </Pressable>
-            ) : null} */}
+            
           </View>
         </View>
       ) : (
