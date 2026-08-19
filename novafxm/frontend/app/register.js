@@ -350,13 +350,17 @@ export default function RegisterScreen() {
     setError('');
 
     try {
-      await register({
+      const result = await register({
         ...form,
         name: `${trimmedFirstName} ${trimmedLastName}`,
         email: trimmedEmail,
         country: trimmedCountry,
         phone: trimmedPhone,
       });
+      if (result?.verificationRequired) {
+        router.replace({ pathname: '/verify-email', params: { email: trimmedEmail } });
+        return;
+      }
       router.replace('/trading');
     } catch (requestError) {
       setError(

@@ -5,6 +5,8 @@ export const authService = {
   // password. A busy production database can take longer than the generic
   // API timeout, so do not show a false "backend is running" error at 9s.
   register: (values) => api.post('/auth/register', values, { timeout: 45000 }).then((response) => response.data),
+  verifyEmail: (values) => api.post('/auth/verify-email', values, { timeout: 45000 }).then((response) => response.data),
+  resendEmailVerification: (values) => api.post('/auth/resend-email-verification', values, { timeout: 45000 }).then((response) => response.data),
   login: (values) => api.post('/auth/login', values).then((response) => response.data),
   presence: () => api.post('/auth/presence').then((response) => response.data),
   offline: () => api.post('/auth/offline').then((response) => response.data),

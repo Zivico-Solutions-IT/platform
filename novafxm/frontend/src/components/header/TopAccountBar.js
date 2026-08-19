@@ -400,7 +400,7 @@ export default function TopAccountBar() {
             </View>
           </View>
           {/* Row 2: Account Select & Action Buttons */}
-          <View className="w-full flex-row items-center gap-2">
+          <View className="w-full flex-row items-center gap-2"w>
             {user ? (
               <Pressable
                 onPress={() => setMenu(menu === 'account' ? null : 'account')}

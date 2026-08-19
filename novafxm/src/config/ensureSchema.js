@@ -172,6 +172,27 @@ async function ensureSchema() {
     allowNull: true,
     after: 'reset_password_token',
   });
+  await addColumnIfMissing(queryInterface, 'users', 'email_verification_token', {
+    type: DataTypes.STRING(64),
+    allowNull: true,
+    after: 'reset_password_expires',
+  });
+  await addColumnIfMissing(queryInterface, 'users', 'email_verification_expires', {
+    type: DataTypes.DATE,
+    allowNull: true,
+    after: 'email_verification_token',
+  });
+  const emailVerifiedAtWasMissing = !(await hasColumn(queryInterface, 'users', 'email_verified_at'));
+  await addColumnIfMissing(queryInterface, 'users', 'email_verified_at', {
+    type: DataTypes.DATE,
+    allowNull: true,
+    after: 'email_verification_expires',
+  });
+  // Accounts created before email verification was introduced must keep
+  // working after deployment; only new registrations go through the flow.
+  if (emailVerifiedAtWasMissing) {
+    await queryInterface.sequelize.query('UPDATE users SET email_verified_at = NOW() WHERE email_verified_at IS NULL');
+  }
   await addColumnIfMissing(queryInterface, 'users', 'last_login_at', {
     type: DataTypes.DATE,
     allowNull: true,

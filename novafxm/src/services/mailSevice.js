@@ -41,6 +41,28 @@ const sendPasswordResetCode = async ({ to, code }) => {
   });
 };
 
+const sendEmailVerificationCode = async ({ to, code }) => {
+  const from = process.env.MAIL_FROM || process.env.SMTP_USER;
+  const appName = process.env.APP_NAME || 'NovaFXM';
+  const transporter = createTransporter();
+
+  await transporter.sendMail({
+    from,
+    to,
+    subject: `${appName} email verification code`,
+    text: `Your ${appName} verification code is ${code}. This code expires in 15 minutes.`,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111">
+        <h2>Verify your ${appName} email</h2>
+        <p>Enter this code to finish creating your account:</p>
+        <p style="font-size:28px;font-weight:700;letter-spacing:4px">${code}</p>
+        <p>This code expires in 15 minutes. If you did not create an account, you can ignore this email.</p>
+      </div>
+    `,
+  });
+};
+
 module.exports = {
   sendPasswordResetCode,
+  sendEmailVerificationCode,
 };

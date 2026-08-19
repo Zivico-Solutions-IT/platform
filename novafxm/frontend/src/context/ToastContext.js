@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react-native';
 import { useAppTheme } from './ThemeContext';
 
@@ -14,7 +14,9 @@ const toneStyles = {
 
 export function ToastProvider({ children }) {
   const { darkMode, colors } = useAppTheme();
+  const { width } = useWindowDimensions();
   const [toasts, setToasts] = useState([]);
+  const mobile = width < 760;
 
   const dismiss = useCallback((id) => {
     setToasts((current) => current.filter((toast) => toast.id !== id));
@@ -45,8 +47,14 @@ export function ToastProvider({ children }) {
         {children}
         <View
           pointerEvents="box-none"
-          className="absolute right-3 top-3 z-50 w-[360px] max-w-[92vw]"
-          style={{ elevation: 50 }}
+          style={{
+            position: 'absolute',
+            zIndex: 50,
+            elevation: 50,
+            ...(mobile
+              ? { left: 12, right: 12, bottom: 60 }
+              : { right: 12, top: 12, width: 360, maxWidth: '92vw' }),
+          }}
         >
           {toasts.map((toast) => {
             const tone = toneStyles[toast.type] || toneStyles.info;

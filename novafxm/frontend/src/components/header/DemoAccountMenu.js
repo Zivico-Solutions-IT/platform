@@ -36,8 +36,14 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
     currency: 'USD',
   };
   
-  const tradingAccounts = accounts.length ? accounts : [fallbackAccount];
+  const tradingAccounts = [...(accounts.length ? accounts : [fallbackAccount])].sort((left, right) => {
+    const rank = (account) => String(account?.type || '').toLowerCase() === 'live' ? 1 : 0;
+    return rank(left) - rank(right);
+  });
   const activeAccount = selectedAccount || tradingAccounts[0];
+  const menuBackground = darkMode ? '#1E232A' : colors.panel;
+  const cardBackground = darkMode ? '#242B33' : colors.surface;
+  const defaultBorder = darkMode ? '#353C45' : colors.border;
   
   const isMobile = width < 992;
 
@@ -50,13 +56,13 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
     <View
       className="absolute z-50 rounded-[20px] border p-2.5 shadow-2xl"
       style={{
-        width: isMobile ? undefined : 382,
-        maxWidth: isMobile ? undefined : 382,
+        width: isMobile ? Math.max(0, width - 24) : 382,
+        maxWidth: isMobile ? Math.max(0, width - 24) : 382,
         top: isMobile ? 96 : 60,
-        left: isMobile ? 4 : (anchor ? Math.max(12, anchor.x - 26) : 'auto'),
-        right: isMobile ? 12 : (anchor ? 'auto' : 190),
-        backgroundColor: darkMode ? '#1E232A' : '#FFFFFF',
-        borderColor: darkMode ? '#353C45' : '#E7E9ED',
+        left: isMobile ? 12 : (anchor ? Math.max(12, anchor.x - 26) : 'auto'),
+        right: isMobile ? undefined : (anchor ? 'auto' : 190),
+        backgroundColor: menuBackground,
+        borderColor: defaultBorder,
         shadowColor: '#000',
         shadowOpacity: 0.13,
         shadowRadius: 22,
@@ -67,7 +73,7 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
       {tradingAccounts.map((account) => {
         const selected = String(account.id) === String(activeAccount?.id);
         const live = account.type === 'Live';
-        const accent = live ? '#BF8B20' : '#37A866';
+        const accent = live ? colors.success : colors.primary;
 
         return (
           <Pressable
@@ -83,11 +89,11 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
             }}
             className="mb-2 flex-row items-center rounded-xl border px-3 py-2.5"
             style={{
-              backgroundColor: selected ? (darkMode ? '#1C3024' : '#F4FCF7') : (darkMode ? '#242B33' : '#FFFFFF'),
-              borderColor: selected ? (darkMode ? '#3C8055' : '#BFE5CC') : (darkMode ? '#353C45' : '#E3E5E8'),
+              backgroundColor: selected ? (darkMode ? '#1C3024' : `${colors.success}12`) : cardBackground,
+              borderColor: selected ? (darkMode ? '#3C8055' : `${colors.success}55`) : defaultBorder,
             }}
           >
-            <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: live ? '#FCF5E5' : '#EAF8EF' }}>
+            <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: live ? `${colors.success}16` : `${colors.primary}16` }}>
               {live ? <Repeat2 size={18} color={accent} /> : <Monitor size={18} color={accent} />}
             </View>
             <View className="min-w-0 flex-1">
@@ -105,7 +111,7 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
                 <View className="h-5 w-5 items-center justify-center rounded-full" style={{ backgroundColor: '#37A866' }}>
                   <Check size={13} color="#FFFFFF" strokeWidth={3} />
                 </View>
-              ) : <Circle size={20} color="#D7DCE1" strokeWidth={1.2} />}
+              ) : <Circle size={20} color={darkMode ? '#667085' : colors.border} strokeWidth={1.2} />}
             </View>
           </Pressable>
         );
@@ -113,7 +119,7 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
       <Pressable
         onPress={openAccountManager}
         className="mt-0.5 items-center rounded-xl py-3"
-        style={{ backgroundColor: '#E0B231' }}
+        style={{ backgroundColor: colors.primary }}
       >
         <Text className="text-sm font-bold" style={{ color: '#1B1B1B' }}>Manage Accounts</Text>
       </Pressable>

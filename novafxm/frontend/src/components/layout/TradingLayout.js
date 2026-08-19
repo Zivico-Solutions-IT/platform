@@ -126,14 +126,14 @@ function MobileFundingOptions({ colors, onDeposit, onWithdraw, onHistory }) {
   ];
 
   return (
-    <View className="rounded-xl border p-2" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-      <Text className="px-1 pb-3 pt-1 text-lg font-semibold" style={{ color: colors.text }}>Funding Options</Text>
+    <View className="px-1 pt-1">
+      <Text className="pb-3 pt-1 text-lg font-semibold" style={{ color: colors.text }}>Funding Options</Text>
       {actions.map(({ label, icon: Icon, onPress }) => (
         <Pressable
           key={label}
           onPress={onPress}
           className="mb-2 flex-row items-center rounded-xl border px-4 py-4"
-          style={{ backgroundColor: colors.panel, borderColor: colors.border }}
+          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
         >
           <Icon size={21} color={colors.text} strokeWidth={1.8} />
           <Text className="ml-4 text-base font-medium" style={{ color: colors.text }}>{label}</Text>

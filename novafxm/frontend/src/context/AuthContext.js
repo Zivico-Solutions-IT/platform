@@ -100,7 +100,10 @@ export function AuthProvider({ children }) {
     const result = await authService.login(values);
     return storeSession(result);
   }, [storeSession]);
-  const register = useCallback(async (values) => storeSession(await authService.register(values)), [storeSession]);
+  // Registration now stops at email verification, so do not create a local
+  // session until the user enters the code sent to their inbox.
+  const register = useCallback((values) => authService.register(values), []);
+  const verifyEmail = useCallback(async (values) => storeSession(await authService.verifyEmail(values)), [storeSession]);
 
   const logout = useCallback(async () => {
     try {
@@ -201,8 +204,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, updateProfile, submitVerification, refreshUser, isAdmin: hasConsoleUi(user), isMaster: user?.role === 'master' }),
-    [user, loading, login, register, logout, updateProfile, submitVerification, refreshUser],
+    () => ({ user, loading, login, register, verifyEmail, logout, updateProfile, submitVerification, refreshUser, isAdmin: hasConsoleUi(user), isMaster: user?.role === 'master' }),
+    [user, loading, login, register, verifyEmail, logout, updateProfile, submitVerification, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

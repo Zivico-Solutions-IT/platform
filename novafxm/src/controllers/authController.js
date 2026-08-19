@@ -3,16 +3,17 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const sequelize = require('../config/db');
-const { User, Wallet, TradingAccount, Project, AdminNotification, RegistrationCode } = require('../models');
+const { User, Wallet, TradingAccount, Project, RegistrationCode } = require('../models');
 const { ensureReferralCode } = require('../services/dashboardService');
-const { sendPasswordResetCode } = require('../services/mailSevice');
-const { getIo } = require('../config/socketIo');
+const { sendPasswordResetCode, sendEmailVerificationCode } = require('../services/mailSevice');
 
 const publicUser = (user) => {
   const values = user.toJSON ? user.toJSON() : user;
   delete values.password;
   delete values.resetPasswordToken;
   delete values.resetPasswordExpires;
+  delete values.emailVerificationToken;
+  delete values.emailVerificationExpires;
   // Documents are fetched only by the protected verification endpoints. Sending
   // multi-megabyte base64 files with every profile refresh delays KYC UI updates.
   delete values.idProofImage;
@@ -31,6 +32,17 @@ const tokenFor = (user) => jwt.sign({ id: user.id, role: user.role, email: user.
 const onlineUntil = () => new Date(Date.now() + ONLINE_WINDOW_MS);
 
 const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+const emailVerificationCode = () => String(crypto.randomInt(100000, 1000000));
+const emailVerificationExpiry = () => new Date(Date.now() + 15 * 60 * 1000);
+
+const issueEmailVerificationCode = async (user) => {
+  const code = emailVerificationCode();
+  await user.update({
+    emailVerificationToken: hashResetToken(code),
+    emailVerificationExpires: emailVerificationExpiry(),
+  });
+  await sendEmailVerificationCode({ to: user.email, code });
+};
 
 const ensureStaffClientAccounts = async (user) => {
   if (!['agent', 'manager', 'master'].includes(user?.role)) return;
@@ -61,7 +73,14 @@ exports.register = async (req, res, next) => {
     const selectedAccountType = accountType === 'Live' ? 'Live' : 'Demo';
     const startingBalance = selectedAccountType === 'Demo' ? 5000 : 0;
     const normalizedEmail = email.trim().toLowerCase();
-    if (await User.findOne({ where: { email: normalizedEmail } })) return res.status(409).json({ message: 'Email already registered.' });
+    const existingUser = await User.findOne({ where: { email: normalizedEmail } });
+    if (existingUser) {
+      if (existingUser.emailVerifiedAt || existingUser.role !== 'user') {
+        return res.status(409).json({ message: 'Email already registered.' });
+      }
+      await issueEmailVerificationCode(existingUser);
+      return res.json({ verificationRequired: true, email: normalizedEmail, message: 'A new verification code was sent to your email.' });
+    }
     // NovaFXM public registrations are controlled by the one code configured
     // in CRM. Personal referral links use referralInviteCode separately.
     const headerProjectId = Number.parseInt(req.headers['x-project-id'], 10);
@@ -81,6 +100,7 @@ exports.register = async (req, res, next) => {
       : null;
     const projectId = project.id;
 
+    const verificationCode = emailVerificationCode();
     const user = await sequelize.transaction(async (transaction) => {
       const created = await User.create({
         name: name.trim(),
@@ -93,6 +113,8 @@ exports.register = async (req, res, next) => {
         verificationStatus: 'unverified',
         referredById: referrer?.id || null,
         projectId: projectId,
+        emailVerificationToken: hashResetToken(verificationCode),
+        emailVerificationExpires: emailVerificationExpiry(),
       }, { transaction });
       const walletBalance = selectedAccountType === 'Live' ? startingBalance : 0;
       // Registration is public, so it does not run inside the authenticated
@@ -118,64 +140,18 @@ exports.register = async (req, res, next) => {
       return created;
     });
     await ensureReferralCode(user);
-    await user.update({ lastLoginAt: new Date(), onlineUntil: onlineUntil() });
-
-    // Create admin notification for new user registration
     try {
-      // Reload user with latest fields (referralCode, etc.)
-      const freshUser = await User.findByPk(user.id, {
-        attributes: { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires', 'idProofImage', 'addressProofImage', 'profileImage'] },
-      });
-
-      const notification = await AdminNotification.create({
-        projectId: user.projectId || null,
-        type: 'new_user',
-        title: 'New User Registered',
-        message: `${user.name} (${user.email}) has just registered a new ${user.accountType} account.`,
-        referenceType: 'user',
-        referenceId: user.id,
-        userId: user.id,
-      });
-
-      const io = getIo();
-      if (io) {
-        io.emit('admin:notification', {
-          id: notification.id,
-          type: 'new_user',
-          title: notification.title,
-          message: notification.message,
-          referenceType: 'user',
-          referenceId: user.id,
-          userId: user.id,
-          projectId: user.projectId || null,
-          createdAt: notification.createdAt,
-          // Full user object so admin panel can show the new user immediately
-          user: freshUser ? {
-            id: freshUser.id,
-            name: freshUser.name,
-            email: freshUser.email,
-            phone: freshUser.phone || null,
-            country: freshUser.country || null,
-            accountType: freshUser.accountType,
-            leverage: freshUser.leverage,
-            tradingLevel: freshUser.tradingLevel,
-            tradingStatus: freshUser.tradingStatus,
-            verificationStatus: freshUser.verificationStatus,
-            role: freshUser.role,
-            referralCode: freshUser.referralCode || null,
-            referredById: freshUser.referredById || null,
-            projectId: freshUser.projectId || null,
-            onlineUntil: freshUser.onlineUntil,
-            lastLoginAt: freshUser.lastLoginAt,
-            createdAt: freshUser.createdAt,
-          } : null,
-        });
-      }
-    } catch (notifError) {
-      console.error('[auth] Failed to create admin notification for new user:', notifError.message);
+      await sendEmailVerificationCode({ to: normalizedEmail, code: verificationCode });
+    } catch (mailError) {
+      return res.status(500).json({ message: mailError.message || 'Verification email could not be sent. Please try again.' });
     }
 
-    return res.status(201).json({ token: tokenFor(user), user: publicUser(user) });
+    return res.status(201).json({
+      verificationRequired: true,
+      email: normalizedEmail,
+      message: 'Verification code sent to your email.',
+    });
+
   } catch (error) {
     return next(error);
   }
@@ -186,6 +162,7 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email: String(email || '').trim().toLowerCase() }, include: [{ model: Wallet, as: 'wallet' }] });
     if (!user || !(await bcrypt.compare(String(password || ''), user.password))) return res.status(401).json({ message: 'Invalid email or password.' });
+    if (user.role === 'user' && !user.emailVerifiedAt) return res.status(403).json({ message: 'Verify your email address before logging in.' });
     if (user.role !== 'master' && user.projectId) {
       const project = await Project.findByPk(user.projectId);
       if (!project || project.status === 'inactive') return res.status(403).json({ message: 'This company is inactive. Access is currently unavailable.' });
@@ -203,6 +180,40 @@ exports.login = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+};
+
+exports.verifyEmail = async (req, res, next) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const code = String(req.body?.code || '').trim();
+    if (!email || !/^\d{6}$/.test(code)) return res.status(400).json({ message: 'Enter the 6-digit verification code.' });
+    const user = await User.findOne({
+      where: {
+        email,
+        emailVerificationToken: hashResetToken(code),
+        emailVerificationExpires: { [Op.gt]: new Date() },
+      },
+      include: [{ model: Wallet, as: 'wallet' }],
+    });
+    if (!user) return res.status(400).json({ message: 'Verification code is invalid or expired.' });
+    await user.update({
+      emailVerifiedAt: new Date(),
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+      lastLoginAt: new Date(),
+      onlineUntil: onlineUntil(),
+    });
+    return res.json({ token: tokenFor(user), user: publicUser(user) });
+  } catch (error) { return next(error); }
+};
+
+exports.resendEmailVerification = async (req, res, next) => {
+  try {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const user = await User.findOne({ where: { email } });
+    if (user && user.role === 'user' && !user.emailVerifiedAt) await issueEmailVerificationCode(user);
+    return res.json({ message: 'If that account is awaiting verification, a new code has been sent.' });
+  } catch (error) { return next(error); }
 };
 
 exports.me = async (req, res, next) => {
