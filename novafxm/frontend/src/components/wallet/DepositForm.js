@@ -22,7 +22,7 @@ import { useAppTheme } from '../../context/ThemeContext';
 import { walletService } from '../../services/walletService';
 
 const paymentMethods = [
-  { label: 'TRC20', description: 'TRC20 network transfer', icon: WalletCards, accent: '#EF0027' },
+  { label: 'TRC20', description: 'TRC20 network transfer', icon: WalletCards, accent: '#F5A623' },
   { label: 'BEP20', description: 'BEP20 network transfer', icon: WalletCards, accent: '#F3BA2F' },
   { label: 'ERC20', description: 'ERC20 network transfer', icon: WalletCards, accent: '#627EEA' },
   { label: 'Bank Transfer', description: 'Direct bank transfer', icon: Landmark, accent: '#6B7280' },

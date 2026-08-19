@@ -13,10 +13,10 @@ export default function DepositScreen() {
   return (
     <ScrollView
       className="flex-1"
-      style={{ backgroundColor: '#1A1C20' }}
-      contentContainerStyle={{ alignItems: 'center', paddingHorizontal: 12, paddingVertical: 24 }}
+      style={{ backgroundColor: '#F6F5F1' }}
+      contentContainerStyle={{ alignItems: 'center', paddingHorizontal: 0, paddingVertical: 0 }}
     >
-      <View className="w-full overflow-hidden" style={{ maxWidth: 380, borderRadius: 28, backgroundColor: '#F6F5F1', shadowColor: '#000', shadowOpacity: 0.4, shadowOffset: { width: 0, height: 20 }, shadowRadius: 30, elevation: 8 }}>
+      <View className="w-full overflow-hidden" style={{ maxWidth: 380, borderRadius: 0, backgroundColor: 'transparent' }}>
         <View className="flex-row items-start justify-between border-b px-5 pb-[18px] pt-[22px]" style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}>
           <View className="min-w-0 flex-1 pr-3">
             <Text className="text-[21px] font-semibold" style={{ color: '#1B1F27' }}>Deposit</Text>
