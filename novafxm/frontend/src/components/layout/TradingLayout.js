@@ -1,11 +1,10 @@
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { Animated, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, Clock3, ListFilter, Wallet } from 'lucide-react-native';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
 import OrderPanel from '../order/OrderPanel';
-import SymbolPanel from '../market/SymbolPanel';
 import InsufficientFundsModal from '../order/InsufficientFundsModal';
 import OpenPositions from '../positions/OpenPositions';
 import AccountSummary from '../account/AccountSummary';
@@ -45,10 +44,11 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
 
   const ui = useMemo(() => ({
     background: darkMode ? '#0e1726' : colors.background,
-    menu: darkMode ? '#121e30' : colors.surface,
+    menu: darkMode ? '#121e30' : colors.panel,
     menuBorder: colors.border,
     border: colors.border,
-    soft: darkMode ? 'rgba(212, 175, 55, 0.12)' : 'rgba(212, 175, 55, 0.15)',
+    soft: darkMode ? 'rgba(16, 185, 129, 0.16)' : 'rgba(16, 185, 129, 0.09)',
+    selected: darkMode ? 'rgba(212, 175, 55, 0.22)' : 'rgba(212, 175, 55, 0.18)',
     control: colors.surface,
     accent: colors.primary,
     activeText: '#0B0B0B',
@@ -92,10 +92,36 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
     return items;
   }, [prices, search, symbolTab, favoriteSymbols]);
 
+  const activeSymbol = useMemo(
+    () => prices.find((item) => item.symbol === selectedSymbol) || { symbol: selectedSymbol },
+    [prices, selectedSymbol],
+  );
+
+  const activeSymbolGroup = String(activeSymbol?.group || '');
+
+  useEffect(() => {
+    const group = activeSymbolGroup.toLowerCase();
+    const matchingTab = group.includes('crypto')
+      ? 'Crypto CFD'
+      : group.includes('energy')
+        ? 'Energies'
+        : group.includes('forex')
+          ? 'Forex'
+          : group.includes('indice') || group.includes('index')
+            ? 'Indices'
+            : group.includes('metal')
+              ? 'Metals'
+              : null;
+    if (matchingTab) {
+      setSymbolTab(matchingTab);
+      setSymbolTabMenuOpen(false);
+    }
+  }, [activeSymbolGroup, selectedSymbol]);
+
   return (
     <ChartSymbolPanel
       isInline={true}
-      currentSymbol={selectedSymbol}
+      currentSymbol={activeSymbol}
       favoriteSymbols={favoriteSymbols}
       filteredSymbols={filteredSymbols}
       onSearchChange={setSearch}
@@ -126,13 +152,13 @@ function MobileFundingOptions({ colors, onDeposit, onWithdraw, onHistory }) {
   ];
 
   return (
-    <View className="px-1 pt-1">
-      <Text className="pb-3 pt-1 text-lg font-semibold" style={{ color: colors.text }}>Funding Options</Text>
+    <View className="rounded-[20px] border px-3 pt-3 shadow-sm" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <Text className="pb-3 px-1 text-lg font-semibold" style={{ color: colors.text }}>Funding Options</Text>
       {actions.map(({ label, icon: Icon, onPress }) => (
         <Pressable
           key={label}
           onPress={onPress}
-          className="mb-2 flex-row items-center rounded-xl border px-4 py-4"
+          className="mb-2 flex-row items-center rounded-2xl border px-4 py-4"
           style={{ backgroundColor: colors.surface, borderColor: colors.border }}
         >
           <Icon size={21} color={colors.text} strokeWidth={1.8} />
@@ -151,6 +177,7 @@ export default function TradingLayout() {
   const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
+  const mobileContentAnimation = useRef(new Animated.Value(1)).current;
 
   const desktop = width >= 1100;
   const tablet = width >= 760;
@@ -162,43 +189,67 @@ export default function TradingLayout() {
       : Math.max(430, Math.min(560, height - 210));
 
   useEffect(() => {
+    if (mobile && params.tab === 'wallet') setMobileTab('wallet');
     if (params.panel === 'verification') setSidePanel('verification');
     if (params.panel === 'history') {
       setSidePanel('history');
-      if (mobile) setMobileTab('position');
+      if (mobile) setMobileTab(params.tab === 'wallet' ? 'wallet' : 'position');
     }
     if (params.panel === 'settings') {
       const section = typeof params.section === 'string' && params.section ? params.section : 'profile';
       setSidePanel(`settings:${section}`);
     }
-  }, [mobile, params.panel, params.section, setSidePanel]);
+  }, [mobile, params.panel, params.section, params.tab, setSidePanel]);
+
+  useEffect(() => {
+    if (!mobile || chartFullscreen) return undefined;
+    mobileContentAnimation.setValue(0);
+    const animation = Animated.parallel([
+      Animated.timing(mobileContentAnimation, { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [chartFullscreen, mobile, mobileContentAnimation, mobileTab]);
 
   if (mobile) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
         {!chartFullscreen && <TopAccountBar />}
-        <View className="flex-1" style={{ paddingBottom: chartFullscreen ? 0 : 48 }}>
+        <Animated.View
+          className="flex-1"
+          style={{
+            minHeight: 0,
+            paddingBottom: chartFullscreen ? 0 : 52,
+            opacity: mobileContentAnimation,
+            transform: [{ translateY: mobileContentAnimation.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+          }}
+        >
           {mobileTab === 'symbols' ? (
-            <View className="flex-1 p-2">
+            <View className="flex-1 px-2 pb-2 pt-1" style={{ minHeight: 0 }}>
               <MobileSymbolWatchlist onSelectSymbol={() => setMobileTab('trade')} />
             </View>
           ) : mobileTab === 'position' ? (
-            <ScrollView className="flex-1 p-2" contentContainerStyle={{ paddingBottom: 16 }}>
+            <ScrollView className="flex-1 px-2 pb-2 pt-1" contentContainerStyle={{ paddingBottom: 16 }}>
               <OpenPositions />
             </ScrollView>
           ) : mobileTab === 'wallet' ? (
-            <View className="flex-1 p-2">
+            <View className="flex-1 px-2 pb-2 pt-1">
               <MobileFundingOptions
                 colors={colors}
                 onDeposit={() => router.push('/deposit')}
                 onWithdraw={() => router.push('/withdraw')}
-                onHistory={() => router.push({ pathname: '/trading', params: { panel: 'history' } })}
+                onHistory={() => router.push({ pathname: '/trading', params: { panel: 'history', tab: 'wallet' } })}
               />
             </View>
           ) : (
             <View className="flex-1 flex-col min-h-0">
               <View className="flex-1 min-h-[340px] min-w-0">
-                <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
+                <TradingChart
+                  isFullscreen={chartFullscreen}
+                  onFullscreenChange={setChartFullscreen}
+                  isAdmin={isAdmin}
+                  onOpenSymbols={() => setMobileTab('symbols')}
+                />
               </View>
               {!chartFullscreen && !sidePanel ? (
                 <View className="w-full shrink-0">
@@ -207,19 +258,19 @@ export default function TradingLayout() {
               ) : null}
             </View>
           )}
-        </View>
+        </Animated.View>
 
         {!chartFullscreen ? (
           <View
             className="flex-row items-center justify-around border-t"
             style={{
-              backgroundColor: colors.surface,
+              backgroundColor: colors.panel,
               borderColor: colors.border,
               position: 'fixed',
               bottom: 0,
               left: 0,
               right: 0,
-              height: 48,
+              height: 52,
               zIndex: 4000,
               elevation: 4000,
             }}
@@ -230,7 +281,7 @@ export default function TradingLayout() {
             >
               <View
                 className="h-5 w-10 items-center justify-center rounded-full"
-                style={{ backgroundColor: mobileTab === 'symbols' ? `${colors.primary}25` : 'transparent' }}
+                style={{ backgroundColor: mobileTab === 'symbols' ? `${colors.primary}22` : 'transparent' }}
               >
                 <ListFilter size={16} color={mobileTab === 'symbols' ? colors.primary : colors.muted} />
               </View>

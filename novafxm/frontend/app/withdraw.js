@@ -23,7 +23,12 @@ function WithdrawScreen() {
             <Text className="text-2xl font-semibold" style={{ color: colors.text }}>Withdraw</Text>
             <Text className="mt-1 text-sm" style={{ color: colors.muted }}>Request funds from your live account.</Text>
           </View>
-          <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: colors.surface }}>
+          <Pressable
+            accessibilityLabel="Close withdrawal"
+            onPress={() => router.replace({ pathname: '/trading', params: { tab: 'wallet' } })}
+            className="h-10 w-10 items-center justify-center rounded-full"
+            style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+          >
             <X size={24} color={colors.text} strokeWidth={1.8} />
           </Pressable>
         </View>

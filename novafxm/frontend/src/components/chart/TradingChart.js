@@ -896,7 +896,7 @@ document.addEventListener('message', receiveLiveUpdate);
 </body></html>`;
 }
 
-export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin }) {
+export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin, onOpenSymbols }) {
   const { currentSymbol, openPosition, prices, setSelectedSymbol } = useDemoTrading();
   const { colors } = useAppTheme();
   const { notify } = useToast();
@@ -1311,6 +1311,17 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
     setDrawingOpen(false);
   };
   const toggleSymbolMenu = () => {
+    if (mobile && onOpenSymbols) {
+      setSymbolMenuOpen(false);
+      setTimeframeMenuOpen(false);
+      setSymbolTabMenuOpen(false);
+      setChartMenuOpen(false);
+      setIndicatorOpen(false);
+      setSettingsOpen(false);
+      setDrawingOpen(false);
+      onOpenSymbols();
+      return;
+    }
     setSymbolMenuOpen((value) => !value);
     setTimeframeMenuOpen(false);
     setSymbolTabMenuOpen(false);

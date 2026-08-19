@@ -5505,3 +5505,88 @@ Error: TypeError: Cannot read properties of null (reading 'referralCode')
     at exports.me (D:\platform\novafxm\src\controllers\authController.js:171:11)
     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
 --------------------------------------------------
+
+Date: 2026-08-19T11:15:30.604Z
+Method: GET
+URL: /api/market/candles/AUD%2FSGD?timeframe=5m&limit=500
+Body: {}
+Error: Error: TradingView has no chart data for this symbol
+    at D:\platform\novafxm\src\services\tradingViewService.js:745:29
+    at Array.forEach (<anonymous>)
+    at WebSocket.<anonymous> (D:\platform\novafxm\src\services\tradingViewService.js:743:27)
+    at WebSocket.emit (node:events:524:28)
+    at Receiver.receiverOnMessage (D:\platform\novafxm\node_modules\ws\lib\websocket.js:1239:20)
+    at Receiver.emit (node:events:524:28)
+    at Receiver.dataMessage (D:\platform\novafxm\node_modules\ws\lib\receiver.js:650:14)
+    at D:\platform\novafxm\node_modules\ws\lib\receiver.js:584:12
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:309:9
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:392:7
+--------------------------------------------------
+
+Date: 2026-08-19T11:15:32.702Z
+Method: GET
+URL: /api/market/candles/AUD%2FSGD?timeframe=5m&limit=500
+Body: {}
+Error: Error: TradingView has no chart data for this symbol
+    at D:\platform\novafxm\src\services\tradingViewService.js:745:29
+    at Array.forEach (<anonymous>)
+    at WebSocket.<anonymous> (D:\platform\novafxm\src\services\tradingViewService.js:743:27)
+    at WebSocket.emit (node:events:524:28)
+    at Receiver.receiverOnMessage (D:\platform\novafxm\node_modules\ws\lib\websocket.js:1239:20)
+    at Receiver.emit (node:events:524:28)
+    at Receiver.dataMessage (D:\platform\novafxm\node_modules\ws\lib\receiver.js:650:14)
+    at D:\platform\novafxm\node_modules\ws\lib\receiver.js:584:12
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:309:9
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:392:7
+--------------------------------------------------
+
+Date: 2026-08-19T11:15:35.373Z
+Method: GET
+URL: /api/market/candles/AUD%2FSGD?timeframe=5m&limit=500
+Body: {}
+Error: Error: TradingView has no chart data for this symbol
+    at D:\platform\novafxm\src\services\tradingViewService.js:745:29
+    at Array.forEach (<anonymous>)
+    at WebSocket.<anonymous> (D:\platform\novafxm\src\services\tradingViewService.js:743:27)
+    at WebSocket.emit (node:events:524:28)
+    at Receiver.receiverOnMessage (D:\platform\novafxm\node_modules\ws\lib\websocket.js:1239:20)
+    at Receiver.emit (node:events:524:28)
+    at Receiver.dataMessage (D:\platform\novafxm\node_modules\ws\lib\receiver.js:650:14)
+    at D:\platform\novafxm\node_modules\ws\lib\receiver.js:584:12
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:309:9
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:392:7
+--------------------------------------------------
+
+Date: 2026-08-19T11:15:38.705Z
+Method: GET
+URL: /api/market/candles/AUD%2FSGD?timeframe=5m&limit=500
+Body: {}
+Error: Error: TradingView has no chart data for this symbol
+    at D:\platform\novafxm\src\services\tradingViewService.js:745:29
+    at Array.forEach (<anonymous>)
+    at WebSocket.<anonymous> (D:\platform\novafxm\src\services\tradingViewService.js:743:27)
+    at WebSocket.emit (node:events:524:28)
+    at Receiver.receiverOnMessage (D:\platform\novafxm\node_modules\ws\lib\websocket.js:1239:20)
+    at Receiver.emit (node:events:524:28)
+    at Receiver.dataMessage (D:\platform\novafxm\node_modules\ws\lib\receiver.js:650:14)
+    at D:\platform\novafxm\node_modules\ws\lib\receiver.js:584:12
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:309:9
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:392:7
+--------------------------------------------------
+
+Date: 2026-08-19T11:15:42.793Z
+Method: GET
+URL: /api/market/candles/AUD%2FSGD?timeframe=5m&limit=500
+Body: {}
+Error: Error: TradingView has no chart data for this symbol
+    at D:\platform\novafxm\src\services\tradingViewService.js:745:29
+    at Array.forEach (<anonymous>)
+    at WebSocket.<anonymous> (D:\platform\novafxm\src\services\tradingViewService.js:743:27)
+    at WebSocket.emit (node:events:524:28)
+    at Receiver.receiverOnMessage (D:\platform\novafxm\node_modules\ws\lib\websocket.js:1239:20)
+    at Receiver.emit (node:events:524:28)
+    at Receiver.dataMessage (D:\platform\novafxm\node_modules\ws\lib\receiver.js:650:14)
+    at D:\platform\novafxm\node_modules\ws\lib\receiver.js:584:12
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:309:9
+    at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:392:7
+--------------------------------------------------

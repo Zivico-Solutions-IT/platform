@@ -1,5 +1,5 @@
-import { Link } from 'expo-router';
-import { ArrowLeft, CheckCircle2, ShieldCheck, Wallet, XCircle } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { CheckCircle2, ShieldCheck, Wallet, X, XCircle } from 'lucide-react-native';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import DepositForm from '../src/components/wallet/DepositForm';
 import TransactionList from '../src/components/wallet/TransactionList';
@@ -18,17 +18,19 @@ export default function DepositScreen() {
 
   return (
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-4 lg:p-8">
-      <View className="mb-6 flex-row flex-wrap items-center justify-between gap-3">
-        <View>
+      <View className="mb-6 flex-row items-start justify-between gap-3">
+        <View className="flex-1 min-w-0">
           <Text className="text-3xl font-medium" style={{ color: colors.text }}>Deposit Center</Text>
           <Text className="mt-1 text-muted">Fund your trading account with a reviewed deposit request.</Text>
         </View>
-        <Link href="/trading" asChild>
-          <Pressable className="flex-row items-center rounded-2xl border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-            <ArrowLeft size={17} color="#D4AF37" />
-            <Text className="ml-2 font-medium text-primary">Back to Trading</Text>
-          </Pressable>
-        </Link>
+        <Pressable
+          accessibilityLabel="Close deposit"
+          onPress={() => router.replace({ pathname: '/trading', params: { tab: 'wallet' } })}
+          className="h-10 w-10 items-center justify-center rounded-full"
+          style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}
+        >
+          <X size={23} color={colors.text} strokeWidth={1.8} />
+        </Pressable>
       </View>
 
       <View className="mb-5 flex-row flex-wrap items-center justify-between gap-4 rounded-3xl border p-6 shadow-sm" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>

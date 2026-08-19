@@ -40,7 +40,6 @@ export default function TopAccountBar() {
   const [adminNotificationData, setAdminNotificationData] = useState(emptyAdminNotificationData);
   const [readNotificationIds, setReadNotificationIds] = useState([]);
   const [hoveredAction, setHoveredAction] = useState(null);
-  const [hasSwitchedToLive, setHasSwitchedToLive] = useState(false);
   const mobile = width < 1024;
   const narrowPhone = width < 380;
   const compactDesktop = !mobile && width < 1450;
@@ -73,7 +72,7 @@ export default function TopAccountBar() {
   const selectedAccount = tradingAccounts.find((account) => String(account.id) === String(selectedTradingAccount?.id)) || selectedTradingAccount || tradingAccounts[0];
   const selectedAccountBalance = Number.isFinite(Number(selectedAccount?.balance)) ? Number(selectedAccount.balance) : summary.balance;
   const selectedAccountIsLive = String(selectedAccount?.type || '').toLowerCase() === 'live';
-  const accountBadgeColor = selectedAccountIsLive ? colors.success : '#F59E0B';
+  const accountBadgeColor = selectedAccountIsLive ? colors.success : '#D8B536';
   const accountBadgeLabel = selectedAccountIsLive ? 'Live' : 'Demo';
   const routeAccountId = params.accountId ? String(params.accountId) : '';
 
@@ -84,7 +83,7 @@ export default function TopAccountBar() {
   const summaryNetProfit = Number(summary.openProfit || 0);
   const summaryBonus = Number(summary.bonus || 0);
   const summaryFreeFunds = summaryEquity - summaryMargin;
-  const metrics = [
+  const mobileMetrics = [
     ['Balance', `${money(summaryBalance)} USD`],
     ['Equity', `${money(summaryEquity)} USD`],
     ['Margin', `${money(summaryMargin)} USD`],
@@ -112,7 +111,8 @@ export default function TopAccountBar() {
     ? '2,34 15,31 26,32 37,24 48,27 58,10 67,18 78,20 90,7 100,12 112,4'
     : '2,7 15,12 26,10 37,18 48,16 58,29 67,22 78,25 90,33 100,28 112,35';
 
-  const maxMetricStep = Math.max(metrics.length - visibleMetricCount, 0);
+  const maxMetricStep = Math.max(mobileMetrics.length - visibleMetricCount, 0);
+
   const notificationIds = useMemo(() => {
     if (isAdmin) {
       return buildAdminNotificationItems(adminNotificationData, {
@@ -248,16 +248,9 @@ export default function TopAccountBar() {
     const routeAccount = routeAccountId ? tradingAccounts.find((account) => String(account.id) === routeAccountId) : null;
     if (routeAccount && String(selectedTradingAccount?.id) !== String(routeAccount.id)) { setSelectedTradingAccount(routeAccount); return; }
 
-    const liveAccount = tradingAccounts.find((account) => account.type === 'Live');
-    if (liveAccount && selectedTradingAccount?.type === 'Demo' && !hasSwitchedToLive) {
-      setHasSwitchedToLive(true);
-      setSelectedTradingAccount(liveAccount);
-      return;
-    }
-
     const selectedExists = tradingAccounts.some((account) => String(account.id) === String(selectedTradingAccount?.id));
-    if (!selectedExists) setSelectedTradingAccount(liveAccount || tradingAccounts[0]);
-  }, [routeAccountId, selectedTradingAccount?.id, setSelectedTradingAccount, tradingAccounts, hasSwitchedToLive]);
+    if (!selectedExists) setSelectedTradingAccount(tradingAccounts[0]);
+  }, [routeAccountId, selectedTradingAccount?.id, setSelectedTradingAccount, tradingAccounts]);
 
   const selectAccount = (account) => { setSelectedTradingAccount(account); setMenu(null); };
   const updateAccounts = useCallback((nextAccounts = [], preferredAccount = null) => {
@@ -278,6 +271,14 @@ export default function TopAccountBar() {
   const openSidePanel = (panel) => {
     setMenu(null);
     setSidePanel(panel);
+  };
+
+  const closeSidePanel = () => {
+    const closingPanel = sidePanel;
+    setSidePanel(null);
+    if (mobile && closingPanel === 'history') {
+      router.replace({ pathname: '/trading', params: { tab: 'wallet' } });
+    }
   };
 
   const hoverProps = (action) => ({ onHoverIn: () => setHoveredAction(action), onHoverOut: () => setHoveredAction(null) });
@@ -331,10 +332,10 @@ export default function TopAccountBar() {
   useEffect(() => {
     if (!metricsWidth || maxMetricStep === 0) return undefined;
     let step = 0;
-    const itemWidth = (metricsWidth - 24) / visibleMetricCount;
+    const cardWidth = (metricsWidth - 18) / visibleMetricCount;
     const interval = setInterval(() => {
       step = step >= maxMetricStep ? 0 : step + 1;
-      metricsScrollRef.current?.scrollTo({ x: itemWidth * step, animated: true });
+      metricsScrollRef.current?.scrollTo({ x: (cardWidth + 6) * step, animated: true });
     }, 3800);
     return () => clearInterval(interval);
   }, [maxMetricStep, metricsWidth]);
@@ -400,7 +401,7 @@ export default function TopAccountBar() {
             </View>
           </View>
           {/* Row 2: Account Select & Action Buttons */}
-          <View className="w-full flex-row items-center gap-2"w>
+          <View className="w-full flex-row items-center gap-2">
             {user ? (
               <Pressable
                 onPress={() => setMenu(menu === 'account' ? null : 'account')}
@@ -501,26 +502,30 @@ export default function TopAccountBar() {
         </>
       )}
       {mobile && !isAdmin ? (
-        <ScrollView 
-          ref={metricsScrollRef} 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          className="h-[50px] rounded-2xl mt-3 mx-3" 
-          contentContainerStyle={{ paddingHorizontal: 12 }} 
-          onLayout={({ nativeEvent }) => setMetricsWidth(nativeEvent.layout.width)} 
-          style={{ backgroundColor: `${colors.primary}15` }}
+        <ScrollView
+          ref={metricsScrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="mx-2 mt-3 h-[54px]"
+          contentContainerStyle={{ gap: 6 }}
+          onLayout={({ nativeEvent }) => setMetricsWidth(nativeEvent.layout.width)}
         >
-          {metrics.map(([label, value], index) => (
+          {mobileMetrics.map(([label, value], index) => (
             <View 
               key={label} 
-              className="justify-center h-full px-1 items-center"
+              className="h-[54px] justify-center rounded-2xl border px-3"
               style={{
-                width: metricsWidth ? (metricsWidth - 24) / visibleMetricCount : 100,
-                borderLeftWidth: index === 0 ? 0 : 1,
-                borderLeftColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+                width: metricsWidth ? (metricsWidth - 18) / visibleMetricCount : 82,
+                backgroundColor: index === 0 ? `${colors.success}10` : colors.panel,
+                borderColor: index === 0 ? `${colors.success}55` : colors.border,
+                shadowColor: '#101828',
+                shadowOpacity: darkMode ? 0.16 : 0.04,
+                shadowOffset: { width: 0, height: 3 },
+                shadowRadius: 7,
+                elevation: 1,
               }}
             >
-              <Text className="text-[8px] font-bold tracking-widest uppercase mb-0.5 opacity-60" numberOfLines={1} style={{ color: colors.text }}>{label}</Text>
+              <Text className="mb-1 text-[8px] font-bold tracking-[0.7px] uppercase" numberOfLines={1} style={{ color: index === 0 ? colors.success : colors.muted }}>{label}</Text>
               <Text className="text-[10px] font-bold tracking-tight" numberOfLines={1} style={{ color: label === 'Net Profit' && summary.openProfit < 0 ? colors.danger : (label === 'Net Profit' && summary.openProfit > 0 ? colors.success : colors.text) }}>{value}</Text>
             </View>
           ))}
@@ -654,13 +659,13 @@ export default function TopAccountBar() {
           </View>
         </Pressable>
       </Modal>
-      <Modal visible={Boolean(sidePanel)} transparent animationType="fade" onRequestClose={() => setSidePanel(null)}>
+      <Modal visible={Boolean(sidePanel)} transparent animationType="fade" onRequestClose={closeSidePanel}>
         {sidePanel ? (
           <HeaderSidePanel
             type={sidePanel}
             selectedAccount={selectedAccount}
             summary={summary}
-            onClose={() => setSidePanel(null)}
+            onClose={closeSidePanel}
             onAccountsChanged={updateAccounts}
             onSelectAccount={selectAccount}
           />

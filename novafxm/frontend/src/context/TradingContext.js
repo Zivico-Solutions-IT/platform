@@ -57,7 +57,7 @@ export function TradingProvider({ children }) {
   const serverAccount = user && selectedAccountId;
 
   const syncAccount = useCallback(async () => {
-    if (!user || !serverAccount) return;
+    if (!user?.id || !serverAccount) return;
     // A dashboard can trigger syncs from the header, wallet flows, and the
     // interval. Never start another five-request batch while one is pending.
     if (syncRequestRef.current) return syncRequestRef.current;
@@ -93,19 +93,19 @@ export function TradingProvider({ children }) {
     } finally {
       if (syncRequestRef.current === request) syncRequestRef.current = null;
     }
-  }, [selectedAccountId, serverAccount, user]);
+  }, [selectedAccountId, serverAccount, user?.id]);
 
   useEffect(() => {
     syncAccount().catch(() => {});
   }, [syncAccount]);
 
   useEffect(() => {
-    if (!user || !serverAccount) return;
+    if (!user?.id || !serverAccount) return;
     const interval = setInterval(() => {
       syncAccount().catch(() => {});
-    }, 4000);
+    }, 15000);
     return () => clearInterval(interval);
-  }, [syncAccount, user, serverAccount]);
+  }, [syncAccount, user?.id, serverAccount]);
 
   useEffect(() => {
     if (authLoading || user) return;
