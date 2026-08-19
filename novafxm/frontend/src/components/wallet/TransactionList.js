@@ -1,8 +1,9 @@
 import { Text, View, useWindowDimensions } from 'react-native';
+import { Clock3 } from 'lucide-react-native';
 import { dateTime, money, transactionTypeLabel } from '../../utils/formatters';
 import { useAppTheme } from '../../context/ThemeContext';
 
-export default function TransactionList({ transactions, title = 'Transaction History' }) {
+export default function TransactionList({ transactions, title = 'Transaction History', compact = false }) {
   const { width } = useWindowDimensions();
   const { colors } = useAppTheme();
   const mobile = width < 640;
@@ -12,8 +13,18 @@ export default function TransactionList({ transactions, title = 'Transaction His
     return type.includes('deposit') || type.includes('withdraw');
   });
 
+  if (compact && !filteredTransactions.length) {
+    return (
+      <View className="mb-[18px] items-center rounded-2xl border px-4 py-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}>
+        <Clock3 size={22} color="#C9CDD4" strokeWidth={1.8} />
+        <Text className="mt-2 text-[13px] font-semibold" style={{ color: '#1B1F27' }}>{title}</Text>
+        <Text className="mt-0.5 text-[12px]" style={{ color: '#9CA4AF' }}>No deposits or withdrawals yet</Text>
+      </View>
+    );
+  }
+
   return (
-    <View className={`${mobile ? 'p-4 mt-3' : 'p-5 mt-5'} rounded-2xl border shadow-sm`} style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+    <View className={`${compact ? 'mb-[18px] p-4' : mobile ? 'p-4 mt-3' : 'p-5 mt-5'} rounded-2xl border shadow-sm`} style={{ backgroundColor: compact ? '#FFFFFF' : colors.panel, borderColor: compact ? '#ECEAE3' : colors.border }}>
       <Text className="mb-4 text-lg font-medium" style={{ color: colors.text }}>{title}</Text>
       {filteredTransactions.length ? (
         <View>

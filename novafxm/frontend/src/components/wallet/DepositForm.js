@@ -266,49 +266,34 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
     }
   };
   return (
-    <View className="flex-1 overflow-hidden rounded-3xl border shadow-lg" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-      <View className={`${mobile ? 'px-4 py-4' : 'px-5 py-4'} border-b`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-        <View className="flex-row items-center justify-between">
-          <View className="min-w-0 flex-1 pr-3">
-            <Text className={`${mobile ? 'text-lg' : 'text-xl'} font-medium`} numberOfLines={1} style={{ color: colors.text }}>Deposit Funds</Text>
-            <Text className="mt-1 text-sm" style={{ color: colors.muted }}>Submit a funding request with receipt proof.</Text>
-          </View>
-          <View className="h-10 w-10 items-center justify-center rounded-2xl bg-primary/15">
-            <Wallet size={22} color="#D4AF37" />
-          </View>
-        </View>
-      </View>
-
-      <View className={`${mobile ? 'gap-3 p-4' : 'gap-5 p-5'} xl:flex-row`}>
+    <View>
+      <View>
         <View className="flex-1">
-          <View className={`${mobile ? 'mb-3' : 'mb-4'} flex-row flex-wrap gap-2`}>
-            {[
-              [1, 'Deposit Methods'],
-              [2, 'Deposit Confirmation'],
-            ].map(([value, label]) => (
-              <View
-                key={value}
-                className="flex-row items-center rounded-full border px-3 py-2"
-                style={{ backgroundColor: step === value ? `${colors.primary}1a` : colors.surface, borderColor: step === value ? colors.primary : colors.border }}
-              >
-                <Text className="text-xs font-medium" style={{ color: step === value ? colors.primary : colors.muted }}>{value}. {label}</Text>
+          <View className="mb-[18px] flex-row items-center">
+            <View className="flex-row items-center">
+              <View className="h-[22px] w-[22px] items-center justify-center rounded-full" style={{ backgroundColor: step === 1 ? '#D9AC38' : '#E4E1D8' }}>
+                <Text className="text-[11px] font-semibold" style={{ color: step === 1 ? '#241A02' : '#9CA4AF' }}>1</Text>
               </View>
-            ))}
+              <Text className="ml-1.5 text-[13px] font-semibold" style={{ color: '#1B1F27' }}>Method</Text>
+            </View>
+            <View className="mx-2 h-0.5 flex-1" style={{ backgroundColor: '#E4E1D8' }} />
+            <View className="flex-row items-center">
+              <View className="h-[22px] w-[22px] items-center justify-center rounded-full" style={{ backgroundColor: step === 2 ? '#D9AC38' : '#E4E1D8' }}>
+                <Text className="text-[11px] font-semibold" style={{ color: step === 2 ? '#241A02' : '#9CA4AF' }}>2</Text>
+              </View>
+              <Text className="ml-1.5 text-[13px]" style={{ color: step === 2 ? '#1B1F27' : '#9CA4AF' }}>Confirm</Text>
+            </View>
           </View>
-          <View className={`${mobile ? 'mb-3' : 'mb-4'}`}>
-            <Text className="text-[11px] font-medium uppercase tracking-wider" style={{ color: colors.muted }}>Deposit Amount</Text>
+          <View className="mb-[18px]">
+            <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: '#9CA4AF' }}>Deposit Amount</Text>
             <View
-              className="mt-2 flex-row items-center rounded-2xl border px-3.5 py-2.5"
+              className="flex-row items-center rounded-2xl border px-4 py-3.5"
               style={{
-                backgroundColor: colors.surface,
-                borderColor: focusAmount ? colors.primary : colors.border,
-                shadowColor: focusAmount ? colors.primary : '#000',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: focusAmount ? 0.15 : 0.03,
-                shadowRadius: 4,
+                backgroundColor: '#FFFFFF',
+                borderColor: focusAmount ? '#D9AC38' : '#E4E1D8',
               }}
             >
-              <Text className="text-base font-normal mr-1.5" style={{ color: colors.primary }}>$</Text>
+              <Text className="mr-1 text-xl font-semibold" style={{ color: '#B8891E' }}>$</Text>
               <TextInput
                 placeholder="0.00"
                 placeholderTextColor={colors.muted}
@@ -321,19 +306,34 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                 onFocus={() => setFocusAmount(true)}
                 onBlur={() => setFocusAmount(false)}
                 editable={step === 1}
-                className="flex-1 text-base font-normal"
+                className="flex-1 text-xl font-semibold"
                 style={{
-                  color: colors.text,
-                  fontSize: 15,
-                  fontWeight: '400',
+                  color: '#1B1F27',
+                  fontSize: 20,
+                  fontWeight: '600',
                   outline: 'none',
                   padding: 0,
                   margin: 0,
                 }}
               />
-              <View className="rounded-md px-2 py-0.5" style={{ backgroundColor: `${colors.primary}15` }}>
-                <Text className="text-[11px] font-normal" style={{ color: colors.primary }}>USD</Text>
+              <View className="rounded-lg px-2 py-1" style={{ backgroundColor: '#F4F2ED' }}>
+                <Text className="text-xs" style={{ color: '#9CA4AF' }}>USD</Text>
               </View>
+            </View>
+            <View className="mt-2 flex-row gap-2">
+              {selectedDepositRule.quickAmounts.map((amount) => {
+                const selected = Number(form.amount) === amount;
+                return (
+                  <Pressable
+                    key={amount}
+                    onPress={() => update('amount')(String(amount))}
+                    className="flex-1 items-center rounded-[10px] border py-[7px]"
+                    style={{ backgroundColor: selected ? '#FBF3E2' : '#FFFFFF', borderColor: selected ? '#E9CB84' : '#E4E1D8' }}
+                  >
+                    <Text className="text-[12px] font-medium" style={{ color: selected ? '#8A6A1E' : '#5C635A' }}>${amount.toLocaleString()}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
             {message && !success ? (
               <View className="mt-2.5 rounded-xl border p-3" style={{ backgroundColor: `${colors.danger}15`, borderColor: `${colors.danger}40` }}>
@@ -344,104 +344,57 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
 
           {step === 1 ? (
             <>
-              <Text className={`${mobile ? 'mb-2' : 'mb-3'} text-[11px] font-bold uppercase tracking-wider`} style={{ color: colors.muted }}>Payment Method</Text>
-              <View className={`${mobile ? 'mb-2' : 'mb-3'}`}>
-                {mobile ? (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                    {paymentMethodGroups.map((group) => {
-                      const GroupIcon = group.icon;
-                      const active = activePaymentGroup.title === group.title;
-                      return (
-                        <Pressable
-                          key={group.title}
-                          onPress={() => selectPaymentGroup(group)}
-                          className="min-h-[34px] flex-row items-center rounded-full border px-3"
-                          style={{
-                            backgroundColor: active ? `${colors.primary}20` : colors.surface,
-                            borderColor: active ? colors.primary : colors.border,
-                          }}
-                        >
-                          <GroupIcon size={13} color={active ? colors.primary : group.accent} />
-                          <Text className="ml-1.5 text-[11px] font-medium" style={{ color: active ? colors.primary : colors.text }}>{group.title}</Text>
-                          <Text className="ml-1 text-[9px]" style={{ color: active ? colors.primary : colors.muted }}>({group.methods.length})</Text>
-                          {active ? <CheckCircle2 className="ml-1.5" size={13} color={colors.primary} /> : null}
-                        </Pressable>
-                      );
-                    })}
-                  </ScrollView>
-                ) : (
-                  <View className="flex-row flex-wrap gap-2">
-                    {paymentMethodGroups.map((group) => {
-                      const GroupIcon = group.icon;
-                      const active = activePaymentGroup.title === group.title;
-                      return (
-                        <Pressable
-                          key={group.title}
-                          onPress={() => selectPaymentGroup(group)}
-                          className="min-h-[34px] flex-row items-center rounded-full border px-3 py-1.5"
-                          style={{
-                            backgroundColor: active ? `${colors.primary}20` : colors.surface,
-                            borderColor: active ? colors.primary : colors.border,
-                          }}
-                        >
-                          <GroupIcon size={13} color={active ? colors.primary : group.accent} />
-                          <Text className="ml-1.5 text-[11px] font-medium" numberOfLines={1} style={{ color: active ? colors.primary : colors.text }}>{group.title}</Text>
-                          <Text className="ml-1 text-[9px]" style={{ color: active ? colors.primary : colors.muted }}>({group.methods.length})</Text>
-                          {active ? <CheckCircle2 className="ml-1.5" size={13} color={colors.primary} /> : null}
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                )}
+              <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: '#9CA4AF' }}>Payment Method</Text>
+              <View className="mb-[14px] flex-row gap-2">
+                {paymentMethodGroups.map((group) => {
+                  const GroupIcon = group.icon;
+                  const active = activePaymentGroup.title === group.title;
+                  return (
+                    <Pressable
+                      key={group.title}
+                      onPress={() => selectPaymentGroup(group)}
+                      className="flex-1 flex-row items-center justify-center rounded-xl border py-2.5"
+                      style={{ backgroundColor: active ? '#FBF3E2' : '#FFFFFF', borderColor: active ? '#D9AC38' : '#E4E1D8' }}
+                    >
+                      <GroupIcon size={16} color={active ? '#8A6A1E' : '#5C635A'} />
+                      <Text className="ml-1.5 text-[13px]" style={{ color: active ? '#8A6A1E' : '#5C635A', fontWeight: active ? '600' : '500' }}>{group.title}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-              <View className={`${mobile ? 'mb-4' : 'mb-5'} rounded-xl border p-3`} style={{ backgroundColor: `${paymentPanelAccent}0d`, borderColor: `${paymentPanelAccent}35` }}>
-                <View className="mb-3 flex-row items-center justify-between gap-3">
-                  <View className="min-w-0 flex-1 flex-row items-center">
-                    <View className="mr-3 h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${paymentPanelAccent}1f` }}>
-                      <ActivePaymentGroupIcon size={18} color={paymentPanelAccent} />
-                    </View>
-                    <View className="min-w-0 flex-1">
-                      <Text className="text-sm font-medium" numberOfLines={1} style={{ color: colors.text }}>{activePaymentGroup.title}</Text>
-                      <Text className="mt-0.5 text-[10px]" numberOfLines={1} style={{ color: colors.muted }}>{activePaymentGroup.subtitle}</Text>
-                    </View>
-                  </View>
-                  <View className="rounded-full px-2.5 py-1" style={{ backgroundColor: `${paymentPanelAccent}20` }}>
-                    <Text className="text-[10px] font-medium" style={{ color: paymentPanelAccent }}>{activePaymentGroup.methods.length} methods</Text>
-                  </View>
-                </View>
-                <View className="flex-row flex-wrap gap-2">
-                  {activePaymentGroup.methods.map(({ label, description, icon: Icon, accent: methodAccent }) => {
-                    const selected = form.paymentMethod === label;
-                    return (
-                      <Pressable
-                        key={label}
-                        onPress={() => update('paymentMethod')(label)}
-                        className="min-h-[68px] rounded-lg border p-2.5"
-                        style={{
-                          flexBasis: activeMethodBasis,
-                          maxWidth: activeMethodBasis,
-                          backgroundColor: selected ? `${colors.primary}24` : colors.panel,
-                          borderColor: selected ? colors.primary : `${paymentPanelAccent}2b`,
-                        }}
-                      >
-                        <View className="flex-row items-center justify-between">
-                          <View className="h-7 w-7 items-center justify-center rounded-md" style={{ backgroundColor: `${methodAccent || activePaymentGroup.accent}16` }}>
-                            <Icon size={16} color={methodAccent || activePaymentGroup.accent} />
-                          </View>
-                          {selected ? (
-                            <View className="h-5 w-5 items-center justify-center rounded-full bg-primary">
-                              <CheckCircle2 size={12} color="#0B0B0B" />
-                            </View>
-                          ) : null}
-                        </View>
-                        <Text numberOfLines={1} className="mt-2 text-[11px] font-medium" style={{ color: selected ? colors.primary : colors.text }}>{label}</Text>
-                        <Text numberOfLines={1} className="mt-0.5 text-[9px]" style={{ color: colors.muted }}>{description}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+              <View className="mb-[18px] gap-2">
+                {activePaymentGroup.methods.map(({ label, description, accent: methodAccent }) => {
+                  const selected = form.paymentMethod === label;
+                  const initial = label.replace('20', '').charAt(0) || 'P';
+                  return (
+                    <Pressable
+                      key={label}
+                      onPress={() => update('paymentMethod')(label)}
+                      className="flex-row items-center rounded-[14px] border px-[14px] py-3"
+                      style={{ backgroundColor: selected ? '#FBF3E2' : '#FFFFFF', borderColor: selected ? '#D9AC38' : '#E4E1D8' }}
+                    >
+                      <View className="h-[34px] w-[34px] items-center justify-center rounded-[9px]" style={{ backgroundColor: methodAccent }}>
+                        <Text className="text-xs font-bold text-white">{initial}</Text>
+                      </View>
+                      <View className="ml-3 flex-1">
+                        <Text className="text-[14px] font-semibold" style={{ color: '#1B1F27' }}>{label}</Text>
+                        <Text className="mt-0.5 text-[11px]" style={{ color: '#8A8F7C' }}>{description}</Text>
+                      </View>
+                      <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: selected ? '#D9AC38' : '#FFFFFF', borderWidth: selected ? 0 : 1.5, borderColor: '#D6DAE0' }}>
+                        {selected ? <Check size={11} color="#FFFFFF" /> : null}
+                      </View>
+                    </Pressable>
+                  );
+                })}
               </View>
-              <CustomButton title={addressesLoading ? 'Loading Methods...' : 'Proceed'} onPress={chooseAddress} loading={addressesLoading} disabled={disabled || addressesLoading} />
+              <Pressable
+                onPress={chooseAddress}
+                disabled={disabled || addressesLoading}
+                className="mb-[22px] items-center rounded-[14px] py-[14px]"
+                style={{ backgroundColor: disabled || addressesLoading ? '#E4E1D8' : '#D9AC38', shadowColor: '#B8891E', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 8 }, shadowRadius: 18 }}
+              >
+                <Text className="text-[15px] font-bold" style={{ color: '#241A02' }}>{addressesLoading ? 'Loading methods...' : 'Proceed to confirmation'}</Text>
+              </Pressable>
             </>
           ) : (
             <>
@@ -655,7 +608,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
           )}
         </View>
 
-        <View className="w-full gap-4 xl:w-[280px]">
+        <View className="w-full gap-4 xl:w-[280px]" style={{ display: 'none' }}>
           <View className="rounded-2xl border p-5 shadow-sm" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
             <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-success/10">
               <ShieldCheck size={24} color="#12cf7a" />
