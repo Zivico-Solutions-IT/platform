@@ -15,7 +15,7 @@ const labelColors = {
   secondary: '',
 };
 
-export default function CustomButton({ title, onPress, variant = 'primary', loading = false, className = '', disabled = false, compact = false }) {
+export default function CustomButton({ title, onPress, variant = 'primary', loading = false, className = '', disabled = false, compact = false, style }) {
   const { darkMode } = useAppTheme();
   const labelColor = labelColors[variant] || 'text-white';
 
@@ -36,7 +36,7 @@ export default function CustomButton({ title, onPress, variant = 'primary', load
       onPress={onPress}
       disabled={disabled || loading}
       className={`${compact ? 'min-h-[36px] py-1.5 px-4' : 'min-h-[46px] px-5'} items-center justify-center rounded-xl ${variants[variant]} ${disabled ? 'opacity-50' : ''} ${className}`}
-      style={secondaryStyle}
+      style={[secondaryStyle, style]}
     >
       {loading
         ? <ActivityIndicator color={variant === 'primary' ? '#0B0B0B' : (secondaryTextColor || '#fff')} size={compact ? 'small' : undefined} />

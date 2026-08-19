@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Check } from 'lucide-react-native';
+import { Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import CustomButton from '../common/CustomButton';
 import CustomInput from '../common/CustomInput';
 import { dateTime, money } from '../../utils/formatters';
@@ -12,10 +13,10 @@ function Option({ active, label, onPress, colors }) {
   return (
     <Pressable
       onPress={onPress}
-      className="min-h-[42px] flex-1 items-center justify-center rounded-xl border px-3"
-      style={{ backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }}
+      className="h-9 flex-1 items-center justify-center rounded-[10px] border px-3"
+      style={{ backgroundColor: active ? '#FBF3E2' : '#FFFFFF', borderColor: active ? '#D9AC38' : '#E4E1D8' }}
     >
-      <Text className="text-sm font-medium" style={{ color: active ? '#05130d' : colors.text }}>{label}</Text>
+      <Text className="text-[12px]" style={{ color: active ? '#8A6A1E' : '#5C635A', fontWeight: active ? '600' : '500' }}>{label}</Text>
     </Pressable>
   );
 }
@@ -25,23 +26,23 @@ function DetailOption({ active, detail, onPress, colors }) {
   return (
     <Pressable
       onPress={onPress}
-      className="rounded-2xl border p-5"
-      style={{ backgroundColor: active ? colors.panel : colors.surface, borderColor: active ? colors.primary : colors.border }}
+      className="flex-row items-center rounded-[14px] border px-3 py-2.5"
+      style={{ backgroundColor: active ? '#FBF3E2' : '#FFFFFF', borderColor: active ? '#D9AC38' : '#E4E1D8' }}
     >
-      <View className="flex-row flex-wrap items-center justify-between gap-3">
-        <Text className="min-w-0 flex-1 text-sm font-medium" numberOfLines={1} style={{ color: colors.text }}>
+      <View className="h-8 w-8 items-center justify-center rounded-[9px]" style={{ backgroundColor: isTrc20 ? '#F5A623' : '#7C8592' }}>
+        <Text className="text-xs font-bold text-white">{isTrc20 ? 'T' : 'B'}</Text>
+      </View>
+      <View className="ml-2.5 min-w-0 flex-1">
+        <Text className="text-[12px] font-semibold" numberOfLines={1} style={{ color: '#1B1F27' }}>
           {isTrc20 ? 'USDT TRC20' : detail.bankName}
         </Text>
-        <Text className="rounded-full px-3 py-1 text-[11px] font-bold tracking-wider uppercase" style={{ backgroundColor: colors.panel, color: colors.muted }}>
-          {detail.status}
+        <Text className="mt-0.5 text-[10px]" numberOfLines={1} selectable style={{ color: '#8A8F7C' }}>
+          {isTrc20 ? detail.bankAccountNumber : detail.bankAccountHolder}
         </Text>
       </View>
-      <Text className="mt-2 text-sm" selectable style={{ color: colors.muted }}>
-        {isTrc20 ? 'Wallet address' : 'Account number'}: {detail.bankAccountNumber}
-      </Text>
-      <Text className="mt-1 text-sm" style={{ color: colors.muted }}>
-        {isTrc20 ? 'Wallet holder' : 'Account holder'}: {detail.bankAccountHolder}
-      </Text>
+      <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: active ? '#D9AC38' : '#FFFFFF', borderWidth: active ? 0 : 1.5, borderColor: '#D6DAE0' }}>
+        {active ? <Check size={11} color="#FFFFFF" /> : null}
+      </View>
     </Pressable>
   );
 }
@@ -49,17 +50,17 @@ function DetailOption({ active, detail, onPress, colors }) {
 function InfoTile({ label, value, tone, colors, mobile }) {
   return (
     <View
-      className={`${mobile ? 'p-3 rounded-xl' : 'p-4 rounded-2xl'} flex-1 border`}
+      className={`${mobile ? 'p-2.5 rounded-[10px]' : 'p-4 rounded-2xl'} flex-1 border`}
       style={{
         minWidth: mobile ? 110 : 145,
-        backgroundColor: colors.surface,
-        borderColor: colors.border
+        backgroundColor: '#FFFFFF',
+        borderColor: '#E4E1D8'
       }}
     >
-      <Text className="text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }} numberOfLines={1}>
+      <Text className="text-[9px] uppercase tracking-wider" style={{ color: '#9CA4AF' }} numberOfLines={1}>
         {label}
       </Text>
-      <Text className={`${mobile ? 'mt-1 text-sm' : 'mt-2 text-base'} font-medium`} style={{ color: tone || colors.text }} numberOfLines={1} adjustsFontSizeToFit>
+      <Text className={`${mobile ? 'mt-1 text-[12px]' : 'mt-2 text-base'} font-semibold`} style={{ color: tone || '#1B1F27' }} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
     </View>
@@ -68,8 +69,8 @@ function InfoTile({ label, value, tone, colors, mobile }) {
 
 function WithdrawalHistory({ withdrawals, colors, mobile }) {
   return (
-    <View className="mt-5 rounded-3xl border p-5 shadow-sm" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-      <Text className="mb-3 text-base font-medium" style={{ color: colors.text }}>Withdrawal History</Text>
+    <View className="mt-4 rounded-[14px] border p-4" style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}>
+      <Text className="mb-1 text-center text-[12px] font-semibold" style={{ color: '#1B1F27' }}>Withdrawal history</Text>
       {withdrawals.length ? (
         mobile ? (
           <View className="gap-3">
@@ -108,7 +109,7 @@ function WithdrawalHistory({ withdrawals, colors, mobile }) {
           ))}
         </View>
         )
-      ) : <Text style={{ color: colors.muted }}>No withdrawal requests yet.</Text>}
+      ) : <Text className="text-center text-[10px]" style={{ color: '#9CA4AF' }}>No withdrawal requests yet.</Text>}
     </View>
   );
 }
@@ -270,8 +271,8 @@ export default function WithdrawForm({
   };
 
   return (
-    <View className={`${mobile ? 'p-5' : 'p-6'} flex-1 rounded-3xl border shadow-lg`} style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-      <Text className="mb-5 text-lg font-medium" style={{ color: colors.text }}>Withdraw Funds</Text>
+    <View className={`${mobile ? 'p-3' : 'p-6'} flex-1`} style={{ backgroundColor: 'transparent' }}>
+      <Text className="mb-3 text-[17px] font-semibold" style={{ color: '#1B1F27' }}>Withdraw Funds</Text>
       {!liveAccountSelected ? (
         <Text className="mb-4 rounded-2xl border p-4 text-sm" style={{ borderColor: colors.danger, backgroundColor: `${colors.danger}12`, color: colors.danger }}>
           Withdrawals are available only from Live accounts. Demo accounts cannot withdraw.
@@ -289,15 +290,64 @@ export default function WithdrawForm({
         <Option active={form.withdrawalMethod === 'Crypto'} label="Crypto" onPress={() => setMethod('Crypto')} colors={colors} />
       </View>
 
-      <CustomInput label="Amount (USD)" keyboardType="decimal-pad" value={form.amount} onChangeText={update('amount')} />
+      <View className="mb-3">
+        <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: '#9CA4AF' }}>Amount</Text>
+        <View className="flex-row items-center rounded-[16px] border px-4 py-3.5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E4E1D8' }}>
+          <Text className="mr-1 text-xl font-semibold" style={{ color: '#B8891E' }}>$</Text>
+          <TextInput
+            placeholder="0.00"
+            placeholderTextColor="#8A8F7C"
+            keyboardType="decimal-pad"
+            value={form.amount}
+            onChangeText={update('amount')}
+            className="flex-1 text-xl font-semibold"
+            style={{ color: '#1B1F27', padding: 0, margin: 0, outline: 'none' }}
+          />
+          <View className="rounded-lg px-2 py-1" style={{ backgroundColor: '#F4F2ED' }}>
+            <Text className="text-xs" style={{ color: '#9CA4AF' }}>USD</Text>
+          </View>
+        </View>
+      </View>
       {form.withdrawalMethod === 'Crypto' ? (
         <View className="mb-4 mt-2">
           <Text className="mb-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Crypto Network</Text>
-          <View className="mb-4 flex-row gap-3">
-            <Option active={cryptoNetwork === 'TRC20'} label="TRC20" onPress={() => setCryptoNetwork('TRC20')} colors={colors} />
-            <Option active={cryptoNetwork === 'BEP20'} label="BEP20" onPress={() => setCryptoNetwork('BEP20')} colors={colors} />
+          <View className="mb-4 gap-2">
+            {[
+              ['TRC20', 'TRON network · ~1 min confirm', 'T', '#F5A623'],
+              ['BEP20', 'BNB Smart Chain', 'B', '#F0B90B'],
+            ].map(([network, description, initial, accent]) => {
+              const active = cryptoNetwork === network;
+              return (
+                <Pressable
+                  key={network}
+                  onPress={() => setCryptoNetwork(network)}
+                  className="flex-row items-center rounded-[14px] border px-[14px] py-3"
+                  style={{ backgroundColor: active ? '#FBF3E2' : '#FFFFFF', borderColor: active ? '#D9AC38' : '#E4E1D8' }}
+                >
+                  <View className="h-[34px] w-[34px] items-center justify-center rounded-[9px]" style={{ backgroundColor: accent }}>
+                    <Text className="text-xs font-bold text-white">{initial}</Text>
+                  </View>
+                  <View className="ml-3 flex-1">
+                    <Text className="text-[14px] font-semibold" style={{ color: '#1B1F27' }}>{network}</Text>
+                    <Text className="mt-0.5 text-[11px]" style={{ color: '#8A8F7C' }}>{description}</Text>
+                  </View>
+                  <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: active ? '#D9AC38' : '#FFFFFF', borderWidth: active ? 0 : 1.5, borderColor: '#D6DAE0' }}>
+                    {active ? <Check size={11} color="#FFFFFF" /> : null}
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
-          <CustomInput label="Wallet ID" value={walletId} onChangeText={setWalletId} />
+          <CustomInput
+            label="Wallet ID"
+            placeholder="Enter destination wallet address"
+            value={walletId}
+            onChangeText={setWalletId}
+            className="mb-3"
+            labelStyle={{ color: '#9CA4AF', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}
+            placeholderTextColor="#8A8F7C"
+            style={{ height: 56, borderRadius: 16, backgroundColor: '#FFFFFF', borderColor: '#E4E1D8', paddingHorizontal: 16, color: '#1B1F27' }}
+          />
         </View>
       ) : null}
 
@@ -332,7 +382,15 @@ export default function WithdrawForm({
           </Text>
         ) : null}
       </View>
-      <CustomButton title="Request Withdrawal" onPress={submit} loading={loading} disabled={disabled} variant="primary" />
+      <CustomButton
+        title="Request Withdrawal"
+        onPress={submit}
+        loading={loading}
+        disabled={disabled}
+        variant="secondary"
+        compact
+        style={{ backgroundColor: '#E8DCA8', borderColor: '#E8DCA8' }}
+      />
       {disabled && disabledMessage ? <Text className="mt-3 text-sm text-danger">{disabledMessage}</Text> : null}
       {message ? <Text className={`mt-3 text-sm ${message.startsWith('Success') ? 'text-success' : 'text-danger'}`}>{message}</Text> : null}
       <WithdrawalHistory withdrawals={withdrawals} colors={colors} mobile={mobile} />
