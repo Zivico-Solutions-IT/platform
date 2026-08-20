@@ -453,7 +453,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
           <Pressable
             onPress={() => openOrderModal('SELL')}
             className="h-[36px] flex-1 flex-row items-center justify-center gap-1.5 rounded-md"
-            style={{ backgroundColor: orderDanger }}
+            style={{ backgroundColor: '#F15B54' }}
           >
             <Text className="text-[10px] font-bold uppercase text-white">Sell</Text>
             <Text className="text-xs font-bold text-white">{quote(currentSymbol.bid, currentSymbol.decimals)}</Text>
@@ -461,7 +461,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
           <Pressable
             onPress={() => openOrderModal('BUY')}
             className="h-[36px] flex-1 flex-row items-center justify-center gap-1.5 rounded-md"
-            style={{ backgroundColor: orderSuccess }}
+            style={{ backgroundColor: '#249F57' }}
           >
             <Text className="text-[10px] font-bold uppercase text-white">Buy</Text>
             <Text className="text-xs font-bold text-white">{quote(currentSymbol.ask, currentSymbol.decimals)}</Text>
