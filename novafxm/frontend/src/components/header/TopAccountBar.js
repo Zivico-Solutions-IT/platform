@@ -407,7 +407,7 @@ export default function TopAccountBar() {
                 onPress={() => setMenu(menu === 'account' ? null : 'account')}
                 className="h-[40px] w-full flex-row items-center justify-between rounded-xl px-3"
                 style={{
-                  backgroundColor: darkMode ? '#1E232A' : '#FFFFFF',
+                  backgroundColor: darkMode ? '#1E232A' : '#FBFAF7',
                   borderWidth: 1,
                   borderColor: darkMode ? '#353C45' : '#E2E5E9',
                   shadowColor: '#111827',

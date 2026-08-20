@@ -1,7 +1,7 @@
 import { Animated, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, Clock3, ListFilter, Wallet } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, ChevronRight, Clock3, ListFilter, Wallet } from 'lucide-react-native';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
 import OrderPanel from '../order/OrderPanel';
@@ -146,23 +146,26 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
 
 function MobileFundingOptions({ colors, onDeposit, onWithdraw, onHistory }) {
   const actions = [
-    { label: 'Deposit', icon: ArrowUp, onPress: onDeposit },
-    { label: 'Withdraw', icon: ArrowDown, onPress: onWithdraw },
-    { label: 'Transactions History', icon: Clock3, onPress: onHistory },
+    { label: 'Deposit', icon: ArrowUp, onPress: onDeposit, tone: '#2FB675', iconBackground: '#E1F5EE' },
+    { label: 'Withdraw', icon: ArrowDown, onPress: onWithdraw, tone: '#DF626A', iconBackground: '#FAECE7' },
+    { label: 'Transactions History', icon: Clock3, onPress: onHistory, tone: '#737B78', iconBackground: '#F1F1ED' },
   ];
 
   return (
     <View className="rounded-[20px] border px-3 pt-3 shadow-sm" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
       <Text className="pb-3 px-1 text-lg font-semibold" style={{ color: colors.text }}>Funding Options</Text>
-      {actions.map(({ label, icon: Icon, onPress }) => (
+      {actions.map(({ label, icon: Icon, onPress, tone, iconBackground }) => (
         <Pressable
           key={label}
           onPress={onPress}
           className="mb-2 flex-row items-center rounded-2xl border px-4 py-4"
           style={{ backgroundColor: colors.surface, borderColor: colors.border }}
         >
-          <Icon size={21} color={colors.text} strokeWidth={1.8} />
-          <Text className="ml-4 text-base font-medium" style={{ color: colors.text }}>{label}</Text>
+          <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: iconBackground }}>
+            <Icon size={21} color={tone} strokeWidth={1.9} />
+          </View>
+          <Text className="ml-4 flex-1 text-base font-semibold" style={{ color: colors.text }}>{label}</Text>
+          <ChevronRight size={18} color="#C9CDD2" strokeWidth={1.8} />
         </Pressable>
       ))}
     </View>
