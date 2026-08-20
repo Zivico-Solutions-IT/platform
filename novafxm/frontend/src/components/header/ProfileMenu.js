@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   X,
   HelpCircle,
+  ChevronRight,
 } from 'lucide-react-native';
 import { Animated, Image, Pressable, ScrollView, Text, View, useWindowDimensions, DeviceEventEmitter } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
@@ -28,25 +29,28 @@ function initialsFor(user) {
 }
 
 function MenuTile({ icon: Icon, title, subtitle, badge, onPress, palette }) {
+  const verificationTile = title === 'Verification';
   return (
     <Pressable
       onPress={(event) => {
         event.stopPropagation?.();
         onPress();
       }}
-      className="min-h-[110px] flex-1 justify-between rounded-xl p-3"
-      style={{ backgroundColor: palette.tile }}
+      className="min-h-[126px] flex-1 justify-between rounded-2xl border p-3.5"
+      style={{ backgroundColor: palette.tile, borderColor: palette.border }}
     >
       <View className="flex-row items-center justify-between">
-        <Icon size={20} color={palette.text} />
+        <View className="h-8 w-8 items-center justify-center rounded-[9px]" style={{ backgroundColor: verificationTile ? `${palette.danger}16` : `${palette.accent}16` }}>
+          <Icon size={16} color={verificationTile ? palette.danger : palette.accent} strokeWidth={2} />
+        </View>
         {badge ? (
-          <Text className="rounded-md px-2 py-1 text-[11px] font-medium" style={{ color: palette.danger, backgroundColor: `${palette.danger}22` }}>
+          <Text className="rounded-full px-2 py-1 text-[10px] font-bold" style={{ color: palette.danger, backgroundColor: `${palette.danger}16` }}>
             {badge}
           </Text>
         ) : null}
       </View>
       <View>
-        <Text className="text-base font-medium" style={{ color: palette.text }}>{title}</Text>
+        <Text className="text-[14px] font-bold" style={{ color: palette.text }}>{title}</Text>
         <Text className="mt-1 text-xs" style={{ color: palette.muted }}>{subtitle}</Text>
       </View>
     </Pressable>
@@ -67,18 +71,21 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
         marginBottom: 8,
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 12,
+        borderRadius: 14,
         borderWidth: 1,
         borderColor: palette.border,
-        paddingHorizontal: 18,
-        paddingVertical: 14,
-        backgroundColor: pressed ? palette.tile : 'transparent',
+        paddingHorizontal: 14,
+        paddingVertical: 11,
+        backgroundColor: danger ? `${palette.danger}12` : pressed ? palette.card : palette.tile,
       }}
     >
-      <Icon size={20} color={danger ? palette.danger : palette.text} strokeWidth={1.8} />
-      <Text style={{ marginLeft: 12, fontSize: 16, fontWeight: '500', color: danger ? palette.danger : palette.text }}>
+      <View className="h-8 w-8 items-center justify-center rounded-[9px]" style={{ backgroundColor: danger ? palette.tile : palette.iconBackground }}>
+        <Icon size={16} color={danger ? palette.danger : palette.icon} strokeWidth={2} />
+      </View>
+      <Text style={{ flex: 1, marginLeft: 12, fontSize: 14, fontWeight: danger ? '700' : '600', color: danger ? palette.danger : palette.text }}>
         {title}
       </Text>
+      {!danger ? <ChevronRight size={16} color={palette.chevron} strokeWidth={2} /> : null}
     </Pressable>
   );
 }
@@ -90,7 +97,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const [bonusCount, setBonusCount] = useState(0);
   const [bonusLoading, setBonusLoading] = useState(false);
   const [showBonusPosts, setShowBonusPosts] = useState(false);
-  const { colors } = useAppTheme();
+  const { colors, darkMode } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const slideAnim = useRef(new Animated.Value(410)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -128,15 +135,18 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
     ? `${Math.min(100, Math.max(2, (tradingLevelValue / levelTarget) * 100))}%`
     : '0%';
   const palette = {
-    panel: colors.panel,
-    tile: colors.surface,
-    card: colors.surface,
-    border: colors.border,
+    panel: darkMode ? colors.panel : '#F6F5F1',
+    tile: darkMode ? colors.surface : '#FFFFFF',
+    card: darkMode ? colors.surface : '#FFFFFF',
+    border: darkMode ? colors.border : '#ECEAE3',
     text: colors.text,
     muted: colors.muted,
     accent: colors.primary,
     progress: colors.border,
     danger: colors.danger,
+    iconBackground: darkMode ? colors.panel : '#F4F2ED',
+    icon: darkMode ? colors.text : '#5C635A',
+    chevron: darkMode ? colors.muted : '#C9CDD4',
   };
 
   const loadBonusPosts = async () => {
@@ -235,9 +245,9 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
         zIndex: 50,
         width: mobile ? '100%' : panelWidth,
         height: panelHeight,
-        paddingTop: mobile ? 28 : 24,
-        paddingBottom: mobile ? 24 : 20,
-        paddingHorizontal: mobile ? 20 : 20,
+        paddingTop: mobile ? 0 : 20,
+        paddingBottom: mobile ? 0 : 20,
+        paddingHorizontal: mobile ? 0 : 20,
         backgroundColor: palette.panel,
         borderLeftWidth: mobile ? 0 : 1,
         borderLeftColor: palette.border,
@@ -264,12 +274,15 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             ],
           }}
         >
-          <View className={`mb-5 flex-row items-center justify-between ${mobile ? '' : 'pl-[18px]'}`}>
-            <Text className={`${mobile ? 'text-2xl' : 'text-2xl'} font-medium`} style={{ color: palette.text }}>{showBonusPosts ? 'Bonus Offers' : 'My Profile'}</Text>
+          <View
+            className={`mb-5 flex-row items-center justify-between ${mobile ? 'border-b px-5 py-[18px]' : 'pl-[18px]'}`}
+            style={mobile ? { backgroundColor: palette.tile, borderColor: palette.border } : undefined}
+          >
+            <Text className={`${mobile ? 'text-[21px]' : 'text-2xl'} font-semibold`} style={{ color: palette.text }}>{showBonusPosts ? 'Bonus Offers' : 'My Profile'}</Text>
             <View className="flex-row items-center">
               {!showBonusPosts ? (
-                <Pressable onPress={() => { setShowBonusPosts(true); loadBonusPosts(); }} className="mr-2 h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: `${palette.danger}16` }} accessibilityLabel="View bonus offers">
-                  <Gift size={mobile ? 21 : 22} color={palette.danger} strokeWidth={2} />
+                <Pressable onPress={() => { setShowBonusPosts(true); loadBonusPosts(); }} className="mr-2 h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: darkMode ? `${palette.accent}22` : '#FBF3E2' }} accessibilityLabel="View bonus offers">
+                  <Gift size={16} color={palette.accent} strokeWidth={2} />
                   {bonusCount > 0 ? (
                     <View className="absolute right-0 top-0 h-[18px] min-w-[18px] items-center justify-center rounded-full px-1" style={{ backgroundColor: palette.danger, borderWidth: 2, borderColor: palette.panel }}>
                       <Text className="text-[10px] font-bold text-white">{bonusCount > 9 ? '9+' : bonusCount}</Text>
@@ -281,8 +294,8 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                   <ArrowLeft size={mobile ? 21 : 22} color={palette.text} strokeWidth={2} />
                 </Pressable>
               )}
-              <Pressable onPress={onClose} className="h-10 w-10 items-center justify-center">
-                <X size={mobile ? 24 : 26} color={palette.text} strokeWidth={1.8} />
+              <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: palette.iconBackground }}>
+                <X size={18} color={palette.icon} strokeWidth={2.2} />
               </Pressable>
             </View>
           </View>
@@ -306,23 +319,23 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
               ))}
             </View>
           ) : (
-            <>
+            <View className={mobile ? 'px-5 pt-[18px]' : undefined}>
 
-          <View className={`mb-4 flex-row items-center ${mobile ? '' : 'px-[18px]'}`}>
-            <View className="h-[50px] w-[50px] items-center justify-center rounded-full" style={{ backgroundColor: palette.accent }}>
-              <Text className="text-base font-medium text-medium">{initials}</Text>
+          <View className={`mb-[18px] flex-row items-center ${mobile ? '' : 'px-[18px]'}`}>
+            <View className="h-[52px] w-[52px] items-center justify-center rounded-full" style={{ backgroundColor: darkMode ? palette.accent : '#E7B84C' }}>
+              <Text className="text-base font-bold text-medium">{initials}</Text>
             </View>
-            <View className="ml-4 flex-1">
-              <Text className="text-lg font-semimedium" style={{ color: palette.text }}>
+            <View className="ml-[14px] flex-1">
+              <Text className="text-[15.5px]" style={{ color: palette.muted }}>
                 Hey, <Text className="font-medium">{firstName.toUpperCase()}</Text>
               </Text>
-              <Text className="mt-1 text-sm" style={{ color: palette.muted }}>{user?.email || 'client@novafxm.com'}</Text>
+              <Text className="mt-0.5 text-[12.5px]" style={{ color: palette.muted }}>{user?.email || 'client@novafxm.com'}</Text>
             </View>
           </View>
 
           {!isAdmin ? (
             <>
-              <View className="mb-4 rounded-xl p-4" style={{ backgroundColor: palette.card }}>
+              <View className="mb-[14px] rounded-2xl border p-4" style={{ backgroundColor: palette.card, borderColor: palette.border }}>
                 {showUpgradePrompt ? (
                   <View>
                     <Text className="text-base font-medium" style={{ color: palette.text }}>Upgrade Your Trading Level</Text>
@@ -368,7 +381,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                 )}
               </View>
 
-              <View className="mb-4 flex-row gap-3">
+              <View className="mb-5 flex-row gap-[10px]">
                 <MenuTile
                   icon={ShieldCheck}
                   title="Verification"
@@ -388,7 +401,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             </>
           ) : null}
 
-          <Text className={`mb-4 ${mobile ? 'pl-0' : 'pl-[18px]'} text-xl font-medium`} style={{ color: palette.text }}>Account</Text>
+          <Text className={`mb-3 ${mobile ? 'pl-0' : 'pl-[18px]'} text-base font-bold`} style={{ color: palette.text }}>Account</Text>
 
           <MenuAction
             icon={Settings2}
@@ -414,7 +427,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             danger
             palette={palette}
           />
-            </>
+            </View>
           )}
         </Animated.View>
       </ScrollView>
