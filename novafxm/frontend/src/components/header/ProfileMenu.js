@@ -8,13 +8,12 @@ import {
   Settings2,
   ShieldCheck,
   X,
-  HelpCircle,
   ChevronRight,
 } from 'lucide-react-native';
-import { Animated, Image, Pressable, ScrollView, Text, View, useWindowDimensions, DeviceEventEmitter } from 'react-native';
+import { Animated, Image, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppTheme } from '../../context/ThemeContext';
-import { money } from '../../utils/formatters';
 import { authService } from '../../services/authService';
 import api from '../../services/api';
 
@@ -36,7 +35,7 @@ function MenuTile({ icon: Icon, title, subtitle, badge, onPress, palette }) {
         event.stopPropagation?.();
         onPress();
       }}
-      className="min-h-[126px] flex-1 justify-between rounded-2xl border p-3.5"
+      className="min-h-[110px] flex-1 justify-between rounded-2xl border p-[15px]"
       style={{ backgroundColor: palette.tile, borderColor: palette.border }}
     >
       <View className="flex-row items-center justify-between">
@@ -111,31 +110,10 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const displayName = user?.name || 'Nova FXM Client';
   const firstName = displayName.split(/\s+/)[0] || 'Client';
   const accountType = selectedAccount?.type || user?.accountType || 'Demo';
-  const selectedAccountId = selectedAccount?.id ? String(selectedAccount.id) : '';
-  const approvedStatuses = ['approved', 'completed'];
-  const liveAccountDeposits = accountType !== 'Live'
-    ? []
-    : deposits.filter((deposit) => (
-      approvedStatuses.includes(deposit.status)
-      && (!selectedAccountId || !deposit.tradingAccountId || String(deposit.tradingAccountId) === selectedAccountId)
-    ));
-  const liveDepositTotal = liveAccountDeposits.reduce((sum, deposit) => sum + Number(deposit.amount || 0), 0);
-  const completedDepositTotal = transactions
-    .filter((transaction) => (
-      ['deposit', 'admin_add_balance'].includes(transaction.type)
-      && approvedStatuses.includes(transaction.status)
-    ))
-    .reduce((sum, transaction) => sum + Number(transaction.amount || 0) + Number(transaction.bonus || 0), 0);
-  const tradingLevelValue = liveDepositTotal || completedDepositTotal;
-  const hasLiveDeposit = accountType === 'Live' && tradingLevelValue > 0;
-  const showUpgradePrompt = accountType === 'Live' && !hasLiveDeposit;
   const liveTradingLevel = user?.tradingLevel || 'Standard';
-  const levelTarget = 1000000;
-  const levelProgress = accountType === 'Live'
-    ? `${Math.min(100, Math.max(2, (tradingLevelValue / levelTarget) * 100))}%`
-    : '0%';
+  const profileAccountId = String(Number(selectedAccount?.id || 0) + 4999).padStart(6, '0');
   const palette = {
-    panel: darkMode ? colors.panel : '#F6F5F1',
+    panel: darkMode ? colors.panel : '#FBFAF6',
     tile: darkMode ? colors.surface : '#FFFFFF',
     card: darkMode ? colors.surface : '#FFFFFF',
     border: darkMode ? colors.border : '#ECEAE3',
@@ -275,13 +253,13 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
           }}
         >
           <View
-            className={`mb-5 flex-row items-center justify-between ${mobile ? 'border-b px-5 py-[18px]' : 'pl-[18px]'}`}
-            style={mobile ? { backgroundColor: palette.tile, borderColor: palette.border } : undefined}
+            className={`mb-[10px] flex-row items-center justify-between ${mobile ? 'px-5 pt-5' : 'pl-[18px]'}`}
+            style={mobile ? { backgroundColor: palette.panel } : undefined}
           >
-            <Text className={`${mobile ? 'text-[21px]' : 'text-2xl'} font-semibold`} style={{ color: palette.text }}>{showBonusPosts ? 'Bonus Offers' : 'My Profile'}</Text>
+            <Text className={`${mobile ? 'text-[19px]' : 'text-2xl'} font-bold`} style={{ color: palette.text }}>{showBonusPosts ? 'Bonus Offers' : 'My Profile'}</Text>
             <View className="flex-row items-center">
               {!showBonusPosts ? (
-                <Pressable onPress={() => { setShowBonusPosts(true); loadBonusPosts(); }} className="mr-2 h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: darkMode ? `${palette.accent}22` : '#FBF3E2' }} accessibilityLabel="View bonus offers">
+                <Pressable onPress={() => { setShowBonusPosts(true); loadBonusPosts(); }} className="mr-2 h-8 w-8 items-center justify-center rounded-[10px]" style={{ backgroundColor: darkMode ? `${palette.accent}22` : '#FBF3E2' }} accessibilityLabel="View bonus offers">
                   <Gift size={16} color={palette.accent} strokeWidth={2} />
                   {bonusCount > 0 ? (
                     <View className="absolute right-0 top-0 h-[18px] min-w-[18px] items-center justify-center rounded-full px-1" style={{ backgroundColor: palette.danger, borderWidth: 2, borderColor: palette.panel }}>
@@ -294,7 +272,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                   <ArrowLeft size={mobile ? 21 : 22} color={palette.text} strokeWidth={2} />
                 </Pressable>
               )}
-              <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: palette.iconBackground }}>
+              <Pressable onPress={onClose} className="h-[30px] w-[30px] items-center justify-center rounded-[10px]" style={{ backgroundColor: palette.iconBackground }}>
                 <X size={18} color={palette.icon} strokeWidth={2.2} />
               </Pressable>
             </View>
@@ -319,86 +297,65 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
               ))}
             </View>
           ) : (
-            <View className={mobile ? 'px-5 pt-[18px]' : undefined}>
+            <View className={mobile ? 'px-5 pt-3' : undefined}>
 
-          <View className={`mb-[18px] flex-row items-center ${mobile ? '' : 'px-[18px]'}`}>
-            <View className="h-[52px] w-[52px] items-center justify-center rounded-full" style={{ backgroundColor: darkMode ? palette.accent : '#E7B84C' }}>
-              <Text className="text-base font-bold text-medium">{initials}</Text>
+          <View className={`relative mb-4 overflow-hidden rounded-[28px] border px-5 pb-7 pt-6 ${mobile ? '' : 'mx-[18px]'}`} style={{ backgroundColor: darkMode ? palette.card : '#FFFDF9', borderColor: darkMode ? palette.border : '#ECE6D6' }}>
+            {!darkMode ? (
+              <Svg width="166" height="166" viewBox="0 0 166 166" style={{ position: 'absolute', right: -52, top: -52, opacity: 0.7 }}>
+                <Circle cx="83" cy="83" r="82" fill="none" stroke="#E9CB84" strokeWidth="1" />
+                <Circle cx="83" cy="83" r="60" fill="none" stroke="#E9CB84" strokeWidth="1" />
+              </Svg>
+            ) : null}
+            <View className="relative flex-row items-center justify-between">
+              <Text className="text-[10px] font-bold uppercase" style={{ letterSpacing: 1, color: darkMode ? palette.muted : '#A79F87' }}>Welcome Back</Text>
+              <View className="rounded-full border px-3 py-1" style={{ backgroundColor: darkMode ? `${palette.accent}22` : '#FFF9ED', borderColor: darkMode ? palette.accent : '#E9CB84' }}>
+                <Text className="text-[10px] font-bold" style={{ color: darkMode ? palette.accent : '#B8891E' }}>{accountType}</Text>
+              </View>
             </View>
-            <View className="ml-[14px] flex-1">
-              <Text className="text-[15.5px]" style={{ color: palette.muted }}>
-                Hey, <Text className="font-medium">{firstName.toUpperCase()}</Text>
-              </Text>
-              <Text className="mt-0.5 text-[12.5px]" style={{ color: palette.muted }}>{user?.email || 'client@novafxm.com'}</Text>
+            <View className="relative mt-6 flex-row items-center">
+              <View className="h-[70px] w-[70px] items-center justify-center rounded-full border-[3px]" style={{ backgroundColor: darkMode ? palette.accent : '#E7B84C', borderColor: '#FFFFFF', shadowColor: '#B8891E', shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 5 } }}>
+                <Text className="text-[20px] font-bold" style={{ color: '#241A02' }}>{initials}</Text>
+                <View className="absolute bottom-0 right-0 h-5 w-5 rounded-full border-[3px]" style={{ backgroundColor: '#36B86D', borderColor: '#FFFFFF' }} />
+              </View>
+              <View className="ml-[14px] flex-1">
+                <Text className="text-[21px] font-bold" style={{ color: palette.text, fontFamily: 'Georgia, serif' }}>{displayName}</Text>
+                <Text className="mt-0.5 text-xs" style={{ color: darkMode ? palette.muted : '#8C93A0' }}>{user?.email || 'client@novafxm.com'}</Text>
+              </View>
+            </View>
+            <View className="relative mt-6 flex-row overflow-hidden rounded-[18px]" style={{ backgroundColor: darkMode ? palette.panel : '#FBFAF6' }}>
+              <View className="flex-1 px-3 py-4">
+                <Text className="text-[9.5px] uppercase" style={{ letterSpacing: 0.5, color: darkMode ? palette.muted : '#A79F87' }}>Level</Text>
+                <Text className="mt-1 text-[15px] font-bold" style={{ color: palette.text }}>{accountType === 'Demo' ? 'Demo' : liveTradingLevel}</Text>
+              </View>
+              <View className="flex-1 border-l px-3 py-4" style={{ borderColor: darkMode ? palette.border : '#ECE6D6' }}>
+                <Text className="text-[9.5px] uppercase" style={{ letterSpacing: 0.5, color: darkMode ? palette.muted : '#A79F87' }}>Account Type</Text>
+                <Text className="mt-1 text-[15px] font-bold" style={{ color: palette.text }}>{accountType}</Text>
+              </View>
+              <View className="flex-1 border-l px-3 py-4" style={{ borderColor: darkMode ? palette.border : '#ECE6D6' }}>
+                <Text className="text-[9.5px] uppercase" style={{ letterSpacing: 0.5, color: darkMode ? palette.muted : '#A79F87' }}>Account ID</Text>
+                <Text className="mt-1 text-[15px] font-bold" style={{ color: palette.text }}>#{profileAccountId}</Text>
+              </View>
             </View>
           </View>
 
           {!isAdmin ? (
-            <>
-              <View className="mb-[14px] rounded-2xl border p-4" style={{ backgroundColor: palette.card, borderColor: palette.border }}>
-                {showUpgradePrompt ? (
-                  <View>
-                    <Text className="text-base font-medium" style={{ color: palette.text }}>Upgrade Your Trading Level</Text>
-                    <Text className="mt-2 text-xs leading-5" style={{ color: palette.muted }}>
-                      Make your first deposit to activate your account level and unlock exclusive trading benefits.
-                    </Text>
-                    <Pressable
-                      onPress={(event) => {
-                        event.stopPropagation?.();
-                        openPanel('deposit');
-                      }}
-                      className="mt-4 self-start rounded-lg px-4 py-2"
-                      style={{ backgroundColor: palette.accent }}
-                    >
-                      <Text className="text-xs font-medium text-medium">Deposit Now</Text>
-                    </Pressable>
-                  </View>
-                ) : (
-                  <>
-                    <View className="flex-row justify-between">
-                      <View>
-                        <Text className="text-xs" style={{ color: palette.muted }}>Level</Text>
-                        <Text className="mt-1 text-base font-medium" style={{ color: palette.text }}>{accountType === 'Demo' ? 'Demo' : liveTradingLevel}</Text>
-                      </View>
-                      <View className="items-end">
-                        <Text className="text-xs" style={{ color: palette.muted }}>{accountType === 'Demo' ? 'Account Type' : 'Trading Volume'}</Text>
-                        <Text className="mt-1 text-base font-medium" style={{ color: palette.text }}>
-                          {accountType === 'Demo' ? 'Demo' : `$${money(tradingLevelValue)} `}
-                          {accountType === 'Demo' ? null : <Text style={{ color: palette.muted }}>/ $1,000,000</Text>}
-                        </Text>
-                      </View>
-                    </View>
-                    {accountType === 'Demo' ? null : (
-                      <View className="mt-4 flex-row items-center">
-                        <Award size={20} color={palette.accent} strokeWidth={1.8} />
-                        <View className="mx-3 h-2 flex-1 overflow-hidden rounded-full" style={{ backgroundColor: palette.progress }}>
-                          <View className="h-full rounded-full" style={{ width: levelProgress, backgroundColor: palette.accent }} />
-                        </View>
-                        <Award size={20} color={palette.muted} strokeWidth={1.8} />
-                      </View>
-                    )}
-                  </>
-                )}
-              </View>
-
-              <View className="mb-5 flex-row gap-[10px]">
-                <MenuTile
-                  icon={ShieldCheck}
-                  title="Verification"
-                  subtitle={verified ? 'Verified' : 'Unverified'}
-                  badge={verified ? null : 'Unverified'}
-                  onPress={() => openPanel('verification')}
-                  palette={palette}
-                />
-                <MenuTile
-                  icon={Award}
-                  title="Referral Program"
-                  subtitle="Invite & earn rewards"
-                  onPress={() => openPanel('referral')}
-                  palette={palette}
-                />
-              </View>
-            </>
+            <View className="mb-[22px] flex-row gap-[10px]">
+              <MenuTile
+                icon={ShieldCheck}
+                title="Verification"
+                subtitle={verified ? 'Verified' : 'Unverified'}
+                badge={verified ? null : 'Unverified'}
+                onPress={() => openPanel('verification')}
+                palette={palette}
+              />
+              <MenuTile
+                icon={Award}
+                title="Referral Program"
+                subtitle="Invite & earn rewards"
+                onPress={() => openPanel('referral')}
+                palette={palette}
+              />
+            </View>
           ) : null}
 
           <Text className={`mb-3 ${mobile ? 'pl-0' : 'pl-[18px]'} text-base font-bold`} style={{ color: palette.text }}>Account</Text>
@@ -409,17 +366,6 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             onPress={() => openPanel('settings')}
             palette={palette}
           />
-          {user?.role === 'user' && (
-            <MenuAction
-              icon={HelpCircle}
-              title="Support AI"
-              onPress={() => {
-                onClose?.();
-                DeviceEventEmitter.emit('openSupportChat');
-              }}
-              palette={palette}
-            />
-          )}
           <MenuAction
             icon={LogOut}
             title="Sign Out"

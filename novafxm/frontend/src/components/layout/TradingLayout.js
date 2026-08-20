@@ -1,7 +1,8 @@
 import { Animated, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, ChevronRight, Clock3, ListFilter, Wallet } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, Clock3, ListFilter, Wallet } from 'lucide-react-native';
+import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
 import OrderPanel from '../order/OrderPanel';
@@ -144,7 +145,12 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
   );
 }
 
-function MobileFundingOptions({ colors, onDeposit, onWithdraw, onHistory }) {
+function MobileFundingOptions({ selectedAccount, summary = {}, onDeposit, onWithdraw, onHistory }) {
+  const balance = Number.isFinite(Number(selectedAccount?.balance)) ? Number(selectedAccount.balance) : Number(summary.balance || 0);
+  const accountTier = selectedAccount?.tier || 'Standard';
+  const accountType = selectedAccount?.type || 'Demo';
+  const realAccount = String(accountType).toLowerCase() === 'live';
+  const accountNumber = String(Number(selectedAccount?.id || 0) + 4999).padStart(6, '0');
   const actions = [
     { label: 'Deposit', icon: ArrowUp, onPress: onDeposit, tone: '#2FB675', iconBackground: '#E1F5EE' },
     { label: 'Withdraw', icon: ArrowDown, onPress: onWithdraw, tone: '#DF626A', iconBackground: '#FAECE7' },
@@ -152,22 +158,37 @@ function MobileFundingOptions({ colors, onDeposit, onWithdraw, onHistory }) {
   ];
 
   return (
-    <View className="rounded-[20px] border px-3 pt-3 shadow-sm" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-      <Text className="pb-3 px-1 text-lg font-semibold" style={{ color: colors.text }}>Funding Options</Text>
+    <View className="px-2 pt-2">
+      <View className="relative mb-5 overflow-hidden rounded-[22px] border px-5 pb-[22px] pt-5" style={{ backgroundColor: '#FFFDF9', borderColor: '#ECE6D6' }}>
+        <Svg width="100%" height="64" viewBox="0 0 340 64" preserveAspectRatio="none" style={{ position: 'absolute', left: 0, bottom: 0, opacity: 0.62 }}>
+          <Defs><LinearGradient id="mobileFundingBalanceFill" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor="#2FA85B" stopOpacity="0.28" /><Stop offset="1" stopColor="#2FA85B" stopOpacity="0" /></LinearGradient></Defs>
+          <Path d="M0,44 L28,40 L56,46 L84,26 L112,34 L140,18 L168,24 L196,10 L224,18 L252,6 L280,14 L308,3 L340,12 L340,64 L0,64 Z" fill="url(#mobileFundingBalanceFill)" />
+          <Path d="M0,44 L28,40 L56,46 L84,26 L112,34 L140,18 L168,24 L196,10 L224,18 L252,6 L280,14 L308,3 L340,12" fill="none" stroke="#2FA85B" strokeWidth="2" />
+        </Svg>
+        <View className="relative mb-[14px] flex-row items-center">
+          <Text className="text-[13.5px] font-bold" style={{ color: '#1B1F27' }}>{accountTier}</Text>
+          <View className="ml-2 rounded-full border px-2 py-0.5" style={{ backgroundColor: realAccount ? '#EAF6EC' : '#FBF3E2', borderColor: realAccount ? '#BEE8CC' : '#E9CB84' }}><Text className="text-[10.5px] font-bold" style={{ color: realAccount ? '#2FA85B' : '#B8891E' }}>{realAccount ? 'Real' : 'Demo'}</Text></View>
+        </View>
+        <Text className="relative text-[9.5px] uppercase" style={{ letterSpacing: 0.6, color: '#A79F87' }}>Total Balance</Text>
+        <Text className="relative mt-1 text-[30px] font-bold" style={{ color: '#1B1F27' }}>${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+        <Text className="relative mt-0.5 text-[11.5px]" style={{ color: '#A79F87' }}>#{accountNumber}</Text>
+      </View>
+      <Text className="mb-[10px] text-[10.5px] uppercase" style={{ letterSpacing: 0.6, color: '#A79F87' }}>Funding Options</Text>
+      <View className="flex-row gap-2">
       {actions.map(({ label, icon: Icon, onPress, tone, iconBackground }) => (
         <Pressable
           key={label}
           onPress={onPress}
-          className="mb-2 flex-row items-center rounded-2xl border px-4 py-4"
-          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+          className="flex-1 items-center rounded-2xl border px-2 py-4"
+          style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}
         >
-          <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: iconBackground }}>
-            <Icon size={21} color={tone} strokeWidth={1.9} />
+          <View className="h-9 w-9 items-center justify-center rounded-[11px]" style={{ backgroundColor: iconBackground }}>
+            <Icon size={17} color={tone} strokeWidth={1.9} />
           </View>
-          <Text className="ml-4 flex-1 text-base font-semibold" style={{ color: colors.text }}>{label}</Text>
-          <ChevronRight size={18} color="#C9CDD2" strokeWidth={1.8} />
+          <Text className="mt-2 text-[11.5px] font-semibold" numberOfLines={1} style={{ color: '#1B1F27' }}>{label === 'Transactions History' ? 'History' : label}</Text>
         </Pressable>
       ))}
+      </View>
     </View>
   );
 }
@@ -177,7 +198,7 @@ export default function TradingLayout() {
   const { width, height } = useWindowDimensions();
   const { colors } = useAppTheme();
   const { user, isAdmin } = useAuth();
-  const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
+  const { summary, selectedTradingAccount, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
   const mobileContentAnimation = useRef(new Animated.Value(1)).current;
@@ -241,7 +262,8 @@ export default function TradingLayout() {
           ) : mobileTab === 'wallet' ? (
             <View className="flex-1 px-2 pb-2 pt-1">
               <MobileFundingOptions
-                colors={colors}
+                selectedAccount={selectedTradingAccount}
+                summary={summary}
                 onDeposit={() => router.push('/deposit')}
                 onWithdraw={() => router.push('/withdraw')}
                 onHistory={() => router.push({ pathname: '/trading', params: { panel: 'history', tab: 'wallet' } })}
