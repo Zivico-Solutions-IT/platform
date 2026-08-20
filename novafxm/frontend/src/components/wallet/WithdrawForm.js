@@ -135,6 +135,7 @@ export default function WithdrawForm({
   const [cryptoNetwork, setCryptoNetwork] = useState('TRC20');
   const [walletId, setWalletId] = useState('');
   const [message, setMessage] = useState('');
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [savedDetails, setSavedDetails] = useState([]);
   const accountType = selectedAccount?.type || user?.accountType || 'Demo';
   const liveAccountSelected = String(accountType).toLowerCase() === 'live';
@@ -224,6 +225,7 @@ export default function WithdrawForm({
   }, [cryptoNetwork, form.withdrawalMethod]);
 
   const submit = async () => {
+    setSubmitAttempted(true);
     try {
       if (!liveAccountSelected) throw new Error('Withdrawals are available only from Live accounts. Demo accounts cannot withdraw.');
       if (disabled) throw new Error(disabledMessage || 'Withdrawals are unavailable.');
@@ -258,7 +260,7 @@ export default function WithdrawForm({
       setMessage('Success: withdrawal request submitted. Status is Pending until admin approval.');
       setForm((current) => ({ ...current, amount: '' }));
     } catch (error) {
-      setMessage(`Error: ${error.message}`);
+      setMessage(error.message || 'Withdrawal request could not be submitted.');
     }
   };
   const openPaymentDetails = () => {
@@ -364,7 +366,7 @@ export default function WithdrawForm({
             colors={colors}
           />
         ))}
-        {!approvedMethodDetails.length ? (
+        {submitAttempted && !approvedMethodDetails.length ? (
           <Pressable
             onPress={openPaymentDetails}
             className="rounded-2xl border p-4"
@@ -386,12 +388,11 @@ export default function WithdrawForm({
         title="Request Withdrawal"
         onPress={submit}
         loading={loading}
-        disabled={disabled}
+        disabled={loading}
         variant="secondary"
         compact
-        style={{ backgroundColor: '#E8DCA8', borderColor: '#E8DCA8' }}
+        style={{ backgroundColor: '#D9AC38', borderColor: '#D9AC38' }}
       />
-      {disabled && disabledMessage ? <Text className="mt-3 text-sm text-danger">{disabledMessage}</Text> : null}
       {message ? <Text className={`mt-3 text-sm ${message.startsWith('Success') ? 'text-success' : 'text-danger'}`}>{message}</Text> : null}
       <WithdrawalHistory withdrawals={withdrawals} colors={colors} mobile={mobile} />
     </View>
