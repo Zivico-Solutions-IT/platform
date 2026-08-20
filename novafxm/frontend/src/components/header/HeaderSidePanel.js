@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import DatePicker from 'react-datepicker';
 import {
   Award,
   BadgeCheck,
   CheckCircle2,
   Camera,
+  CalendarDays,
   CreditCard,
   Edit3,
   Eye,
@@ -75,12 +78,12 @@ const bankStatusText = (status) => {
 };
 const canEditWithdrawalDetail = (account) => ['approved', 'rejected'].includes(account?.status);
 
-function PanelHeader({ title, subtitle, icon: Icon, onClose, colors, onIconPress }) {
+function PanelHeader({ title, subtitle, icon: Icon, onClose, colors, onIconPress, accountStyle = false }) {
   const IconContainer = onIconPress ? Pressable : View;
   return (
     <View className="flex-row items-start justify-between border-b" style={{ borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 16 }}>
       <View className="flex-row items-center">
-        <IconContainer onPress={onIconPress} className="h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: `${colors.primary}22` }}>
+        <IconContainer onPress={onIconPress} className={`h-11 w-11 items-center justify-center ${accountStyle ? 'rounded-full' : 'rounded-lg'}`} style={{ backgroundColor: accountStyle ? '#F4E8C5' : `${colors.primary}22` }}>
           <Icon size={22} color={colors.primary} />
         </IconContainer>
         <View className="ml-3">
@@ -88,7 +91,7 @@ function PanelHeader({ title, subtitle, icon: Icon, onClose, colors, onIconPress
           {subtitle ? <Text className="mt-1 text-sm" style={{ color: colors.muted }}>{subtitle}</Text> : null}
         </View>
       </View>
-      <Pressable onPress={onClose} className="h-10 w-10 items-center justify-center rounded-md" style={{ backgroundColor: colors.surface }}>
+      <Pressable onPress={onClose} className={`h-10 w-10 items-center justify-center ${accountStyle ? 'rounded-full' : 'rounded-md'}`} style={{ backgroundColor: colors.surface }}>
         <X size={22} color={colors.text} />
       </Pressable>
     </View>
@@ -200,68 +203,62 @@ function AccountPanel({ dashboard, selectedAccount, summary, colors, onAccountsC
     }
   };
 
+  const gold = '#B87F0E';
+  const cream = '#F5F3EE';
+  const card = '#FFFFFF';
+  const border = '#E7E1D7';
+  const muted = '#68758A';
+  const ink = '#171717';
+
   return (
-    <View className={`${mobile ? 'gap-4 p-4' : 'gap-5 p-6'}`}>
+    <View className={`${mobile ? 'gap-4 p-4' : 'gap-5 p-6'}`} style={{ backgroundColor: cream }}>
       <View className="gap-4 lg:flex-row">
-        <View className={`${mobile ? 'p-4' : 'p-5'} lg:flex-1 rounded-lg border`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-          <Text className="text-xs font-medium uppercase" style={{ color: colors.muted }}>Selected Account</Text>
-          <View className="mt-4 flex-row flex-wrap items-center justify-between gap-4">
-            <View className="min-w-0 flex-1 flex-row items-center">
-              <View className="h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: colors.primary }}>
-                <Wallet size={25} color="#0B0B0B" />
-              </View>
-              <View className="ml-4 min-w-0 flex-1">
-                <Text className={`${mobile ? 'text-lg' : 'text-xl'} font-medium`} numberOfLines={1} style={{ color: colors.text }}>{activeAccount.type || 'Demo'} Account</Text>
-                <Text className="mt-1 text-sm" style={{ color: colors.muted }}>{activeAccount.name || 'Trading account'}</Text>
-              </View>
-            </View>
-            <View className={mobile ? 'w-full items-start' : 'items-end'}>
-              <Text className="text-xs" style={{ color: colors.muted }}>Balance</Text>
-              <Text className={`${mobile ? 'text-xl' : 'text-2xl'} font-medium`} numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.text }}>{money(activeAccount.balance || 0)} {activeAccount.currency || 'USD'}</Text>
+        <View className={`${mobile ? 'p-3' : 'p-5'} lg:flex-1 rounded-xl border`} style={{ backgroundColor: card, borderColor: border }}>
+          <Text className={`${mobile ? 'text-[8px]' : 'text-[11px]'} font-semibold uppercase tracking-wider`} style={{ color: muted }}>Selected Account</Text>
+          <View className={`${mobile ? 'mt-2.5' : 'mt-4'} flex-row items-center`}>
+            <View className={`${mobile ? 'h-7 w-7 rounded-md' : 'h-12 w-12 rounded-xl'} items-center justify-center`} style={{ backgroundColor: '#D9A928' }}><Wallet size={mobile ? 13 : 23} color="#5D4305" /></View>
+            <View className={`${mobile ? 'ml-2' : 'ml-3'} min-w-0 flex-1`}>
+              <Text className={`${mobile ? 'text-[11px]' : 'text-lg'} font-bold`} numberOfLines={1} style={{ color: ink }}>{activeAccount.type || 'Demo'} Account</Text>
+              <Text className={`${mobile ? 'text-[8px]' : 'mt-0.5 text-xs'}`} style={{ color: muted }}>{activeAccount.name || 'Trading account'}</Text>
             </View>
           </View>
-          <View className="mt-5 flex-row flex-wrap gap-3">
-            <InfoCard label="Account ID" value={`#${accountId(activeAccount)}`} colors={colors} />
-            <InfoCard label="Status" value={activeAccount.status || 'active'} colors={colors} />
-            <InfoCard label="Leverage" value={leverageText(activeAccount)} colors={colors} />
+          <View className={mobile ? 'mt-3' : 'mt-5'}>
+            <Text className={`${mobile ? 'text-[8px]' : 'text-[11px]'} font-semibold uppercase tracking-wider`} style={{ color: muted }}>Balance</Text>
+            <Text className={`${mobile ? 'mt-0.5 text-base' : 'mt-1 text-2xl'} font-bold`} numberOfLines={1} adjustsFontSizeToFit style={{ color: ink }}>{money(activeAccount.balance || 0)} {activeAccount.currency || 'USD'}</Text>
           </View>
+          {[['Account ID', `#${accountId(activeAccount)}`], ['Status', activeAccount.status || 'active'], ['Leverage', leverageText(activeAccount)]].map(([label, value], index) => (
+            <View key={label} className={`flex-row items-center justify-between border-t ${mobile ? 'py-2' : 'py-3'}`} style={{ marginTop: index === 0 ? (mobile ? 10 : 18) : 0, borderColor: border }}>
+              <Text className={mobile ? 'text-[9px]' : 'text-sm'} style={{ color: muted }}>{label}</Text>
+              <Text className={`${mobile ? 'text-[10px]' : 'text-sm'} ${label === 'Leverage' ? 'font-bold' : 'font-semibold'}`} style={{ color: label === 'Status' ? '#24945A' : ink }}>{value}</Text>
+            </View>
+          ))}
         </View>
 
-        <View className={`${mobile ? 'p-4' : 'p-5'} lg:flex-1 rounded-lg border`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-          <Text className="text-xs font-medium uppercase" style={{ color: colors.muted }}>Create Trading Account</Text>
-          <Text className="mt-2 text-sm" style={{ color: colors.muted }}>Create extra demo/live accounts from inside the account section.</Text>
-          <View className={`${mobile ? 'flex-col' : 'flex-row'} mt-5 gap-3`}>
-            <Pressable
-              onPress={() => setConfirmType('Demo')}
-              disabled={busyType === 'Demo' || demoCount >= 2}
-              className="flex-1 flex-row items-center justify-center rounded-lg px-4 py-4"
-              style={{ backgroundColor: demoCount >= 2 ? colors.panel : colors.primary, opacity: busyType === 'Demo' ? 0.7 : 1 }}
-            >
-              <Plus size={17} color={demoCount >= 2 ? colors.muted : '#0B0B0B'} />
-              <Text className="ml-2 font-medium" style={{ color: demoCount >= 2 ? colors.muted : '#0B0B0B' }}>{busyType === 'Demo' ? 'Creating...' : 'New Demo'}</Text>
+        <View className={`${mobile ? 'p-4' : 'p-5'} lg:flex-1 rounded-2xl border`} style={{ backgroundColor: card, borderColor: border }}>
+          <Text className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: muted }}>Create Trading Account</Text>
+          <Text className="mt-2 text-sm leading-5" style={{ color: muted }}>Create extra demo/live accounts from inside the account section.</Text>
+          <View className="mt-5 gap-3">
+            <Pressable onPress={() => setConfirmType('Demo')} disabled={busyType === 'Demo' || demoCount >= 2} className="w-full flex-row items-center justify-center rounded-full px-4 py-3.5" style={{ backgroundColor: demoCount >= 2 ? '#E8E4DB' : gold, backgroundImage: demoCount >= 2 || Platform.OS !== 'web' ? undefined : 'linear-gradient(135deg, #D9A928, #B87F0E)', opacity: busyType === 'Demo' ? 0.7 : 1 }}>
+              <Plus size={17} color={demoCount >= 2 ? muted : '#FFFFFF'} />
+              <Text className="ml-2 font-semibold" style={{ color: demoCount >= 2 ? muted : '#FFFFFF' }}>{busyType === 'Demo' ? 'Creating...' : 'New Demo'}</Text>
             </Pressable>
-            <Pressable
-              onPress={() => setConfirmType('Live')}
-              disabled={busyType === 'Live' || liveCount >= 5}
-              className="flex-1 flex-row items-center justify-center rounded-lg border px-4 py-4"
-              style={{ borderColor: colors.border, backgroundColor: colors.panel, opacity: busyType === 'Live' ? 0.7 : 1 }}
-            >
-              <Plus size={17} color={colors.primary} />
-              <Text className="ml-2 font-medium" style={{ color: liveCount >= 5 ? colors.muted : colors.text }}>{busyType === 'Live' ? 'Creating...' : 'New Live'}</Text>
+            <Pressable onPress={() => setConfirmType('Live')} disabled={busyType === 'Live' || liveCount >= 5} className="w-full flex-row items-center justify-center rounded-full border px-4 py-3.5" style={{ borderColor: gold, backgroundColor: card, opacity: busyType === 'Live' ? 0.7 : 1 }}>
+              <Plus size={17} color={liveCount >= 5 ? muted : gold} />
+              <Text className="ml-2 font-semibold" style={{ color: liveCount >= 5 ? muted : gold }}>{busyType === 'Live' ? 'Creating...' : 'New Live'}</Text>
             </Pressable>
           </View>
           {confirmType ? (
-            <View className="mt-5 rounded-lg border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.primary }}>
-              <Text className="text-lg font-medium" style={{ color: colors.text }}>Create {confirmType} account?</Text>
-              <Text className="mt-1 text-sm" style={{ color: colors.muted }}>
+            <View className="mt-5 rounded-xl border p-4" style={{ backgroundColor: cream, borderColor: gold }}>
+              <Text className="text-lg font-semibold" style={{ color: ink }}>Create {confirmType} account?</Text>
+              <Text className="mt-1 text-sm" style={{ color: muted }}>
                 This will add a new {confirmType.toLowerCase()} trading account to your profile.
               </Text>
               <View className="mt-4 flex-row gap-3">
-                <Pressable onPress={() => setConfirmType('')} className="flex-1 rounded-lg border px-4 py-3" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
-                  <Text className="text-center font-medium" style={{ color: colors.text }}>Cancel</Text>
+                <Pressable onPress={() => setConfirmType('')} className="flex-1 rounded-full border px-4 py-3" style={{ borderColor: border, backgroundColor: card }}>
+                  <Text className="text-center font-semibold" style={{ color: ink }}>Cancel</Text>
                 </Pressable>
-                <Pressable onPress={() => createAccount(confirmType)} disabled={Boolean(busyType)} className="flex-1 rounded-lg px-4 py-3" style={{ backgroundColor: colors.primary, opacity: busyType ? 0.7 : 1 }}>
-                  <Text className="text-center font-medium text-medium">{busyType ? 'Creating...' : 'Confirm'}</Text>
+                <Pressable onPress={() => createAccount(confirmType)} disabled={Boolean(busyType)} className="flex-1 rounded-full px-4 py-3" style={{ backgroundColor: gold, opacity: busyType ? 0.7 : 1 }}>
+                  <Text className="text-center font-semibold text-white">{busyType ? 'Creating...' : 'Confirm'}</Text>
                 </Pressable>
               </View>
             </View>
@@ -269,8 +266,8 @@ function AccountPanel({ dashboard, selectedAccount, summary, colors, onAccountsC
         </View>
       </View>
 
-      <View className={`${mobile ? 'p-4' : 'p-5'} rounded-lg border`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-        <Text className="text-xl font-medium" style={{ color: colors.text }}>All Trading Accounts</Text>
+      <View className={`${mobile ? 'p-4' : 'p-5'} rounded-2xl border`} style={{ backgroundColor: card, borderColor: border }}>
+        <Text className="text-xl font-bold" style={{ color: ink }}>All Trading Accounts</Text>
         <View className="mt-4 gap-3">
           {accounts.length ? accounts.map((account) => {
             const selected = String(account.id) === String(activeAccount.id);
@@ -278,25 +275,25 @@ function AccountPanel({ dashboard, selectedAccount, summary, colors, onAccountsC
               <Pressable
                 key={account.id}
                 onPress={() => onSelectAccount?.(account)}
-                className="flex-row flex-wrap items-center justify-between gap-3 rounded-lg border p-4"
+                className="flex-row items-center justify-between gap-3 rounded-xl border p-4"
                 style={{
-                  backgroundColor: selected ? `${colors.primary}12` : colors.panel,
-                  borderColor: selected ? colors.primary : colors.border,
+                  backgroundColor: selected ? '#FFF9E8' : card,
+                  borderColor: selected ? '#D9B34A' : border,
                   cursor: 'pointer',
                 }}
               >
-                <View>
-                  <Text className="font-medium" style={{ color: colors.text }}>{account.type} - {account.name}</Text>
-                  <Text className="mt-1 text-xs" style={{ color: colors.muted }}>#{accountId(account)} | {account.status || 'active'} | {leverageText(account)}</Text>
+                <View className="min-w-0 flex-1">
+                  <Text className="font-bold" numberOfLines={1} style={{ color: ink }}>{account.type} · {account.name}</Text>
+                  <Text className="mt-1 text-xs" numberOfLines={1} style={{ color: muted }}>#{accountId(account)} · {account.status || 'active'} · {leverageText(account)}</Text>
                 </View>
-                <Text className="font-medium" style={{ color: colors.text }}>{money(account.balance || 0)} {account.currency || 'USD'}</Text>
+                <Text className="text-sm font-bold" numberOfLines={1} adjustsFontSizeToFit style={{ color: selected ? gold : ink }}>{money(account.balance || 0)} {account.currency || 'USD'}</Text>
               </Pressable>
             );
-          }) : <Text style={{ color: colors.muted }}>No trading accounts found.</Text>}
+          }) : <Text style={{ color: muted }}>No trading accounts found.</Text>}
         </View>
       </View>
 
-      {message ? <Text className="rounded-lg border p-3 text-sm" style={{ borderColor: colors.border, color: colors.text }}>{message}</Text> : null}
+      {message ? <Text className="rounded-xl border p-3 text-sm" style={{ backgroundColor: card, borderColor: border, color: ink }}>{message}</Text> : null}
     </View>
   );
 }
@@ -337,6 +334,73 @@ function Field({ label, value, onChangeText, placeholder, editable = true, secur
           </Pressable>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+const dateOfBirthParts = (value) => /^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/.exec(String(value || '').trim());
+
+const dateOfBirthToDate = (value) => {
+  const match = dateOfBirthParts(value);
+  return match ? new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1])) : new Date();
+};
+
+const formatDateOfBirth = (date) => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}/${date.getFullYear()}`;
+};
+
+const isValidDateOfBirth = (value) => {
+  const match = dateOfBirthParts(value);
+  if (!match) return false;
+  const date = dateOfBirthToDate(value);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date.getFullYear() === Number(match[3])
+    && date.getMonth() === Number(match[2]) - 1
+    && date.getDate() === Number(match[1])
+    && date <= today;
+};
+
+function DateOfBirthField({ value, onChange, colors, compactMobile = false }) {
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const { width } = useWindowDimensions();
+  const compact = width < 992 && compactMobile;
+  const selectedDate = dateOfBirthParts(value) ? dateOfBirthToDate(value) : null;
+
+  return (
+    <View className="w-full" style={{ marginBottom: compact ? 14 : width < 992 ? 24 : 16 }}>
+      <Text className="text-sm font-medium" style={{ color: colors.text, ...(compact ? { lineHeight: 17 } : {}) }}>Date of Birth</Text>
+      {Platform.OS === 'web' ? (
+        <View style={{ marginTop: compact ? 6 : width < 992 ? 12 : 8 }}>
+          <DatePicker
+            selected={selectedDate}
+            onChange={(date) => { if (date) onChange(formatDateOfBirth(date)); }}
+            dateFormat="dd/MM/yyyy"
+            maxDate={new Date()}
+            showMonthDropdown
+            showYearDropdown
+            scrollableYearDropdown
+            yearDropdownItemNumber={100}
+            dropdownMode="scroll"
+            popperPlacement="bottom-start"
+            placeholderText="DD/MM/YYYY"
+            calendarClassName="dob-react-datepicker"
+            wrapperClassName="dob-datepicker-wrapper"
+            className="dob-datepicker-input"
+          />
+          <CalendarDays pointerEvents="none" size={18} color="#B87F0E" style={{ position: 'absolute', right: 14, top: compact ? 11 : 13 }} />
+        </View>
+      ) : (
+        <>
+          <Pressable onPress={() => setPickerVisible(true)} accessibilityRole="button" accessibilityLabel="Select Date of Birth" className="flex-row items-center rounded-lg border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border, marginTop: compact ? 6 : width < 992 ? 12 : 8, ...(compact ? { minHeight: 42, paddingVertical: 9 } : {}) }}>
+            <Text className="flex-1" style={{ color: value ? colors.text : colors.muted }}>{value || 'DD/MM/YYYY'}</Text>
+            <CalendarDays size={18} color="#B87F0E" />
+          </Pressable>
+          {pickerVisible ? <DateTimePicker value={dateOfBirthToDate(value)} mode="date" maximumDate={new Date()} onChange={(_, date) => { setPickerVisible(false); if (date) onChange(formatDateOfBirth(date)); }} /> : null}
+        </>
+      )}
     </View>
   );
 }
@@ -465,8 +529,12 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
   };
 
   const saveProfile = async () => {
-    setBusy(true);
     setMessage('');
+    if (!isValidDateOfBirth(profile.dateOfBirth)) {
+      setMessage('Please select a valid date of birth. Future dates are not allowed.');
+      return;
+    }
+    setBusy(true);
     try {
       await updateProfile({
         name: profile.name.trim(),
@@ -827,7 +895,7 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
                   <Field label="Country" value={profile.country} onChangeText={(country) => setProfile((current) => ({ ...current, country }))} placeholder="Sri Lanka" colors={colors} compactMobile />
                   <Field label="Phone Number" value={profile.phone} onChangeText={(phone) => setProfile((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" colors={colors} compactMobile />
                 </View>
-                <Field label="Date of Birth" value={profile.dateOfBirth} onChangeText={(dateOfBirth) => setProfile((current) => ({ ...current, dateOfBirth }))} placeholder="DD / MM / YYYY" colors={colors} compactMobile />
+                <DateOfBirthField value={profile.dateOfBirth} onChange={(dateOfBirth) => setProfile((current) => ({ ...current, dateOfBirth }))} colors={colors} compactMobile />
                 {isMobileLayout ? (
                   <CustomButton title={busy ? 'Saving...' : 'Save Profile'} onPress={saveProfile} disabled={busy} className="mt-3 self-center px-6" compact={isMobileLayout} />
                 ) : null}
@@ -1401,6 +1469,7 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
           icon={Icon || BadgeCheck}
           onClose={onClose}
           colors={colors}
+          accountStyle={activePanelType === 'account'}
           onIconPress={activePanelType === 'settings' && isMobile ? () => setShowSettingsMenu((prev) => !prev) : undefined}
         />
         <ScrollView showsVerticalScrollIndicator>

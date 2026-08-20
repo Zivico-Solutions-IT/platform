@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import {
   CalendarDays,
@@ -242,6 +243,29 @@ const isValidDateOfBirth = (value) => {
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day && date < new Date();
 };
 
+const dateOfBirthToPickerValue = (value) => {
+  const match = /^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/.exec(String(value || '').trim());
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : '';
+};
+
+const pickerValueToDateOfBirth = (value) => {
+  const [year, month, day] = String(value || '').split('-');
+  return year && month && day ? `${day}/${month}/${year}` : '';
+};
+
+const todayAsPickerValue = () => {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${today.getFullYear()}-${month}-${day}`;
+};
+
+const dateOfBirthToDate = (value) => {
+  const match = /^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/.exec(String(value || '').trim());
+  if (!match) return new Date();
+  return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+};
+
 function readFileDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -290,6 +314,79 @@ function SettingsInput({ label, value, onChangeText, placeholder, editable = tru
         className={`rounded-xl border px-4 py-3 ${editable ? '' : 'opacity-70'}`}
         style={{ backgroundColor: colors.panel, borderColor: colors.border, color: colors.text }}
       />
+      {error ? <Text className="mt-1 text-xs text-danger">{error}</Text> : null}
+    </View>
+  );
+}
+
+function DateOfBirthInput({ value, onChangeText, editable = true, error }) {
+  const { colors } = useAppTheme();
+  const dateInputRef = useRef(null);
+  const [nativePickerVisible, setNativePickerVisible] = useState(false);
+  const pickerValue = dateOfBirthToPickerValue(value);
+
+  const handleNativeChange = (_, selectedDate) => {
+    setNativePickerVisible(false);
+    if (!selectedDate) return;
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    onChangeText(`${day}/${month}/${selectedDate.getFullYear()}`);
+  };
+
+  const openWebPicker = () => {
+    const input = dateInputRef.current;
+    if (!input) return;
+    if (typeof input.showPicker === 'function') input.showPicker();
+    else input.click();
+  };
+
+  return (
+    <View className="mb-4">
+      <Text className="mb-2 text-sm font-medium" style={{ color: colors.text }}>Date of Birth</Text>
+      {Platform.OS === 'web' ? (
+        <View className={`relative flex-row items-center rounded-xl border ${editable ? '' : 'opacity-70'}`} style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+          <Pressable
+            disabled={!editable}
+            onPress={openWebPicker}
+            className="flex-1 px-4 py-3"
+            accessibilityLabel="Select Date of Birth"
+          >
+            <Text style={{ color: value ? colors.text : colors.muted }}>{value || 'DD/MM/YYYY'}</Text>
+          </Pressable>
+          <CalendarDays size={18} color={colors.muted} className="mr-4" />
+          <input
+            ref={dateInputRef}
+            type="date"
+            value={pickerValue}
+            disabled={!editable}
+            max={todayAsPickerValue()}
+            aria-label="Date of Birth calendar"
+            onChange={(event) => onChangeText(pickerValueToDateOfBirth(event.target.value))}
+            style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+          />
+        </View>
+      ) : (
+        <>
+          <Pressable
+            disabled={!editable}
+            onPress={() => setNativePickerVisible(true)}
+            className={`flex-row items-center rounded-xl border px-4 py-3 ${editable ? '' : 'opacity-70'}`}
+            style={{ backgroundColor: colors.panel, borderColor: colors.border }}
+            accessibilityLabel="Select Date of Birth"
+          >
+            <Text className="flex-1" style={{ color: value ? colors.text : colors.muted }}>{value || 'DD/MM/YYYY'}</Text>
+            <CalendarDays size={18} color={colors.muted} />
+          </Pressable>
+          {nativePickerVisible ? (
+            <DateTimePicker
+              value={dateOfBirthToDate(value)}
+              mode="date"
+              maximumDate={new Date()}
+              onChange={handleNativeChange}
+            />
+          ) : null}
+        </>
+      )}
       {error ? <Text className="mt-1 text-xs text-danger">{error}</Text> : null}
     </View>
   );
@@ -1107,7 +1204,7 @@ export default function SettingsScreen() {
                 <SettingsInput label="Email Address" value={profileForm.email} editable={editingProfile} error={profileErrors.email} keyboardType="email-address" onChangeText={(email) => setProfileForm((current) => ({ ...current, email }))} placeholder="email@example.com" />
                 <CountrySelect value={profileForm.country} editable={editingProfile} error={profileErrors.country} onChange={updateCountry} />
                 <SettingsInput label="Phone Number" value={profileForm.phone} editable={editingProfile} error={profileErrors.phone} keyboardType="phone-pad" onChangeText={(phone) => setProfileForm((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" />
-                <SettingsInput label="Date of Birth" value={profileForm.dateOfBirth} editable={editingProfile} error={profileErrors.dateOfBirth} onChangeText={(dateOfBirth) => setProfileForm((current) => ({ ...current, dateOfBirth }))} placeholder="DD / MM / YYYY" />
+                <DateOfBirthInput value={profileForm.dateOfBirth} editable={editingProfile} error={profileErrors.dateOfBirth} onChangeText={(dateOfBirth) => setProfileForm((current) => ({ ...current, dateOfBirth }))} />
               </View>
             </View>
             </View>
