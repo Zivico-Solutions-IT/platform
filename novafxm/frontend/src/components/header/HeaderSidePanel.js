@@ -352,11 +352,6 @@ const formatDateOfBirth = (date) => {
   return `${day}/${month}/${date.getFullYear()}`;
 };
 
-const datePickerMonths = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
 const isValidDateOfBirth = (value) => {
   const match = dateOfBirthParts(value);
   if (!match) return false;
@@ -385,45 +380,24 @@ function DateOfBirthField({ value, onChange, colors, darkMode, compactMobile = f
             onChange={(date) => { if (date) onChange(formatDateOfBirth(date)); }}
             dateFormat="dd/MM/yyyy"
             maxDate={new Date()}
+            showMonthDropdown
+            showYearDropdown
+            scrollableYearDropdown
+            yearDropdownItemNumber={100}
+            dropdownMode="scroll"
             popperPlacement="bottom-start"
             placeholderText="DD/MM/YYYY"
             calendarClassName={`dob-react-datepicker${darkMode ? ' dob-react-datepicker--dark' : ''}`}
             wrapperClassName="dob-datepicker-wrapper"
-            className="dob-datepicker-input dob-datepicker-input--with-icon"
-            renderCustomHeader={({ date, changeMonth, changeYear, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => {
-              const selectStyle = darkMode ? {
-                width: 82,
-                border: '1px solid #1f242d',
-                borderRadius: 6,
-                padding: '5px 8px',
-                backgroundColor: '#1a1f26',
-                color: '#ffffff',
-                colorScheme: 'dark',
-                appearance: 'none',
-                WebkitAppearance: 'none',
-              } : { width: 82 };
-
-              return (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 0 6px' }}>
-                  <button type="button" onClick={decreaseMonth} disabled={prevMonthButtonDisabled} aria-label="Previous month" style={{ border: 0, background: 'transparent', color: '#B87F0E', fontSize: 20 }}>‹</button>
-                  <select value={date.getMonth()} onChange={(event) => changeMonth(Number(event.target.value))} style={selectStyle}>
-                    {datePickerMonths.map((month, index) => <option key={month} value={index}>{month}</option>)}
-                  </select>
-                  <select value={date.getFullYear()} onChange={(event) => changeYear(Number(event.target.value))} style={{ ...selectStyle, width: 66 }}>
-                    {Array.from({ length: 101 }, (_, index) => new Date().getFullYear() - index).map((year) => <option key={year} value={year}>{year}</option>)}
-                  </select>
-                  <button type="button" onClick={increaseMonth} disabled={nextMonthButtonDisabled} aria-label="Next month" style={{ border: 0, background: 'transparent', color: '#B87F0E', fontSize: 20 }}>›</button>
-                </div>
-              );
-            }}
+            className="dob-datepicker-input"
           />
-          <CalendarDays pointerEvents="none" size={18} color="#B87F0E" style={{ position: 'absolute', left: 14, top: compact ? 11 : 13 }} />
+          <CalendarDays pointerEvents="none" size={18} color="#B87F0E" style={{ position: 'absolute', right: 14, top: compact ? 11 : 13 }} />
         </View>
       ) : (
         <>
           <Pressable onPress={() => setPickerVisible(true)} accessibilityRole="button" accessibilityLabel="Select Date of Birth" className="flex-row items-center rounded-lg border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border, marginTop: compact ? 6 : width < 992 ? 12 : 8, ...(compact ? { minHeight: 42, paddingVertical: 9 } : {}) }}>
-            <CalendarDays size={18} color="#B87F0E" style={{ marginRight: 10 }} />
             <Text className="flex-1" style={{ color: value ? colors.text : colors.muted }}>{value || 'DD/MM/YYYY'}</Text>
+            <CalendarDays size={18} color="#B87F0E" />
           </Pressable>
           {pickerVisible ? <DateTimePicker value={dateOfBirthToDate(value)} mode="date" maximumDate={new Date()} themeVariant={darkMode ? 'dark' : 'light'} onChange={(_, date) => { setPickerVisible(false); if (date) onChange(formatDateOfBirth(date)); }} /> : null}
         </>
