@@ -12,8 +12,8 @@ const GREEN = '#2FA85B';
 
 function Card({ title, children, colors }) {
   return (
-    <View className="rounded-[18px] border p-4" style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}>
-      <Text className="mb-4 text-[15px] font-bold" style={{ color: '#1B1F27' }}>{title}</Text>
+    <View className="rounded-[18px] border p-4" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+      <Text className="mb-4 text-[15px] font-bold" style={{ color: colors.text }}>{title}</Text>
       {children}
     </View>
   );
@@ -21,47 +21,47 @@ function Card({ title, children, colors }) {
 
 function VerificationStep({ title, description, status, active, complete, colors }) {
   const accent = complete ? GREEN : active ? GOLD : '#D6DAE0';
-  const labelColor = active ? medium : '#8A8F7C';
-  const labelBackground = active ? '#D9AC38' : '#F4F2ED';
+  const labelColor = active ? medium : colors.muted;
+  const labelBackground = active ? '#D9AC38' : colors.surface;
 
   return (
     <View
       className="flex-1 rounded-[18px] border p-4"
       style={{
-        backgroundColor: complete ? '#FBF3E2' : '#FFFFFF',
+        backgroundColor: complete ? (colors.mode === 'dark' ? '#2B2513' : '#FBF3E2') : colors.surface,
         borderColor: accent,
       }}
     >
       <View className="mb-4 flex-row items-center justify-between">
-        <View className="h-10 w-10 items-center justify-center rounded-[11px]" style={{ backgroundColor: complete ? '#F0DEA8' : '#F4F2ED' }}>
+        <View className="h-10 w-10 items-center justify-center rounded-[11px]" style={{ backgroundColor: complete ? '#F0DEA8' : colors.surface }}>
           {complete ? <CheckCircle2 size={20} color={GOLD} /> : active ? <UploadCloud size={20} color="#9CA4AF" /> : <FileText size={20} color="#9CA4AF" />}
         </View>
         <Text className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase" style={{ color: labelColor, backgroundColor: labelBackground }}>
           {status}
         </Text>
       </View>
-      <Text className="text-[15px] font-bold" style={{ color: '#1B1F27' }}>{title}</Text>
-      <Text className="mt-1 text-[12px] leading-[17px]" style={{ color: '#8A8F7C' }}>{description}</Text>
+      <Text className="text-[15px] font-bold" style={{ color: colors.text }}>{title}</Text>
+      <Text className="mt-1 text-[12px] leading-[17px]" style={{ color: colors.muted }}>{description}</Text>
     </View>
   );
 }
 
 function AccountDashboardHeader({ user, colors }) {
   return (
-    <View className="border-b px-5 pb-[18px] pt-[22px]" style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}>
+    <View className="border-b px-5 pb-[18px] pt-[22px]" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
       <View className="flex-row items-start justify-between">
         <View className="flex-row items-start gap-3">
-          <View className="h-[38px] w-[38px] items-center justify-center rounded-[11px]" style={{ backgroundColor: '#FBF3E2' }}>
+          <View className="h-[38px] w-[38px] items-center justify-center rounded-[11px]" style={{ backgroundColor: colors.primarySoft }}>
             <ShieldCheck size={18} color={GOLD} />
           </View>
           <View>
-            <Text className="text-[21px] font-semibold" style={{ color: '#1B1F27' }}>Verification</Text>
-            <Text className="mt-1 text-[12px]" style={{ color: '#8A8F7C' }}>Step-wise KYC status and documents</Text>
+            <Text className="text-[21px] font-semibold" style={{ color: colors.text }}>Verification</Text>
+            <Text className="mt-1 text-[12px]" style={{ color: colors.muted }}>Step-wise KYC status and documents</Text>
           </View>
         </View>
         <Link href="/trading" asChild>
-          <Pressable className="h-[30px] w-[30px] items-center justify-center rounded-full" style={{ backgroundColor: '#F4F2ED' }}>
-            <X size={14} color="#7C8592" />
+          <Pressable className="h-[30px] w-[30px] items-center justify-center rounded-full" style={{ backgroundColor: colors.surface }}>
+            <X size={14} color={colors.muted} />
           </Pressable>
         </Link>
       </View>
@@ -74,7 +74,7 @@ function AccountDashboardHeader({ user, colors }) {
 
 export default function VerificationScreen() {
   const { user, refreshUser } = useAuth();
-  const { colors } = useAppTheme();
+  const { colors, darkMode } = useAppTheme();
   const verificationStatus = user?.verificationStatus || 'unverified';
 
   useEffect(() => {
@@ -127,16 +127,16 @@ export default function VerificationScreen() {
   }
 
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: '#1A1C20' }} contentContainerStyle={{ alignItems: 'center', paddingHorizontal: 12, paddingVertical: 24 }}>
-      <View className="w-full overflow-hidden" style={{ maxWidth: 380, borderRadius: 0, backgroundColor: '#F6F5F1' }}>
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerStyle={{ alignItems: 'center', paddingHorizontal: 12, paddingVertical: 24 }}>
+      <View className="w-full overflow-hidden" style={{ maxWidth: 380, borderRadius: 0, backgroundColor: colors.background }}>
       <AccountDashboardHeader user={user} colors={colors} />
 
       <View className="gap-4 px-5 pb-5 pt-[18px]">
         <Card title="Verification Status" colors={colors}>
           <View className="mb-4">
-            <Text className="text-[19px] font-bold" style={{ color: '#1B1F27' }}>Unlock full account access</Text>
-            <Text className="mt-1 text-[12px] leading-[17px]" style={{ color: '#8A8F7C' }}>Upload your documents to enable withdrawals and full account features.</Text>
-            <View className="mt-3 self-start rounded-full border px-3.5 py-1.5" style={{ borderColor: '#E9CB84', backgroundColor: '#FFFFFF' }}>
+            <Text className="text-[19px] font-bold" style={{ color: colors.text }}>Unlock full account access</Text>
+            <Text className="mt-1 text-[12px] leading-[17px]" style={{ color: colors.muted }}>Upload your documents to enable withdrawals and full account features.</Text>
+            <View className="mt-3 self-start rounded-full border px-3.5 py-1.5" style={{ borderColor: '#E9CB84', backgroundColor: colors.surface }}>
               <Text className="text-[11px] font-semibold" style={{ color: GOLD }}>KYC Required</Text>
             </View>
           </View>
@@ -165,19 +165,19 @@ export default function VerificationScreen() {
               />
             </View>
 
-            <View className="flex-1 rounded-[18px] border p-4" style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}>
+            <View className="flex-1 rounded-[18px] border p-4" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
               <View className="mb-3 h-10 w-10 items-center justify-center rounded-[11px]" style={{ backgroundColor: '#EAF6EC' }}>
                 <FileCheck2 size={20} color={GREEN} />
               </View>
-              <Text className="text-[15px] font-bold" style={{ color: '#1B1F27' }}>Document Requirements</Text>
-              <Text className="mt-1 text-[12px] leading-[17px]" style={{ color: '#8A8F7C' }}>Both files are required before submission.</Text>
+              <Text className="text-[15px] font-bold" style={{ color: colors.text }}>Document Requirements</Text>
+              <Text className="mt-1 text-[12px] leading-[17px]" style={{ color: colors.muted }}>Both files are required before submission.</Text>
               <View className="mt-4 gap-2.5">
                 {['ID Proof', 'Address Proof'].map((item) => (
-                  <View key={item} className="items-center rounded-[16px] border border-dashed p-4" style={{ backgroundColor: '#F9FBF9', borderColor: '#B7DFC0' }}>
+                  <View key={item} className="items-center rounded-[16px] border border-dashed p-4" style={{ backgroundColor: darkMode ? '#18251F' : '#F9FBF9', borderColor: '#B7DFC0' }}>
                     <View className="h-9 w-9 items-center justify-center rounded-[10px]" style={{ backgroundColor: '#EAF6EC' }}>
                       <UploadCloud size={18} color={GREEN} />
                     </View>
-                    <Text className="mt-2 text-[13px] font-semibold" style={{ color: '#1B1F27' }}>{item}</Text>
+                    <Text className="mt-2 text-[13px] font-semibold" style={{ color: colors.text }}>{item}</Text>
                     <Text className="mt-1 text-center text-[11px]" style={{ color: '#9CA4AF' }}>Click to upload · JPG or PNG, up to 5MB</Text>
                   </View>
                 ))}

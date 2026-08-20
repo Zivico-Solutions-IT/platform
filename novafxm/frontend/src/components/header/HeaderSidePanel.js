@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { router } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import DatePicker from 'react-datepicker';
 import {
@@ -13,15 +12,16 @@ import {
   Eye,
   EyeOff,
   FileText,
+  Globe2,
   History,
   LockKeyhole,
-  LogOut,
+  Mail,
   Menu,
   Moon,
   Plus,
+  Phone,
   Save,
   ShieldCheck,
-  Sun,
   Trash2,
   UploadCloud,
   UserRound,
@@ -52,7 +52,7 @@ function readFileDataUrl(file) {
 const panelTypeFrom = (type) => String(type || '').split(':')[0] || type;
 const settingsSectionFrom = (type) => {
   const section = String(type || '').split(':')[1] || 'profile';
-  return ['profile', 'security', 'payments', 'session'].includes(section) ? section : 'profile';
+  return ['profile', 'security', 'payments'].includes(section) ? section : 'profile';
 };
 
 const normalizeBankAccount = (account) => ({
@@ -298,7 +298,7 @@ function AccountPanel({ dashboard, selectedAccount, summary, colors, onAccountsC
   );
 }
 
-function Field({ label, value, onChangeText, placeholder, editable = true, secureTextEntry = false, colors, compactMobile = false, noFlex = false }) {
+function Field({ label, value, onChangeText, placeholder, editable = true, secureTextEntry = false, icon: Icon, colors, compactMobile = false, noFlex = false }) {
   const [visible, setVisible] = useState(false);
   const { width } = useWindowDimensions();
   const isMobile = width < 992;
@@ -316,6 +316,7 @@ function Field({ label, value, onChangeText, placeholder, editable = true, secur
           ...(compact ? { minHeight: 42 } : {}),
         }}
       >
+        {Icon ? <Icon size={16} color={colors.muted} style={{ marginLeft: 12 }} /> : null}
         <TextInput
           value={value}
           onChangeText={onChangeText}
@@ -325,7 +326,7 @@ function Field({ label, value, onChangeText, placeholder, editable = true, secur
           secureTextEntry={secureTextEntry && !visible}
           autoCapitalize={secureTextEntry ? 'none' : undefined}
           autoCorrect={secureTextEntry ? false : undefined}
-          className="flex-1 px-4 py-3"
+          className={`flex-1 ${Icon ? 'px-3' : 'px-4'} py-3`}
           style={{ color: colors.text, ...(compact ? { paddingVertical: 9 } : {}) }}
         />
         {secureTextEntry ? (
@@ -363,7 +364,7 @@ const isValidDateOfBirth = (value) => {
     && date <= today;
 };
 
-function DateOfBirthField({ value, onChange, colors, compactMobile = false }) {
+function DateOfBirthField({ value, onChange, colors, darkMode, compactMobile = false }) {
   const [pickerVisible, setPickerVisible] = useState(false);
   const { width } = useWindowDimensions();
   const compact = width < 992 && compactMobile;
@@ -386,7 +387,7 @@ function DateOfBirthField({ value, onChange, colors, compactMobile = false }) {
             dropdownMode="scroll"
             popperPlacement="bottom-start"
             placeholderText="DD/MM/YYYY"
-            calendarClassName="dob-react-datepicker"
+            calendarClassName={`dob-react-datepicker${darkMode ? ' dob-react-datepicker--dark' : ''}`}
             wrapperClassName="dob-datepicker-wrapper"
             className="dob-datepicker-input"
           />
@@ -398,7 +399,7 @@ function DateOfBirthField({ value, onChange, colors, compactMobile = false }) {
             <Text className="flex-1" style={{ color: value ? colors.text : colors.muted }}>{value || 'DD/MM/YYYY'}</Text>
             <CalendarDays size={18} color="#B87F0E" />
           </Pressable>
-          {pickerVisible ? <DateTimePicker value={dateOfBirthToDate(value)} mode="date" maximumDate={new Date()} onChange={(_, date) => { setPickerVisible(false); if (date) onChange(formatDateOfBirth(date)); }} /> : null}
+          {pickerVisible ? <DateTimePicker value={dateOfBirthToDate(value)} mode="date" maximumDate={new Date()} themeVariant={darkMode ? 'dark' : 'light'} onChange={(_, date) => { setPickerVisible(false); if (date) onChange(formatDateOfBirth(date)); }} /> : null}
         </>
       )}
     </View>
@@ -426,11 +427,11 @@ function SettingsTab({ active, title, subtitle, icon: Icon, onPress, colors }) {
   );
 }
 
-function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, initialSection = 'profile', returnToWithdrawPayoutType, onReturnToWithdraw, showMenu, setShowMenu }) {
+function SettingsPanel({ colors, darkMode, user, updateProfile, initialSection = 'profile', returnToWithdrawPayoutType, onReturnToWithdraw, showMenu, setShowMenu }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 992;
   const isMobileLayout = width < 760;
-  const { logout, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const profileImageInputRef = useRef(null);
   const returnedToWithdrawRef = useRef(false);
   const [activeSection, setActiveSection] = useState(initialSection);
@@ -475,7 +476,7 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
   }, [user]);
 
   useEffect(() => {
-    const allowedSections = isAdmin ? ['profile', 'security', 'session'] : ['profile', 'security', 'payments', 'session'];
+    const allowedSections = isAdmin ? ['profile', 'security'] : ['profile', 'security', 'payments'];
     setActiveSection(allowedSections.includes(initialSection) ? initialSection : 'profile');
   }, [initialSection, isAdmin]);
 
@@ -757,16 +758,10 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
     }
   };
 
-  const signOut = async () => {
-    await logout();
-    router.replace('/login');
-  };
-
   const tabs = [
     ['profile', 'Profile', 'Edit your profile details', UserRound],
     ['security', 'Security', 'Password and account access', LockKeyhole],
     ...(!isAdmin ? [['payments', 'Payments', 'Withdrawal methods', CreditCard]] : []),
-    ['session', 'Session', 'Sign out and sessions', LogOut],
   ];
 
   const ContentWrapper = isMobile ? View : ScrollView;
@@ -783,18 +778,19 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
   const showTrc20Form = !savedTrc20Detail || trc20Rejected || (editingPayoutType === 'TRC20' && Boolean(editingBankAccountId));
   const showBep20Form = !savedBep20Detail || bep20Rejected || (editingPayoutType === 'BEP20' && Boolean(editingBankAccountId));
   return (
-    <View className="min-h-[620px] flex-row">
+    <View className="min-h-[620px]" style={{ flexDirection: isMobile ? 'column' : 'row' }}>
       {(!isMobile || showMenu) && (
         <View
-          className="border-r"
+          className={isMobile ? 'border-b' : 'border-r'}
           style={{
-            width: isMobile ? 64 : 300,
+            width: isMobile ? '100%' : 300,
             padding: isMobile ? 8 : 16,
             borderColor: colors.border,
             backgroundColor: colors.background,
-            alignItems: isMobile ? 'center' : 'stretch',
+            alignItems: 'stretch',
           }}
         >
+          <View style={isMobile ? { flexDirection: 'row', gap: 4 } : undefined}>
           {tabs.map(([key, title, subtitle, Icon]) => {
             const active = activeSection === key;
             if (isMobile) {
@@ -804,13 +800,14 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
                   onPress={() => {
                     setActiveSection(key);
                   }}
-                  className="mb-4 h-11 w-11 items-center justify-center rounded-xl border"
+                  className="h-10 flex-1 flex-row items-center justify-center rounded-lg border px-2"
                   style={{
                     borderColor: active ? colors.primary : colors.border,
                     backgroundColor: active ? `${colors.primary}18` : colors.surface,
                   }}
                 >
-                  <Icon size={18} color={active ? colors.primary : colors.muted} />
+                  <Icon size={14} color={active ? colors.primary : colors.muted} />
+                  <Text className="ml-1 text-[10px] font-medium" numberOfLines={1} style={{ color: active ? colors.primary : colors.muted }}>{title}</Text>
                 </Pressable>
               );
             }
@@ -826,15 +823,16 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
               />
             );
           })}
+          </View>
         </View>
       )}
 
       <ContentWrapper {...contentWrapperProps}>
         {activeSection === 'profile' ? (
-          <View className={`${isMobileLayout ? 'rounded-lg border p-3' : 'rounded-lg border p-5'}`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-            <View className={isMobileLayout ? "mb-3 flex-row items-center justify-between" : "mb-4 flex-row items-center justify-between"}>
+          <View className={`${isMobileLayout ? 'rounded-lg border p-3' : 'rounded-xl border p-6'}`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+            <View className={isMobileLayout ? "mb-3 flex-row items-center justify-between" : "mb-5 flex-row items-center justify-between"}>
               <View>
-                <View className="flex-row items-center gap-2">
+                <View className="flex-row items-center gap-2" style={!isMobile ? { display: 'none' } : undefined}>
                   <Text className="text-xl font-medium" style={{ color: colors.text }}>Profile</Text>
                   {isMobileLayout ? (
                     <View className="rounded-lg px-2 py-0.5" style={{ backgroundColor: user?.verificationStatus === 'approved' ? `${colors.success}22` : `${colors.primary}22` }}>
@@ -844,15 +842,15 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
                     </View>
                   ) : null}
                 </View>
-                <Text className="mt-1 text-xs" style={{ color: colors.muted }}>Edit your profile details</Text>
+                {isMobile ? <Text className="mt-1 text-xs" style={{ color: colors.muted }}>Edit your profile details</Text> : null}
               </View>
               {!isMobileLayout ? (
                 <CustomButton title={busy ? 'Saving...' : 'Save Profile'} onPress={saveProfile} disabled={busy} className="min-w-[150px]" />
               ) : null}
             </View>
-            <View className={isMobileLayout ? "gap-3" : "gap-4 lg:flex-row"}>
-              <View className={`w-full items-center rounded-lg border lg:w-[250px] ${isMobileLayout ? 'p-3' : 'p-5'}`} style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-                <View className={isMobileLayout ? "h-20 w-20 overflow-hidden rounded-full border" : "h-28 w-28 overflow-hidden rounded-full border"} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+            <View className={isMobileLayout ? "gap-3" : "gap-6 lg:flex-row"}>
+              <View className={`w-full items-center ${isMobileLayout ? 'rounded-lg border p-3' : 'lg:w-[220px]'}`} style={isMobileLayout ? { backgroundColor: colors.panel, borderColor: colors.border } : { paddingRight: 24, borderRightWidth: 1, borderColor: colors.border }}>
+                <View className={isMobileLayout ? "h-20 w-20 overflow-hidden rounded-full border" : "h-28 w-28 overflow-hidden rounded-full"} style={{ backgroundColor: isMobileLayout || darkMode ? colors.surface : '#F7F7F4', borderColor: colors.border }}>
                   {profile.profileImage ? (
                     <Image source={{ uri: profile.profileImage }} className="h-full w-full" resizeMode="cover" />
                   ) : (
@@ -864,7 +862,7 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
                 {Platform.OS === 'web' ? (
                   <input ref={profileImageInputRef} accept="image/*" style={{ display: 'none' }} type="file" onChange={selectProfileImage} />
                 ) : null}
-                <Pressable onPress={openProfileImagePicker} className={isMobileLayout ? "-mt-7 ml-14 h-7 w-7 items-center justify-center rounded-full" : "-mt-8 ml-20 h-9 w-9 items-center justify-center rounded-full"} style={{ backgroundColor: colors.primary }}>
+                <Pressable onPress={openProfileImagePicker} className={isMobileLayout ? "-mt-7 ml-14 h-7 w-7 items-center justify-center rounded-full" : "-mt-7 ml-20 h-9 w-9 items-center justify-center rounded-full"} style={{ backgroundColor: colors.primary }}>
                   <Camera size={isMobileLayout ? 12 : 16} color="#0B0B0B" />
                 </Pressable>
                 <View className="mt-3 flex-row flex-wrap justify-center gap-1.5">
@@ -879,7 +877,7 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
                 </View>
                 {!isMobileLayout ? (
                   <>
-                    <Text className="mt-3 text-lg font-medium" style={{ color: colors.text }}>{profile.name || 'NovaFXM Client'}</Text>
+                    <Text className="mt-3 text-sm font-medium" style={{ color: colors.text }}>{profile.name || 'NovaFXM Client'}</Text>
                     <Text className="mt-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium" style={{ backgroundColor: user?.verificationStatus === 'approved' ? `${colors.success}22` : `${colors.primary}22`, color: user?.verificationStatus === 'approved' ? colors.success : colors.primary }}>
                       {user?.verificationStatus === 'approved' ? 'Verified' : 'Not Verified'}
                     </Text>
@@ -888,14 +886,14 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
               </View>
               <View className="flex-1">
                 <View className={isMobileLayout ? "gap-2" : "gap-4 lg:flex-row"}>
-                  <Field label="Full Name" value={profile.name} onChangeText={(name) => setProfile((current) => ({ ...current, name }))} placeholder="Your full name" colors={colors} compactMobile />
-                  <Field label="Email Address" value={profile.email} onChangeText={(email) => setProfile((current) => ({ ...current, email }))} placeholder="email@example.com" colors={colors} compactMobile />
+                  <Field label="Full Name" value={profile.name} onChangeText={(name) => setProfile((current) => ({ ...current, name }))} placeholder="Your full name" icon={UserRound} colors={colors} compactMobile />
+                  <Field label="Email Address" value={profile.email} onChangeText={(email) => setProfile((current) => ({ ...current, email }))} placeholder="email@example.com" icon={Mail} colors={colors} compactMobile />
                 </View>
                 <View className={isMobileLayout ? "gap-2" : "gap-4 lg:flex-row"}>
-                  <Field label="Country" value={profile.country} onChangeText={(country) => setProfile((current) => ({ ...current, country }))} placeholder="Sri Lanka" colors={colors} compactMobile />
-                  <Field label="Phone Number" value={profile.phone} onChangeText={(phone) => setProfile((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" colors={colors} compactMobile />
+                  <Field label="Country" value={profile.country} onChangeText={(country) => setProfile((current) => ({ ...current, country }))} placeholder="Sri Lanka" icon={Globe2} colors={colors} compactMobile />
+                  <Field label="Phone Number" value={profile.phone} onChangeText={(phone) => setProfile((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" icon={Phone} colors={colors} compactMobile />
                 </View>
-                <DateOfBirthField value={profile.dateOfBirth} onChange={(dateOfBirth) => setProfile((current) => ({ ...current, dateOfBirth }))} colors={colors} compactMobile />
+                <DateOfBirthField value={profile.dateOfBirth} onChange={(dateOfBirth) => setProfile((current) => ({ ...current, dateOfBirth }))} colors={colors} darkMode={darkMode} compactMobile />
                 {isMobileLayout ? (
                   <CustomButton title={busy ? 'Saving...' : 'Save Profile'} onPress={saveProfile} disabled={busy} className="mt-3 self-center px-6" compact={isMobileLayout} />
                 ) : null}
@@ -1015,28 +1013,6 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
                   </View>
                 </View>
               )) : <Text style={{ color: colors.muted }}>No payment methods saved yet.</Text>}
-            </View>
-          </View>
-        ) : null}
-
-        {activeSection === 'session' ? (
-          <View className="rounded-lg border p-5" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-            <Text className="text-2xl font-medium" style={{ color: colors.text }}>Session</Text>
-            <Text className="mt-1 text-sm" style={{ color: colors.muted }}>Manage your theme and account session.</Text>
-            <Pressable onPress={toggleTheme} className="mt-5 flex-row items-center justify-between rounded-lg border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-              <View className="flex-row items-center">
-                {darkMode ? <Moon size={20} color={colors.primary} /> : <Sun size={20} color={colors.primary} />}
-                <View className="ml-3">
-                  <Text className="font-medium" style={{ color: colors.text }}>Mode</Text>
-                  <Text className="text-xs" style={{ color: colors.muted }}>{darkMode ? 'Dark mode enabled' : 'Light mode enabled'}</Text>
-                </View>
-              </View>
-              <Text className="font-medium" style={{ color: colors.primary }}>Change</Text>
-            </Pressable>
-            <View className="mt-4 rounded-lg border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-              <Text className="font-medium" style={{ color: colors.text }}>{profile.email || user?.email || 'Signed in user'}</Text>
-              <Text className="mt-1 text-xs" style={{ color: colors.muted }}>End this account session safely.</Text>
-              <CustomButton title="Sign Out" variant="secondary" onPress={signOut} className="mt-4 max-w-[160px]" compact={isMobileLayout} />
             </View>
           </View>
         ) : null}
@@ -1200,7 +1176,7 @@ function VerificationPanel({ user, colors, submitVerification, refreshUser }) {
 
 export default function HeaderSidePanel({ type, selectedAccount, summary, onClose, onAccountsChanged, onSelectAccount }) {
   const { user, updateProfile, submitVerification, refreshUser } = useAuth();
-  const { colors, darkMode, toggleTheme } = useAppTheme();
+  const { colors, darkMode } = useAppTheme();
   const { deposit, withdraw, loading: walletLoading } = useWallet();
   const { width, height } = useWindowDimensions();
   const [dashboard, setDashboard] = useState(null);
@@ -1314,7 +1290,7 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
     deposit: ['Deposit', 'Submit a funding request', Wallet],
     withdraw: ['Withdraw', 'Request funds from your account', Wallet],
     history: ['Transaction History', 'Deposits, withdrawals and account activity', History],
-    settings: ['My Settings', ['admin', 'agent'].includes(user?.role) ? 'Profile, security and sessions' : 'Profile, security, notifications and payments', isMobile ? Menu : Moon],
+    settings: ['My Settings', ['admin', 'agent'].includes(user?.role) ? 'Profile and security' : 'Profile, security, notifications and payments', isMobile ? Menu : Moon],
     verification: ['Verification', 'Step-wise KYC status and documents', ShieldCheck],
     referral: ['Referral Programme', 'Invite clients and earn rewards', Award],
   };
@@ -1535,7 +1511,6 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
               <SettingsPanel
                 colors={colors}
                 darkMode={darkMode}
-                toggleTheme={toggleTheme}
                 user={user}
                 updateProfile={updateProfile}
                 initialSection={settingsInitialSection}

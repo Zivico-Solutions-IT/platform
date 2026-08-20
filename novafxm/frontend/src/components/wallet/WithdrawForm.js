@@ -10,37 +10,39 @@ import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
 
 function Option({ active, label, onPress, colors }) {
+  const darkMode = colors.mode === 'dark';
   return (
     <Pressable
       onPress={onPress}
       className="h-9 flex-1 items-center justify-center rounded-[10px] border px-3"
-      style={{ backgroundColor: active ? '#FBF3E2' : '#FFFFFF', borderColor: active ? '#D9AC38' : '#E4E1D8' }}
+      style={{ backgroundColor: active ? (darkMode ? '#3A2F12' : '#FBF3E2') : (darkMode ? colors.surface : '#FFFFFF'), borderColor: active ? '#D9AC38' : (darkMode ? colors.border : '#E4E1D8') }}
     >
-      <Text className="text-[12px]" style={{ color: active ? '#8A6A1E' : '#5C635A', fontWeight: active ? '600' : '500' }}>{label}</Text>
+      <Text className="text-[12px]" style={{ color: active ? (darkMode ? '#E8C95A' : '#8A6A1E') : (darkMode ? colors.text : '#5C635A'), fontWeight: active ? '600' : '500' }}>{label}</Text>
     </Pressable>
   );
 }
 
 function DetailOption({ active, detail, onPress, colors }) {
+  const darkMode = colors.mode === 'dark';
   const isTrc20 = detail.payoutType === 'TRC20';
   return (
     <Pressable
       onPress={onPress}
       className="flex-row items-center rounded-[14px] border px-3 py-2.5"
-      style={{ backgroundColor: active ? '#FBF3E2' : '#FFFFFF', borderColor: active ? '#D9AC38' : '#E4E1D8' }}
+      style={{ backgroundColor: active ? (darkMode ? '#3A2F12' : '#FBF3E2') : (darkMode ? colors.surface : '#FFFFFF'), borderColor: active ? '#D9AC38' : (darkMode ? colors.border : '#E4E1D8') }}
     >
       <View className="h-8 w-8 items-center justify-center rounded-[9px]" style={{ backgroundColor: isTrc20 ? '#F5A623' : '#7C8592' }}>
         <Text className="text-xs font-bold text-white">{isTrc20 ? 'T' : 'B'}</Text>
       </View>
       <View className="ml-2.5 min-w-0 flex-1">
-        <Text className="text-[12px] font-semibold" numberOfLines={1} style={{ color: '#1B1F27' }}>
+        <Text className="text-[12px] font-semibold" numberOfLines={1} style={{ color: colors.text }}>
           {isTrc20 ? 'USDT TRC20' : detail.bankName}
         </Text>
-        <Text className="mt-0.5 text-[10px]" numberOfLines={1} selectable style={{ color: '#8A8F7C' }}>
+        <Text className="mt-0.5 text-[10px]" numberOfLines={1} selectable style={{ color: colors.muted }}>
           {isTrc20 ? detail.bankAccountNumber : detail.bankAccountHolder}
         </Text>
       </View>
-      <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: active ? '#D9AC38' : '#FFFFFF', borderWidth: active ? 0 : 1.5, borderColor: '#D6DAE0' }}>
+      <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: active ? '#D9AC38' : (darkMode ? colors.surface : '#FFFFFF'), borderWidth: active ? 0 : 1.5, borderColor: darkMode ? colors.border : '#D6DAE0' }}>
         {active ? <Check size={11} color="#FFFFFF" /> : null}
       </View>
     </Pressable>
@@ -53,14 +55,14 @@ function InfoTile({ label, value, tone, colors, mobile }) {
       className={`${mobile ? 'p-2.5 rounded-[10px]' : 'p-4 rounded-2xl'} flex-1 border`}
       style={{
         minWidth: mobile ? 110 : 145,
-        backgroundColor: '#FFFFFF',
-        borderColor: '#E4E1D8'
+        backgroundColor: colors.surface,
+        borderColor: colors.border
       }}
     >
-      <Text className="text-[9px] uppercase tracking-wider" style={{ color: '#9CA4AF' }} numberOfLines={1}>
+      <Text className="text-[9px] uppercase tracking-wider" style={{ color: colors.muted }} numberOfLines={1}>
         {label}
       </Text>
-      <Text className={`${mobile ? 'mt-1 text-[12px]' : 'mt-2 text-base'} font-semibold`} style={{ color: tone || '#1B1F27' }} numberOfLines={1} adjustsFontSizeToFit>
+      <Text className={`${mobile ? 'mt-1 text-[12px]' : 'mt-2 text-base'} font-semibold`} style={{ color: tone || colors.text }} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
     </View>
@@ -69,8 +71,8 @@ function InfoTile({ label, value, tone, colors, mobile }) {
 
 function WithdrawalHistory({ withdrawals, colors, mobile }) {
   return (
-    <View className="mt-4 rounded-[14px] border p-4" style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}>
-      <Text className="mb-1 text-center text-[12px] font-semibold" style={{ color: '#1B1F27' }}>Withdrawal history</Text>
+    <View className="mt-4 rounded-[14px] border p-4" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+      <Text className="mb-1 text-center text-[12px] font-semibold" style={{ color: colors.text }}>Withdrawal history</Text>
       {withdrawals.length ? (
         mobile ? (
           <View className="gap-3">
@@ -109,7 +111,7 @@ function WithdrawalHistory({ withdrawals, colors, mobile }) {
           ))}
         </View>
         )
-      ) : <Text className="text-center text-[10px]" style={{ color: '#9CA4AF' }}>No withdrawal requests yet.</Text>}
+      ) : <Text className="text-center text-[10px]" style={{ color: colors.muted }}>No withdrawal requests yet.</Text>}
     </View>
   );
 }
@@ -125,7 +127,7 @@ export default function WithdrawForm({
   selectedAccount,
 }) {
   const { width } = useWindowDimensions();
-  const { colors } = useAppTheme();
+  const { colors, darkMode } = useAppTheme();
   const { user } = useAuth();
   const [form, setForm] = useState({
     amount: '',
@@ -274,7 +276,7 @@ export default function WithdrawForm({
 
   return (
     <View className={`${mobile ? 'p-3' : 'p-6'} flex-1`} style={{ backgroundColor: 'transparent' }}>
-      <Text className="mb-3 text-[17px] font-semibold" style={{ color: '#1B1F27' }}>Withdraw Funds</Text>
+      <Text className="mb-3 text-[17px] font-semibold" style={{ color: colors.text }}>Withdraw Funds</Text>
       {!liveAccountSelected ? (
         <Text className="mb-4 rounded-2xl border p-4 text-sm" style={{ borderColor: colors.danger, backgroundColor: `${colors.danger}12`, color: colors.danger }}>
           Withdrawals are available only from Live accounts. Demo accounts cannot withdraw.
@@ -293,20 +295,20 @@ export default function WithdrawForm({
       </View>
 
       <View className="mb-3">
-        <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: '#9CA4AF' }}>Amount</Text>
-        <View className="flex-row items-center rounded-[16px] border px-4 py-3.5" style={{ backgroundColor: '#FFFFFF', borderColor: '#E4E1D8' }}>
+        <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: colors.muted }}>Amount</Text>
+        <View className="flex-row items-center rounded-[16px] border px-4 py-3.5" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
           <Text className="mr-1 text-xl font-semibold" style={{ color: '#B8891E' }}>$</Text>
           <TextInput
             placeholder="0.00"
-            placeholderTextColor="#8A8F7C"
+            placeholderTextColor={colors.muted}
             keyboardType="decimal-pad"
             value={form.amount}
             onChangeText={update('amount')}
             className="flex-1 text-xl font-semibold"
-            style={{ color: '#1B1F27', padding: 0, margin: 0, outline: 'none' }}
+            style={{ color: colors.text, padding: 0, margin: 0, outline: 'none' }}
           />
-          <View className="rounded-lg px-2 py-1" style={{ backgroundColor: '#F4F2ED' }}>
-            <Text className="text-xs" style={{ color: '#9CA4AF' }}>USD</Text>
+          <View className="rounded-lg px-2 py-1" style={{ backgroundColor: colors.panel }}>
+            <Text className="text-xs" style={{ color: colors.muted }}>USD</Text>
           </View>
         </View>
       </View>
@@ -324,16 +326,16 @@ export default function WithdrawForm({
                   key={network}
                   onPress={() => setCryptoNetwork(network)}
                   className="flex-row items-center rounded-[14px] border px-[14px] py-3"
-                  style={{ backgroundColor: active ? '#FBF3E2' : '#FFFFFF', borderColor: active ? '#D9AC38' : '#E4E1D8' }}
+                  style={{ backgroundColor: active ? (darkMode ? '#3A2F12' : '#FBF3E2') : colors.surface, borderColor: active ? '#D9AC38' : colors.border }}
                 >
                   <View className="h-[34px] w-[34px] items-center justify-center rounded-[9px]" style={{ backgroundColor: accent }}>
                     <Text className="text-xs font-bold text-white">{initial}</Text>
                   </View>
                   <View className="ml-3 flex-1">
-                    <Text className="text-[14px] font-semibold" style={{ color: '#1B1F27' }}>{network}</Text>
-                    <Text className="mt-0.5 text-[11px]" style={{ color: '#8A8F7C' }}>{description}</Text>
+                    <Text className="text-[14px] font-semibold" style={{ color: colors.text }}>{network}</Text>
+                    <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>{description}</Text>
                   </View>
-                  <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: active ? '#D9AC38' : '#FFFFFF', borderWidth: active ? 0 : 1.5, borderColor: '#D6DAE0' }}>
+                  <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: active ? '#D9AC38' : colors.surface, borderWidth: active ? 0 : 1.5, borderColor: colors.border }}>
                     {active ? <Check size={11} color="#FFFFFF" /> : null}
                   </View>
                 </Pressable>
@@ -346,9 +348,9 @@ export default function WithdrawForm({
             value={walletId}
             onChangeText={setWalletId}
             className="mb-3"
-            labelStyle={{ color: '#9CA4AF', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}
-            placeholderTextColor="#8A8F7C"
-            style={{ height: 56, borderRadius: 16, backgroundColor: '#FFFFFF', borderColor: '#E4E1D8', paddingHorizontal: 16, color: '#1B1F27' }}
+            labelStyle={{ color: colors.muted, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}
+            placeholderTextColor={colors.muted}
+            style={{ height: 56, borderRadius: 16, backgroundColor: colors.surface, borderColor: colors.border, paddingHorizontal: 16, color: colors.text }}
           />
         </View>
       ) : null}

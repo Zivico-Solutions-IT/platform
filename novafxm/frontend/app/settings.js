@@ -298,11 +298,11 @@ function SettingsMenuItem({ icon: Icon, title, subtitle, active, onPress }) {
   );
 }
 
-function SettingsInput({ label, value, onChangeText, placeholder, editable = true, error, keyboardType }) {
+function SettingsInput({ label, value, onChangeText, placeholder, editable = true, error, keyboardType, containerStyle }) {
   const { colors } = useAppTheme();
 
   return (
-    <View className="mb-4">
+    <View className="mb-4" style={containerStyle}>
       <Text className="mb-2 text-sm font-medium" style={{ color: colors.text }}>{label}</Text>
       <TextInput
         value={value}
@@ -319,8 +319,8 @@ function SettingsInput({ label, value, onChangeText, placeholder, editable = tru
   );
 }
 
-function DateOfBirthInput({ value, onChangeText, editable = true, error }) {
-  const { colors } = useAppTheme();
+function DateOfBirthInput({ value, onChangeText, editable = true, error, containerStyle }) {
+  const { colors, darkMode } = useAppTheme();
   const dateInputRef = useRef(null);
   const [nativePickerVisible, setNativePickerVisible] = useState(false);
   const pickerValue = dateOfBirthToPickerValue(value);
@@ -341,7 +341,7 @@ function DateOfBirthInput({ value, onChangeText, editable = true, error }) {
   };
 
   return (
-    <View className="mb-4">
+    <View className="mb-4" style={containerStyle}>
       <Text className="mb-2 text-sm font-medium" style={{ color: colors.text }}>Date of Birth</Text>
       {Platform.OS === 'web' ? (
         <View className={`relative flex-row items-center rounded-xl border ${editable ? '' : 'opacity-70'}`} style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
@@ -362,7 +362,7 @@ function DateOfBirthInput({ value, onChangeText, editable = true, error }) {
             max={todayAsPickerValue()}
             aria-label="Date of Birth calendar"
             onChange={(event) => onChangeText(pickerValueToDateOfBirth(event.target.value))}
-            style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+            style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none', colorScheme: darkMode ? 'dark' : 'light' }}
           />
         </View>
       ) : (
@@ -382,6 +382,7 @@ function DateOfBirthInput({ value, onChangeText, editable = true, error }) {
               value={dateOfBirthToDate(value)}
               mode="date"
               maximumDate={new Date()}
+              themeVariant={darkMode ? 'dark' : 'light'}
               onChange={handleNativeChange}
             />
           ) : null}
@@ -392,7 +393,7 @@ function DateOfBirthInput({ value, onChangeText, editable = true, error }) {
   );
 }
 
-function CountrySelect({ value, onChange, editable, error }) {
+function CountrySelect({ value, onChange, editable, error, containerStyle }) {
   const { colors } = useAppTheme();
   const [open, setOpen] = useState(false);
   const selectedCountry = countryByName(value);
@@ -403,7 +404,7 @@ function CountrySelect({ value, onChange, editable, error }) {
   };
 
   return (
-    <View className="mb-4">
+    <View className="mb-4" style={containerStyle}>
       <Text className="mb-2 text-sm font-medium" style={{ color: colors.text }}>Country</Text>
       <Pressable
         disabled={!editable}
@@ -1040,13 +1041,14 @@ export default function SettingsScreen() {
   const showTrc20Form = !savedTrc20Detail || trc20Rejected || (editingPayoutType === 'TRC20' && Boolean(editingBankAccountId));
   const showBep20Form = !savedBep20Detail || bep20Rejected || (editingPayoutType === 'BEP20' && Boolean(editingBankAccountId));
   const mobileLayout = width < 640;
+  const webProfileLayout = Platform.OS === 'web' && !isMobile;
 
   return (
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-4 lg:p-8">
       <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
         <View className="min-w-0 flex-1">
-          <Text className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>Settings</Text>
-          <Text className="mt-1" style={{ color: colors.muted }}>Manage your account preferences and security</Text>
+          <Text className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>{webProfileLayout ? 'My Settings' : 'Settings'}</Text>
+          <Text className="mt-1" style={{ color: colors.muted }}>{webProfileLayout ? 'Profile, security, notifications and payments' : 'Manage your account preferences and security'}</Text>
         </View>
         <Pressable onPress={() => router.push('/dashboard')} className="rounded-xl border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
           <Text className="font-medium text-primary">Back to Dashboard</Text>
@@ -1116,10 +1118,14 @@ export default function SettingsScreen() {
         <View className={`${mobileLayout ? 'p-4' : (isMobile ? 'p-5' : 'p-8')} flex-1`}>
           <View className="mb-6 flex-row flex-wrap items-center justify-between gap-4">
             <View className="min-w-0 flex-1">
-              <Text className={`${isMobile ? 'text-xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>{activeSettings.title}</Text>
-              <Text className="mt-2" style={{ color: colors.muted }}>{activeSettings.subtitle}</Text>
+              {!webProfileLayout || activeSection !== 'profile' ? (
+                <>
+                  <Text className={`${isMobile ? 'text-xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>{activeSettings.title}</Text>
+                  <Text className="mt-2" style={{ color: colors.muted }}>{activeSettings.subtitle}</Text>
+                </>
+              ) : null}
             </View>
-            {activeSection === 'profile' ? (
+            {activeSection === 'profile' && !webProfileLayout ? (
               <View className="flex-row flex-wrap gap-3">
                 {editingProfile ? (
                   <>
@@ -1145,10 +1151,10 @@ export default function SettingsScreen() {
 
           {activeSection === 'profile' ? (
             <View className={`${isMobile ? 'p-4' : 'p-5 lg:p-7'} rounded-2xl border`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-            <Text className={`${isMobile ? 'text-xl' : 'text-2xl'} mb-6 font-medium`} style={{ color: colors.text }}>Profile Information</Text>
-            <View className="gap-8 lg:flex-row">
-              <View className="items-center lg:w-[300px]">
-                <View className="h-40 w-40 overflow-hidden rounded-full border" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+            {!webProfileLayout ? <Text className={`${isMobile ? 'text-xl' : 'text-2xl'} mb-6 font-medium`} style={{ color: colors.text }}>Profile Information</Text> : null}
+            <View className={webProfileLayout ? 'flex-row gap-6' : 'gap-8 lg:flex-row'}>
+              <View className="items-center lg:w-[300px]" style={webProfileLayout ? { width: 220, paddingRight: 24, borderRightWidth: 1, borderColor: colors.border } : undefined}>
+                <View className={webProfileLayout ? 'h-28 w-28 overflow-hidden rounded-full border' : 'h-40 w-40 overflow-hidden rounded-full border'} style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
                   {profileForm.profileImage ? (
                     <Image source={{ uri: profileForm.profileImage }} className="h-full w-full" resizeMode="cover" />
                   ) : (
@@ -1171,11 +1177,11 @@ export default function SettingsScreen() {
                 ) : null}
                 <Pressable
                   onPress={openProfileImagePicker}
-                  className="-mt-9 ml-28 h-12 w-12 items-center justify-center rounded-full bg-primary"
+                  className={`${webProfileLayout ? '-mt-7 ml-20 h-9 w-9' : '-mt-9 ml-28 h-12 w-12'} items-center justify-center rounded-full bg-primary`}
                 >
-                  <Camera size={19} color="#05130d" />
+                  <Camera size={webProfileLayout ? 15 : 19} color="#05130d" />
                 </Pressable>
-                {editingProfile ? (
+                {editingProfile || webProfileLayout ? (
                   <View className="mt-4 flex-row flex-wrap justify-center gap-3">
                     <Pressable onPress={openProfileImagePicker} className="rounded-lg border border-primary px-4 py-2">
                       <Text className="text-xs font-medium text-primary">{profileForm.profileImage ? 'Change Photo' : 'Add Photo'}</Text>
@@ -1187,24 +1193,34 @@ export default function SettingsScreen() {
                     ) : null}
                   </View>
                 ) : null}
-                <Text className="mt-6 text-xl font-medium" style={{ color: colors.text }}>{profileForm.name || 'NovaFXM User'}</Text>
+                <Text className={`${webProfileLayout ? 'mt-4 text-sm' : 'mt-6 text-xl'} font-medium`} style={{ color: colors.text }}>{profileForm.name || 'NovaFXM User'}</Text>
                 <View className="mt-3 rounded-lg px-3 py-2" style={{ backgroundColor: user?.verificationStatus === 'approved' ? '#12cf7a26' : '#D4AF3726' }}>
                   <Text className="font-medium" style={{ color: user?.verificationStatus === 'approved' ? '#12cf7a' : '#D4AF37' }}>
                     {user?.verificationStatus === 'approved' ? 'Verified' : 'Not Verified'}
                   </Text>
                 </View>
-                <View className="mt-4 flex-row items-center">
+                <View className="mt-4 flex-row items-center" style={webProfileLayout ? { display: 'none' } : undefined}>
                   <CalendarDays size={15} color="#8fa0bb" />
                   <Text className="ml-2" style={{ color: colors.muted }}>Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'NovaFXM'}</Text>
                 </View>
               </View>
 
-              <View className="flex-1">
-                <SettingsInput label="Full Name" value={profileForm.name} editable={editingProfile} error={profileErrors.name} onChangeText={(name) => setProfileForm((current) => ({ ...current, name }))} placeholder="Your full name" />
-                <SettingsInput label="Email Address" value={profileForm.email} editable={editingProfile} error={profileErrors.email} keyboardType="email-address" onChangeText={(email) => setProfileForm((current) => ({ ...current, email }))} placeholder="email@example.com" />
-                <CountrySelect value={profileForm.country} editable={editingProfile} error={profileErrors.country} onChange={updateCountry} />
-                <SettingsInput label="Phone Number" value={profileForm.phone} editable={editingProfile} error={profileErrors.phone} keyboardType="phone-pad" onChangeText={(phone) => setProfileForm((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" />
-                <DateOfBirthInput value={profileForm.dateOfBirth} editable={editingProfile} error={profileErrors.dateOfBirth} onChangeText={(dateOfBirth) => setProfileForm((current) => ({ ...current, dateOfBirth }))} />
+              <View className="flex-1" style={webProfileLayout ? { flexDirection: 'row', flexWrap: 'wrap', columnGap: 16 } : undefined}>
+                <SettingsInput label="Full Name" value={profileForm.name} editable={editingProfile} error={profileErrors.name} onChangeText={(name) => setProfileForm((current) => ({ ...current, name }))} placeholder="Your full name" containerStyle={webProfileLayout ? { width: '48%' } : undefined} />
+                <SettingsInput label="Email Address" value={profileForm.email} editable={editingProfile} error={profileErrors.email} keyboardType="email-address" onChangeText={(email) => setProfileForm((current) => ({ ...current, email }))} placeholder="email@example.com" containerStyle={webProfileLayout ? { width: '48%' } : undefined} />
+                <CountrySelect value={profileForm.country} editable={editingProfile} error={profileErrors.country} onChange={updateCountry} containerStyle={webProfileLayout ? { width: '48%' } : undefined} />
+                <SettingsInput label="Phone Number" value={profileForm.phone} editable={editingProfile} error={profileErrors.phone} keyboardType="phone-pad" onChangeText={(phone) => setProfileForm((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" containerStyle={webProfileLayout ? { width: '48%' } : undefined} />
+                <DateOfBirthInput value={profileForm.dateOfBirth} editable={editingProfile} error={profileErrors.dateOfBirth} onChangeText={(dateOfBirth) => setProfileForm((current) => ({ ...current, dateOfBirth }))} containerStyle={webProfileLayout ? { width: '48%' } : undefined} />
+                {webProfileLayout ? (
+                  <View style={{ width: '48%', alignItems: 'flex-end', justifyContent: 'flex-end', paddingBottom: 16 }}>
+                    {editingProfile ? (
+                      <View className="flex-row gap-3">
+                        <Pressable onPress={cancelProfileEdit} className="rounded-xl border px-5 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><Text className="font-medium" style={{ color: colors.text }}>Cancel</Text></Pressable>
+                        <Pressable onPress={saveSettings} className="flex-row items-center rounded-xl bg-primary px-5 py-3"><Save size={16} color="#05130d" /><Text className="ml-2 font-medium text-medium">Save Changes</Text></Pressable>
+                      </View>
+                    ) : <Pressable onPress={() => setEditingProfile(true)} className="rounded-xl bg-primary px-5 py-3"><Text className="font-medium text-medium">Edit Profile</Text></Pressable>}
+                  </View>
+                ) : null}
               </View>
             </View>
             </View>
