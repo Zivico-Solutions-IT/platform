@@ -567,7 +567,6 @@ export default function LoginScreen() {
   // ─── Login View ───
   return (
     <View className="flex-1" style={{ backgroundColor: '#f0f5f2' }}>
-      <TopControls />
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
         <View style={cardStyle}>
 
@@ -575,18 +574,6 @@ export default function LoginScreen() {
         <View className="mb-[32px]">
           <NovaLogo dark={false} width={110} height={32} />
         </View>
-
-        <Text className="text-[13px] mb-[32px]" style={{ color: '#4e6b5a' }}>
-          New to NOVAFXM?{' '}
-          {/* Client registration belongs to the trading portal, not the staff CRM. */}
-          {!isCrmHost() ? (
-            <Link href="/register" asChild>
-              <Text className="font-semibold" style={{ color: linkColor, textDecorationLine: 'underline' }}>Open an Account</Text>
-            </Link>
-          ) : (
-            <Text className="font-semibold" style={{ color: linkColor, textDecorationLine: 'underline' }}>Contact Admin</Text>
-          )}
-        </Text>
 
         <View>
 
@@ -684,11 +671,15 @@ export default function LoginScreen() {
           />
         </View>
 
-        <Text className="text-center text-[11.5px] mt-[18px]" style={{ color: '#4e6b5a' }}>
-          By continuing, you agree to NOVAFXM's{' '}
-          <Text className="font-semibold" style={{ color: linkColor, textDecorationLine: 'underline' }}>Terms</Text>
-          {' '}and{' '}
-          <Text className="font-semibold" style={{ color: linkColor, textDecorationLine: 'underline' }}>Risk Disclosure</Text>.
+        <Text className="mt-5 text-center text-[13px]" style={{ color: '#7C8074' }}>
+          Don't have an account?{' '}
+          {!isCrmHost() ? (
+            <Link href="/register" asChild>
+              <Text className="font-semibold" style={{ color: linkColor }}>Sign up</Text>
+            </Link>
+          ) : (
+            <Text className="font-semibold" style={{ color: linkColor }}>Contact Admin</Text>
+          )}
         </Text>
 
         </View>
