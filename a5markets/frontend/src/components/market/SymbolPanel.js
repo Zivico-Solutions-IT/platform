@@ -86,9 +86,9 @@ export default function SymbolPanel({ onSelectSymbol }) {
   const [search, setSearch] = useState('');
   const [marketTab, setMarketTab] = useState('COIN-M');
   const [tag, setTag] = useState('All');
-  const panelBackground = darkMode ? colors.panel : '#e8f8ee';
-  const controlBackground = darkMode ? colors.surface : '#f6fff9';
-  const tabBackground = darkMode ? colors.surface : '#f6fff9';
+  const panelBackground = darkMode ? colors.panel : '#ffffff';
+  const controlBackground = darkMode ? colors.surface : '#fbfaf6';
+  const tabBackground = darkMode ? colors.surface : colors.surface;
   const desktop = width >= 1100;
   const mobile = width < 760;
   const panelHeight = desktop ? undefined : 390;
@@ -124,7 +124,7 @@ export default function SymbolPanel({ onSelectSymbol }) {
   );
 
   return (
-    <View className="overflow-hidden rounded-2xl border p-2 lg:h-full lg:w-[350px]" style={{ height: panelHeight, backgroundColor: panelBackground, borderColor: colors.border }}>
+    <View className="overflow-hidden rounded-xl border p-2 lg:h-full lg:w-[350px]" style={{ height: panelHeight, backgroundColor: panelBackground, borderColor: colors.border }}>
       <View className={`${mobile ? 'mb-2 rounded-md p-0.5' : 'mb-3 rounded-xl p-1'} flex-row border`} style={{ backgroundColor: tabBackground, borderColor: colors.border }}>
         <Pressable onPress={() => setTab('symbols')} className={`${mobile ? 'rounded px-2 py-2' : 'rounded-lg px-3 py-3'} mr-1 flex-1 flex-row items-center justify-center`} style={{ backgroundColor: tab === 'symbols' ? colors.primary : 'transparent' }}>
           <CircleDollarSign size={mobile ? 14 : 18} color={tab === 'symbols' ? '#0B0B0B' : colors.muted} />
@@ -156,7 +156,7 @@ export default function SymbolPanel({ onSelectSymbol }) {
         </View>
       ) : (
         <View className="flex-1 min-h-0">
-          <View className="p-3 mb-3 border rounded-xl" style={{ backgroundColor: darkMode ? colors.surface : '#ffffff', borderColor: colors.border }}>
+          <View className="p-3 mb-3 border rounded-xl" style={{ backgroundColor: darkMode ? colors.surface : '#fbfaf6', borderColor: colors.border }}>
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center flex-1 min-w-0">
                 <Star size={16} color={colors.primary} />

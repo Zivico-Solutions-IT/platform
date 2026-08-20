@@ -71,7 +71,7 @@ export default function PortalLayout({ children }) {
                 routeSection ? String(params.section || '') === routeSection : !(routePath === '/dashboard' && params.section)
               );
               return (
-                <Pressable key={label} onPress={() => go(href)} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 13, marginBottom: 7, backgroundColor: active ? '#2c79bb' : 'transparent' }}>
+                <Pressable key={label} onPress={() => go(href)} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 13, marginBottom: 7, backgroundColor: active ? colors.primary : 'transparent' }}>
                   <Icon size={19} color={active ? '#fff' : colors.muted} />
                   <Text numberOfLines={1} style={{ color: active ? '#fff' : colors.text, fontWeight: active ? '700' : '500', fontSize: 15, marginLeft: 12, flex: 1, flexShrink: 1 }}>{label}</Text>
                   {active ? <ChevronRight size={16} color="#fff" /> : null}
@@ -97,9 +97,9 @@ export default function PortalLayout({ children }) {
             </View>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-            <Pressable onPress={() => navigateToA5App('platform', '/trading', router)} style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 17, height: 44, borderRadius: 13, backgroundColor: darkMode ? '#31253d' : '#fcf4ff', borderWidth: 1, borderColor: '#ba72e3', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: darkMode ? '#f3d5ff' : '#1e1c25', fontWeight: '700', fontSize: 15 }}>Platform</Text>
-              <CandlestickChart size={18} color="#d45677" strokeWidth={2.4} />
+            <Pressable onPress={() => navigateToA5App('platform', '/trading', router)} style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 17, height: 44, borderRadius: 13, backgroundColor: colors.accent, borderWidth: 1, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: 15 }}>Platform</Text>
+              <CandlestickChart size={18} color="#ffffff" strokeWidth={2.4} />
             </Pressable>
             <Pressable onPress={toggleTheme} style={{ width: 44, height: 44, borderRadius: 13, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' }}>
               {darkMode ? <Sun size={19} color={colors.text} /> : <Moon size={19} color={colors.text} />}

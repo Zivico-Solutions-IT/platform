@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import ClientPortalHeader from '../src/components/layout/ClientPortalHeader';
 import WithdrawForm from '../src/components/wallet/WithdrawForm';
 import { useWallet } from '../src/hooks/useWallet';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
-import PortalLayout from '../src/components/portal/PortalLayout';
 import { dashboardService } from '../src/services/dashboardService';
 import { money } from '../src/utils/formatters';
 
@@ -18,7 +19,7 @@ function AccountSummary({ label, value, colors }) {
 }
 
 export default function WithdrawScreen() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { colors } = useAppTheme();
   const { summary, transactions, withdraw, loading } = useWallet();
   const [accounts, setAccounts] = useState([]);
@@ -56,10 +57,29 @@ export default function WithdrawScreen() {
       });
     return () => { active = false; };
   }, []);
+  const signOut = async () => {
+    await logout();
+    router.replace('/login');
+  };
 
   return (
-    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-6 lg:p-8">
-      <Text className="mb-6 text-3xl font-medium" style={{ color: colors.text }}>New Withdrawal</Text>
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-6 lg:p-8">
+      <ClientPortalHeader
+        title="Withdraw"
+        subtitle={user?.email || 'Request withdrawals from your live trading account.'}
+        activeKey="withdraw"
+        userRole={user?.role}
+        rightContent={(
+          <>
+            <Pressable onPress={() => router.push('/trading')} className="h-10 items-center justify-center px-2">
+              <Text className="font-medium" style={{ color: colors.primary }}>Back to Trading</Text>
+            </Pressable>
+            <Pressable onPress={signOut} className="h-10 items-center justify-center px-2">
+              <Text className="font-medium" style={{ color: colors.danger }}>Sign Out</Text>
+            </Pressable>
+          </>
+        )}
+      />
 
       <View className="mb-6 flex-row flex-wrap gap-4">
         <AccountSummary label="Selected Account" value={selectedAccount?.name || (accountsLoading ? 'Loading live accounts...' : 'No live account')} colors={colors} />
@@ -75,6 +95,6 @@ export default function WithdrawScreen() {
         transactions={transactions}
         selectedAccount={selectedAccount}
       />
-    </ScrollView></PortalLayout>
+    </ScrollView>
   );
 }

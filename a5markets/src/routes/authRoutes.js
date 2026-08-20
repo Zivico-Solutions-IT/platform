@@ -3,6 +3,7 @@ const controller = require('../controllers/authController');
 const auth = require('../middleware/authMiddleware');
 
 router.post('/register', controller.register);
+router.get('/registration-status', controller.registrationStatus);
 router.post('/login', controller.login);
 router.post('/forgot-password', controller.forgotPassword);
 router.post('/reset-password', controller.resetPassword);

@@ -3,9 +3,17 @@ import { Link, router, useLocalSearchParams } from 'expo-router';
 import { Platform, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList, useWindowDimensions } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
-import { Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react-native';
+import {
+  ArrowRight,
+  ChevronDown,
+  Eye,
+  EyeOff,
+  Search,
+  X,
+} from 'lucide-react-native';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import api from '../src/services/api';
 
 export default function RegisterScreen() {
   const { register } = useAuth();
@@ -19,7 +27,8 @@ export default function RegisterScreen() {
     password: '',
     confirmPassword: '',
     accountType: 'Demo',
-    referralCode: String(params.ref || ''),
+    referralCode: '',
+    referralInviteCode: String(params.ref || ''),
     country: '',
     agree: false
   });
@@ -30,6 +39,7 @@ export default function RegisterScreen() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [requiresReferralCode, setRequiresReferralCode] = useState(false);
 
   const update = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
   const inputBackground = darkMode ? colors.surface : 'rgba(255,255,255,0.96)';
@@ -76,6 +86,12 @@ export default function RegisterScreen() {
     `;
     if (!style.parentNode) document.head.appendChild(style);
   }, [colors.muted, colors.text, darkMode, inputBackground]);
+
+  useEffect(() => {
+    api.get('/auth/registration-status')
+      .then(({ data }) => setRequiresReferralCode(Boolean(data?.requiresReferralCode)))
+      .catch(() => setRequiresReferralCode(false));
+  }, []);
 
   const countries = [
     { code: 'AF', name: 'Afghanistan', dialCode: '+93' },
@@ -446,6 +462,11 @@ export default function RegisterScreen() {
     return;
   }
 
+  if (requiresReferralCode && !form.referralCode.trim()) {
+    setError('Referral code is required.');
+    return;
+  }
+
   if (phoneError) {
     setError(phoneError);
     return;
@@ -472,7 +493,7 @@ export default function RegisterScreen() {
       country: trimmedCountry,
       phone: `${selectedCountry.dialCode} ${trimmedPhone}`,
     });
-    router.replace('/dashboard');
+    router.replace('/trading');
   } catch (requestError) {
     setError(
       requestError.response?.data?.message
@@ -514,6 +535,96 @@ export default function RegisterScreen() {
   const allowPageScroll = width < 600 || height < 740;
 
   return (
+    <ScrollView scrollEnabled={allowPageScroll} showsVerticalScrollIndicator={allowPageScroll} className="a5-auth-page flex-1" style={{ backgroundColor: '#f6fbfc' }} contentContainerStyle={{ minHeight: height }}>
+      <View className="min-h-full items-center justify-center px-4 py-8">
+        <View className="relative w-full max-w-[760px] overflow-hidden rounded-[28px] border px-6 py-7 md:px-10 md:py-10" style={{ minHeight: 720, backgroundColor: '#ffffff', borderColor: 'rgba(21, 63, 115, 0.12)', shadowColor: '#5a7d91', shadowOffset: { width: 0, height: 28 }, shadowOpacity: 0.18, shadowRadius: 42, elevation: 18 }}>
+          <View className="absolute inset-0 bg-[#f6fbfc]" />
+          <View className="absolute right-[-14%] top-[-16%] h-[580px] w-[580px] rounded-full bg-[#00d08418]" />
+          <View className="absolute left-[-12%] bottom-[-12%] h-[500px] w-[500px] rounded-full bg-[#1493b014]" />
+          <Text className="absolute right-[10%] top-[18%] text-[20px] font-bold text-[#00a66a22]">+0.8949</Text>
+          <Text className="absolute right-[12%] top-[28%] text-[20px] font-bold text-[#00a66a22]">+0.33%</Text>
+          <View className="relative z-10">
+            <NovaLogo dark={false} width={190} height={62} />
+          </View>
+
+          <View className="relative z-10 mt-8 flex-1 items-center justify-center">
+            <View className="w-full max-w-[430px] rounded-[22px] border px-7 py-8" style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'rgba(21, 63, 115, 0.14)', shadowColor: '#5a7d91', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.14, shadowRadius: 28, elevation: 10 }}>
+              <Text className="text-[30px] font-bold text-[#101827]">Create Account</Text>
+              <Text className="mt-2 text-[14px] text-[#607083]">Join A5 Markets and start trading</Text>
+              <View className="my-6 flex-row items-center">
+                {[1, 2, 3].map((step, index) => (
+                  <View key={step} className="flex-1 flex-row items-center">
+                    <View className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: step === 1 ? '#00c875' : '#edf4f6' }}>
+                      <Text className="text-sm font-bold" style={{ color: step === 1 ? '#ffffff' : '#607083' }}>{step}</Text>
+                    </View>
+                    {index < 2 ? <View className="mx-2 h-px flex-1" style={{ backgroundColor: '#d9e5ea' }} /> : null}
+                  </View>
+                ))}
+              </View>
+
+              <View className="mb-4 flex-row gap-3">
+                <TextInput placeholder="First Name" className="flex-1 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" value={firstName} onChangeText={handleFirstNameChange} />
+                <TextInput placeholder="Last Name" className="flex-1 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" value={lastName} onChangeText={handleLastNameChange} />
+              </View>
+              <TextInput placeholder="Email Address" className="mb-4 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" autoCapitalize="none" keyboardType="email-address" value={form.email} onChangeText={update('email')} />
+              {requiresReferralCode ? <TextInput placeholder="Referral Code" className="mb-4 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" autoCapitalize="characters" autoCorrect={false} value={form.referralCode} onChangeText={update('referralCode')} /> : null}
+              <View className="mb-4 z-10">
+                <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea' }}>
+                  <TouchableOpacity onPress={() => setDropdownOpen(!dropdownOpen)} className="flex-row items-center gap-1 border-r px-4 py-3" style={{ borderColor: '#d9e5ea' }}>
+                    <Text className="text-xs text-[#465668]">{selectedCountry ? countryFlag(selectedCountry.code) : '🌐'}</Text>
+                    <Text className="text-xs text-[#465668]">{selectedCountry?.dialCode || 'Code'}</Text>
+                    <ChevronDown size={13} color="#64748b" />
+                  </TouchableOpacity>
+                  <TextInput keyboardType="phone-pad" maxLength={20} value={form.phone} onChangeText={handlePhoneChange} placeholder="Phone Number" placeholderTextColor="#7b8ca0" className="flex-1 px-4 py-3 text-xs" style={{ color: '#101827', outlineStyle: 'none' }} />
+                </View>
+                {dropdownOpen && (
+                  <View className="absolute top-full left-0 right-0 mt-1 border rounded-lg shadow-xl z-50 max-h-80" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea' }}>
+                    <View className="p-2 border-b" style={{ borderColor: '#d9e5ea' }}>
+                      <View className="flex-row items-center rounded-lg border px-2" style={{ backgroundColor: '#f6fbfc', borderColor: '#d9e5ea' }}>
+                        <Search size={16} color="#64748b" />
+                        <TextInput className="flex-1 py-2 px-2 text-sm" style={{ color: '#101827' }} placeholder="Search country..." placeholderTextColor="#7b8ca0" value={searchQuery} onChangeText={setSearchQuery} autoFocus />
+                        {searchQuery ? <TouchableOpacity onPress={() => setSearchQuery('')}><X size={14} color="#64748b" /></TouchableOpacity> : null}
+                      </View>
+                    </View>
+                    <FlatList data={filteredCountries} keyExtractor={(item) => item.code} renderItem={({ item }) => (
+                      <TouchableOpacity onPress={() => handleCountrySelect(item)} className="flex-row justify-between items-center px-3 py-2 border-b" style={{ borderColor: '#edf4f6' }}>
+                        <Text className="text-sm text-[#101827]">{item.name}</Text><Text className="text-xs text-[#607083]">{item.dialCode}</Text>
+                      </TouchableOpacity>
+                    )} showsVerticalScrollIndicator className="max-h-64" keyboardShouldPersistTaps="handled" />
+                  </View>
+                )}
+              </View>
+              <View className="mb-4">
+                <TextInput className="rounded-xl border px-4 py-3 pr-12 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none', ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }} placeholder="Password" placeholderTextColor="#7b8ca0" secureTextEntry={Platform.OS !== 'web' && !showPassword} autoCapitalize="none" autoCorrect={false} autoComplete="new-password" textContentType="newPassword" importantForAutofill="no" value={form.password} onChangeText={(val) => setForm((v) => ({ ...v, password: val }))} />
+                <TouchableOpacity onPress={() => setShowPassword((visible) => !visible)} className="absolute right-4 top-1/2 -translate-y-1/2" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+                  {showPassword ? <Eye size={18} color="#64748b" /> : <EyeOff size={18} color="#64748b" />}
+                </TouchableOpacity>
+              </View>
+              <View className="mb-4">
+                <TextInput className="rounded-xl border px-4 py-3 pr-12 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none', ...(Platform.OS === 'web' && !showConfirmPassword ? { WebkitTextSecurity: 'disc' } : {}) }} placeholder="Confirm Password" placeholderTextColor="#7b8ca0" secureTextEntry={Platform.OS !== 'web' && !showConfirmPassword} autoCapitalize="none" autoCorrect={false} autoComplete="new-password" textContentType="newPassword" importantForAutofill="no" value={form.confirmPassword} onChangeText={(val) => setForm((v) => ({ ...v, confirmPassword: val }))} />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2" accessibilityLabel={showConfirmPassword ? 'Hide password' : 'Show password'}>
+                  {showConfirmPassword ? <Eye size={18} color="#64748b" /> : <EyeOff size={18} color="#64748b" />}
+                </TouchableOpacity>
+              </View>
+              <View className="mb-4 flex-row items-start gap-2">
+                <TouchableOpacity onPress={() => setForm({ ...form, agree: !form.agree })} className="mt-0.5">
+                  <View className="w-4 h-4 rounded border items-center justify-center" style={{ borderColor: form.agree ? '#00d084' : '#b9c9d3', backgroundColor: form.agree ? '#00d084' : '#ffffff' }}>{form.agree && <Text className="text-white text-xs">✓</Text>}</View>
+                </TouchableOpacity>
+                <Text className="flex-1 text-xs leading-relaxed text-[#465668]">I agree to the <Text className="font-medium text-[#00d084]">Terms of service</Text> and Privacy policies</Text>
+              </View>
+              {error ? <Text className="text-red-400 text-xs mb-4">{error}</Text> : null}
+              <Pressable onPress={submit} disabled={loading} className="w-full flex-row items-center justify-center gap-2 rounded-xl py-4" style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#00c875' }}>
+                <Text className="text-sm font-bold text-white">{loading ? 'Signing up...' : 'Create Account'}</Text>{!loading ? <ArrowRight size={18} color="#ffffff" /> : null}
+              </Pressable>
+              <Link href="/login" asChild><Pressable className="mt-5"><Text className="text-center text-sm text-[#465668]">Already have an account? <Text className="font-semibold text-[#00d084]">Login</Text></Text></Pressable></Link>
+            </View>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  return (
     <ScrollView scrollEnabled={allowPageScroll} showsVerticalScrollIndicator={allowPageScroll} className="a5-auth-page flex-1" style={{ backgroundColor: darkMode ? colors.background : '#eaf6fb' }} contentContainerStyle={{ minHeight: height }}>
       <View className="min-h-full items-center justify-center px-5 py-5">
         <View className="mb-4 items-center">
@@ -522,7 +633,6 @@ export default function RegisterScreen() {
         <View className="a5-auth-shell relative w-full max-w-[370px] rounded-[24px] px-8 py-5 shadow-xl" style={{ backgroundColor: darkMode ? colors.panel : 'rgba(255,255,255,0.54)', borderColor: darkMode ? colors.border : 'rgba(255,255,255,0.74)', borderWidth: 1, shadowColor: '#5a7d91', shadowOffset: { width: 0, height: 14 }, shadowOpacity: darkMode ? 0.35 : 0.18, shadowRadius: 28, elevation: 12 }}>
           <View>
 
-            {/* First and Last Name Row */}
             <View className="mb-4">
               <View>
                 <TextInput
@@ -546,7 +656,6 @@ export default function RegisterScreen() {
               </View>
             </View>
 
-            {/* Email */}
             <View className="mb-4">
               <TextInput
                 placeholder="Email Address"
@@ -560,7 +669,6 @@ export default function RegisterScreen() {
               />
             </View>
 
-            {/* Country-code dropdown and phone number, combined like the reference layout. */}
             <View className="mb-4 z-10">
               <View>
                 <View className="flex-row items-center rounded-full border" style={inputStyle}>
@@ -570,7 +678,7 @@ export default function RegisterScreen() {
                     style={{ borderColor: darkMode ? colors.border : '#e7edf2' }}
                   >
                     <Text className="text-xs" style={{ color: form.country ? colors.text : colors.muted }}>
-                      {selectedCountry ? countryFlag(selectedCountry.code) : '🌐'}
+                      {selectedCountry ? countryFlag(selectedCountry.code) : 'ðŸŒ'}
                     </Text>
                     <Text className="text-xs" style={{ color: form.country ? colors.text : colors.muted }}>
                       {selectedCountry?.dialCode || 'Code'}
@@ -632,7 +740,6 @@ export default function RegisterScreen() {
               </View>
             </View>
 
-            {/* Password */}
             <View className="mb-4">
               <View className="relative">
                 <TextInput
@@ -658,25 +765,11 @@ export default function RegisterScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Password Requirements */}
               <View className="mt-2">
                 <Text className="mb-1 text-[10px]" style={labelStyle}>Password: min. 8 characters, uppercase, number and special character.</Text>
-                <View className="flex-row flex-wrap">
-                  {requirements.map((req) => (
-                    <View key={req.label} className="hidden w-full sm:w-[48%] flex-row items-center gap-1.5 mb-1">
-                      <Text className={`text-sm ${req.met ? 'text-green-600' : 'text-gray-500'}`}>
-                        {req.met ? '✓' : '○'}
-                      </Text>
-                      <Text className="flex-1 text-xs" numberOfLines={1} style={{ color: req.met ? colors.success : colors.muted }}>
-                        {req.label}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
               </View>
             </View>
 
-            {/* Confirm Password */}
             <View className="mb-4">
               <View className="relative">
                 <TextInput
@@ -703,7 +796,6 @@ export default function RegisterScreen() {
               </View>
             </View>
 
-            {/* Terms and Conditions */}
             <View className="flex-row items-start gap-2 mb-4">
               <TouchableOpacity onPress={() => setForm({ ...form, agree: !form.agree })} className="mt-0.5">
                 <View className="w-4 h-4 rounded border items-center justify-center" style={{ borderColor: form.agree ? linkColor : colors.border, backgroundColor: form.agree ? linkColor : inputStyle.backgroundColor }}>
@@ -719,7 +811,6 @@ export default function RegisterScreen() {
 
             {error ? <Text className="text-red-600 text-xs mb-4">{error}</Text> : null}
 
-            {/* Submit Button */}
             <Pressable
               onPress={submit}
               disabled={loading}
@@ -730,7 +821,6 @@ export default function RegisterScreen() {
             </Pressable>
           </View>
 
-          {/* Login Link */}
           <Link href="/login" asChild>
             <Pressable className="mt-5">
               <Text className="text-center text-sm" style={labelStyle}>
@@ -744,4 +834,5 @@ export default function RegisterScreen() {
       </View>
     </ScrollView>
   );
+
 }

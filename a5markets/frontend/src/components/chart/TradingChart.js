@@ -243,7 +243,7 @@ const loadCandlesWithRetry = async (symbol, timeframe, limit, options = {}, atte
   return lastCandles;
 };
 
-const TRADING_CHART_TEAL = '#2bb8a8';
+const TRADING_CHART_TEAL = '#25bdb2';
 const QUICK_TRADE_BUY = '#0C9F91';
 
 const chartUiFromTheme = (colors) => ({
