@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import {
   BadgeIndianRupee,
+  ArrowLeft,
   Check,
   CheckCircle2,
   Clock3,
@@ -284,6 +285,18 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
               <Text className="ml-1.5 text-[13px]" style={{ color: step === 2 ? '#1B1F27' : '#9CA4AF' }}>Confirm</Text>
             </View>
           </View>
+          {step === 2 ? (
+            <View className="mb-4 flex-row justify-end">
+              <Pressable
+                onPress={returnToDetails}
+                className="flex-row items-center rounded-xl border px-3 py-2"
+                style={{ backgroundColor: '#FFFFFF', borderColor: '#E4E1D8' }}
+              >
+                <ArrowLeft size={14} color="#5C635A" strokeWidth={2} />
+                <Text className="ml-1.5 text-xs font-semibold" style={{ color: '#5C635A' }}>Back to method</Text>
+              </Pressable>
+            </View>
+          ) : null}
           <View className="mb-[18px]">
             <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: '#9CA4AF' }}>Deposit Amount</Text>
             <View
@@ -399,14 +412,11 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
           ) : (
             <>
               <View className="mb-5 rounded-2xl border p-4 shadow-sm" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-                <View className="mb-4 flex-row items-center justify-between">
+                <View className="mb-4 flex-row items-center">
                   <View>
                     <Text className="text-[11px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Send Payment To</Text>
                     <Text className="mt-1 text-base font-medium" style={{ color: colors.text }}>{selectedMethod.label}</Text>
                   </View>
-                  <Pressable onPress={returnToDetails} className="rounded-lg border px-3 py-2" style={{ borderColor: colors.border }}>
-                    <Text className="text-xs font-medium" style={{ color: colors.text }}>Back</Text>
-                  </Pressable>
                 </View>
                 <View className="gap-4 md:flex-row">
                   {!isBankMethod ? (
