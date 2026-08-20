@@ -215,17 +215,20 @@ export default function TradingLayout() {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
         {!chartFullscreen && <TopAccountBar />}
-        <Animated.View
-          className="flex-1"
-          style={{
-            minHeight: 0,
-            paddingBottom: chartFullscreen ? 0 : 52,
-            opacity: mobileContentAnimation,
-            transform: [{ translateY: mobileContentAnimation.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
-          }}
-        >
+        <View className="flex-1" style={{ paddingBottom: chartFullscreen ? 0 : 52, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <Animated.View
+            className="flex-1"
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              opacity: mobileContentAnimation,
+              transform: [{ translateY: mobileContentAnimation.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+            }}
+          >
           {mobileTab === 'symbols' ? (
-            <View className="flex-1 px-2 pb-2 pt-1" style={{ minHeight: 0 }}>
+            <View className="flex-1 p-2" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
               <MobileSymbolWatchlist onSelectSymbol={() => setMobileTab('trade')} />
             </View>
           ) : mobileTab === 'position' ? (
@@ -258,7 +261,8 @@ export default function TradingLayout() {
               ) : null}
             </View>
           )}
-        </Animated.View>
+          </Animated.View>
+        </View>
 
         {!chartFullscreen ? (
           <View

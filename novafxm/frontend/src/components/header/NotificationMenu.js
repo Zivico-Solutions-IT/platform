@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { AlertTriangle, CheckCircle2, CreditCard, ShieldCheck, Wallet, X } from 'lucide-react-native';
+import { AlertTriangle, Bell, CheckCircle2, CreditCard, ShieldCheck, Wallet, X } from 'lucide-react-native';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
@@ -22,29 +22,49 @@ const notificationTimestamp = (...values) => {
   return 0;
 };
 
-function NotificationItem({ Icon, title, body, time, tone, colors, read, onPress }) {
+function NotificationItem({ Icon, title, body, time, tone, colors, read, onPress, compact = false, mobileTheme }) {
+  if (compact) {
+    return (
+      <Pressable onPress={onPress} className="flex-row border-b px-4 py-3" style={{ borderColor: colors.border, opacity: read ? 0.68 : 1 }}>
+        <View className="mr-3 h-9 w-9 items-center justify-center rounded-md" style={{ backgroundColor: `${tone}22` }}>
+          <Icon size={17} color={tone} />
+        </View>
+        <View className="min-w-0 flex-1">
+          <Text className="text-xs font-medium" numberOfLines={1} style={{ color: colors.text }}>{title}</Text>
+          <Text className="mt-0.5 text-[11px]" numberOfLines={2} style={{ color: colors.muted }}>{body}</Text>
+          <Text className="mt-1 text-[9px] font-semimedium uppercase" numberOfLines={1} style={{ color: colors.muted }}>{time}</Text>
+        </View>
+      </Pressable>
+    );
+  }
+
   return (
-    <Pressable onPress={onPress} className="flex-row border-b px-4 py-3" style={{ borderColor: colors.border, opacity: read ? 0.68 : 1 }}>
-      <View className="mr-3 h-9 w-9 items-center justify-center rounded-md" style={{ backgroundColor: `${tone}22` }}>
+    <Pressable
+      onPress={onPress}
+      className="flex-row rounded-2xl border p-[14px]"
+      style={{ backgroundColor: read ? mobileTheme.surface : mobileTheme.unreadSurface, borderColor: mobileTheme.border, opacity: read ? 0.78 : 1 }}
+    >
+      <View className="mr-3 h-9 w-9 items-center justify-center rounded-[10px]" style={{ backgroundColor: `${tone}18` }}>
         <Icon size={17} color={tone} />
       </View>
       <View className="min-w-0 flex-1">
-        <Text className="text-xs font-medium" numberOfLines={1} style={{ color: colors.text }}>{title}</Text>
-        <Text className="mt-0.5 text-[11px]" numberOfLines={2} style={{ color: colors.muted }}>{body}</Text>
-        <Text className="mt-1 text-[9px] font-semimedium uppercase" numberOfLines={1} style={{ color: colors.muted }}>{time}</Text>
+        <Text className="text-[14px] font-bold" numberOfLines={1} style={{ color: mobileTheme.text }}>{title}</Text>
+        <Text className="mt-0.5 text-xs leading-[17px]" numberOfLines={2} style={{ color: mobileTheme.muted }}>{body}</Text>
+        <Text className="mt-1.5 text-[10px]" numberOfLines={1} style={{ color: mobileTheme.subtle }}>{time}</Text>
       </View>
+      {!read ? <View className="ml-2 mt-1 h-2 w-2 rounded-full" style={{ backgroundColor: '#D9AC38' }} /> : null}
     </Pressable>
   );
 }
 
 export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
-  const { colors } = useAppTheme();
+  const { colors, darkMode } = useAppTheme();
   const { user, isAdmin } = useAuth();
   const { transactions, setSidePanel } = useDemoTrading();
   const [dashboard, setDashboard] = useState(null);
   const [adminData, setAdminData] = useState(emptyAdminNotificationData);
   const { width } = useWindowDimensions();
-  const isMobile = width < 992;
+  const isMobile = width < 760;
 
   useEffect(() => {
     let active = true;
@@ -168,53 +188,113 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
       .sort((a, b) => b.sortAt - a.sortAt);
   }, [adminData, colors, dashboard, isAdmin, onClose, setSidePanel, transactions, user]);
   const unreadCount = notifications.filter((item) => !readIds.includes(item.id)).length;
+  const mobileTheme = darkMode
+    ? { background: '#111827', header: '#161D27', surface: '#1B2430', unreadSurface: '#20281F', border: '#2C3746', text: '#F4F7FB', muted: '#A7B1BF', subtle: '#768295', close: '#222C38' }
+    : { background: '#F6F5F1', header: '#FFFFFF', surface: '#FFFFFF', unreadSurface: '#FBF9F4', border: '#ECEAE3', text: '#1B1F27', muted: '#8A8F7C', subtle: '#B3B8AE', close: '#F4F2ED' };
+
+  if (!isMobile) {
+    return (
+      <View
+        className="absolute z-50 overflow-hidden rounded-xl border shadow-2xl"
+        style={{
+          width: 360,
+          maxWidth: '92%',
+          top: 74,
+          right: 12,
+          backgroundColor: colors.panel,
+          borderColor: colors.border,
+          shadowColor: '#000',
+          shadowOpacity: 0.18,
+          shadowRadius: 24,
+          elevation: 12,
+        }}
+      >
+        <View className="flex-row items-center justify-between border-b px-4 py-3" style={{ borderColor: colors.border }}>
+          <View>
+            <Text className="text-sm font-medium" style={{ color: colors.text }}>{isAdmin ? 'Admin Notifications' : 'Notifications'}</Text>
+            <Text className="text-[10px] font-semimedium uppercase" style={{ color: colors.muted }}>{isAdmin ? 'Requests waiting for action' : `${unreadCount} unread`}</Text>
+          </View>
+          <View className="flex-row items-center gap-2">
+            <Pressable onPress={() => onReadAll?.(notifications.map((item) => item.id))} className="rounded-md px-3 py-2" style={{ backgroundColor: colors.surface }}>
+              <Text className="text-xs font-medium" style={{ color: colors.primary }}>Read all</Text>
+            </Pressable>
+            <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center rounded-md" style={{ backgroundColor: colors.surface }}>
+              <X size={16} color={colors.text} />
+            </Pressable>
+          </View>
+        </View>
+        <ScrollView style={{ maxHeight: 430 }} showsVerticalScrollIndicator={false}>
+          {notifications.length ? notifications.map((item, index) => (
+            <NotificationItem
+              key={`${item.id}-${index}`}
+              colors={colors}
+              compact
+              read={readIds.includes(item.id)}
+              {...item}
+              onPress={() => {
+                onReadAll?.([item.id]);
+                item.onPress?.();
+              }}
+            />
+          )) : (
+            <Text className="p-5 text-sm" style={{ color: colors.muted }}>{isAdmin ? 'No new admin notifications.' : 'No account notifications yet.'}</Text>
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View
-      className="absolute z-50 overflow-hidden rounded-xl border shadow-2xl"
+      className="absolute inset-0 z-50 items-center"
       style={{
-        width: isMobile ? 310 : 360,
-        maxWidth: '92%',
-        top: isMobile ? 54 : 74,
-        right: 12,
-        backgroundColor: colors.panel,
-        borderColor: colors.border,
-        shadowColor: '#000',
-        shadowOpacity: 0.18,
-        shadowRadius: 24,
-        elevation: 12,
+        backgroundColor: mobileTheme.background,
       }}
     >
-      <View className="flex-row items-center justify-between border-b px-4 py-3" style={{ borderColor: colors.border }}>
-        <View>
-          <Text className="text-sm font-medium" style={{ color: colors.text }}>{isAdmin ? 'Admin Notifications' : 'Notifications'}</Text>
-          <Text className="text-[10px] font-semimedium uppercase" style={{ color: colors.muted }}>{isAdmin ? 'Requests waiting for action' : `${unreadCount} unread`}</Text>
-        </View>
-        <View className="flex-row items-center gap-2">
-          <Pressable onPress={() => onReadAll?.(notifications.map((item) => item.id))} className="rounded-md px-3 py-2" style={{ backgroundColor: colors.surface }}>
-            <Text className="text-xs font-medium" style={{ color: colors.primary }}>Read all</Text>
+      <View className="w-full flex-1 overflow-hidden" style={{ backgroundColor: mobileTheme.background }}>
+        <View className="flex-row items-start justify-between border-b px-5 pb-[18px] pt-[22px]" style={{ backgroundColor: mobileTheme.header, borderColor: mobileTheme.border }}>
+          <View className="flex-row flex-1 pr-3">
+            <View className="mr-3 h-[38px] w-[38px] items-center justify-center rounded-[11px]" style={{ backgroundColor: '#FBF3E2' }}>
+              <Bell size={18} color="#B8891E" strokeWidth={2} />
+            </View>
+            <View className="min-w-0 flex-1">
+              <Text className="text-[21px] font-semibold" style={{ color: mobileTheme.text }}>{isAdmin ? 'Admin Notifications' : 'Notifications'}</Text>
+              <Text className="mt-1 text-[13px]" style={{ color: mobileTheme.muted }}>{isAdmin ? 'Requests waiting for action' : `${unreadCount} unread`}</Text>
+            </View>
+          </View>
+          <Pressable onPress={onClose} className="h-[30px] w-[30px] items-center justify-center rounded-full" style={{ backgroundColor: mobileTheme.close }}>
+            <X size={15} color={mobileTheme.muted} strokeWidth={2.2} />
           </Pressable>
-          <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center rounded-md" style={{ backgroundColor: colors.surface }}>
-            <X size={16} color={colors.text} />
-          </Pressable>
         </View>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 22 }} style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          <View className="mb-[10px] flex-row justify-end">
+            <Pressable onPress={() => onReadAll?.(notifications.map((item) => item.id))}>
+              <Text className="text-[13px] font-bold" style={{ color: '#B8891E' }}>Mark all as read</Text>
+            </Pressable>
+          </View>
+          <View className="gap-2">
+            {notifications.length ? notifications.map((item, index) => (
+              <NotificationItem
+                key={`${item.id}-${index}`}
+                colors={colors}
+                mobileTheme={mobileTheme}
+                read={readIds.includes(item.id)}
+                {...item}
+                onPress={() => {
+                  onReadAll?.([item.id]);
+                  item.onPress?.();
+                }}
+              />
+            )) : (
+              <View className="items-center py-8">
+                <Bell size={22} color="#C9CDD4" />
+                <Text className="mt-3 text-[13px] font-semibold" style={{ color: mobileTheme.text }}>{isAdmin ? 'No new admin notifications' : 'No account notifications yet'}</Text>
+              </View>
+            )}
+          </View>
+          <Text className="pb-1 pt-4 text-center text-xs" style={{ color: mobileTheme.muted }}>You&apos;re all caught up</Text>
+        </ScrollView>
       </View>
-      <ScrollView style={{ maxHeight: 430 }} showsVerticalScrollIndicator={false}>
-        {notifications.length ? notifications.map((item, index) => (
-          <NotificationItem
-            key={`${item.id}-${index}`}
-            colors={colors}
-            read={readIds.includes(item.id)}
-            {...item}
-            onPress={() => {
-              onReadAll?.([item.id]);
-              item.onPress?.();
-            }}
-          />
-        )) : (
-          <Text className="p-5 text-sm" style={{ color: colors.muted }}>{isAdmin ? 'No new admin notifications.' : 'No account notifications yet.'}</Text>
-        )}
-      </ScrollView>
     </View>
   );
 }

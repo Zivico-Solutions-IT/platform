@@ -373,8 +373,8 @@ export default function TopAccountBar() {
               <NovaLogo dark={darkMode} width={narrowPhone ? 108 : 130} height={narrowPhone ? 28 : 34} />
             </Pressable>
             <View className="flex-row items-center gap-1.5">
-              <Pressable {...hoverProps('mobile-theme')} onPress={toggleTheme} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-theme', { backgroundColor: `${colors.text}08` })}>
-                <View style={iconHoverStyle('mobile-theme')}>{darkMode ? <Sun size={16} color={iconColor('mobile-theme')} /> : <Moon size={16} color={iconColor('mobile-theme')} />}</View>
+              <Pressable {...hoverProps('mobile-theme')} onPress={toggleTheme} className={`${narrowPhone ? 'h-[32px] w-[30px]' : 'h-[38px] w-[34px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-theme', { backgroundColor: 'transparent' })}>
+                <View style={iconHoverStyle('mobile-theme')}>{darkMode ? <Sun size={18} color={colors.text} /> : <Moon size={18} color={colors.text} />}</View>
               </Pressable>
               {isAdmin ? (
                 <Pressable {...hoverProps('mobile-admin-dashboard')} onPress={goToAdminDashboard} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-admin-dashboard', { backgroundColor: `${colors.text}08` })}>
@@ -382,8 +382,8 @@ export default function TopAccountBar() {
                 </Pressable>
               ) : null}
               {user ? (
-                <Pressable {...hoverProps('mobile-notifications')} onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-notifications', { backgroundColor: `${colors.text}08` })}>
-                  <View style={iconHoverStyle('mobile-notifications')}><Bell color={iconColor('mobile-notifications')} size={16} /></View>
+                <Pressable {...hoverProps('mobile-notifications')} onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')} className={`${narrowPhone ? 'h-[36px] w-[36px]' : 'h-[42px] w-[42px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-notifications', { backgroundColor: darkMode ? 'rgba(216,181,54,0.10)' : '#FFFDF7', borderWidth: 1, borderColor: '#D8B536' })}>
+                  <View style={iconHoverStyle('mobile-notifications')}><Bell color="#B8891E" size={18} strokeWidth={1.8} /></View>
                   {unreadNotificationCount ? (
                     <View className="absolute items-center justify-center rounded-full bg-danger px-1" style={{ right: -2, top: -2, height: 16, minWidth: 16, borderWidth: 1.5, borderColor: colors.panel }}>
                       <Text className="text-[9px] font-bold text-white">
@@ -394,8 +394,8 @@ export default function TopAccountBar() {
                 </Pressable>
               ) : null}
               {user ? (
-                <Pressable {...hoverProps('mobile-profile')} onPress={() => setMenu(menu === 'profile' ? null : 'profile')} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-profile', { backgroundColor: `${colors.primary}1A` })}>
-                  <View style={iconHoverStyle('mobile-profile')}><UserRound color={colors.primary} size={16} /></View>
+                <Pressable {...hoverProps('mobile-profile')} onPress={() => setMenu(menu === 'profile' ? null : 'profile')} className={`${narrowPhone ? 'h-[32px] w-[30px]' : 'h-[38px] w-[34px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-profile', { backgroundColor: 'transparent' })}>
+                  <View style={iconHoverStyle('mobile-profile')}><UserRound color={darkMode ? '#A7B1BF' : '#AEB4BD'} size={19} strokeWidth={1.8} /></View>
                 </Pressable>
               ) : null}
             </View>
@@ -652,7 +652,7 @@ export default function TopAccountBar() {
               </Pressable>
             ) : null}
             {menu === 'notifications' ? (
-              <Pressable onPress={(event) => event.stopPropagation()}>
+              <Pressable onPress={(event) => event.stopPropagation()} style={{ flex: 1 }}>
                 <NotificationMenu onClose={() => setMenu(null)} readIds={readNotificationIds} onReadAll={readAllNotifications} />
               </Pressable>
             ) : null}

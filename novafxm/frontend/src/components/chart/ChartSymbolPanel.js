@@ -29,9 +29,6 @@ export default function ChartSymbolPanel({
   const selectedCategory = symbolTabs.includes(symbolTab) ? symbolTab : symbolTabs[0];
 
   const containerRef = useRef(null);
-  const symbolListRef = useRef(null);
-  const symbolListKey = filteredSymbols.map((item) => item.symbol).join('|');
-
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     if (!symbolTabMenuOpen) return;
@@ -48,24 +45,16 @@ export default function ChartSymbolPanel({
     };
   }, [symbolTabMenuOpen, setSymbolTabMenuOpen]);
 
-  useEffect(() => {
-    if (!isInline) return undefined;
-    const activeIndex = filteredSymbols.findIndex((item) => item.symbol === currentSymbol?.symbol);
-    if (activeIndex < 0) return undefined;
-    const timer = setTimeout(() => {
-      symbolListRef.current?.scrollTo({ y: Math.max(0, (activeIndex * 48) - 72), animated: false });
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [currentSymbol?.symbol, isInline, symbolListKey, symbolTab]);
-
   return (
     <View
-      className={isInline ? "flex-1 w-full overflow-hidden rounded-[20px] border shadow-sm" : "absolute max-w-[96vw] overflow-hidden rounded-lg border shadow-2xl"}
+      className={isInline ? "flex-1 w-full overflow-hidden rounded-xl border shadow-sm" : "absolute max-w-[96vw] overflow-hidden rounded-lg border shadow-2xl"}
       style={isInline ? {
-        flex: 1,
-        minHeight: 0,
         backgroundColor: ui.menu,
         borderColor: ui.menuBorder,
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
       } : {
         left: 10,
         top: symbolPanelTop,
@@ -85,12 +74,12 @@ export default function ChartSymbolPanel({
               className="flex-row items-center justify-between px-3 border rounded-md h-9"
               style={{
                 backgroundColor: symbolTabMenuOpen ? ui.soft : ui.control,
-                borderColor: symbolTabMenuOpen ? ui.success : ui.border,
+                borderColor: symbolTabMenuOpen ? ui.accent : ui.border,
                 cursor: 'pointer',
               }}
             >
-              <Text className="text-xs font-medium" numberOfLines={1} style={{ color: symbolTabMenuOpen ? ui.success : ui.text }}>{selectedCategory}</Text>
-              <ChevronDown size={13} color={symbolTabMenuOpen ? ui.success : ui.muted} />
+              <Text className="text-xs font-medium" numberOfLines={1} style={{ color: symbolTabMenuOpen ? ui.accent : ui.text }}>{selectedCategory}</Text>
+              <ChevronDown size={13} color={symbolTabMenuOpen ? ui.accent : ui.muted} />
             </Pressable>
             {symbolTabMenuOpen ? (
               <View
@@ -104,7 +93,7 @@ export default function ChartSymbolPanel({
                     className="justify-center h-8 px-2 rounded"
                     style={{ backgroundColor: entry === symbolTab ? ui.soft : 'transparent', cursor: 'pointer' }}
                   >
-                    <Text className="text-xs font-medium" style={{ color: entry === symbolTab ? ui.success : ui.text }}>{entry}</Text>
+                    <Text className="text-xs font-medium" style={{ color: entry === symbolTab ? ui.accent : ui.text }}>{entry}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -157,14 +146,15 @@ export default function ChartSymbolPanel({
       </View>
 
       <ScrollView
-        ref={symbolListRef}
         className="flex-1 min-h-0"
-        scrollEnabled
-        nestedScrollEnabled
         showsVerticalScrollIndicator
         persistentScrollbar
-        contentContainerStyle={{ paddingBottom: 12 }}
-        style={Platform.OS === 'web' ? { flex: 1, minHeight: 0, overflowY: 'auto', scrollbarGutter: 'stable' } : { flex: 1, minHeight: 0 }}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 0, paddingBottom: 80 }}
+        style={Platform.OS === 'web'
+          ? { flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', scrollbarGutter: 'stable', touchAction: 'pan-y' }
+          : { flex: 1, minHeight: 0 }}
       >
         {filteredSymbols.map((item) => {
           const active = item.symbol === currentSymbol.symbol;
@@ -191,15 +181,13 @@ export default function ChartSymbolPanel({
               onHoverIn={() => onHoverSymbol(item.symbol)}
               onHoverOut={() => onHoverSymbol(null)}
               onPress={() => onSelectSymbol(item.symbol)}
-              className="mx-2 h-[48px] flex-row items-center rounded-xl px-2"
+              className="h-[48px] flex-row items-center px-4"
               style={{
                 backgroundColor: active
-                  ? (ui.selected || ui.soft)
+                  ? 'rgba(212, 175, 55, 0.28)'
                   : hovered
                     ? ui.soft
                     : 'transparent',
-                borderWidth: active ? 1 : 0,
-                borderColor: active ? (ui.accent || '#D4AF37') : 'transparent',
                 cursor: 'pointer',
               }}
             >

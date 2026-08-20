@@ -40,16 +40,6 @@ const paymentMethodGroups = [
 }));
 const paymentPanelAccent = '#38BDF8';
 
-const depositRules = {
-  USD: {
-    minimum: 100,
-    quickAmounts: [100, 250, 500, 1000],
-  },
-  INR: {
-    minimum: 10000,
-    quickAmounts: [10000, 25000, 50000, 100000],
-  },
-};
 const displayCurrencies = [
   { code: 'USD', symbol: '$' },
 ];
@@ -162,7 +152,6 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
   const activePaymentGroup = paymentMethodGroups.find((group) => group.title === selectedPaymentGroup) || paymentMethodGroups[0];
   const ActivePaymentGroupIcon = activePaymentGroup.icon;
   const isBankMethod = form.paymentMethod === 'Bank Transfer' || activePaymentGroup.title === 'Bank';
-  const selectedDepositRule = depositRules[selectedCurrency.code] || depositRules.USD;
   const selectedSymbol = selectedCurrency.symbol;
   const selectedMethodAddresses = depositAddresses.filter((item) => {
     if (item.isActive === false) return false;
@@ -332,21 +321,6 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
               <View className="rounded-lg px-2 py-1" style={{ backgroundColor: '#F4F2ED' }}>
                 <Text className="text-xs" style={{ color: '#9CA4AF' }}>USD</Text>
               </View>
-            </View>
-            <View className="mt-2 flex-row gap-2">
-              {selectedDepositRule.quickAmounts.map((amount) => {
-                const selected = Number(form.amount) === amount;
-                return (
-                  <Pressable
-                    key={amount}
-                    onPress={() => update('amount')(String(amount))}
-                    className="flex-1 items-center rounded-[10px] border py-[7px]"
-                    style={{ backgroundColor: selected ? '#FBF3E2' : '#FFFFFF', borderColor: selected ? '#E9CB84' : '#E4E1D8' }}
-                  >
-                    <Text className="text-[12px] font-medium" style={{ color: selected ? '#8A6A1E' : '#5C635A' }}>${amount.toLocaleString()}</Text>
-                  </Pressable>
-                );
-              })}
             </View>
             {message && !success ? (
               <View className="mt-2.5 rounded-xl border p-3" style={{ backgroundColor: `${colors.danger}15`, borderColor: `${colors.danger}40` }}>
