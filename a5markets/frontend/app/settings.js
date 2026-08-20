@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import {
@@ -17,7 +17,7 @@ import {
   UserRound,
 } from 'lucide-react-native';
 import CustomButton from '../src/components/common/CustomButton';
-import PortalLayout from '../src/components/portal/PortalLayout';
+import ClientPortalHeader from '../src/components/layout/ClientPortalHeader';
 import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
 import { useAppTheme } from '../src/context/ThemeContext';
@@ -941,24 +941,36 @@ export default function SettingsScreen() {
   const showTrc20Form = !savedTrc20Detail || trc20Rejected || (editingPayoutType === 'TRC20' && Boolean(editingBankAccountId));
   const showBep20Form = !savedBep20Detail || bep20Rejected || (editingPayoutType === 'BEP20' && Boolean(editingBankAccountId));
   const mobileLayout = width < 640;
-  const SettingsLayout = String(user?.role || 'user').toLowerCase() === 'user' ? PortalLayout : Fragment;
-
   return (
-    <SettingsLayout>
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-4 lg:p-8">
-      <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
-        <View className="min-w-0 flex-1">
-          <Text className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>Settings</Text>
-          <Text className="mt-1" style={{ color: colors.muted }}>Manage your account preferences and security</Text>
-        </View>
-      </View>
+      <ClientPortalHeader
+        title="Settings"
+        subtitle={user?.email || 'Manage your account preferences and security'}
+        activeKey="settings"
+        userRole={user?.role}
+        rightContent={(
+          <>
+            <Pressable onPress={() => router.push('/trading')} className="h-10 items-center justify-center px-2">
+              <Text className="font-medium" style={{ color: colors.primary }}>Back to Trading</Text>
+            </Pressable>
+            <Pressable onPress={signOut} className="h-10 items-center justify-center px-2">
+              <Text className="font-medium" style={{ color: colors.danger }}>Sign Out</Text>
+            </Pressable>
+          </>
+        )}
+      />
 
       <View
-        className="overflow-hidden rounded-2xl border"
+        className="overflow-hidden rounded-xl border"
         style={{
           flexDirection: mobileLayout ? 'column' : 'row',
           backgroundColor: colors.panel,
           borderColor: colors.border,
+          shadowColor: '#5a7d91',
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.08,
+          shadowRadius: 22,
+          elevation: 3,
         }}
       >
         <View
@@ -1432,6 +1444,5 @@ export default function SettingsScreen() {
         </View>
       </View>
     </ScrollView>
-    </SettingsLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Award, BanknoteArrowDown, BanknoteArrowUp, BarChart3, Bell, ChevronDown, LayoutDashboard, LogOut, Menu, Moon, RefreshCw, Settings, ShieldCheck, Sun, TrendingUp, UserRound, UsersRound, X, Coins, Activity } from 'lucide-react-native';
+import { AlertTriangle, Award, BanknoteArrowDown, BanknoteArrowUp, BarChart3, Bell, ChevronDown, LayoutDashboard, LogOut, Menu, Moon, RefreshCw, Settings, ShieldCheck, Sun, TrendingUp, UserRound, UsersRound, X, Coins, Activity, KeyRound } from 'lucide-react-native';
 import { Animated, Image, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -19,6 +19,7 @@ const navigation = [
   { id: 'trades', label: 'All Trades', shortLabel: 'Trades', icon: BarChart3 },
   { id: 'addTrading', label: 'Add Trading', shortLabel: 'Add', icon: TrendingUp },
   { id: 'marginAlerts', label: 'Margin Alerts', shortLabel: 'Margin', icon: AlertTriangle },
+  { id: 'registrationCode', label: 'Referral Code', shortLabel: 'Code', icon: KeyRound, masterOnly: true },
   { id: 'agents', label: 'Staff & Permissions', shortLabel: 'Staff', icon: ShieldCheck, masterOnly: true },
   { id: 'symbols', label: 'Symbol Settings', shortLabel: 'Symbols', icon: Coins, masterOnly: true },
 ];

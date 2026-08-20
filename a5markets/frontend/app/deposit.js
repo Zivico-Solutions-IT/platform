@@ -1,36 +1,44 @@
-import { Link } from 'expo-router';
-import { ArrowLeft, CheckCircle2, ShieldCheck, Wallet, XCircle } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { CheckCircle2, ShieldCheck, Wallet, XCircle } from 'lucide-react-native';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import ClientPortalHeader from '../src/components/layout/ClientPortalHeader';
 import DepositForm from '../src/components/wallet/DepositForm';
 import TransactionList from '../src/components/wallet/TransactionList';
 import { useWallet } from '../src/hooks/useWallet';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
-import PortalLayout from '../src/components/portal/PortalLayout';
 
 export default function DepositScreen() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { colors } = useAppTheme();
   const { deposit, transactions, loading } = useWallet();
   const depositTransactions = transactions.filter((item) => item.type === 'deposit');
   const latestReviewedDeposit = depositTransactions.find((item) => ['approved', 'completed', 'rejected'].includes(item.status));
   const depositApproved = ['approved', 'completed'].includes(latestReviewedDeposit?.status);
   const latestBonus = Number(latestReviewedDeposit?.bonus || 0);
+  const signOut = async () => {
+    await logout();
+    router.replace('/login');
+  };
 
   return (
-    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-4 lg:p-8">
-      <View className="mb-6 flex-row flex-wrap items-center justify-between gap-3">
-        <View>
-          <Text className="text-3xl font-medium" style={{ color: colors.text }}>Deposit Center</Text>
-          <Text className="mt-1 text-muted">Fund your trading account with a reviewed deposit request.</Text>
-        </View>
-        <Link href="/trading" asChild>
-          <Pressable className="flex-row items-center rounded-2xl border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-            <ArrowLeft size={17} color="#17B8B2" />
-            <Text className="ml-2 font-medium text-primary">Back to Trading</Text>
-          </Pressable>
-        </Link>
-      </View>
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-4 lg:p-8">
+      <ClientPortalHeader
+        title="Deposit"
+        subtitle="Fund your trading account with a reviewed deposit request."
+        activeKey="deposit"
+        userRole={user?.role}
+        rightContent={(
+          <>
+            <Pressable onPress={() => router.push('/trading')} className="h-10 items-center justify-center px-2">
+              <Text className="font-medium" style={{ color: colors.primary }}>Back to Trading</Text>
+            </Pressable>
+            <Pressable onPress={signOut} className="h-10 items-center justify-center px-2">
+              <Text className="font-medium" style={{ color: colors.danger }}>Sign Out</Text>
+            </Pressable>
+          </>
+        )}
+      />
 
       <View className="mb-5 flex-row flex-wrap items-center justify-between gap-4 rounded-3xl border p-6 shadow-sm" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
         <View className="flex-row items-center">
@@ -73,6 +81,6 @@ export default function DepositScreen() {
         loading={loading}
       />
       <TransactionList transactions={depositTransactions} title="Deposit History" />
-    </ScrollView></PortalLayout>
+    </ScrollView>
   );
 }

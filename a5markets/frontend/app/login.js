@@ -9,7 +9,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Eye, EyeOff, ArrowLeft, Mail, ShieldCheck, LockKeyhole, CheckCircle2 } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+} from 'lucide-react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
 import NovaLogo from '../src/components/brand/NovaLogo';
@@ -547,6 +556,83 @@ export default function LoginScreen() {
   return (
     <ScrollView
       className="a5-auth-page flex-1"
+      style={{ backgroundColor: '#f6fbfc' }}
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
+      <View className="min-h-full items-center justify-center px-4 py-8">
+        <View
+          className="relative w-full max-w-[760px] overflow-hidden rounded-[28px] border px-6 py-7 md:px-10 md:py-10"
+          style={{
+            minHeight: 720,
+            backgroundColor: '#ffffff',
+            borderColor: 'rgba(21, 63, 115, 0.12)',
+            shadowColor: '#5a7d91',
+            shadowOffset: { width: 0, height: 28 },
+            shadowOpacity: 0.18,
+            shadowRadius: 42,
+            elevation: 18,
+          }}
+        >
+          <View className="absolute inset-0 bg-[#f6fbfc]" />
+          <View className="absolute left-[-18%] top-[-18%] h-[620px] w-[620px] rounded-full bg-[#00d08418]" />
+          <View className="absolute right-[-12%] top-[8%] h-[460px] w-[460px] rounded-full bg-[#1493b014]" />
+          <Text className="absolute left-[14%] top-[24%] text-[24px] font-bold text-[#00a66a22]">+0.33%</Text>
+          <Text className="absolute left-[27%] top-[18%] text-[24px] font-bold text-[#00a66a20]">-1.08949</Text>
+          <View className="relative z-10">
+            <NovaLogo dark={false} width={190} height={62} />
+          </View>
+          <View className="relative z-10 mt-8 flex-1 items-center justify-center">
+            <View className="w-full max-w-[410px] rounded-[22px] border px-7 py-8" style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'rgba(21, 63, 115, 0.14)', shadowColor: '#5a7d91', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.14, shadowRadius: 28, elevation: 10 }}>
+              <Text className="text-[30px] font-bold text-[#101827]">Welcome Back</Text>
+              <Text className="mt-2 text-[14px] text-[#607083]">Login to your A5 Markets account</Text>
+              <View className="mt-7 flex-row rounded-full bg-[#edf4f6] p-1">
+                <View className="flex-1 rounded-full bg-white py-2.5 shadow-sm">
+                  <Text className="text-center text-sm font-semibold text-[#00d084]">Login</Text>
+                </View>
+                <View className="flex-1 py-2.5">
+                  <Text className="text-center text-sm text-[#607083]">Demo Login</Text>
+                </View>
+              </View>
+              <View className="mb-4 mt-6 flex-row items-center rounded-xl border px-4" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea' }}>
+                <Mail size={18} color="#64748b" />
+                <TextInput className="flex-1 px-3 py-3.5 text-sm" style={{ backgroundColor: 'transparent', color: '#101827', caretColor: '#101827', outlineStyle: 'none' }} placeholder="Email Address" placeholderTextColor="#7b8ca0" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" autoComplete="email" textContentType="username" importantForAutofill="yes" value={form.email} onChangeText={(email) => setForm((value) => ({ ...value, email }))} />
+              </View>
+              <View className="mb-5 flex-row items-center rounded-xl border px-4" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea' }}>
+                <LockKeyhole size={18} color="#64748b" />
+                <TextInput className="flex-1 px-3 py-3.5 text-sm" style={{ backgroundColor: 'transparent', borderWidth: 0, color: '#101827', caretColor: '#101827', outlineStyle: 'none', ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }} placeholder="Password" placeholderTextColor="#7b8ca0" secureTextEntry={!showPassword} autoCapitalize="none" autoCorrect={false} autoComplete="current-password" textContentType="password" importantForAutofill="yes" value={form.password} onChangeText={(password) => setForm((value) => ({ ...value, password }))} />
+                <TouchableOpacity onPress={() => setShowPassword((value) => !value)} className="px-2 py-2" accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+                  {showPassword ? <Eye size={18} color="#64748b" /> : <EyeOff size={18} color="#64748b" />}
+                </TouchableOpacity>
+              </View>
+              <View className="mb-5 flex-row items-center justify-between">
+                <TouchableOpacity onPress={() => setRememberMe((value) => !value)} className="flex-row items-center gap-2">
+                  <View className="h-4 w-4 items-center justify-center rounded border" style={{ borderColor: rememberMe ? '#00d084' : '#b9c9d3', backgroundColor: rememberMe ? '#00d084' : '#ffffff' }}>
+                    {rememberMe ? <Text className="text-[10px] font-bold text-[#04111d]">✓</Text> : null}
+                  </View>
+                  <Text className="text-sm text-[#465668]">Remember Me</Text>
+                </TouchableOpacity>
+                {!isCrmHost() && <TouchableOpacity onPress={() => setView('forgot-email')}><Text className="text-sm font-medium text-[#00d084]">Forgot Password?</Text></TouchableOpacity>}
+              </View>
+              {error ? <Text className="mb-4 text-xs text-red-400">{error}</Text> : null}
+              <TouchableOpacity onPress={submit} disabled={loading} className="w-full flex-row items-center justify-center gap-2 rounded-xl py-4" style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#00c875' }}>
+                <Text className="text-sm font-bold text-white">{loading ? 'Logging in...' : 'Login'}</Text>
+                {!loading ? <ArrowRight size={18} color="#ffffff" /> : null}
+              </TouchableOpacity>
+              {!isCrmHost() && (
+                <Link href="/register" asChild>
+                  <Pressable className="mt-6"><Text className="text-center text-sm text-[#465668]">Don&apos;t have an account? <Text className="font-semibold text-[#00d084]">Create Account</Text></Text></Pressable>
+                </Link>
+              )}
+            </View>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  return (
+    <ScrollView
+      className="a5-auth-page flex-1"
       style={{ backgroundColor: darkMode ? colors.background : '#eaf6fb' }}
       contentContainerStyle={{ flexGrow: 1 }}
     >
@@ -568,8 +654,6 @@ export default function LoginScreen() {
           }}
         >
         <View>
-
-          {/* Email Field */}
           <View className="mb-4">
             <TextInput
               className="w-full rounded-full border px-6 py-3 text-sm"
@@ -587,7 +671,6 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Password Field */}
           <View className="mb-5">
             <View className="flex-row items-center rounded-full border" style={{ backgroundColor: inputBackground, borderColor: inputStyle.borderColor, overflow: 'hidden' }}>
               <TextInput
@@ -618,7 +701,6 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Remember Me & Forgot Password */}
           <View className="mb-5 flex-row items-center justify-between">
             <TouchableOpacity
               onPress={() => setRememberMe((value) => !value)}
@@ -644,12 +726,10 @@ export default function LoginScreen() {
             )}
           </View>
 
-          {/* Error Message */}
           {error ? (
             <Text className="mb-4 text-xs text-red-600">{error}</Text>
           ) : null}
 
-          {/* Login Button */}
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
@@ -675,7 +755,7 @@ export default function LoginScreen() {
 
       </View>
       </View>
-
     </ScrollView>
   );
+
 }

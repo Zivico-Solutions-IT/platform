@@ -1,5 +1,5 @@
 import { Check, Circle, Copy } from 'lucide-react-native';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useToast } from '../../context/ToastContext';
@@ -19,6 +19,7 @@ function accountLabel(account) {
 }
 
 export default function DemoAccountMenu({ accounts = [], selectedAccount, onSelectAccount, onClose, onOpenPanel }) {
+  const { width } = useWindowDimensions();
   const { user } = useAuth();
   const { colors } = useAppTheme();
   const { notify } = useToast();
@@ -31,6 +32,7 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
   };
   const tradingAccounts = accounts.length ? accounts : [fallbackAccount];
   const activeAccount = selectedAccount || tradingAccounts[0];
+  const mobile = width < 760;
 
   const openAccounts = () => {
     onClose?.();
@@ -42,9 +44,9 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
     <View
       className="absolute z-50 overflow-hidden rounded-2xl border shadow-xl"
       style={{
-        width: 208,
-        top: 62,
-        right: 190,
+        width: mobile ? Math.min(width - 24, 260) : 208,
+        top: mobile ? 54 : 62,
+        right: mobile ? 8 : 190,
         backgroundColor: colors.panel,
         borderColor: colors.border,
         shadowColor: '#172536',

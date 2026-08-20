@@ -1,9 +1,9 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { CheckCircle2, FileText, ShieldCheck, UploadCloud } from 'lucide-react-native';
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import CustomButton from '../src/components/common/CustomButton';
-import PortalLayout from '../src/components/portal/PortalLayout';
+import ClientPortalHeader from '../src/components/layout/ClientPortalHeader';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
 
@@ -76,7 +76,18 @@ function DocumentLink({ title, file, inputRef, onSelect, colors }) {
 
 function StatusScreen({ title, description, icon, buttonTitle, colors }) {
   return (
-    <View className="w-full max-w-[640px] mx-auto items-center rounded-2xl border p-6 sm:p-10" style={{ backgroundColor: colors.panel, borderColor: GOLD }}>
+    <View
+      className="w-full max-w-[640px] mx-auto items-center rounded-xl border p-6 sm:p-10"
+      style={{
+        backgroundColor: colors.panel,
+        borderColor: colors.border,
+        shadowColor: '#5a7d91',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.08,
+        shadowRadius: 22,
+        elevation: 3,
+      }}
+    >
       <View className="mb-6 h-20 w-20 items-center justify-center rounded-full" style={{ backgroundColor: SOFT_GOLD }}>
         {icon}
       </View>
@@ -88,7 +99,7 @@ function StatusScreen({ title, description, icon, buttonTitle, colors }) {
 }
 
 export default function VerificationScreen() {
-  const { user, refreshUser, submitVerification } = useAuth();
+  const { user, logout, refreshUser, submitVerification } = useAuth();
   const { colors, darkMode } = useAppTheme();
   const idProofInputRef = useRef(null);
   const addressProofInputRef = useRef(null);
@@ -97,7 +108,6 @@ export default function VerificationScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const verificationStatus = user?.verificationStatus || 'unverified';
-  const VerificationLayout = String(user?.role || 'user').toLowerCase() === 'user' ? PortalLayout : Fragment;
 
   useEffect(() => {
     refreshUser?.().catch(() => {});
@@ -120,39 +130,76 @@ export default function VerificationScreen() {
     }
   };
 
+  const signOut = async () => {
+    await logout();
+    router.replace('/login');
+  };
+
+  const headerActions = (
+    <>
+      <Pressable onPress={() => router.push('/trading')} className="h-10 items-center justify-center px-2">
+        <Text className="font-medium" style={{ color: colors.primary }}>Back to Trading</Text>
+      </Pressable>
+      <Pressable onPress={signOut} className="h-10 items-center justify-center px-2">
+        <Text className="font-medium" style={{ color: colors.danger }}>Sign Out</Text>
+      </Pressable>
+    </>
+  );
+
   if (verificationStatus === 'approved' || verificationStatus === 'pending' || verificationStatus === 'rejected') {
     const rejected = verificationStatus === 'rejected';
     const pending = verificationStatus === 'pending';
     return (
-      <VerificationLayout>
-        <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8 justify-center min-h-full">
-          <StatusScreen
-            colors={colors}
-            icon={rejected ? <FileText size={42} color={GOLD} /> : pending ? <ShieldCheck size={42} color={GOLD} /> : <CheckCircle2 size={42} color={GREEN} />}
-            title={rejected ? 'Try Again' : pending ? 'Verification Submitted' : 'Verification Successful'}
-            description={rejected ? 'Your verification was not approved. Upload clear ID proof and address proof photos again.' : pending ? 'Your documents are waiting for admin review. You will see the result here once reviewed.' : 'Your account is verified and all enabled account features are available.'}
-            buttonTitle="Go to Dashboard"
-          />
-          {rejected ? <CustomButton title="Upload Again" onPress={() => router.push('/verification-upload')} className="mt-4 w-full max-w-[640px] mx-auto" /> : null}
-        </ScrollView>
-      </VerificationLayout>
+      <ScrollView
+        className="flex-1"
+        style={{ backgroundColor: colors.background }}
+        contentContainerClassName="mx-auto w-full max-w-[1180px] p-4 lg:p-7"
+      >
+        <ClientPortalHeader
+          title="Verification"
+          subtitle={user?.email || 'Step-wise KYC status and documents'}
+          activeKey="verification"
+          userRole={user?.role}
+          rightContent={headerActions}
+        />
+        <StatusScreen
+          colors={colors}
+          icon={rejected ? <FileText size={42} color={GOLD} /> : pending ? <ShieldCheck size={42} color={GOLD} /> : <CheckCircle2 size={42} color={GREEN} />}
+          title={rejected ? 'Try Again' : pending ? 'Verification Submitted' : 'Verification Successful'}
+          description={rejected ? 'Your verification was not approved. Upload clear ID proof and address proof photos again.' : pending ? 'Your documents are waiting for admin review. You will see the result here once reviewed.' : 'Your account is verified and all enabled account features are available.'}
+          buttonTitle="Go to Dashboard"
+        />
+        {rejected ? <CustomButton title="Upload Again" onPress={() => router.push('/verification-upload')} className="mt-4 w-full max-w-[640px] mx-auto" /> : null}
+      </ScrollView>
     );
   }
 
   return (
-    <VerificationLayout>
-      <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="p-4 lg:p-8">
-        <View className="mb-6 flex-row items-start">
-          <View className="h-14 w-14 items-center justify-center rounded-xl" style={{ backgroundColor: SOFT_GOLD }}>
-            <ShieldCheck size={26} color={GOLD} />
-          </View>
-          <View className="ml-4 flex-1">
-            <Text className="text-3xl font-medium" style={{ color: colors.text }}>Verification</Text>
-            <Text className="mt-1 text-base" style={{ color: colors.muted }}>Step-wise KYC status and documents</Text>
-          </View>
-        </View>
+    <ScrollView
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+      contentContainerClassName="mx-auto w-full max-w-[1180px] p-4 lg:p-7"
+    >
+        <ClientPortalHeader
+          title="Verification"
+          subtitle={user?.email || 'Step-wise KYC status and documents'}
+          activeKey="verification"
+          userRole={user?.role}
+          rightContent={headerActions}
+        />
 
-        <View className="rounded-2xl border p-4 sm:p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+        <View
+          className="rounded-xl border p-4 sm:p-6"
+          style={{
+            backgroundColor: colors.panel,
+            borderColor: colors.border,
+            shadowColor: '#5a7d91',
+            shadowOffset: { width: 0, height: 12 },
+            shadowOpacity: 0.08,
+            shadowRadius: 22,
+            elevation: 3,
+          }}
+        >
           <View className="mb-7 flex-row flex-wrap items-start justify-between gap-4">
             <View>
               <Text className="text-2xl font-medium" style={{ color: colors.text }}>Unlock full account access</Text>
@@ -187,6 +234,5 @@ export default function VerificationScreen() {
           </View>
         </View>
       </ScrollView>
-    </VerificationLayout>
   );
 }

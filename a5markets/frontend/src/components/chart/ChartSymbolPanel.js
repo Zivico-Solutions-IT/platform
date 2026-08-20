@@ -34,6 +34,7 @@ export default function ChartSymbolPanel({
   const categoryBlue = ui.accent;
   const categoryBackground = ui.dark ? '#153a56' : '#d9eaf6';
   const expandedBackground = ui.dark ? ui.panel : '#eef7fc';
+  const selectedSymbol = typeof currentSymbol === 'string' ? currentSymbol : currentSymbol?.symbol;
   const { openPosition } = useDemoTrading();
   const { notify } = useToast();
   const [quickTradeSymbol, setQuickTradeSymbol] = useState(null);
@@ -188,7 +189,7 @@ export default function ChartSymbolPanel({
                 <Text className="ml-2 text-xs font-semibold" style={{ color: expanded ? categoryBlue : ui.text }}>{category.toUpperCase()}</Text>
               </Pressable>
               {expanded ? filteredSymbols.map((item) => {
-          const active = item.symbol === currentSymbol.symbol;
+          const active = item.symbol === selectedSymbol;
           const hovered = hoveredSymbol === item.symbol;
           const favorite = favoriteSymbolSet.has(item.symbol);
 
@@ -214,8 +215,8 @@ export default function ChartSymbolPanel({
           return (
             <View key={item.symbol}>
             <Pressable
-              onHoverIn={() => onHoverSymbol(item.symbol)}
-              onHoverOut={() => onHoverSymbol(null)}
+              onHoverIn={() => onHoverSymbol?.(item.symbol)}
+              onHoverOut={() => onHoverSymbol?.(null)}
               onPress={() => onSelectSymbol(item.symbol)}
               className="h-[48px] flex-row items-center px-2.5 border-b"
               style={{

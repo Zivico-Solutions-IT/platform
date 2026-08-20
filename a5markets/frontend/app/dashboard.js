@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   ArrowUpRight,
   ArrowDownRight,
-  Bell,
   CheckCircle2,
   Clock3,
   CreditCard,
@@ -16,6 +15,8 @@ import {
   X,
 } from 'lucide-react-native';
 import CustomButton from '../src/components/common/CustomButton';
+import ClientPortalHeader from '../src/components/layout/ClientPortalHeader';
+import { dashboardTabLabel } from '../src/components/layout/DashboardTabs';
 import DepositForm from '../src/components/wallet/DepositForm';
 import WithdrawForm from '../src/components/wallet/WithdrawForm';
 import TransactionList from '../src/components/wallet/TransactionList';
@@ -26,14 +27,24 @@ import { useWallet } from '../src/hooks/useWallet';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { dateTime, money, transactionTypeLabel } from '../src/utils/formatters';
 import { storage } from '../src/utils/storage';
-import PortalLayout from '../src/components/portal/PortalLayout';
 
 const DEMO_ACCOUNT_LIMIT = 2;
 const LIVE_ACCOUNT_LIMIT = 3;
 
 function Card({ title, subtitle, children, colors, mobile = false }) {
   return (
-    <View className={`${mobile ? 'p-4' : 'p-5'} rounded-2xl border`} style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+    <View
+      className={`${mobile ? 'p-4' : 'p-5'} rounded-xl border`}
+      style={{
+        backgroundColor: colors.panel,
+        borderColor: colors.border,
+        shadowColor: '#5a7d91',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.08,
+        shadowRadius: 22,
+        elevation: 3,
+      }}
+    >
       <View className={mobile ? 'mb-4' : 'mb-5'}>
         <Text className={`${mobile ? 'text-lg' : 'text-xl'} font-medium`} style={{ color: colors.text }}>{title}</Text>
         {subtitle ? <Text className="mt-1 text-sm" style={{ color: colors.muted }}>{subtitle}</Text> : null}
@@ -45,7 +56,7 @@ function Card({ title, subtitle, children, colors, mobile = false }) {
 
 function Stat({ label, value, colors, mobile = false }) {
   return (
-    <View className="flex-1 rounded-xl border p-4" style={{ minWidth: mobile ? '48%' : 150, backgroundColor: colors.surface, borderColor: colors.border }}>
+    <View className="flex-1 rounded-xl border p-4" style={{ minWidth: mobile ? '48%' : 150, backgroundColor: colors.panel, borderColor: colors.border }}>
       <Text className="text-xs font-semimedium uppercase" style={{ color: colors.muted }}>{label}</Text>
       <Text className={`${mobile ? 'text-base' : 'text-xl'} mt-2 font-medium`} numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.text }}>{value}</Text>
     </View>
@@ -287,9 +298,9 @@ function ActivitySelector({ active, tradesCount, transactionsCount, onChange, co
             className="flex-1 flex-row items-center justify-center rounded-lg px-3 py-2"
             style={{ backgroundColor: selected ? colors.primary : 'transparent' }}
           >
-            <Text className="text-sm font-medium" style={{ color: selected ? '#0B0B0B' : colors.text }}>{item.label}</Text>
-            <View className="ml-2 rounded-full px-2 py-0.5" style={{ backgroundColor: selected ? 'rgba(11,11,11,0.12)' : colors.panel }}>
-              <Text className="text-[10px] font-medium" style={{ color: selected ? '#0B0B0B' : colors.muted }}>{item.count}</Text>
+            <Text className="text-sm font-medium" style={{ color: selected ? '#ffffff' : colors.text }}>{item.label}</Text>
+            <View className="ml-2 rounded-full px-2 py-0.5" style={{ backgroundColor: selected ? 'rgba(255,255,255,0.18)' : colors.panel }}>
+              <Text className="text-[10px] font-medium" style={{ color: selected ? '#ffffff' : colors.muted }}>{item.count}</Text>
             </View>
           </Pressable>
         );
@@ -487,6 +498,12 @@ export default function DashboardScreen() {
   const liveTrades = dashboard?.liveTrades || [];
   const depositTransactions = transactions.filter((item) => item.type === 'deposit');
   const bankAccounts = dashboard?.bankAccounts || [];
+  const referral = dashboard?.referral || {};
+  const referralUrl = referral.url || (
+    user?.referralCode
+      ? `${typeof window !== 'undefined' ? window.location.origin : 'https://platform.a5markets.com'}/register?ref=${user.referralCode}`
+      : ''
+  );
   const notifications = useMemo(() => {
     const items = [];
     const reviewedVerification = ['approved', 'rejected'].includes(dashboardUser?.verificationStatus);
@@ -583,6 +600,16 @@ export default function DashboardScreen() {
     setPendingAccountType(type);
   };
 
+  const signOut = async () => {
+    await logout();
+    router.replace('/login');
+  };
+
+  const copyReferralUrl = async () => {
+    if (!referralUrl || typeof navigator === 'undefined' || !navigator.clipboard) return;
+    await navigator.clipboard.writeText(referralUrl);
+  };
+
   const createAccount = async () => {
     const type = pendingAccountType;
     if (!type) return;
@@ -627,36 +654,39 @@ export default function DashboardScreen() {
   }
 
   return (
-    <PortalLayout><ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-4 lg:p-8">
-      <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
-        <View className="min-w-0 flex-1">
-          <Text className={`${mobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>Account Dashboard</Text>
-          <Text className="mt-1" style={{ color: colors.muted }}>{user?.email || 'Manage accounts, funds, and rewards'}</Text>
-        </View>
-        <View className="relative flex-row flex-wrap items-center justify-end gap-3">
-          <Pressable
-            onPress={() => setNotificationsOpen((current) => !current)}
-            className="relative h-10 w-10 items-center justify-center rounded-xl border"
-            style={{ backgroundColor: colors.panel, borderColor: colors.border }}
-          >
-            <Bell size={18} color={colors.text} />
-            {unreadNotificationCount ? (
-              <Text className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-danger px-1 text-center text-[10px] font-medium text-white">
-                {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-              </Text>
-            ) : null}
-          </Pressable>
-          <Modal visible={notificationsOpen} transparent animationType="fade" onRequestClose={() => setNotificationsOpen(false)}>
-            <Pressable className="flex-1" style={{ backgroundColor: 'rgba(0,0,0,0.12)' }} onPress={() => setNotificationsOpen(false)}>
-              <View className="absolute right-4 top-16">
-                <Pressable onPress={(event) => event.stopPropagation?.()}>
-                  <DashboardNotificationMenu notifications={notifications} readIds={readNotificationIds} unreadCount={unreadNotificationCount} colors={colors} onClose={() => setNotificationsOpen(false)} onReadAll={readAllNotifications} />
-                </Pressable>
-              </View>
+    <ScrollView
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
+      contentContainerClassName="mx-auto w-full max-w-[1180px] p-4 lg:p-7"
+    >
+      <ClientPortalHeader
+        title={dashboardTabLabel(activeSection)}
+        subtitle={user?.email || 'Manage accounts, funds, and rewards'}
+        activeKey={activeSection}
+        onSectionChange={setActiveSection}
+        userRole={user?.role}
+        notificationCount={unreadNotificationCount}
+        onNotificationPress={() => setNotificationsOpen((current) => !current)}
+        rightContent={(
+          <>
+            <Pressable onPress={() => router.push('/trading')} className="h-10 items-center justify-center px-2">
+              <Text className="font-medium" style={{ color: colors.primary }}>Back to Trading</Text>
             </Pressable>
-          </Modal>
-        </View>
-      </View>
+            <Pressable onPress={signOut} className="h-10 items-center justify-center px-2">
+              <Text className="font-medium" style={{ color: colors.danger }}>Sign Out</Text>
+            </Pressable>
+            <Modal visible={notificationsOpen} transparent animationType="fade" onRequestClose={() => setNotificationsOpen(false)}>
+              <Pressable className="flex-1" style={{ backgroundColor: 'rgba(0,0,0,0.12)' }} onPress={() => setNotificationsOpen(false)}>
+                <View className="absolute right-4 top-16">
+                  <Pressable onPress={(event) => event.stopPropagation?.()}>
+                    <DashboardNotificationMenu notifications={notifications} readIds={readNotificationIds} unreadCount={unreadNotificationCount} colors={colors} onClose={() => setNotificationsOpen(false)} onReadAll={readAllNotifications} />
+                  </Pressable>
+                </View>
+              </Pressable>
+            </Modal>
+          </>
+        )}
+      />
 
       {activeSection === 'overview' ? (
         <View className="mb-5 flex-row flex-wrap gap-3">
@@ -675,6 +705,20 @@ export default function DashboardScreen() {
               <Text className="mt-2" style={{ color: colors.text }}>Phone: {dashboard?.user?.phone || '-'}</Text>
               <Text className="mt-2" style={{ color: colors.text }}>Trading Status: {dashboard?.user?.tradingStatus || 'active'}</Text>
             </Card>
+            <Card title="Broker Referral" colors={colors} mobile={mobile}>
+              <Text style={{ color: colors.muted }}>Share this URL. New users who register from it are linked to you.</Text>
+              <View className="mt-5 rounded-xl border px-4 py-3" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+                <Text numberOfLines={1} style={{ color: colors.text }}>{referralUrl || 'Referral link is not available yet.'}</Text>
+              </View>
+              <Pressable
+                onPress={copyReferralUrl}
+                disabled={!referralUrl}
+                className="mt-5 h-12 items-center justify-center rounded-xl"
+                style={{ backgroundColor: colors.primary, opacity: referralUrl ? 1 : 0.55 }}
+              >
+                <Text className="font-bold text-white">Copy Referral URL</Text>
+              </Pressable>
+            </Card>
           </View>
           <View className="flex-1">
             <Card title="Live Account Activity" colors={colors} mobile={mobile}>
@@ -692,14 +736,14 @@ export default function DashboardScreen() {
 
       {activeSection === 'accounts' ? (
         <Card title="Demo and Live Accounts" subtitle="Create, review, and manage all trading accounts from one clean workspace." colors={colors} mobile={mobile}>
-          <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3 rounded-2xl border p-4" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+          <View className={`${mobile ? 'items-stretch' : 'flex-row flex-wrap items-center justify-between'} mb-5 gap-3 rounded-2xl border p-4`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
             <View>
               <Text className="text-sm font-medium" style={{ color: colors.text }}>Account slots</Text>
               <Text className="mt-1 text-xs" style={{ color: colors.muted }}>Demo {demoAccountCount}/{DEMO_ACCOUNT_LIMIT} | Live {liveAccountCount}/{LIVE_ACCOUNT_LIMIT}</Text>
             </View>
-            <View className="flex-row flex-wrap gap-3">
-              <CustomButton title="Create Demo Account" onPress={() => askCreateAccount('Demo')} disabled={demoAccountCount >= DEMO_ACCOUNT_LIMIT || accountCreating} className={mobile ? 'w-full' : 'min-w-[210px]'} />
-              <CustomButton title="Create Live Account" onPress={() => askCreateAccount('Live')} disabled={liveAccountCount >= LIVE_ACCOUNT_LIMIT || accountCreating} variant="secondary" className={mobile ? 'w-full' : 'min-w-[210px]'} />
+            <View className={`${mobile ? 'w-full' : 'flex-row flex-wrap'} gap-3`}>
+              <CustomButton title="Create Demo Account" onPress={() => askCreateAccount('Demo')} disabled={demoAccountCount >= DEMO_ACCOUNT_LIMIT || accountCreating} className={mobile ? 'w-full self-stretch px-3' : 'min-w-[210px]'} />
+              <CustomButton title="Create Live Account" onPress={() => askCreateAccount('Live')} disabled={liveAccountCount >= LIVE_ACCOUNT_LIMIT || accountCreating} variant="secondary" className={mobile ? 'w-full self-stretch px-3' : 'min-w-[210px]'} />
             </View>
           </View>
           {accountError ? <Text className="mb-4 rounded-xl border border-danger/40 bg-danger/10 p-3 text-danger">{accountError}</Text> : null}
@@ -781,6 +825,6 @@ export default function DashboardScreen() {
         </View>
       </Modal>
 
-    </ScrollView></PortalLayout>
+    </ScrollView>
   );
 }

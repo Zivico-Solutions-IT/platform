@@ -35,6 +35,15 @@ async function ensureSchema() {
     allowNull: true,
   }).catch(() => {});
 
+  await queryInterface.createTable('registration_codes', {
+    id: { type: DataTypes.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true },
+    project_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false, unique: true },
+    code: { type: DataTypes.STRING(40), allowNull: false },
+    updated_by_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+    created_at: { type: DataTypes.DATE, allowNull: false },
+    updated_at: { type: DataTypes.DATE, allowNull: false },
+  }).catch(() => {});
+
   // Ensure 'manager' role exists in the users table ENUM
   await queryInterface.sequelize.query(
     "ALTER TABLE users MODIFY COLUMN role ENUM('user', 'admin', 'agent', 'master', 'manager') NOT NULL DEFAULT 'user';"

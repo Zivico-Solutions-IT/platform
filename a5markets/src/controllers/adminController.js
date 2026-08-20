@@ -2,7 +2,7 @@ const sequelize = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification } = require('../models');
+const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification, RegistrationCode } = require('../models');
 const tradingView = require('../services/tradingViewService');
 const { ensureReferralCode } = require('../services/dashboardService');
 const { getIo } = require('../config/socketIo');
@@ -2230,4 +2230,39 @@ exports.deleteNotification = async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+};
+
+const normalizeRegistrationCode = (value) => String(value || '').trim().toUpperCase().replace(/\s+/g, '');
+
+const a5Project = () => Project.findOne({ where: { identifier: 'a5markets' } });
+
+exports.registrationCode = async (req, res, next) => {
+  try {
+    const project = await a5Project();
+    if (!project) return res.status(404).json({ message: 'A5 Markets company configuration was not found.' });
+    const registrationCode = await RegistrationCode.findOne({ where: { projectId: project.id } });
+    return res.json({ code: registrationCode?.code || '' });
+  } catch (error) { return next(error); }
+};
+
+exports.saveRegistrationCode = async (req, res, next) => {
+  try {
+    const code = normalizeRegistrationCode(req.body?.code);
+    if (!/^[A-Z0-9_-]{4,40}$/.test(code)) {
+      return res.status(400).json({ message: 'Use 4–40 letters, numbers, hyphens or underscores.' });
+    }
+    const project = await a5Project();
+    if (!project) return res.status(404).json({ message: 'A5 Markets company configuration was not found.' });
+    await RegistrationCode.upsert({ projectId: project.id, code, updatedById: req.user.id });
+    return res.json({ code, message: 'Registration referral code saved.' });
+  } catch (error) { return next(error); }
+};
+
+exports.deleteRegistrationCode = async (req, res, next) => {
+  try {
+    const project = await a5Project();
+    if (!project) return res.status(404).json({ message: 'A5 Markets company configuration was not found.' });
+    await RegistrationCode.destroy({ where: { projectId: project.id } });
+    return res.json({ message: 'Registration referral code removed. Public registration is now open.' });
+  } catch (error) { return next(error); }
 };

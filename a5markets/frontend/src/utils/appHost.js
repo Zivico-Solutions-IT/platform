@@ -63,7 +63,7 @@ export const landingRouteFor = (user) => {
   if (user?.role === 'admin') return '/admin';
   if (isCrmHost() && user?.role === 'agent') return '/agent';
   if (isCrmHost() && user?.role === 'manager') return '/manager';
-  return '/dashboard';
+  return '/trading';
 };
 
 export const hasConsoleUi = (user) => (

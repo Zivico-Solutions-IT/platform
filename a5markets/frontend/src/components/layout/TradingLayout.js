@@ -1,17 +1,17 @@
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
-import { Briefcase, CandlestickChart, ListFilter } from 'lucide-react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { ArrowDownRight, ArrowUpRight, Briefcase, CandlestickChart, Grid2X2, ListFilter, LogOut, Settings, ShieldCheck, UsersRound, WalletCards } from 'lucide-react-native';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
 import OrderPanel from '../order/OrderPanel';
-import SymbolPanel from '../market/SymbolPanel';
 import InsufficientFundsModal from '../order/InsufficientFundsModal';
 import OpenPositions from '../positions/OpenPositions';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
 import BirthdayModal from '../account/BirthdayModal';
+import NovaLogo from '../brand/NovaLogo';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 import A5MarketOrderModal from '../order/A5MarketOrderModal';
@@ -27,14 +27,16 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
   const symbolTabs = ['Popular', 'Crypto CFD', 'Energies', 'Forex', 'Indices', 'Metals', 'Shares USA CFD'];
 
   const ui = useMemo(() => ({
-    background: darkMode ? '#0e1726' : colors.background,
-    menu: darkMode ? '#121e30' : colors.surface,
+    dark: darkMode,
+    background: colors.chartBackground || colors.background,
+    menu: colors.panel,
     menuBorder: colors.border,
     border: colors.border,
-    soft: darkMode ? 'rgba(212, 175, 55, 0.12)' : 'rgba(212, 175, 55, 0.15)',
-    control: colors.surface,
+    soft: colors.primarySoft,
+    control: colors.panel,
+    panel: colors.panel,
     accent: colors.primary,
-    activeText: '#0B0B0B',
+    activeText: darkMode ? colors.text : '#ffffff',
     text: colors.text,
     muted: colors.muted,
     success: colors.success || '#10B981',
@@ -104,8 +106,8 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
 export default function TradingLayout() {
   const params = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
-  const { colors } = useAppTheme();
-  const { user, isAdmin } = useAuth();
+  const { darkMode, colors } = useAppTheme();
+  const { user, isAdmin, logout } = useAuth();
   const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
@@ -229,6 +231,24 @@ export default function TradingLayout() {
                 Position
               </Text>
             </Pressable>
+
+            <Pressable
+              onPress={() => router.push('/dashboard?section=overview')}
+              className="items-center justify-center flex-1 py-0.5"
+            >
+              <View
+                className="h-5 w-10 items-center justify-center rounded-full"
+                style={{ backgroundColor: 'transparent' }}
+              >
+                <Grid2X2 size={16} color={colors.muted} />
+              </View>
+              <Text
+                className="text-[9px] mt-0.5 font-medium"
+                style={{ color: colors.text }}
+              >
+                Dashboard
+              </Text>
+            </Pressable>
           </View>
         ) : null}
 
@@ -242,21 +262,89 @@ export default function TradingLayout() {
     );
   }
 
+  const signOut = async () => {
+    await logout();
+    router.replace('/login');
+  };
+
+  const railItems = [
+    { key: 'overview', label: 'Overview', icon: Grid2X2, onPress: () => router.push('/dashboard?section=overview') },
+    { key: 'accounts', label: 'Accounts', icon: Briefcase, onPress: () => router.push('/dashboard?section=accounts') },
+    { key: 'verification', label: 'Verification', icon: ShieldCheck, onPress: () => router.push('/verification') },
+    { key: 'deposit', label: 'Deposit', icon: ArrowDownRight, onPress: () => router.push('/dashboard?section=deposit') },
+    { key: 'withdraw', label: 'Withdraw', icon: ArrowUpRight, onPress: () => router.push('/dashboard?section=withdraw') },
+    { key: 'referral', label: 'Referral Programme', icon: UsersRound, onPress: () => router.push('/broker-rewards') },
+    { key: 'settings', label: 'Settings', icon: Settings, onPress: () => router.push('/settings?section=profile') },
+  ];
+
   return (
-    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+    <View className="flex-1 flex-row" style={{ backgroundColor: colors.background }}>
+      {!isAdmin && !chartFullscreen ? (
+        <View className="w-[168px] items-center border-r px-2.5 py-3" style={{ backgroundColor: colors.background, borderColor: colors.border }}>
+          <View
+            className="h-[66px] w-full items-center justify-center rounded-xl border"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.primary + '55',
+              shadowColor: colors.primary,
+              shadowOpacity: 0.08,
+              shadowRadius: 10,
+              shadowOffset: { width: 0, height: 4 },
+              elevation: 2,
+            }}
+          >
+            <NovaLogo dark={darkMode} width={146} height={42} />
+          </View>
+          <View className="mt-4 flex-1 w-full items-stretch justify-between rounded-xl border p-1.5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+            {railItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Pressable
+                  key={item.key}
+                  onPress={item.onPress}
+                  className="h-[52px] w-full flex-row items-center rounded-lg px-3"
+                  style={{
+                    backgroundColor: item.active ? colors.primary : colors.surface,
+                    borderWidth: item.active ? 0 : 1,
+                    borderColor: colors.border,
+                    shadowColor: item.active ? colors.primary : '#000',
+                    shadowOpacity: item.active ? 0.18 : 0,
+                    shadowRadius: item.active ? 14 : 0,
+                    shadowOffset: { width: 0, height: 8 },
+                    elevation: item.active ? 4 : 0,
+                  }}
+                >
+                  <Icon size={18} color={item.active ? '#ffffff' : colors.text} />
+                  <Text className="ml-2 flex-1 text-[11px] font-semibold" numberOfLines={2} adjustsFontSizeToFit style={{ color: item.active ? '#ffffff' : colors.muted }}>{item.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable onPress={signOut} className="mt-4 h-[52px] w-full flex-row items-center rounded-lg border px-3" style={{ backgroundColor: `${colors.danger}10`, borderColor: `${colors.danger}45` }}>
+            <LogOut size={18} color={colors.danger} />
+            <Text className="ml-2 text-[11px] font-semibold" style={{ color: colors.danger }}>Sign Out</Text>
+          </Pressable>
+        </View>
+      ) : null}
+      <View className="min-w-0 flex-1">
       {!chartFullscreen && <TopAccountBar onNewOrder={() => setNewOrderOpen(true)} />}
       <ScrollView
         scrollEnabled={!chartFullscreen}
         keyboardShouldPersistTaps="handled"
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: chartFullscreen ? 0 : (mobile ? 6 : 12), paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 24) }}
+        contentContainerStyle={{ flexGrow: 1, padding: chartFullscreen ? 0 : (mobile ? 6 : 10), paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 14) }}
       >
         <View
           className={chartFullscreen ? 'flex-1' : (desktop ? 'flex-row gap-3 overflow-hidden' : mobile ? 'gap-1.5 overflow-hidden' : 'gap-3 overflow-hidden')}
           style={{ height: chartFullscreen ? undefined : chartAreaHeight, overflow: chartFullscreen ? 'visible' : 'hidden' }}
         >
-          {desktop ? (
-            <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
+          {desktop && !chartFullscreen ? (
+            <>
+              <View className="min-w-0 flex-1">
+                <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
+              </View>
+              {!isAdmin ? <OrderPanel /> : null}
+            </>
           ) : (
             <>
               <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
@@ -272,6 +360,7 @@ export default function TradingLayout() {
       />
       <BirthdayModal />
       {newOrderModal}
+      </View>
     </View>
   );
 }
