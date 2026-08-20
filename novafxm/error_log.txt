@@ -5590,3 +5590,32 @@ Error: Error: TradingView has no chart data for this symbol
     at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:309:9
     at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:392:7
 --------------------------------------------------
+
+Date: 2026-08-20T12:29:06.892Z
+Method: POST
+URL: /api/auth/login
+Body: {
+  "email": "kalanichamodya8@gmail.com",
+  "password": "Kalani2004@"
+}
+Error: SequelizeConnectionAcquireTimeoutError: Operation timeout
+    at ConnectionManager.getConnection (C:\Users\MSI\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:206:15)
+    at async C:\Users\MSI\platform\novafxm\node_modules\sequelize\lib\sequelize.js:305:26
+    at async MySQLQueryInterface.select (C:\Users\MSI\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async User.findAll (C:\Users\MSI\platform\novafxm\node_modules\sequelize\lib\model.js:1140:21)
+    at async User.findOne (C:\Users\MSI\platform\novafxm\node_modules\sequelize\lib\model.js:1240:12)
+    at async exports.login (C:\Users\MSI\platform\novafxm\src\controllers\authController.js:163:18)
+--------------------------------------------------
+
+Date: 2026-08-20T12:29:20.054Z
+Method: POST
+URL: /api/auth/login
+Body: {
+  "email": "kalanichamodya8@gmail.com",
+  "password": "Kalani2004@"
+}
+Error: SequelizeConnectionError: connect ETIMEDOUT
+    at ConnectionManager.connect (C:\Users\MSI\platform\novafxm\node_modules\sequelize\lib\dialects\mysql\connection-manager.js:102:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConnectionManager._connect (C:\Users\MSI\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:222:24)
+--------------------------------------------------

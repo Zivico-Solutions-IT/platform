@@ -100,6 +100,11 @@ select option {
   font: inherit;
 }
 
+.dob-datepicker-input--with-icon {
+  padding-left: 42px;
+  padding-right: 16px;
+}
+
 .react-datepicker__portal {
   background-color: transparent !important;
 }
@@ -266,4 +271,92 @@ select option {
 .dob-react-datepicker .react-datepicker__month-option--selected_month {
   background: #B87F0E !important;
   color: #fff;
+}
+
+/* Keep the Date of Birth picker aligned with the application dark theme. */
+.dark .dob-datepicker-input {
+  border-color: #1f242d;
+  background: #12161c;
+  color: #ffffff;
+  color-scheme: dark;
+}
+
+.dark .dob-datepicker-input::placeholder {
+  color: #a1a8b5;
+}
+
+.dark .dob-react-datepicker,
+.dark .dob-react-datepicker .react-datepicker__header,
+.dark .dob-react-datepicker .react-datepicker__month-container,
+.dark .dob-react-datepicker .react-datepicker__month-dropdown,
+.dark .dob-react-datepicker .react-datepicker__year-dropdown {
+  border-color: #1f242d !important;
+  background: #12161c;
+  color: #ffffff;
+}
+
+.dark .dob-react-datepicker .react-datepicker__day,
+.dark .dob-react-datepicker .react-datepicker__day-name,
+.dark .dob-react-datepicker .react-datepicker__current-month,
+.dark .dob-react-datepicker .react-datepicker__month-read-view,
+.dark .dob-react-datepicker .react-datepicker__year-read-view,
+.dark .dob-react-datepicker .react-datepicker__month-option,
+.dark .dob-react-datepicker .react-datepicker__year-option {
+  color: #ffffff;
+}
+
+.dark .dob-react-datepicker .react-datepicker__day--disabled {
+  color: #59616d;
+}
+
+.dark .dob-react-datepicker .react-datepicker__month-select,
+.dark .dob-react-datepicker .react-datepicker__year-select {
+  border-color: #1f242d !important;
+  background: #1a1f26 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23D4AF37' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center !important;
+  background-size: 10px 7px !important;
+  color: #ffffff !important;
+  color-scheme: dark;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 24px !important;
+}
+
+.dark .dob-react-datepicker .react-datepicker__month-select option,
+.dark .dob-react-datepicker .react-datepicker__year-select option {
+  background-color: #1a1f26 !important;
+  color: #ffffff !important;
+}
+
+.dark .dob-datepicker-wrapper .react-datepicker__triangle::before,
+.dark .dob-datepicker-wrapper .react-datepicker__triangle::after {
+  border-bottom-color: #12161c !important;
+}
+
+.dark .dob-react-datepicker .react-datepicker__month-dropdown::-webkit-scrollbar-track,
+.dark .dob-react-datepicker .react-datepicker__year-dropdown::-webkit-scrollbar-track {
+  background: #12161c;
+}
+
+.dark .dob-react-datepicker .react-datepicker__month-dropdown,
+.dark .dob-react-datepicker .react-datepicker__year-dropdown {
+  scrollbar-color: #D4AF37 #12161c;
+}
+
+/* The date picker popup can be rendered outside the themed panel. */
+.dob-react-datepicker--dark .react-datepicker__month-select,
+.dob-react-datepicker--dark .react-datepicker__year-select {
+  border-color: #1f242d !important;
+  background: #1a1f26 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23D4AF37' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center !important;
+  background-size: 10px 7px !important;
+  color: #ffffff !important;
+  color-scheme: dark;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  padding-right: 24px !important;
+}
+
+.dob-react-datepicker--dark .react-datepicker__month-select option,
+.dob-react-datepicker--dark .react-datepicker__year-select option {
+  background: #1a1f26 !important;
+  color: #ffffff !important;
 }
