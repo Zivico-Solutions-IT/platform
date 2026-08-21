@@ -441,12 +441,12 @@ export default function TopAccountBar() {
       )}
       {!mobile && (
         <>
-          <View className={`${compactDesktop ? 'h-[56px]' : 'h-[62px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
+          <View className={`${compactDesktop ? 'h-[58px]' : 'h-[68px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
           <View
-            className={`${compactDesktop ? 'h-[56px]' : 'h-[62px]'} flex-row items-center justify-center`}
-            style={{ paddingHorizontal: compactDesktop ? 16 : 24 }}
+            className={`${compactDesktop ? 'h-[58px]' : 'h-[68px]'} flex-row items-center justify-center`}
+            style={{ paddingHorizontal: compactDesktop ? 16 : 28 }}
           >
-            <View style={{ width: compactDesktop ? 80 : 100 }} className="justify-center">
+            <View style={{ width: compactDesktop ? 84 : 112 }} className="justify-center">
               <View className="flex-row justify-between items-center mb-1">
                 <Text className="text-[8px] font-bold tracking-widest uppercase" style={{ color: desktopMuted }}>Vol Rate</Text>
                 <Text className="text-[8px] font-black tracking-widest uppercase" style={{ color: symbolChange < 0 ? colors.danger : colors.success }}>
@@ -456,7 +456,7 @@ export default function TopAccountBar() {
               {(() => {
                 const symbolStr = currentSymbol?.symbol || 'BTC';
                 const isUp = symbolChange >= 0;
-                const width = compactDesktop ? 80 : 100;
+                const width = compactDesktop ? 84 : 112;
                 const height = 18;
                 const stepX = width / 11;
                 
@@ -498,7 +498,7 @@ export default function TopAccountBar() {
               })()}
             </View>
           </View>
-          <View className={`${compactDesktop ? 'h-[56px]' : 'h-[62px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
+          <View className={`${compactDesktop ? 'h-[58px]' : 'h-[68px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
         </>
       )}
       {mobile && !isAdmin ? (
@@ -532,21 +532,21 @@ export default function TopAccountBar() {
         </ScrollView>
       ) : !mobile && !isAdmin ? (
         <View
-          className={`${twoRowDesktop ? 'h-[42px]' : compactDesktop ? 'h-[56px]' : 'h-[62px]'} flex-row items-center px-2`}
-          style={twoRowDesktop ? { flexBasis: '100%', width: '100%', order: 2 } : { flex: 1, minWidth: 0, backgroundColor: darkMode ? 'transparent' : 'rgba(255,255,255,0.16)' }}
+          className={`${twoRowDesktop ? 'h-[42px]' : compactDesktop ? 'h-[58px]' : 'h-[68px]'} flex-row items-center px-2`}
+          style={twoRowDesktop ? { flexBasis: '100%', width: '100%', order: 2 } : { flex: 1, minWidth: 0 }}
         >
           {desktopMetrics.map(([label, value], index) => (
             <View
               key={label}
-              className="min-w-0 justify-center px-3"
+              className={`min-w-0 justify-center ${compactDesktop ? 'px-3' : 'px-4'}`}
               style={{
                 width: `${100 / desktopMetrics.length}%`,
                 borderLeftWidth: index === 0 ? 0 : 1,
                 borderColor: desktopDivider,
               }}
             >
-              <Text className={`${compactDesktop ? 'text-[9px]' : 'text-[11px]'} font-bold uppercase tracking-wider`} numberOfLines={1} style={{ color: desktopMuted, letterSpacing: compactDesktop ? 0.45 : 0.55 }}>{label}</Text>
-              <Text className={`mt-1 ${compactDesktop ? 'text-[13px]' : 'text-[16px]'} font-bold`} numberOfLines={1} style={{ color: label === 'Net Profit' && summaryNetProfit < 0 ? colors.danger : desktopText }}>
+              <Text className={`${compactDesktop ? 'text-[9px]' : 'text-[11px]'} font-bold uppercase tracking-wider`} numberOfLines={1} style={{ color: desktopMuted, letterSpacing: compactDesktop ? 0.45 : 0.65 }}>{label}</Text>
+              <Text className={`mt-1 ${compactDesktop ? 'text-[13px]' : 'text-[17px]'} font-bold`} numberOfLines={1} style={{ color: label === 'Net Profit' && summaryNetProfit < 0 ? colors.danger : desktopText }}>
                 {label === 'Net Profit' && summaryNetProfit > 0 ? `+${value}` : value}
               </Text>
             </View>
