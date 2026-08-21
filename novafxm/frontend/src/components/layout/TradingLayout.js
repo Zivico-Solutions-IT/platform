@@ -14,6 +14,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
 import BirthdayWidget from '../account/BirthdayWidget';
 import BirthdayModal from '../account/BirthdayModal';
+import { storage } from '../../utils/storage';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 
@@ -234,6 +235,7 @@ export default function TradingLayout() {
   const { summary, selectedTradingAccount, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
+  const [mobileTabRestored, setMobileTabRestored] = useState(false);
   const mobileContentAnimation = useRef(new Animated.Value(1)).current;
 
   const desktop = width >= 1100;
@@ -244,6 +246,32 @@ export default function TradingLayout() {
     : tablet
       ? Math.max(540, Math.min(640, height - 170))
       : Math.max(430, Math.min(560, height - 210));
+
+  useEffect(() => {
+    let active = true;
+    storage.get('mobileTradingTab', 'symbols').then((savedTab) => {
+      if (!active) return;
+      const validTabs = ['symbols', 'trade', 'position', 'wallet'];
+      const restoredTab = validTabs.includes(savedTab) ? savedTab : 'symbols';
+      setMobileTab(params.tab === 'wallet' ? 'wallet' : params.panel === 'history' ? 'position' : restoredTab);
+      setMobileTabRestored(true);
+    }).catch(() => {
+      if (active) setMobileTabRestored(true);
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!mobileTabRestored) return;
+    storage.set('mobileTradingTab', mobileTab).catch(() => {});
+  }, [mobileTab, mobileTabRestored]);
+
+  const selectMobileTab = (tab) => {
+    setMobileTab(tab);
+    if (params.tab === 'wallet' || params.panel === 'history') {
+      router.setParams({ tab: undefined, panel: undefined });
+    }
+  };
 
   useEffect(() => {
     if (mobile && params.tab === 'wallet') setMobileTab('wallet');
@@ -286,7 +314,7 @@ export default function TradingLayout() {
           >
           {mobileTab === 'symbols' ? (
             <View className="flex-1 p-2" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-              <MobileSymbolWatchlist onSelectSymbol={() => setMobileTab('trade')} />
+              <MobileSymbolWatchlist onSelectSymbol={() => selectMobileTab('trade')} />
             </View>
           ) : mobileTab === 'position' ? (
             <ScrollView className="flex-1 px-2 pb-2 pt-1" contentContainerStyle={{ paddingBottom: 16 }}>
@@ -309,7 +337,7 @@ export default function TradingLayout() {
                   isFullscreen={chartFullscreen}
                   onFullscreenChange={setChartFullscreen}
                   isAdmin={isAdmin}
-                  onOpenSymbols={() => setMobileTab('symbols')}
+                  onOpenSymbols={() => selectMobileTab('symbols')}
                 />
               </View>
               {!chartFullscreen && !sidePanel ? (
@@ -338,7 +366,7 @@ export default function TradingLayout() {
             }}
           >
             <Pressable
-              onPress={() => setMobileTab('symbols')}
+              onPress={() => selectMobileTab('symbols')}
               className="items-center justify-center flex-1 py-0.5"
             >
               <View
@@ -356,7 +384,7 @@ export default function TradingLayout() {
             </Pressable>
 
             <Pressable
-              onPress={() => setMobileTab('trade')}
+              onPress={() => selectMobileTab('trade')}
               className="items-center justify-center flex-1 py-0.5"
             >
               <View
@@ -374,7 +402,7 @@ export default function TradingLayout() {
             </Pressable>
 
             <Pressable
-              onPress={() => setMobileTab('position')}
+              onPress={() => selectMobileTab('position')}
               className="items-center justify-center flex-1 py-0.5"
             >
               <View
@@ -391,7 +419,7 @@ export default function TradingLayout() {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => setMobileTab('wallet')}
+              onPress={() => selectMobileTab('wallet')}
               className="items-center justify-center flex-1 py-0.5"
             >
               <View className="h-5 w-10 items-center justify-center rounded-full" style={{ backgroundColor: mobileTab === 'wallet' ? `${colors.success}22` : 'transparent' }}>

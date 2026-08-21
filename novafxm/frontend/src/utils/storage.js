@@ -10,6 +10,7 @@ const keys = {
   selectedSymbol: 'novafxm_selected_symbol',
   rememberedEmail: 'novafxm_remembered_email',
   rememberMe: 'novafxm_remember_me',
+  mobileTradingTab: 'novafxm_mobile_trading_tab',
 };
 
 export const storage = {
@@ -24,6 +25,6 @@ export const storage = {
     await AsyncStorage.removeItem(keys[key] || key);
   },
   async clearSession() {
-    await Promise.all([AsyncStorage.removeItem(keys.token), AsyncStorage.removeItem(keys.user)]);
+    await Promise.all([AsyncStorage.removeItem(keys.token), AsyncStorage.removeItem(keys.user), AsyncStorage.removeItem(keys.mobileTradingTab)]);
   },
 };

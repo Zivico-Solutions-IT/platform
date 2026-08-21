@@ -90,7 +90,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const storeSession = useCallback(async (result) => {
-    await Promise.all([storage.set('token', result.token), storage.set('user', result.user)]);
+    await Promise.all([storage.set('token', result.token), storage.set('user', result.user), storage.remove('mobileTradingTab')]);
     setSessionToken(result.token);
     setUser(result.user);
     return result.user;

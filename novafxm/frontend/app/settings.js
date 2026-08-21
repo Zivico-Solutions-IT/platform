@@ -1048,7 +1048,7 @@ export default function SettingsScreen() {
       <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
         <View className="min-w-0 flex-1">
           <Text className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>{webProfileLayout ? 'My Settings' : 'Settings'}</Text>
-          <Text className="mt-1" style={{ color: colors.muted }}>{webProfileLayout ? 'Profile, security, notifications and payments' : 'Manage your account preferences and security'}</Text>
+          {!webProfileLayout ? <Text className="mt-1" style={{ color: colors.muted }}>Manage your account preferences and security</Text> : null}
         </View>
         <Pressable onPress={() => router.push('/dashboard')} className="rounded-xl border px-4 py-3" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
           <Text className="font-medium text-primary">Back to Dashboard</Text>
