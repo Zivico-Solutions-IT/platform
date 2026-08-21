@@ -5,7 +5,7 @@ import { useAppTheme } from '../../context/ThemeContext';
 
 export default function TransactionList({ transactions, title = 'Transaction History', compact = false }) {
   const { width } = useWindowDimensions();
-  const { colors } = useAppTheme();
+  const { colors, darkMode } = useAppTheme();
   const mobile = width < 640;
 
   const filteredTransactions = transactions.filter((item) => {
@@ -15,16 +15,16 @@ export default function TransactionList({ transactions, title = 'Transaction His
 
   if (compact && !filteredTransactions.length) {
     return (
-      <View className="mb-[18px] items-center rounded-2xl border px-4 py-5" style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}>
-        <Clock3 size={22} color="#C9CDD4" strokeWidth={1.8} />
-        <Text className="mt-2 text-[13px] font-semibold" style={{ color: '#1B1F27' }}>{title}</Text>
-        <Text className="mt-0.5 text-[12px]" style={{ color: '#9CA4AF' }}>No deposits or withdrawals yet</Text>
+      <View className="mb-[18px] items-center rounded-2xl border px-4 py-5" style={{ backgroundColor: darkMode ? colors.surface : '#FFFFFF', borderColor: darkMode ? colors.border : '#ECEAE3' }}>
+        <Clock3 size={22} color={colors.muted} strokeWidth={1.8} />
+        <Text className="mt-2 text-[13px] font-semibold" style={{ color: colors.text }}>{title}</Text>
+        <Text className="mt-0.5 text-[12px]" style={{ color: colors.muted }}>No deposits or withdrawals yet</Text>
       </View>
     );
   }
 
   return (
-    <View className={`${compact ? 'mb-[18px] p-4' : mobile ? 'p-4 mt-3' : 'p-5 mt-5'} rounded-2xl border shadow-sm`} style={{ backgroundColor: compact ? '#FFFFFF' : colors.panel, borderColor: compact ? '#ECEAE3' : colors.border }}>
+    <View className={`${compact ? 'mb-[18px] p-4' : mobile ? 'p-4 mt-3' : 'p-5 mt-5'} rounded-2xl border shadow-sm`} style={{ backgroundColor: compact && !darkMode ? '#FFFFFF' : colors.panel, borderColor: compact && !darkMode ? '#ECEAE3' : colors.border }}>
       <Text className="mb-4 text-lg font-medium" style={{ color: colors.text }}>{title}</Text>
       {filteredTransactions.length ? (
         <View>

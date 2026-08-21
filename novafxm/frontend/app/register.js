@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
+import AuthBackground from '../src/components/auth/AuthBackground';
 import { Eye, EyeOff, ChevronDown, Search, X, CheckCircle2 } from 'lucide-react-native';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
@@ -30,13 +31,13 @@ export default function RegisterScreen() {
   const [form, setForm] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone: '+91 ',
     password: '',
     confirmPassword: '',
     accountType: 'Demo',
     referralCode: '',
     referralInviteCode: String(params.invite || params.ref || ''),
-    country: '',
+    country: 'India',
     agree: false
   });
   
@@ -44,7 +45,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState({ code: 'IN', name: 'India', dialCode: '+91' });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -389,20 +390,12 @@ export default function RegisterScreen() {
   const handleFirstNameChange = (text) => setForm({ ...form, name: text + (lastName ? ' ' + lastName : '') });
   const handleLastNameChange = (text) => setForm({ ...form, name: firstName + (text ? ' ' + text : '') });
 
-  const TopControls = () => (
-    <View style={{ position: 'absolute', top: Platform.OS === 'web' ? 22 : 60, right: 24, zIndex: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderColor: 'rgba(1, 69, 33, 0.15)', borderWidth: 1, borderRadius: 100, paddingHorizontal: 12, paddingVertical: 6, gap: 6 }}>
-        <Text style={{ fontSize: 11.5, color: '#4e6b5a', fontWeight: '500' }}>EN</Text>
-      </View>
-    </View>
-  );
-
   return (
     <KeyboardAvoidingView 
-      style={{ flex: 1, backgroundColor: '#f0f5f2' }}
+      style={{ flex: 1, backgroundColor: '#EEF5F0' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <TopControls />
+      <AuthBackground />
       <ScrollView 
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}
         keyboardShouldPersistTaps="handled"

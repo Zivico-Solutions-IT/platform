@@ -1,7 +1,7 @@
 import { Animated, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, Clock3, ListFilter, Wallet } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, ListFilter, Wallet } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
@@ -14,10 +14,11 @@ import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
 import BirthdayWidget from '../account/BirthdayWidget';
 import BirthdayModal from '../account/BirthdayModal';
+import { storage } from '../../utils/storage';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 
-function OrderRail({ summary, user, showSummary = true, showAvailableMargin = true }) {
+function OrderRail({ summary, user, showSummary = true, showAvailableMargin = true, titleInset = 0 }) {
   return (
     <View className="h-full overflow-hidden" style={{ width: 300, maxWidth: '100%', overflow: 'hidden', height: '100%' }}>
       <ScrollView 
@@ -26,9 +27,41 @@ function OrderRail({ summary, user, showSummary = true, showAvailableMargin = tr
         style={{ flex: 1 }}
       >
         <BirthdayWidget />
-        <OrderPanel showAvailableMargin={showAvailableMargin} />
+        <OrderPanel showAvailableMargin={showAvailableMargin} titleInset={titleInset} />
         {showSummary ? <AccountSummary summary={summary} user={user} /> : null}
       </ScrollView>
+    </View>
+  );
+}
+
+function CollapsibleOrderRail({ summary, user }) {
+  const { colors } = useAppTheme();
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (collapsed) {
+    return (
+      <Pressable
+        onPress={() => setCollapsed(false)}
+        className="h-12 w-8 items-center justify-center self-start rounded-l-xl border shadow-lg"
+        style={{ backgroundColor: colors.panel, borderColor: colors.border, cursor: 'pointer' }}
+        accessibilityLabel="Show new trade panel"
+      >
+        <ChevronLeft size={17} color={colors.muted} />
+      </Pressable>
+    );
+  }
+
+  return (
+    <View className="relative h-full" style={{ width: 300, maxWidth: '100%' }}>
+      <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} titleInset={30} />
+      <Pressable
+        onPress={() => setCollapsed(true)}
+        className="absolute left-3 top-3 h-7 w-7 items-center justify-center rounded-md"
+        style={{ backgroundColor: `${colors.text}08`, zIndex: 20, elevation: 20, cursor: 'pointer' }}
+        accessibilityLabel="Hide new trade panel"
+      >
+        <ChevronRight size={17} color={colors.muted} />
+      </Pressable>
     </View>
   );
 }
@@ -41,7 +74,7 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
   const [symbolTabMenuOpen, setSymbolTabMenuOpen] = useState(false);
   const [favoriteSymbols, setFavoriteSymbols] = useState([]);
 
-  const symbolTabs = ['Popular', 'Crypto CFD', 'Energies', 'Forex', 'Indices', 'Metals'];
+  const symbolTabs = ['Popular', 'Crypto', 'Energies', 'Forex', 'Indices', 'Metals'];
 
   const ui = useMemo(() => ({
     background: darkMode ? '#0e1726' : colors.background,
@@ -82,7 +115,7 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
         ? favSet.has(item.symbol)
         : symbolTab === 'Popular'
           ? item.popular
-          : symbolTab === 'Crypto CFD'
+          : symbolTab === 'Crypto'
             ? itemGroup.includes('crypto')
             : itemGroup.includes(symbolTab.toLowerCase());
       return matchesSearch && matchesTab;
@@ -103,7 +136,7 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
   useEffect(() => {
     const group = activeSymbolGroup.toLowerCase();
     const matchingTab = group.includes('crypto')
-      ? 'Crypto CFD'
+      ? 'Crypto'
       : group.includes('energy')
         ? 'Energies'
         : group.includes('forex')
@@ -146,31 +179,32 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
 }
 
 function MobileFundingOptions({ selectedAccount, summary = {}, onDeposit, onWithdraw, onHistory }) {
+  const { darkMode, colors } = useAppTheme();
   const balance = Number.isFinite(Number(selectedAccount?.balance)) ? Number(selectedAccount.balance) : Number(summary.balance || 0);
   const accountTier = selectedAccount?.tier || 'Standard';
   const accountType = selectedAccount?.type || 'Demo';
   const realAccount = String(accountType).toLowerCase() === 'live';
   const accountNumber = String(Number(selectedAccount?.id || 0) + 4999).padStart(6, '0');
   const actions = [
-    { label: 'Deposit', icon: ArrowUp, onPress: onDeposit, tone: '#2FB675', iconBackground: '#E1F5EE' },
-    { label: 'Withdraw', icon: ArrowDown, onPress: onWithdraw, tone: '#DF626A', iconBackground: '#FAECE7' },
-    { label: 'Transactions History', icon: Clock3, onPress: onHistory, tone: '#737B78', iconBackground: '#F1F1ED' },
+    { label: 'Deposit', icon: ArrowUp, onPress: onDeposit, tone: '#2FB675', iconBackground: darkMode ? '#173326' : '#E1F5EE' },
+    { label: 'Withdraw', icon: ArrowDown, onPress: onWithdraw, tone: '#DF626A', iconBackground: darkMode ? '#3A2428' : '#FAECE7' },
+    { label: 'Transactions History', icon: Clock3, onPress: onHistory, tone: darkMode ? colors.muted : '#737B78', iconBackground: darkMode ? '#252B32' : '#F1F1ED' },
   ];
 
   return (
     <View className="px-2 pt-2">
-      <View className="relative mb-5 overflow-hidden rounded-[22px] border px-5 pb-[22px] pt-5" style={{ backgroundColor: '#FFFDF9', borderColor: '#ECE6D6' }}>
+      <View className="relative mb-5 overflow-hidden rounded-[22px] border px-5 pb-[22px] pt-5" style={{ backgroundColor: darkMode ? colors.surface : '#FFFDF9', borderColor: darkMode ? colors.border : '#ECE6D6' }}>
         <Svg width="100%" height="64" viewBox="0 0 340 64" preserveAspectRatio="none" style={{ position: 'absolute', left: 0, bottom: 0, opacity: 0.62 }}>
           <Defs><LinearGradient id="mobileFundingBalanceFill" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor="#2FA85B" stopOpacity="0.28" /><Stop offset="1" stopColor="#2FA85B" stopOpacity="0" /></LinearGradient></Defs>
           <Path d="M0,44 L28,40 L56,46 L84,26 L112,34 L140,18 L168,24 L196,10 L224,18 L252,6 L280,14 L308,3 L340,12 L340,64 L0,64 Z" fill="url(#mobileFundingBalanceFill)" />
           <Path d="M0,44 L28,40 L56,46 L84,26 L112,34 L140,18 L168,24 L196,10 L224,18 L252,6 L280,14 L308,3 L340,12" fill="none" stroke="#2FA85B" strokeWidth="2" />
         </Svg>
         <View className="relative mb-[14px] flex-row items-center">
-          <Text className="text-[13.5px] font-bold" style={{ color: '#1B1F27' }}>{accountTier}</Text>
+          <Text className="text-[13.5px] font-bold" style={{ color: darkMode ? colors.text : '#1B1F27' }}>{accountTier}</Text>
           <View className="ml-2 rounded-full border px-2 py-0.5" style={{ backgroundColor: realAccount ? '#EAF6EC' : '#FBF3E2', borderColor: realAccount ? '#BEE8CC' : '#E9CB84' }}><Text className="text-[10.5px] font-bold" style={{ color: realAccount ? '#2FA85B' : '#B8891E' }}>{realAccount ? 'Real' : 'Demo'}</Text></View>
         </View>
         <Text className="relative text-[9.5px] uppercase" style={{ letterSpacing: 0.6, color: '#A79F87' }}>Total Balance</Text>
-        <Text className="relative mt-1 text-[30px] font-bold" style={{ color: '#1B1F27' }}>${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+        <Text className="relative mt-1 text-[30px] font-bold" style={{ color: darkMode ? colors.text : '#1B1F27' }}>${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
         <Text className="relative mt-0.5 text-[11.5px]" style={{ color: '#A79F87' }}>#{accountNumber}</Text>
       </View>
       <Text className="mb-[10px] text-[10.5px] uppercase" style={{ letterSpacing: 0.6, color: '#A79F87' }}>Funding Options</Text>
@@ -180,12 +214,12 @@ function MobileFundingOptions({ selectedAccount, summary = {}, onDeposit, onWith
           key={label}
           onPress={onPress}
           className="flex-1 items-center rounded-2xl border px-2 py-4"
-          style={{ backgroundColor: '#FFFFFF', borderColor: '#ECEAE3' }}
+          style={{ backgroundColor: darkMode ? colors.surface : '#FFFFFF', borderColor: darkMode ? colors.border : '#ECEAE3' }}
         >
           <View className="h-9 w-9 items-center justify-center rounded-[11px]" style={{ backgroundColor: iconBackground }}>
             <Icon size={17} color={tone} strokeWidth={1.9} />
           </View>
-          <Text className="mt-2 text-[11.5px] font-semibold" numberOfLines={1} style={{ color: '#1B1F27' }}>{label === 'Transactions History' ? 'History' : label}</Text>
+          <Text className="mt-2 text-[11.5px] font-semibold" numberOfLines={1} style={{ color: darkMode ? colors.text : '#1B1F27' }}>{label === 'Transactions History' ? 'History' : label}</Text>
         </Pressable>
       ))}
       </View>
@@ -201,6 +235,7 @@ export default function TradingLayout() {
   const { summary, selectedTradingAccount, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
+  const [mobileTabRestored, setMobileTabRestored] = useState(false);
   const mobileContentAnimation = useRef(new Animated.Value(1)).current;
 
   const desktop = width >= 1100;
@@ -211,6 +246,32 @@ export default function TradingLayout() {
     : tablet
       ? Math.max(540, Math.min(640, height - 170))
       : Math.max(430, Math.min(560, height - 210));
+
+  useEffect(() => {
+    let active = true;
+    storage.get('mobileTradingTab', 'symbols').then((savedTab) => {
+      if (!active) return;
+      const validTabs = ['symbols', 'trade', 'position', 'wallet'];
+      const restoredTab = validTabs.includes(savedTab) ? savedTab : 'symbols';
+      setMobileTab(params.tab === 'wallet' ? 'wallet' : params.panel === 'history' ? 'position' : restoredTab);
+      setMobileTabRestored(true);
+    }).catch(() => {
+      if (active) setMobileTabRestored(true);
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!mobileTabRestored) return;
+    storage.set('mobileTradingTab', mobileTab).catch(() => {});
+  }, [mobileTab, mobileTabRestored]);
+
+  const selectMobileTab = (tab) => {
+    setMobileTab(tab);
+    if (params.tab === 'wallet' || params.panel === 'history') {
+      router.setParams({ tab: undefined, panel: undefined });
+    }
+  };
 
   useEffect(() => {
     if (mobile && params.tab === 'wallet') setMobileTab('wallet');
@@ -253,7 +314,7 @@ export default function TradingLayout() {
           >
           {mobileTab === 'symbols' ? (
             <View className="flex-1 p-2" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-              <MobileSymbolWatchlist onSelectSymbol={() => setMobileTab('trade')} />
+              <MobileSymbolWatchlist onSelectSymbol={() => selectMobileTab('trade')} />
             </View>
           ) : mobileTab === 'position' ? (
             <ScrollView className="flex-1 px-2 pb-2 pt-1" contentContainerStyle={{ paddingBottom: 16 }}>
@@ -276,7 +337,7 @@ export default function TradingLayout() {
                   isFullscreen={chartFullscreen}
                   onFullscreenChange={setChartFullscreen}
                   isAdmin={isAdmin}
-                  onOpenSymbols={() => setMobileTab('symbols')}
+                  onOpenSymbols={() => selectMobileTab('symbols')}
                 />
               </View>
               {!chartFullscreen && !sidePanel ? (
@@ -305,7 +366,7 @@ export default function TradingLayout() {
             }}
           >
             <Pressable
-              onPress={() => setMobileTab('symbols')}
+              onPress={() => selectMobileTab('symbols')}
               className="items-center justify-center flex-1 py-0.5"
             >
               <View
@@ -323,7 +384,7 @@ export default function TradingLayout() {
             </Pressable>
 
             <Pressable
-              onPress={() => setMobileTab('trade')}
+              onPress={() => selectMobileTab('trade')}
               className="items-center justify-center flex-1 py-0.5"
             >
               <View
@@ -341,7 +402,7 @@ export default function TradingLayout() {
             </Pressable>
 
             <Pressable
-              onPress={() => setMobileTab('position')}
+              onPress={() => selectMobileTab('position')}
               className="items-center justify-center flex-1 py-0.5"
             >
               <View
@@ -358,7 +419,7 @@ export default function TradingLayout() {
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => setMobileTab('wallet')}
+              onPress={() => selectMobileTab('wallet')}
               className="items-center justify-center flex-1 py-0.5"
             >
               <View className="h-5 w-10 items-center justify-center rounded-full" style={{ backgroundColor: mobileTab === 'wallet' ? `${colors.success}22` : 'transparent' }}>
@@ -395,7 +456,7 @@ export default function TradingLayout() {
             <>
               <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
               {!chartFullscreen && (
-                <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} />
+                <CollapsibleOrderRail summary={summary} user={user} />
               )}
             </>
           ) : (

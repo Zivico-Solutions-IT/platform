@@ -34,7 +34,7 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/a5markets-logo - Copy.png",
       "bundler": "metro"
     },
     "plugins": ["expo-router"]

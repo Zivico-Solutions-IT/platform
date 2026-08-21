@@ -8,16 +8,17 @@ const THEME_STORAGE_KEY = 'novafxm.theme.v2';
 const palettes = {
   light: {
     mode: 'light',
-    background: '#f1f1eb', // Softer, cleaner background
-    panel: '#fafaf6', // The new modalBg we used
-    surface: '#f3f3ef',
-    border: '#e6e6e2', // The new softer border
-    text: '#0B0B0B',
-    muted: '#737373',
+    // Shared mobile/web palette: warm canvas with crisp white work surfaces.
+    background: '#F4F4EF',
+    panel: '#FFFFFF',
+    surface: '#F7F7F4',
+    border: '#E3E5DE',
+    text: '#161816',
+    muted: '#737A76',
     primary: '#D4AF37',
     primarySoft: '#efe2b1',
-    success: '#22c55e', // Modern green
-    danger: '#f24d58', // Modern red
+    success: '#18B968',
+    danger: '#F4605C',
     chartBackground: '#ffffff',
     chartText: '#0B0B0B',
     chartGrid: 'rgba(1, 68, 33, .08)',

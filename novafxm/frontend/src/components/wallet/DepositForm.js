@@ -21,6 +21,7 @@ import CustomButton from '../common/CustomButton';
 import CustomInput from '../common/CustomInput';
 import { useAppTheme } from '../../context/ThemeContext';
 import { walletService } from '../../services/walletService';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 const paymentMethods = [
   { label: 'TRC20', description: 'TRC20 network transfer', icon: WalletCards, accent: '#F5A623' },
@@ -39,6 +40,40 @@ const paymentMethodGroups = [
     .filter(Boolean),
 }));
 const paymentPanelAccent = '#38BDF8';
+
+function CryptoNetworkIcon({ network, size = 34 }) {
+  const shared = { width: size, height: size, viewBox: '0 0 32 32' };
+  if (network === 'TRC20') {
+    return (
+      <Svg {...shared}>
+        <Circle fill="#EF0027" cx="16" cy="16" r="16" />
+        <Path d="M21.932 9.913L7.5 7.257l7.595 19.112 10.583-12.894-3.746-3.562zm-.232 1.17l2.208 2.099-6.038 1.093 3.83-3.192zm-5.142 2.973l-6.364-5.278 10.402 1.914-4.038 3.364zm-.453.934l-1.038 8.58L9.472 9.487l6.633 5.502zm.96.455l6.687-1.21-7.67 9.343.983-8.133z" fill="#FFFFFF" />
+      </Svg>
+    );
+  }
+  if (network === 'BEP20') {
+    return (
+      <Svg {...shared}>
+        <Circle cx="16" cy="16" r="16" fill="#F3BA2F" />
+        <Path fill="#FFFFFF" d="M12.116 14.404L16 10.52l3.886 3.886 2.26-2.26L16 6l-6.144 6.144 2.26 2.26zM6 16l2.26-2.26L10.52 16l-2.26 2.26L6 16zm6.116 1.596L16 21.48l3.886-3.886 2.26 2.259L16 26l-6.144-6.144-.003-.003 2.263-2.257zM21.48 16l2.26-2.26L26 16l-2.26 2.26L21.48 16zm-3.188-.002h.002V16L16 18.294l-2.291-2.29-.004-.004.004-.003.401-.402.195-.195L16 13.706l2.293 2.293z" />
+      </Svg>
+    );
+  }
+  if (network === 'ERC20') {
+    return (
+      <Svg {...shared}>
+        <Circle cx="16" cy="16" r="16" fill="#627EEA" />
+        <Path fill="#FFFFFF" fillOpacity="0.602" d="M16.498 4v8.87l7.497 3.35z" />
+        <Path fill="#FFFFFF" d="M16.498 4L9 16.22l7.498-3.35z" />
+        <Path fill="#FFFFFF" fillOpacity="0.602" d="M16.498 21.968v6.027L24 17.616z" />
+        <Path fill="#FFFFFF" d="M16.498 27.995v-6.028L9 17.616z" />
+        <Path fill="#FFFFFF" fillOpacity="0.2" d="M16.498 20.573l7.497-4.353-7.497-3.348z" />
+        <Path fill="#FFFFFF" fillOpacity="0.602" d="M9 16.22l7.498 4.353v-7.701z" />
+      </Svg>
+    );
+  }
+  return <View className="items-center justify-center rounded-[9px]" style={{ width: size, height: size, backgroundColor: '#6B7280' }}><Landmark size={18} color="#FFFFFF" /></View>;
+}
 
 const displayCurrencies = [
   { code: 'USD', symbol: '$' },
@@ -61,7 +96,7 @@ const qrUrl = (value) => `https://api.qrserver.com/v1/create-qr-code/?size=220x2
 
 export default function DepositForm({ onSubmit, loading, disabled, disabledMessage }) {
   const { width } = useWindowDimensions();
-  const { colors } = useAppTheme();
+  const { colors, darkMode } = useAppTheme();
   const receiptInputRef = useRef(null);
   const [form, setForm] = useState({ amount: '', paymentMethod: 'TRC20', note: '' });
   const [selectedCurrency, setSelectedCurrency] = useState(displayCurrencies[0]);
@@ -261,17 +296,17 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
         <View className="flex-1">
           <View className="mb-[18px] flex-row items-center">
             <View className="flex-row items-center">
-              <View className="h-[22px] w-[22px] items-center justify-center rounded-full" style={{ backgroundColor: step === 1 ? '#D9AC38' : '#E4E1D8' }}>
-                <Text className="text-[11px] font-semibold" style={{ color: step === 1 ? '#241A02' : '#9CA4AF' }}>1</Text>
+              <View className="h-[22px] w-[22px] items-center justify-center rounded-full" style={{ backgroundColor: step === 1 ? '#D9AC38' : colors.border }}>
+                <Text className="text-[11px] font-semibold" style={{ color: step === 1 ? '#241A02' : colors.muted }}>1</Text>
               </View>
-              <Text className="ml-1.5 text-[13px] font-semibold" style={{ color: '#1B1F27' }}>Method</Text>
+              <Text className="ml-1.5 text-[13px] font-semibold" style={{ color: colors.text }}>Method</Text>
             </View>
-            <View className="mx-2 h-0.5 flex-1" style={{ backgroundColor: '#E4E1D8' }} />
+            <View className="mx-2 h-0.5 flex-1" style={{ backgroundColor: colors.border }} />
             <View className="flex-row items-center">
-              <View className="h-[22px] w-[22px] items-center justify-center rounded-full" style={{ backgroundColor: step === 2 ? '#D9AC38' : '#E4E1D8' }}>
-                <Text className="text-[11px] font-semibold" style={{ color: step === 2 ? '#241A02' : '#9CA4AF' }}>2</Text>
+              <View className="h-[22px] w-[22px] items-center justify-center rounded-full" style={{ backgroundColor: step === 2 ? '#D9AC38' : colors.border }}>
+                <Text className="text-[11px] font-semibold" style={{ color: step === 2 ? '#241A02' : colors.muted }}>2</Text>
               </View>
-              <Text className="ml-1.5 text-[13px]" style={{ color: step === 2 ? '#1B1F27' : '#9CA4AF' }}>Confirm</Text>
+              <Text className="ml-1.5 text-[13px]" style={{ color: step === 2 ? colors.text : colors.muted }}>Confirm</Text>
             </View>
           </View>
           {step === 2 ? (
@@ -279,20 +314,20 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
               <Pressable
                 onPress={returnToDetails}
                 className="flex-row items-center rounded-xl border px-3 py-2"
-                style={{ backgroundColor: '#FFFFFF', borderColor: '#E4E1D8' }}
+                style={{ backgroundColor: colors.surface, borderColor: colors.border }}
               >
-                <ArrowLeft size={14} color="#5C635A" strokeWidth={2} />
-                <Text className="ml-1.5 text-xs font-semibold" style={{ color: '#5C635A' }}>Back to method</Text>
+                <ArrowLeft size={14} color={colors.muted} strokeWidth={2} />
+                <Text className="ml-1.5 text-xs font-semibold" style={{ color: colors.muted }}>Back to method</Text>
               </Pressable>
             </View>
           ) : null}
           <View className="mb-[18px]">
-            <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: '#9CA4AF' }}>Deposit Amount</Text>
+            <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: colors.muted }}>Deposit Amount</Text>
             <View
               className="flex-row items-center rounded-2xl border px-4 py-3.5"
               style={{
-                backgroundColor: '#FFFFFF',
-                borderColor: focusAmount ? '#D9AC38' : '#E4E1D8',
+                backgroundColor: colors.surface,
+                borderColor: focusAmount ? '#D9AC38' : colors.border,
               }}
             >
               <Text className="mr-1 text-xl font-semibold" style={{ color: '#B8891E' }}>$</Text>
@@ -310,7 +345,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                 editable={step === 1}
                 className="flex-1 text-xl font-semibold"
                 style={{
-                  color: '#1B1F27',
+                  color: colors.text,
                   fontSize: 20,
                   fontWeight: '600',
                   outline: 'none',
@@ -318,8 +353,8 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                   margin: 0,
                 }}
               />
-              <View className="rounded-lg px-2 py-1" style={{ backgroundColor: '#F4F2ED' }}>
-                <Text className="text-xs" style={{ color: '#9CA4AF' }}>USD</Text>
+              <View className="rounded-lg px-2 py-1" style={{ backgroundColor: colors.panel }}>
+                <Text className="text-xs" style={{ color: colors.muted }}>USD</Text>
               </View>
             </View>
             {message && !success ? (
@@ -331,7 +366,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
 
           {step === 1 ? (
             <>
-              <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: '#9CA4AF' }}>Payment Method</Text>
+              <Text className="mb-2 text-[11px] uppercase tracking-[0.5px]" style={{ color: colors.muted }}>Payment Method</Text>
               <View className="mb-[14px] flex-row gap-2">
                 {paymentMethodGroups.map((group) => {
                   const GroupIcon = group.icon;
@@ -341,33 +376,30 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                       key={group.title}
                       onPress={() => selectPaymentGroup(group)}
                       className="flex-1 flex-row items-center justify-center rounded-xl border py-2.5"
-                      style={{ backgroundColor: active ? '#FBF3E2' : '#FFFFFF', borderColor: active ? '#D9AC38' : '#E4E1D8' }}
+                      style={{ backgroundColor: active ? (darkMode ? '#3A2F12' : '#FBF3E2') : colors.surface, borderColor: active ? '#D9AC38' : colors.border }}
                     >
-                      <GroupIcon size={16} color={active ? '#8A6A1E' : '#5C635A'} />
-                      <Text className="ml-1.5 text-[13px]" style={{ color: active ? '#8A6A1E' : '#5C635A', fontWeight: active ? '600' : '500' }}>{group.title}</Text>
+                      <GroupIcon size={16} color={active ? (darkMode ? '#E8C95A' : '#8A6A1E') : colors.muted} />
+                      <Text className="ml-1.5 text-[13px]" style={{ color: active ? (darkMode ? '#E8C95A' : '#8A6A1E') : colors.text, fontWeight: active ? '600' : '500' }}>{group.title}</Text>
                     </Pressable>
                   );
                 })}
               </View>
               <View className="mb-[18px] gap-2">
-                {activePaymentGroup.methods.map(({ label, description, accent: methodAccent }) => {
+                {activePaymentGroup.methods.map(({ label, description }) => {
                   const selected = form.paymentMethod === label;
-                  const initial = label.replace('20', '').charAt(0) || 'P';
                   return (
                     <Pressable
                       key={label}
                       onPress={() => update('paymentMethod')(label)}
                       className="flex-row items-center rounded-[14px] border px-[14px] py-3"
-                      style={{ backgroundColor: selected ? '#FBF3E2' : '#FFFFFF', borderColor: selected ? '#D9AC38' : '#E4E1D8' }}
+                      style={{ backgroundColor: selected ? (darkMode ? '#3A2F12' : '#FBF3E2') : colors.surface, borderColor: selected ? '#D9AC38' : colors.border }}
                     >
-                      <View className="h-[34px] w-[34px] items-center justify-center rounded-[9px]" style={{ backgroundColor: methodAccent }}>
-                        <Text className="text-xs font-bold text-white">{initial}</Text>
-                      </View>
+                      <CryptoNetworkIcon network={label} />
                       <View className="ml-3 flex-1">
-                        <Text className="text-[14px] font-semibold" style={{ color: '#1B1F27' }}>{label}</Text>
-                        <Text className="mt-0.5 text-[11px]" style={{ color: '#8A8F7C' }}>{description}</Text>
+                        <Text className="text-[14px] font-semibold" style={{ color: colors.text }}>{label}</Text>
+                        <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>{description}</Text>
                       </View>
-                      <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: selected ? '#D9AC38' : '#FFFFFF', borderWidth: selected ? 0 : 1.5, borderColor: '#D6DAE0' }}>
+                      <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: selected ? '#D9AC38' : colors.surface, borderWidth: selected ? 0 : 1.5, borderColor: colors.border }}>
                         {selected ? <Check size={11} color="#FFFFFF" /> : null}
                       </View>
                     </Pressable>
@@ -467,22 +499,22 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                       </View>
                     ) : (
                       <View className="mt-2 flex-row items-center justify-between rounded-2xl border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-                        <Text selectable className="flex-1 pr-3 text-sm font-semimedium" style={{ color: colors.text }}>{assignedAddress?.address}</Text>
+                        <Text
+                          selectable
+                          className="min-w-0 flex-1 pr-3 text-sm font-semimedium"
+                          style={{ color: colors.text, flexWrap: 'wrap', ...(Platform.OS === 'web' ? { wordBreak: 'break-all' } : {}) }}
+                        >
+                          {assignedAddress?.address}
+                        </Text>
                         <Pressable
                           onPress={copyAddress}
-                          className="flex-row items-center rounded-lg border px-3 py-1.5"
-                          style={{ backgroundColor: copied ? `${colors.primary}20` : colors.surface, borderColor: copied ? colors.primary : colors.border }}
+                          className="h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                          style={{ backgroundColor: copied ? `${colors.primary}20` : colors.surface, borderColor: copied ? colors.primary : colors.border, marginRight: mobile ? 6 : 0 }}
                         >
                           {copied ? (
-                            <>
-                              <Check size={14} color={colors.primary} />
-                              <Text className="ml-1.5 text-xs font-medium" style={{ color: colors.primary }}>Copied!</Text>
-                            </>
+                            <Check size={14} color={colors.primary} />
                           ) : (
-                            <>
-                              <Copy size={14} color={colors.primary} />
-                              <Text className="ml-1.5 text-xs font-medium" style={{ color: colors.primary }}>Copy</Text>
-                            </>
+                            <Copy size={14} color={colors.primary} />
                           )}
                         </Pressable>
                       </View>

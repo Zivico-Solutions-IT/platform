@@ -267,3 +267,62 @@ select option {
   background: #B87F0E !important;
   color: #fff;
 }
+
+/* Dark theme colours for the existing Date of Birth calendar UI. */
+.dark .dob-datepicker-input {
+  border-color: #1f242d;
+  background: #12161c;
+  color: #ffffff;
+  color-scheme: dark;
+}
+
+.dark .dob-react-datepicker,
+.dark .dob-react-datepicker .react-datepicker__header,
+.dark .dob-react-datepicker .react-datepicker__month-container,
+.dark .dob-react-datepicker .react-datepicker__month-dropdown,
+.dark .dob-react-datepicker .react-datepicker__year-dropdown {
+  border-color: #1f242d !important;
+  background: #12161c;
+  color: #ffffff;
+}
+
+.dark .dob-react-datepicker .react-datepicker__day,
+.dark .dob-react-datepicker .react-datepicker__day-name,
+.dark .dob-react-datepicker .react-datepicker__month-option,
+.dark .dob-react-datepicker .react-datepicker__year-option {
+  color: #ffffff;
+}
+
+.dark .dob-react-datepicker .react-datepicker__day--disabled {
+  color: #59616d;
+}
+
+.dark .dob-react-datepicker .react-datepicker__month-select,
+.dark .dob-react-datepicker .react-datepicker__year-select {
+  border-color: #1f242d !important;
+  background-color: #1a1f26 !important;
+  color: #ffffff !important;
+  color-scheme: dark;
+}
+
+.dark .dob-react-datepicker .react-datepicker__month-select option,
+.dark .dob-react-datepicker .react-datepicker__year-select option {
+  background-color: #1a1f26 !important;
+  color: #ffffff !important;
+}
+
+/* The popup may sit outside the element that carries the .dark class. */
+.dob-react-datepicker--dark .react-datepicker__month-select,
+.dob-react-datepicker--dark .react-datepicker__year-select {
+  border-color: #1f242d !important;
+  background-color: #1a1f26 !important;
+  color: #ffffff !important;
+  color-scheme: dark;
+}
+
+.dob-react-datepicker--dark .react-datepicker__month-select option,
+.dob-react-datepicker--dark .react-datepicker__year-select option {
+  background-color: #1a1f26 !important;
+  color: #ffffff !important;
+}
+

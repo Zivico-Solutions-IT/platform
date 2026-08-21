@@ -91,7 +91,6 @@ const CHART_TYPES = [
   ['scatter', 'Scatter Plot', ScatterChart],
 ];
 const INDICATOR_TOOLS = [
-  ['atr', 'AVERAGE TRUE RANGE'],
   ['awesome', 'AWESOME OSCILLATOR'],
   ['bb', 'BOLLINGER BANDS'],
   ['cci', 'COMMODITY CHANNEL'],
@@ -108,7 +107,6 @@ const INDICATOR_TOOLS = [
 const INDICATOR_KEYS = INDICATOR_TOOLS.map(([key]) => key);
 const INDICATOR_LABELS = Object.fromEntries(INDICATOR_TOOLS);
 const INDICATOR_SHORT_NAMES = {
-  atr: 'ATR',
   awesome: 'AO',
   bb: 'BB',
   cci: 'CCI',
@@ -317,7 +315,7 @@ function LineWidthSelect({ value, onPress, ui }) {
   );
 }
 
-function chartHtml(candles, decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange) {
+function chartHtml(candles, decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange, ohlcLeftOffset = 0) {
   const safeDecimals = Math.max(0, Math.min(Number(decimals) || 2, 8));
   const visibleBars = INITIAL_VISIBLE_BARS[timeframe] || 300;
   const recentView = viewRange === 'Recent';
@@ -339,7 +337,7 @@ function chartHtml(candles, decimals, timeframe, chartType, tools, drawings, act
 #empty{display:none;position:absolute;left:0;right:0;top:48%;text-align:center;color:${chartColors.text};font:14px Arial,sans-serif}
 #empty:before{content:'';display:block;width:28px;height:28px;margin:0 auto 10px;border-radius:50%;border:3px solid ${ui.border};border-top-color:${ui.accent};animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-#ohlc-panel{position:absolute;left:10px;right:10px;top:8px;z-index:20;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;max-width:calc(100% - 20px);overflow:visible;white-space:normal;font:12px Arial,sans-serif;line-height:1.25;color:${chartColors.text};pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.38)}
+#ohlc-panel{position:absolute;left:${10 + ohlcLeftOffset}px;right:10px;top:8px;z-index:20;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;max-width:calc(100% - ${20 + ohlcLeftOffset}px);overflow:visible;white-space:normal;font:12px Arial,sans-serif;line-height:1.25;color:${chartColors.text};pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.38)}
 #ohlc-panel span{flex:0 0 auto}
 #ohlc-panel .symbol{font-weight:800;color:${ui.accent}}
 #ohlc-panel .value{font-weight:700}
@@ -549,23 +547,6 @@ function bollingerBands(items, period, multiplier = 2) {
   }
   return { upper, middle, lower };
 }
-function averageTrueRange(items, period) {
-  const output = [];
-  const ranges = items.map((item, index) => {
-    const high = Number(item.high);
-    const low = Number(item.low);
-    const previousClose = Number(items[index - 1]?.close ?? item.close);
-    return Math.max(high - low, Math.abs(high - previousClose), Math.abs(low - previousClose));
-  });
-  for (let index = period - 1; index < ranges.length; index += 1) {
-    const slice = ranges.slice(index - period + 1, index + 1);
-    output.push({
-      time: Number(items[index].time),
-      value: slice.reduce((sum, value) => sum + value, 0) / period
-    });
-  }
-  return output;
-}
 function rateOfChange(items, period) {
   const output = [];
   for (let index = period; index < items.length; index += 1) {
@@ -601,7 +582,6 @@ function addLine(dataSet, color, width = 1, lineStyle = LightweightCharts.LineSt
 function renderIndicators() {
   if (!data.length) return;
   if (chartType === 'combo') addLine(closeData(data), ${JSON.stringify(ui.accent)}, indicatorLineWidth);
-  if (tools.atr) addLine(averageTrueRange(data, Number(tools.atrPeriod || 14)), ${JSON.stringify(ui.accent)}, indicatorLineWidth);
   if (tools.awesome) {
     addLine(momentumLine(data, Number(tools.awesomeShort || 5)), '#4fc3f7', indicatorLineWidth);
     addLine(momentumLine(data, Number(tools.awesomeLong || 34)), '#f24d58', indicatorLineWidth);
@@ -909,7 +889,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const timeframeHeight = compactToolbar ? 22 : 24;
   const timeframeMinWidth = compactToolbar ? 27 : 32;
   const chartMinHeight = mobile ? Math.min(Math.max(Math.round(height * 0.5), 390), 540) : compactToolbar ? 430 : 520;
-  const indicatorPanelHeight = mobile ? Math.min(Math.max(Math.round(height * 0.54), 300), 430) : 330;
+  const indicatorPanelHeight = mobile ? Math.min(Math.max(Math.round(height * 0.46), 250), 340) : 320;
   const [timeframe, setTimeframe] = useState('15m');
   const [timeframeReady, setTimeframeReady] = useState(false);
   const [chartType, setChartType] = useState('candles');
@@ -938,10 +918,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const [drawings, setDrawings] = useState([]);
   const [activeDrawingTool, setActiveDrawingTool] = useState(null);
   const [pendingDrawingPoint, setPendingDrawingPoint] = useState(null);
-  const [activeIndicator, setActiveIndicator] = useState('atr');
+  const [activeIndicator, setActiveIndicator] = useState('awesome');
   const [tools, setTools] = useState({
-    atr: false,
-    atrPeriod: 14,
     awesome: false,
     awesomeShort: 5,
     awesomeLong: 34,
@@ -1225,8 +1203,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const candles = useMemo(() => history, [history]);
   const ui = useMemo(() => chartUiFromTheme(colors), [colors]);
   const html = useMemo(
-    () => chartHtml(candles, currentSymbol.decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange),
-    [candles, currentSymbol.decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange],
+    () => chartHtml(candles, currentSymbol.decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange, mobile ? 0 : (compactToolbar ? 118 : 142)),
+    [candles, currentSymbol.decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange, mobile, compactToolbar],
   );
   const chartDataKey = useMemo(() => {
     const first = candles?.[0]?.time || 0;
@@ -1271,7 +1249,6 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const activeChartType = CHART_TYPES.find(([key]) => key === chartType) || CHART_TYPES[0];
   const ActiveChartIcon = activeChartType[2];
   const activeIndicatorAddLabel = ({
-    atr: 'ADD ATR',
     awesome: 'ADD AO',
     bb: 'ADD BB',
     cci: 'ADD CCI',
@@ -1286,7 +1263,6 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
     williams: 'ADD WILLIAMS',
   })[activeIndicator] || 'ADD INDICATOR';
   const activePeriodSetting = ({
-    atr: ['atrPeriod', tools.atrPeriod],
   })[activeIndicator];
   const toggleTool = (key) => setTools((current) => ({ ...current, [key]: !current[key] }));
   const changeToolNumber = (key, delta, min = 1, max = 300, precision = 0) => {
@@ -1627,40 +1603,28 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                 <Text className="text-[10px]" style={{ color: ui.muted }}>Spread: {fixedSpreadText}</Text>
               </Pressable>
               <View className="min-w-0 flex-1 flex-row flex-wrap items-center" style={{ columnGap: 1, rowGap: 1, minHeight: compactToolbar ? 22 : 28 }}>
-                {TIMEFRAMES.map((entry) => (
-                  <Pressable
-                    key={entry}
-                    onPress={() => selectTimeframe(entry)}
-                    className="items-center justify-center rounded"
-                    style={{ height: timeframeHeight, minWidth: timeframeMinWidth, paddingHorizontal: compactToolbar ? 5 : 8, backgroundColor: entry === timeframe ? ui.controlActive : 'transparent' }}
-                  >
-                    <Text className="font-medium" style={{ color: entry === timeframe ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
-                  </Pressable>
-                ))}
-                <View className="mx-2 h-5 w-px" style={{ backgroundColor: ui.border }} />
-                {VIEW_RANGES.map((entry) => (
-                  <Pressable
-                    key={entry}
-                    onPress={() => setViewRange(entry)}
-                    className="items-center justify-center rounded"
-                    style={{ height: timeframeHeight, minWidth: compactToolbar ? 48 : 58, paddingHorizontal: compactToolbar ? 6 : 9, backgroundColor: entry === viewRange ? ui.controlActive : 'transparent' }}
-                  >
-                    <Text className="font-medium" style={{ color: entry === viewRange ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
-                  </Pressable>
-                ))}
-                <View className="flex-row items-center" style={{ marginLeft: 'auto', paddingLeft: compactToolbar ? 8 : 12, columnGap: compactToolbar ? 2 : 4 }}>
-                  <IconButton active={chartMenuOpen} bare ui={ui} size={iconButtonSize} onPress={toggleChartMenu}>
-                    <ActiveChartIcon size={compactToolbar ? 14 : 17} color={chartMenuOpen ? ui.accent : ui.text} />
-                  </IconButton>
-                  <IconButton active={indicatorOpen} bare ui={ui} size={iconButtonSize} onPress={toggleIndicatorMenu}>
-                    <IndicatorGlyph active={indicatorOpen} activeColor={ui.accent} ui={ui} size={compactToolbar ? 10 : 12} />
-                  </IconButton>
-                  <IconButton active={settingsOpen} bare ui={ui} size={iconButtonSize} onPress={toggleSettingsMenu}>
-                    <Settings size={compactToolbar ? 14 : 16} color={settingsOpen ? ui.accent : ui.text} />
-                  </IconButton>
-                  <IconButton active={drawingOpen || Boolean(activeDrawingTool)} bare ui={ui} size={iconButtonSize} onPress={toggleDrawingMenu}>
-                    <LineChart size={compactToolbar ? 14 : 16} color={drawingOpen || activeDrawingTool ? ui.accent : ui.text} />
-                  </IconButton>
+                <View className="flex-row flex-wrap items-center" style={{ marginLeft: 'auto', columnGap: 1, rowGap: 1 }}>
+                  {TIMEFRAMES.map((entry) => (
+                    <Pressable
+                      key={entry}
+                      onPress={() => selectTimeframe(entry)}
+                      className="items-center justify-center rounded"
+                      style={{ height: timeframeHeight, minWidth: timeframeMinWidth, paddingHorizontal: compactToolbar ? 5 : 8, backgroundColor: entry === timeframe ? ui.controlActive : 'transparent' }}
+                    >
+                      <Text className="font-medium" style={{ color: entry === timeframe ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
+                    </Pressable>
+                  ))}
+                  <View className="mx-2 h-5 w-px" style={{ backgroundColor: ui.border }} />
+                  {VIEW_RANGES.map((entry) => (
+                    <Pressable
+                      key={entry}
+                      onPress={() => setViewRange(entry)}
+                      className="items-center justify-center rounded"
+                      style={{ height: timeframeHeight, minWidth: compactToolbar ? 48 : 58, paddingHorizontal: compactToolbar ? 6 : 9, backgroundColor: entry === viewRange ? ui.controlActive : 'transparent' }}
+                    >
+                      <Text className="font-medium" style={{ color: entry === viewRange ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
+                    </Pressable>
+                  ))}
                 </View>
               </View>
             </View>
@@ -1717,6 +1681,22 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
               style={{ backgroundColor: colors.chartBackground, zIndex: 0, elevation: 0 }}
             />
           )}
+          {!mobile ? (
+            <View className="absolute flex-row items-center" style={{ left: 8, top: 7, zIndex: 80, elevation: 80, columnGap: compactToolbar ? 2 : 4 }}>
+              <IconButton active={chartMenuOpen} bare ui={ui} size={iconButtonSize} onPress={toggleChartMenu}>
+                <ActiveChartIcon size={compactToolbar ? 14 : 17} color={chartMenuOpen ? ui.accent : ui.text} />
+              </IconButton>
+              <IconButton active={indicatorOpen} bare ui={ui} size={iconButtonSize} onPress={toggleIndicatorMenu}>
+                <IndicatorGlyph active={indicatorOpen} activeColor={ui.accent} ui={ui} size={compactToolbar ? 10 : 12} />
+              </IconButton>
+              <IconButton active={settingsOpen} bare ui={ui} size={iconButtonSize} onPress={toggleSettingsMenu}>
+                <Settings size={compactToolbar ? 14 : 16} color={settingsOpen ? ui.accent : ui.text} />
+              </IconButton>
+              <IconButton active={drawingOpen || Boolean(activeDrawingTool)} bare ui={ui} size={iconButtonSize} onPress={toggleDrawingMenu}>
+                <LineChart size={compactToolbar ? 14 : 16} color={drawingOpen || activeDrawingTool ? ui.accent : ui.text} />
+              </IconButton>
+            </View>
+          ) : null}
           {chartFullscreen && !mobile && !isAdmin ? (
             <View className="absolute" style={{ top: compactToolbar ? 28 : 34, left: 12, width: 274, zIndex: 70, elevation: 70 }}>
               {quickTradeMessage ? (
@@ -1992,8 +1972,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         ) : null}
 
         {indicatorOpen ? (
-          <View className="absolute w-[560px] max-w-full flex-row overflow-hidden rounded-lg border shadow-2xl" style={{ right: chartPopoverRight, top: toolbarMenuTop, height: indicatorPanelHeight, backgroundColor: ui.panel, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
-            <View className="w-[210px] border-r" style={{ borderColor: ui.border }}>
+          <View className={`${mobile ? 'w-full rounded-none' : 'w-[520px] rounded-lg'} absolute max-w-full flex-row overflow-hidden border shadow-2xl`} style={{ right: mobile ? 0 : chartPopoverRight, top: toolbarMenuTop, height: indicatorPanelHeight, backgroundColor: ui.panel, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
+            <View className={`${mobile ? 'w-[54%]' : 'w-[198px]'} border-r`} style={{ borderColor: ui.border }}>
               <View className="h-9 justify-center border-b px-3" style={{ borderColor: ui.border }}>
                 <Text className="text-[11px] font-medium uppercase" style={{ color: ui.text }}>Indicators</Text>
               </View>

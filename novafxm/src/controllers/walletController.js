@@ -16,7 +16,10 @@ const profitFor = (trade, price) => (
   * Number(trade.lots)
   * contractSize(trade.symbol)
 );
-const isTrc20Detail = (account) => String(`${account?.bankName || ''} ${account?.branchName || ''}`).toLowerCase().includes('trc20');
+const isCryptoWithdrawalDetail = (account) => {
+  const detail = String(`${account?.bankName || ''} ${account?.branchName || ''}`).toLowerCase();
+  return detail.includes('trc20') || detail.includes('bep20');
+};
 
 exports.claimBirthdayBonus = async (req, res, next) => {
   try {
@@ -273,7 +276,7 @@ exports.withdraw = async (req, res, next) => {
         status: 'approved',
       },
     });
-    if (!savedDetail || (method === 'Crypto') !== isTrc20Detail(savedDetail)) {
+    if (!savedDetail || (method === 'Crypto') !== isCryptoWithdrawalDetail(savedDetail)) {
       return res.status(400).json({ message: 'Select an approved withdrawal detail from Settings.' });
     }
     const bankName = savedDetail.bankName;
