@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { Check } from 'lucide-react-native';
 import { Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import CustomButton from '../common/CustomButton';
-import CustomInput from '../common/CustomInput';
 import { dateTime, money } from '../../utils/formatters';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -24,6 +23,7 @@ function Option({ active, label, onPress, colors }) {
 
 function DetailOption({ active, detail, onPress, colors }) {
   const darkMode = colors.mode === 'dark';
+  const isCrypto = ['TRC20', 'BEP20'].includes(detail.payoutType);
   const isTrc20 = detail.payoutType === 'TRC20';
   return (
     <Pressable
@@ -31,15 +31,15 @@ function DetailOption({ active, detail, onPress, colors }) {
       className="flex-row items-center rounded-[14px] border px-3 py-2.5"
       style={{ backgroundColor: active ? (darkMode ? '#3A2F12' : '#FBF3E2') : (darkMode ? colors.surface : '#FFFFFF'), borderColor: active ? '#D9AC38' : (darkMode ? colors.border : '#E4E1D8') }}
     >
-      <View className="h-8 w-8 items-center justify-center rounded-[9px]" style={{ backgroundColor: isTrc20 ? '#F5A623' : '#7C8592' }}>
-        <Text className="text-xs font-bold text-white">{isTrc20 ? 'T' : 'B'}</Text>
+      <View className="h-8 w-8 items-center justify-center rounded-[9px]" style={{ backgroundColor: isTrc20 ? '#F5A623' : detail.payoutType === 'BEP20' ? '#F0B90B' : '#7C8592' }}>
+        <Text className="text-xs font-bold text-white">{isTrc20 ? 'T' : detail.payoutType === 'BEP20' ? 'B' : 'B'}</Text>
       </View>
       <View className="ml-2.5 min-w-0 flex-1">
         <Text className="text-[12px] font-semibold" numberOfLines={1} style={{ color: colors.text }}>
-          {isTrc20 ? 'USDT TRC20' : detail.bankName}
+          {isCrypto ? `USDT ${detail.payoutType}` : detail.bankName}
         </Text>
         <Text className="mt-0.5 text-[10px]" numberOfLines={1} selectable style={{ color: colors.muted }}>
-          {isTrc20 ? detail.bankAccountNumber : detail.bankAccountHolder}
+          {isCrypto ? detail.bankAccountNumber : detail.bankAccountHolder}
         </Text>
       </View>
       <View className="h-[18px] w-[18px] items-center justify-center rounded-full" style={{ backgroundColor: active ? '#D9AC38' : (darkMode ? colors.surface : '#FFFFFF'), borderWidth: active ? 0 : 1.5, borderColor: darkMode ? colors.border : '#D6DAE0' }}>
@@ -135,7 +135,6 @@ export default function WithdrawForm({
     savedDetailId: '',
   });
   const [cryptoNetwork, setCryptoNetwork] = useState('TRC20');
-  const [walletId, setWalletId] = useState('');
   const [message, setMessage] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [savedDetails, setSavedDetails] = useState([]);
@@ -151,10 +150,10 @@ export default function WithdrawForm({
   const methodDetails = useMemo(() => (
     savedDetails.filter((item) => (
       form.withdrawalMethod === 'Crypto'
-        ? item.payoutType === 'TRC20'
+        ? item.payoutType === cryptoNetwork
         : item.payoutType === 'Bank'
     ))
-  ), [form.withdrawalMethod, savedDetails]);
+  ), [cryptoNetwork, form.withdrawalMethod, savedDetails]);
   const approvedMethodDetails = useMemo(() => (
     methodDetails.filter((item) => item.status === 'approved')
   ), [methodDetails]);
@@ -165,7 +164,7 @@ export default function WithdrawForm({
   const setMethod = (withdrawalMethod) => {
     const matching = savedDetails.filter((item) => (
       withdrawalMethod === 'Crypto'
-        ? item.payoutType === 'TRC20'
+        ? item.payoutType === cryptoNetwork
         : item.payoutType === 'Bank'
     ));
     const detail = matching.find((item) => item.status === 'approved') || null;
@@ -192,7 +191,11 @@ export default function WithdrawForm({
           bankBranch: account.bankBranch || account.branchName || '',
           bankAccountNumber: account.bankAccountNumber || account.accountNumber || '',
           status: account.status || 'pending',
-          payoutType: String(`${account.bankName || ''} ${account.bankBranch || account.branchName || ''}`).toLowerCase().includes('trc20') ? 'TRC20' : 'Bank',
+          payoutType: String(`${account.bankName || ''} ${account.bankBranch || account.branchName || ''}`).toLowerCase().includes('bep20')
+            ? 'BEP20'
+            : String(`${account.bankName || ''} ${account.bankBranch || account.branchName || ''}`).toLowerCase().includes('trc20')
+              ? 'TRC20'
+              : 'Bank',
         })));
       })
       .catch(() => {});
@@ -208,24 +211,6 @@ export default function WithdrawForm({
     });
   }, [approvedMethodDetails]);
 
-  useEffect(() => {
-    if (form.withdrawalMethod === 'Crypto') {
-      const trc20Addresses = [
-        'TRC456328N',
-        'TRC982341M',
-        'TRC710293K'
-      ];
-      const bep20Addresses = [
-        'BEP234567p',
-        'BEP891234q',
-        'BEP567890r'
-      ];
-      const pool = cryptoNetwork === 'TRC20' ? trc20Addresses : bep20Addresses;
-      const randomAddress = pool[Math.floor(Math.random() * pool.length)];
-      setWalletId(randomAddress);
-    }
-  }, [cryptoNetwork, form.withdrawalMethod]);
-
   const submit = async () => {
     setSubmitAttempted(true);
     try {
@@ -236,15 +221,15 @@ export default function WithdrawForm({
       if (amount > withdrawableBalance) throw new Error('Withdrawal amount exceeds withdrawable balance.');
       let finalSubmitData = {};
       if (form.withdrawalMethod === 'Crypto') {
-        if (!walletId) throw new Error('Wallet ID is missing.');
+        if (!selectedSavedDetail) throw new Error(`Select an approved ${cryptoNetwork} wallet from Settings.`);
         finalSubmitData = {
           amount,
           withdrawalMethod: 'Crypto',
           tradingAccountId: selectedAccount?.id,
-          bankAccountId: null,
-          bankName: `USDT ${cryptoNetwork}`,
-          accountNumber: walletId,
-          accountHolderName: user?.name || 'Self',
+          bankAccountId: selectedSavedDetail.id,
+          bankName: selectedSavedDetail.bankName,
+          accountNumber: selectedSavedDetail.bankAccountNumber,
+          accountHolderName: selectedSavedDetail.bankAccountHolder,
         };
       } else {
         if (!selectedSavedDetail) throw new Error('Select an approved bank withdrawal detail from Settings.');
@@ -266,7 +251,7 @@ export default function WithdrawForm({
     }
   };
   const openPaymentDetails = () => {
-    const payoutType = form.withdrawalMethod === 'Crypto' ? 'TRC20' : 'Bank';
+    const payoutType = form.withdrawalMethod === 'Crypto' ? cryptoNetwork : 'Bank';
     if (onMissingDetailsPress) {
       onMissingDetailsPress(payoutType);
       return;
@@ -345,16 +330,6 @@ export default function WithdrawForm({
               );
             })}
           </View>
-          <CustomInput
-            label="Wallet ID"
-            placeholder="Enter destination wallet address"
-            value={walletId}
-            onChangeText={setWalletId}
-            className="mb-3"
-            labelStyle={{ color: colors.muted, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}
-            placeholderTextColor={colors.muted}
-            style={{ height: 56, borderRadius: 16, backgroundColor: colors.surface, borderColor: colors.border, paddingHorizontal: 16, color: colors.text }}
-          />
         </View>
       ) : null}
 
