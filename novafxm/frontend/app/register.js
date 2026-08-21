@@ -31,13 +31,13 @@ export default function RegisterScreen() {
   const [form, setForm] = useState({
     name: '',
     email: '',
-    phone: '',
+    phone: '+91 ',
     password: '',
     confirmPassword: '',
     accountType: 'Demo',
     referralCode: '',
     referralInviteCode: String(params.invite || params.ref || ''),
-    country: '',
+    country: 'India',
     agree: false
   });
   
@@ -45,7 +45,7 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState(null);
+  const [selectedCountry, setSelectedCountry] = useState({ code: 'IN', name: 'India', dialCode: '+91' });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
