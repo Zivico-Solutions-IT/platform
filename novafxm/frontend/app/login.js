@@ -13,6 +13,7 @@ import { Eye, EyeOff, ArrowLeft, Mail, ShieldCheck, LockKeyhole, CheckCircle2 } 
 import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
 import NovaLogo from '../src/components/brand/NovaLogo';
+import AuthBackground from '../src/components/auth/AuthBackground';
 import { isCrmHost, landingRouteFor } from '../src/utils/appHost';
 import { storage } from '../src/utils/storage';
 
@@ -286,7 +287,8 @@ export default function LoginScreen() {
     const forgotStepNum = view === 'forgot-email' ? 1 : view === 'forgot-code' ? 2 : view === 'forgot-newpass' ? 2 : 3;
 
     return (
-      <View className="flex-1" style={{ backgroundColor: '#f0f5f2' }}>
+      <View className="flex-1" style={{ backgroundColor: '#EEF5F0' }}>
+        <AuthBackground />
         <TopControls />
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
           <View style={cardStyle}>
@@ -566,7 +568,8 @@ export default function LoginScreen() {
 
   // ─── Login View ───
   return (
-    <View className="flex-1" style={{ backgroundColor: '#f0f5f2' }}>
+    <View className="flex-1" style={{ backgroundColor: '#EEF5F0' }}>
+      <AuthBackground />
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}>
         <View style={cardStyle}>
 

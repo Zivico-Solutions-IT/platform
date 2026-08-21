@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
+import AuthBackground from '../src/components/auth/AuthBackground';
 import { Eye, EyeOff, ChevronDown, Search, X, CheckCircle2 } from 'lucide-react-native';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 
@@ -391,9 +392,10 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView 
-      style={{ flex: 1, backgroundColor: '#f0f5f2' }}
+      style={{ flex: 1, backgroundColor: '#EEF5F0' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <AuthBackground />
       <ScrollView 
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}
         keyboardShouldPersistTaps="handled"

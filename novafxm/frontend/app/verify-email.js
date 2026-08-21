@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import NovaLogo from '../src/components/brand/NovaLogo';
+import AuthBackground from '../src/components/auth/AuthBackground';
 import { useAuth } from '../src/hooks/useAuth';
 import { authService } from '../src/services/authService';
 
@@ -58,7 +59,8 @@ export default function VerifyEmailScreen() {
   };
 
   return (
-    <View className="flex-1 items-center justify-center px-5" style={{ backgroundColor: '#f0f5f2' }}>
+    <View className="flex-1 items-center justify-center px-5" style={{ backgroundColor: '#EEF5F0' }}>
+      <AuthBackground />
       <View className="w-full max-w-[460px] rounded-[20px] bg-white px-8 py-9" style={{ borderColor: 'rgba(1,69,33,0.08)', borderWidth: 1, shadowColor: '#014521', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
         <NovaLogo dark={false} width={120} height={35} />
         <Text className="mt-8 text-2xl font-semibold" style={{ color: '#012b15' }}>Verify your email</Text>
