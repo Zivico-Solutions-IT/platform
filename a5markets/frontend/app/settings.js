@@ -1111,7 +1111,7 @@ export default function SettingsScreen() {
 
               <View className="flex-1">
                 <SettingsInput label="Full Name" value={profileForm.name} editable={editingProfile} error={profileErrors.name} onChangeText={(name) => setProfileForm((current) => ({ ...current, name }))} placeholder="Your full name" />
-                <SettingsInput label="Email Address" value={profileForm.email} editable={editingProfile} error={profileErrors.email} keyboardType="email-address" onChangeText={(email) => setProfileForm((current) => ({ ...current, email }))} placeholder="email@example.com" />
+                <SettingsInput label="Email Address" value={profileForm.email} editable={false} error={profileErrors.email} keyboardType="email-address" placeholder="email@example.com" />
                 <CountrySelect value={profileForm.country} editable={editingProfile} error={profileErrors.country} onChange={updateCountry} />
                 <SettingsInput label="Phone Number" value={profileForm.phone} editable={editingProfile} error={profileErrors.phone} keyboardType="phone-pad" onChangeText={(phone) => setProfileForm((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" />
                 <SettingsInput label="Date of Birth" value={profileForm.dateOfBirth} editable={editingProfile} error={profileErrors.dateOfBirth} onChangeText={(dateOfBirth) => setProfileForm((current) => ({ ...current, dateOfBirth }))} placeholder="DD / MM / YYYY" />

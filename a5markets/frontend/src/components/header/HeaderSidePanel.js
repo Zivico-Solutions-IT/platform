@@ -317,6 +317,7 @@ function Field({ label, value, onChangeText, placeholder, editable = true, secur
           borderColor: colors.border,
           marginTop: compact ? 6 : isMobile ? 12 : 8,
           ...(compact ? { minHeight: 42 } : {}),
+          opacity: editable ? 1 : 0.7,
         }}
       >
         <TextInput
@@ -819,7 +820,7 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
               <View className="flex-1">
                 <View className={isMobileLayout ? "gap-2" : "gap-4 lg:flex-row"}>
                   <Field label="Full Name" value={profile.name} onChangeText={(name) => setProfile((current) => ({ ...current, name }))} placeholder="Your full name" colors={colors} compactMobile />
-                  <Field label="Email Address" value={profile.email} onChangeText={(email) => setProfile((current) => ({ ...current, email }))} placeholder="email@example.com" colors={colors} compactMobile />
+                  <Field label="Email Address" value={profile.email} editable={false} placeholder="email@example.com" colors={colors} compactMobile />
                 </View>
                 <View className={isMobileLayout ? "gap-2" : "gap-4 lg:flex-row"}>
                   <Field label="Country" value={profile.country} onChangeText={(country) => setProfile((current) => ({ ...current, country }))} placeholder="Sri Lanka" colors={colors} compactMobile />
