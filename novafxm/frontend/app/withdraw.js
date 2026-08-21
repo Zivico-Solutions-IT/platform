@@ -41,6 +41,7 @@ function WithdrawScreen() {
           summary={summary}
           transactions={transactions}
           selectedAccount={selectedTradingAccount}
+          onVerificationRequired={() => router.push({ pathname: '/trading', params: { panel: 'verification' } })}
           onMissingDetailsPress={(payoutType) => router.push({
             pathname: '/trading',
             params: { panel: 'settings', section: 'payments', returnTo: 'withdraw', payoutType },

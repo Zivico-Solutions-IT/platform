@@ -124,6 +124,7 @@ export default function WithdrawForm({
   summary = {},
   transactions = [],
   onMissingDetailsPress,
+  onVerificationRequired,
   selectedAccount,
 }) {
   const { width } = useWindowDimensions();
@@ -373,7 +374,18 @@ export default function WithdrawForm({
         compact
         style={{ backgroundColor: '#D9AC38', borderColor: '#D9AC38' }}
       />
-      {message ? <Text className={`mt-3 text-sm ${message.startsWith('Success') ? 'text-success' : 'text-danger'}`}>{message}</Text> : null}
+      {message ? (
+        /verification approval is required/i.test(message) && onVerificationRequired ? (
+          <Pressable
+            onPress={onVerificationRequired}
+            className="mt-3 rounded-xl border px-3 py-2.5"
+            style={{ backgroundColor: `${colors.danger}10`, borderColor: `${colors.danger}35` }}
+          >
+            <Text className="text-sm" style={{ color: colors.danger }}>{message}</Text>
+            <Text className="mt-1 text-xs font-semibold" style={{ color: colors.primary }}>Open verification →</Text>
+          </Pressable>
+        ) : <Text className={`mt-3 text-sm ${message.startsWith('Success') ? 'text-success' : 'text-danger'}`}>{message}</Text>
+      ) : null}
       <WithdrawalHistory withdrawals={withdrawals} colors={colors} mobile={mobile} />
     </View>
   );

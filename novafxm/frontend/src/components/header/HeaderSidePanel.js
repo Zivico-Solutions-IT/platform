@@ -1494,6 +1494,7 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
                   summary={{ balance }}
                   transactions={transactions}
                   selectedAccount={selectedWithdrawAccount}
+                  onVerificationRequired={() => setActivePanelType('verification')}
                   onMissingDetailsPress={(payoutType) => {
                     setSettingsInitialSection(['admin', 'agent'].includes(user?.role) ? 'profile' : 'payments');
                     setSettingsReturnPayoutType(['admin', 'agent'].includes(user?.role) ? null : payoutType);
