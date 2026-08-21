@@ -317,7 +317,7 @@ function LineWidthSelect({ value, onPress, ui }) {
   );
 }
 
-function chartHtml(candles, decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange) {
+function chartHtml(candles, decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange, ohlcLeftOffset = 0) {
   const safeDecimals = Math.max(0, Math.min(Number(decimals) || 2, 8));
   const visibleBars = INITIAL_VISIBLE_BARS[timeframe] || 300;
   const recentView = viewRange === 'Recent';
@@ -339,7 +339,7 @@ function chartHtml(candles, decimals, timeframe, chartType, tools, drawings, act
 #empty{display:none;position:absolute;left:0;right:0;top:48%;text-align:center;color:${chartColors.text};font:14px Arial,sans-serif}
 #empty:before{content:'';display:block;width:28px;height:28px;margin:0 auto 10px;border-radius:50%;border:3px solid ${ui.border};border-top-color:${ui.accent};animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-#ohlc-panel{position:absolute;left:10px;right:10px;top:8px;z-index:20;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;max-width:calc(100% - 20px);overflow:visible;white-space:normal;font:12px Arial,sans-serif;line-height:1.25;color:${chartColors.text};pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.38)}
+#ohlc-panel{position:absolute;left:${10 + ohlcLeftOffset}px;right:10px;top:8px;z-index:20;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;max-width:calc(100% - ${20 + ohlcLeftOffset}px);overflow:visible;white-space:normal;font:12px Arial,sans-serif;line-height:1.25;color:${chartColors.text};pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.38)}
 #ohlc-panel span{flex:0 0 auto}
 #ohlc-panel .symbol{font-weight:800;color:${ui.accent}}
 #ohlc-panel .value{font-weight:700}
@@ -1225,8 +1225,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const candles = useMemo(() => history, [history]);
   const ui = useMemo(() => chartUiFromTheme(colors), [colors]);
   const html = useMemo(
-    () => chartHtml(candles, currentSymbol.decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange),
-    [candles, currentSymbol.decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange],
+    () => chartHtml(candles, currentSymbol.decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange, mobile ? 0 : (compactToolbar ? 118 : 142)),
+    [candles, currentSymbol.decimals, timeframe, chartType, tools, drawings, activeDrawingTool, ui, viewRange, mobile, compactToolbar],
   );
   const chartDataKey = useMemo(() => {
     const first = candles?.[0]?.time || 0;
@@ -1627,40 +1627,28 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                 <Text className="text-[10px]" style={{ color: ui.muted }}>Spread: {fixedSpreadText}</Text>
               </Pressable>
               <View className="min-w-0 flex-1 flex-row flex-wrap items-center" style={{ columnGap: 1, rowGap: 1, minHeight: compactToolbar ? 22 : 28 }}>
-                {TIMEFRAMES.map((entry) => (
-                  <Pressable
-                    key={entry}
-                    onPress={() => selectTimeframe(entry)}
-                    className="items-center justify-center rounded"
-                    style={{ height: timeframeHeight, minWidth: timeframeMinWidth, paddingHorizontal: compactToolbar ? 5 : 8, backgroundColor: entry === timeframe ? ui.controlActive : 'transparent' }}
-                  >
-                    <Text className="font-medium" style={{ color: entry === timeframe ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
-                  </Pressable>
-                ))}
-                <View className="mx-2 h-5 w-px" style={{ backgroundColor: ui.border }} />
-                {VIEW_RANGES.map((entry) => (
-                  <Pressable
-                    key={entry}
-                    onPress={() => setViewRange(entry)}
-                    className="items-center justify-center rounded"
-                    style={{ height: timeframeHeight, minWidth: compactToolbar ? 48 : 58, paddingHorizontal: compactToolbar ? 6 : 9, backgroundColor: entry === viewRange ? ui.controlActive : 'transparent' }}
-                  >
-                    <Text className="font-medium" style={{ color: entry === viewRange ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
-                  </Pressable>
-                ))}
-                <View className="flex-row items-center" style={{ marginLeft: 'auto', paddingLeft: compactToolbar ? 8 : 12, columnGap: compactToolbar ? 2 : 4 }}>
-                  <IconButton active={chartMenuOpen} bare ui={ui} size={iconButtonSize} onPress={toggleChartMenu}>
-                    <ActiveChartIcon size={compactToolbar ? 14 : 17} color={chartMenuOpen ? ui.accent : ui.text} />
-                  </IconButton>
-                  <IconButton active={indicatorOpen} bare ui={ui} size={iconButtonSize} onPress={toggleIndicatorMenu}>
-                    <IndicatorGlyph active={indicatorOpen} activeColor={ui.accent} ui={ui} size={compactToolbar ? 10 : 12} />
-                  </IconButton>
-                  <IconButton active={settingsOpen} bare ui={ui} size={iconButtonSize} onPress={toggleSettingsMenu}>
-                    <Settings size={compactToolbar ? 14 : 16} color={settingsOpen ? ui.accent : ui.text} />
-                  </IconButton>
-                  <IconButton active={drawingOpen || Boolean(activeDrawingTool)} bare ui={ui} size={iconButtonSize} onPress={toggleDrawingMenu}>
-                    <LineChart size={compactToolbar ? 14 : 16} color={drawingOpen || activeDrawingTool ? ui.accent : ui.text} />
-                  </IconButton>
+                <View className="flex-row flex-wrap items-center" style={{ marginLeft: 'auto', columnGap: 1, rowGap: 1 }}>
+                  {TIMEFRAMES.map((entry) => (
+                    <Pressable
+                      key={entry}
+                      onPress={() => selectTimeframe(entry)}
+                      className="items-center justify-center rounded"
+                      style={{ height: timeframeHeight, minWidth: timeframeMinWidth, paddingHorizontal: compactToolbar ? 5 : 8, backgroundColor: entry === timeframe ? ui.controlActive : 'transparent' }}
+                    >
+                      <Text className="font-medium" style={{ color: entry === timeframe ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
+                    </Pressable>
+                  ))}
+                  <View className="mx-2 h-5 w-px" style={{ backgroundColor: ui.border }} />
+                  {VIEW_RANGES.map((entry) => (
+                    <Pressable
+                      key={entry}
+                      onPress={() => setViewRange(entry)}
+                      className="items-center justify-center rounded"
+                      style={{ height: timeframeHeight, minWidth: compactToolbar ? 48 : 58, paddingHorizontal: compactToolbar ? 6 : 9, backgroundColor: entry === viewRange ? ui.controlActive : 'transparent' }}
+                    >
+                      <Text className="font-medium" style={{ color: entry === viewRange ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
+                    </Pressable>
+                  ))}
                 </View>
               </View>
             </View>
@@ -1717,6 +1705,22 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
               style={{ backgroundColor: colors.chartBackground, zIndex: 0, elevation: 0 }}
             />
           )}
+          {!mobile ? (
+            <View className="absolute flex-row items-center" style={{ left: 8, top: 7, zIndex: 80, elevation: 80, columnGap: compactToolbar ? 2 : 4 }}>
+              <IconButton active={chartMenuOpen} bare ui={ui} size={iconButtonSize} onPress={toggleChartMenu}>
+                <ActiveChartIcon size={compactToolbar ? 14 : 17} color={chartMenuOpen ? ui.accent : ui.text} />
+              </IconButton>
+              <IconButton active={indicatorOpen} bare ui={ui} size={iconButtonSize} onPress={toggleIndicatorMenu}>
+                <IndicatorGlyph active={indicatorOpen} activeColor={ui.accent} ui={ui} size={compactToolbar ? 10 : 12} />
+              </IconButton>
+              <IconButton active={settingsOpen} bare ui={ui} size={iconButtonSize} onPress={toggleSettingsMenu}>
+                <Settings size={compactToolbar ? 14 : 16} color={settingsOpen ? ui.accent : ui.text} />
+              </IconButton>
+              <IconButton active={drawingOpen || Boolean(activeDrawingTool)} bare ui={ui} size={iconButtonSize} onPress={toggleDrawingMenu}>
+                <LineChart size={compactToolbar ? 14 : 16} color={drawingOpen || activeDrawingTool ? ui.accent : ui.text} />
+              </IconButton>
+            </View>
+          ) : null}
           {chartFullscreen && !mobile && !isAdmin ? (
             <View className="absolute" style={{ top: compactToolbar ? 28 : 34, left: 12, width: 274, zIndex: 70, elevation: 70 }}>
               {quickTradeMessage ? (

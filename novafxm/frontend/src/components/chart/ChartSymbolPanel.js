@@ -202,8 +202,8 @@ export default function ChartSymbolPanel({
                 >
                   <Star
                     size={15}
-                    color={favorite || active ? (ui.accent || '#D4AF37') : ui.muted}
-                    fill={favorite || active ? (ui.accent || '#D4AF37') : 'transparent'}
+                    color={favorite ? (ui.accent || '#D4AF37') : ui.muted}
+                    fill={favorite ? (ui.accent || '#D4AF37') : 'transparent'}
                   />
                 </Pressable>
                 <View className="flex-1 min-w-0">

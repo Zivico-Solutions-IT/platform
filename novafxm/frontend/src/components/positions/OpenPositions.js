@@ -340,31 +340,45 @@ export default function OpenPositions() {
             const profit = Number(position.profit || 0);
             const sideColor = position.side === 'BUY' ? colors.success : colors.danger;
             return (
-              <View key={position.id} className="mb-2 rounded-lg border p-3" style={{ backgroundColor: tableBackground, borderColor: colors.border }}>
-                <View className="mb-3 flex-row items-center justify-between">
+              <View
+                key={position.id}
+                className="mb-3 rounded-xl border p-3.5"
+                style={{
+                  backgroundColor: darkMode ? tableBackground : colors.panel,
+                  borderColor: colors.border,
+                  borderLeftWidth: 3,
+                  borderLeftColor: sideColor,
+                  shadowColor: '#18201C',
+                  shadowOpacity: darkMode ? 0 : 0.055,
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowRadius: 10,
+                  elevation: darkMode ? 0 : 1,
+                }}
+              >
+                <View className="mb-3.5 flex-row items-center justify-between">
                   <View>
-                    <Text className="text-sm font-medium" style={{ color: colors.text }}>{position.symbol}</Text>
-                    <Text className="mt-0.5 text-[10px]" style={{ color: colors.muted }}>#{position.id}  {dateTime(position.openedAt || position.createdAt)}</Text>
+                    <Text className="text-[15px] font-bold" style={{ color: colors.text }}>{position.symbol}</Text>
+                    <Text className="mt-0.5 text-[10px]" style={{ color: colors.muted }}>#{position.id} · {dateTime(position.openedAt || position.createdAt)}</Text>
                   </View>
                   <View className="flex-row items-center gap-2">
                     {tab !== 'closed' ? (
-                      <Pressable onPress={() => requestClose(position)} className="h-8 w-8 items-center justify-center rounded-md border" style={{ backgroundColor: colors.danger + '0d', borderColor: colors.danger + '40' }}>
-                        <X size={15} color={colors.danger} />
+                      <Pressable onPress={() => requestClose(position)} className="h-9 w-9 items-center justify-center rounded-lg border" style={{ backgroundColor: colors.danger + '0d', borderColor: colors.danger + '40' }}>
+                        <X size={16} color={colors.danger} />
                       </Pressable>
                     ) : null}
-                    <Pressable onPress={() => handleViewPosition(position, 'all')} className="h-8 w-8 items-center justify-center rounded-md border" style={{ backgroundColor: colors.primary + '0d', borderColor: colors.primary + '40' }}>
-                      <Eye size={15} color={colors.primary} />
+                    <Pressable onPress={() => handleViewPosition(position, 'all')} className="h-9 w-9 items-center justify-center rounded-lg border" style={{ backgroundColor: colors.primary + '0d', borderColor: colors.primary + '40' }}>
+                      <Eye size={16} color={colors.primary} />
                     </Pressable>
                   </View>
                 </View>
-                <View className="flex-row flex-wrap">
-                  <View className="mb-2 w-1/2">
+                <View className="flex-row flex-wrap border-t pt-3" style={{ borderColor: colors.border }}>
+                  <View className="mb-3 w-1/2">
                     <Text className="text-[10px]" style={{ color: colors.muted }}>Side / Lots</Text>
-                    <Text className="mt-0.5 text-xs font-medium" style={{ color: sideColor }}>{position.side}  {Number(position.lots).toFixed(2)}</Text>
+                    <Text className="mt-0.5 text-xs font-bold" style={{ color: sideColor }}>{position.side}  {Number(position.lots).toFixed(2)}</Text>
                   </View>
-                  <View className="mb-2 w-1/2 items-end">
+                  <View className="mb-3 w-1/2 items-end">
                     <Text className="text-[10px]" style={{ color: colors.muted }}>Profit / Loss</Text>
-                    <Text className="mt-0.5 text-xs font-medium" style={{ color: profit >= 0 ? colors.success : colors.danger }}>{money(profit)}</Text>
+                    <Text className="mt-0.5 text-xs font-bold" style={{ color: profit >= 0 ? colors.success : colors.danger }}>{profit >= 0 ? '+' : ''}{money(profit)}</Text>
                   </View>
                   <View className="w-1/2">
                     <Text className="text-[10px]" style={{ color: colors.muted }}>{tab === 'pending' ? 'Entry Price' : 'Open Price'}</Text>
