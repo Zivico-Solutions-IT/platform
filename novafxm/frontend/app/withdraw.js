@@ -41,7 +41,10 @@ function WithdrawScreen() {
           summary={summary}
           transactions={transactions}
           selectedAccount={selectedTradingAccount}
-          onMissingDetailsPress={() => router.push({ pathname: '/settings', params: { section: 'payments', returnTo: 'withdraw' } })}
+          onMissingDetailsPress={(payoutType) => router.push({
+            pathname: '/trading',
+            params: { panel: 'settings', section: 'payments', returnTo: 'withdraw', payoutType },
+          })}
         />
         </View>
       </ScrollView>

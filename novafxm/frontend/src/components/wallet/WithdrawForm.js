@@ -271,7 +271,10 @@ export default function WithdrawForm({
       onMissingDetailsPress(payoutType);
       return;
     }
-    router.push({ pathname: '/settings', params: { section: 'payments', returnTo: 'withdraw', payoutType } });
+    router.push({
+      pathname: '/trading',
+      params: { panel: 'settings', section: 'payments', returnTo: 'withdraw', payoutType },
+    });
   };
 
   return (
