@@ -433,9 +433,9 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
 
               {message || !user ? <Text className="mt-1.5 text-[9px]" style={{ color: colors.muted }}>{message || 'Log in to place trades.'}</Text> : null}
               <Pressable
-                disabled={loading || Boolean(pendingOrderError)}
+                disabled={loading}
                 onPress={open}
-                className={`mt-2.5 h-10 items-center justify-center rounded-lg ${loading || pendingOrderError ? 'opacity-60' : ''}`}
+                className={`mt-2.5 h-10 items-center justify-center rounded-lg ${loading ? 'opacity-60' : ''}`}
                 style={{ backgroundColor: orderSide === 'SELL' ? orderDanger : orderSuccess }}
               >
                 <Text className="text-[11px] font-bold tracking-wider uppercase text-white">{loading ? 'Placing Order...' : 'Place Order'}</Text>
@@ -615,9 +615,9 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
         </View>
         {message || !user ? <Text className="mt-1.5 text-[9px]" style={{ color: colors.muted }}>{message || 'Log in to place trades.'}</Text> : null}
         <Pressable
-          disabled={loading || Boolean(pendingOrderError)}
+          disabled={loading}
           onPress={open}
-          className={`mt-3 h-12 items-center justify-center rounded-xl ${loading || pendingOrderError ? 'opacity-60' : ''}`}
+          className={`mt-3 h-12 items-center justify-center rounded-xl ${loading ? 'opacity-60' : ''}`}
           style={{ backgroundColor: orderSide === 'SELL' ? orderDanger : orderSuccess }}
         >
           <Text className="text-[11px] font-bold tracking-wider uppercase text-white">{loading ? 'Placing Order...' : 'Place Order'}</Text>
