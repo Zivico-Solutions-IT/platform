@@ -322,15 +322,15 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             </View>
             <View className="relative mt-6 flex-row overflow-hidden rounded-[18px]" style={{ backgroundColor: darkMode ? palette.panel : '#FBFAF6' }}>
               <View className="flex-1 px-3 py-4">
-                <Text className="text-[9.5px] uppercase" style={{ letterSpacing: 0.5, color: darkMode ? palette.muted : '#A79F87' }}>Level</Text>
+                <Text className="text-[9.5px] uppercase" style={{ minHeight: 24, letterSpacing: 0.5, color: darkMode ? palette.muted : '#A79F87' }}>Level</Text>
                 <Text className="mt-1 text-[15px] font-bold" style={{ color: palette.text }}>{accountType === 'Demo' ? 'Demo' : liveTradingLevel}</Text>
               </View>
               <View className="flex-1 border-l px-3 py-4" style={{ borderColor: darkMode ? palette.border : '#ECE6D6' }}>
-                <Text className="text-[9.5px] uppercase" style={{ letterSpacing: 0.5, color: darkMode ? palette.muted : '#A79F87' }}>Account Type</Text>
+                <Text className="text-[9.5px] uppercase" style={{ minHeight: 24, letterSpacing: 0.5, color: darkMode ? palette.muted : '#A79F87' }}>Account Type</Text>
                 <Text className="mt-1 text-[15px] font-bold" style={{ color: palette.text }}>{accountType}</Text>
               </View>
               <View className="flex-1 border-l px-3 py-4" style={{ borderColor: darkMode ? palette.border : '#ECE6D6' }}>
-                <Text className="text-[9.5px] uppercase" style={{ letterSpacing: 0.5, color: darkMode ? palette.muted : '#A79F87' }}>Account ID</Text>
+                <Text className="text-[9.5px] uppercase" style={{ minHeight: 24, letterSpacing: 0.5, color: darkMode ? palette.muted : '#A79F87' }}>Account ID</Text>
                 <Text className="mt-1 text-[15px] font-bold" style={{ color: palette.text }}>#{profileAccountId}</Text>
               </View>
             </View>
