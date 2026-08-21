@@ -73,7 +73,7 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
   const [symbolTabMenuOpen, setSymbolTabMenuOpen] = useState(false);
   const [favoriteSymbols, setFavoriteSymbols] = useState([]);
 
-  const symbolTabs = ['Popular', 'Crypto CFD', 'Energies', 'Forex', 'Indices', 'Metals'];
+  const symbolTabs = ['Popular', 'Crypto', 'Energies', 'Forex', 'Indices', 'Metals'];
 
   const ui = useMemo(() => ({
     background: darkMode ? '#0e1726' : colors.background,
@@ -114,7 +114,7 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
         ? favSet.has(item.symbol)
         : symbolTab === 'Popular'
           ? item.popular
-          : symbolTab === 'Crypto CFD'
+          : symbolTab === 'Crypto'
             ? itemGroup.includes('crypto')
             : itemGroup.includes(symbolTab.toLowerCase());
       return matchesSearch && matchesTab;
@@ -135,7 +135,7 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
   useEffect(() => {
     const group = activeSymbolGroup.toLowerCase();
     const matchingTab = group.includes('crypto')
-      ? 'Crypto CFD'
+      ? 'Crypto'
       : group.includes('energy')
         ? 'Energies'
         : group.includes('forex')
