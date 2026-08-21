@@ -907,7 +907,6 @@ function SettingsPanel({ colors, darkMode, user, updateProfile, initialSection =
           <View className={isMobileLayout ? "gap-3" : "gap-4"}>
             <View className={isMobileLayout ? "rounded-lg border p-3" : "rounded-lg border p-5"} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
               <Text className={isMobileLayout ? "text-xl font-medium" : "text-2xl font-medium"} style={{ color: colors.text }}>Security</Text>
-              <Text className="mt-1 text-xs" style={{ color: colors.muted }}>Change your password and recover account access.</Text>
               <View className={isMobileLayout ? "mt-3 gap-2" : "mt-5 gap-4 lg:flex-row"}>
                 <Field label="Current Password" value={passwordForm.currentPassword} onChangeText={(currentPassword) => setPasswordForm((current) => ({ ...current, currentPassword }))} placeholder="Current password" secureTextEntry colors={colors} compactMobile />
                 <Field label="New Password" value={passwordForm.newPassword} onChangeText={(newPassword) => setPasswordForm((current) => ({ ...current, newPassword }))} placeholder="Minimum 8 characters" secureTextEntry colors={colors} compactMobile />
@@ -1291,7 +1290,7 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
     deposit: ['Deposit', 'Submit a funding request', Wallet],
     withdraw: ['Withdraw', 'Request funds from your account', Wallet],
     history: ['Transaction History', 'Deposits, withdrawals and account activity', History],
-    settings: ['My Settings', ['admin', 'agent'].includes(user?.role) ? 'Profile and security' : 'Profile, security, notifications and payments', isMobile ? Menu : Moon],
+    settings: ['My Settings', ['admin', 'agent'].includes(user?.role) ? 'Profile and security' : null, isMobile ? Menu : Moon],
     verification: ['Verification', 'Step-wise KYC status and documents', ShieldCheck],
     referral: ['Referral Programme', 'Invite clients and earn rewards', Award],
   };
