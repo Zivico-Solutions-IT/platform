@@ -9,7 +9,7 @@ export default function ChartSymbolPanel({
   filteredSymbols,
   hoveredSymbol,
   onClose,
-  onHoverSymbol,
+  onHoverSymbol = () => {},
   onSearchChange,
   onSelectSymbol,
   onSelectTab,
