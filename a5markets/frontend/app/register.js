@@ -27,8 +27,9 @@ export default function RegisterScreen() {
     password: '',
     confirmPassword: '',
     accountType: 'Demo',
-    referralCode: '',
-    referralInviteCode: String(params.ref || ''),
+    // This is the single code required by the administrator when a master
+    // referral code is configured for A5 Markets.
+    referralCode: String(params.ref || ''),
     country: '',
     agree: false
   });
@@ -426,9 +427,6 @@ export default function RegisterScreen() {
   const linkColor = darkMode ? colors.primary : '#153F73';
 
   const submit = async () => {
-  setError('Please contact support for assistance.');
-  return;
-
   const trimmedFirstName = form.name.split(' ')[0]?.trim() || '';
   const trimmedLastName = form.name.split(' ').slice(1).join(' ').trim();
   const trimmedEmail = form.email.trim();
@@ -567,8 +565,7 @@ export default function RegisterScreen() {
                 <TextInput placeholder="Last Name" className="flex-1 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" value={lastName} onChangeText={handleLastNameChange} />
               </View>
               <TextInput placeholder="Email Address" className="mb-4 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" autoCapitalize="none" keyboardType="email-address" value={form.email} onChangeText={update('email')} />
-              {requiresReferralCode ? <TextInput placeholder="Registration Code" className="mb-4 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" autoCapitalize="characters" autoCorrect={false} value={form.referralCode} onChangeText={update('referralCode')} /> : null}
-              <TextInput placeholder="Referral Code (Optional)" className="mb-4 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" autoCapitalize="characters" autoCorrect={false} value={form.referralInviteCode} onChangeText={update('referralInviteCode')} />
+              <TextInput placeholder="Referral Code" className="mb-4 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" autoCapitalize="characters" autoCorrect={false} value={form.referralCode} onChangeText={update('referralCode')} />
               <View className="mb-4 z-10">
                 <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea' }}>
                   <TouchableOpacity onPress={() => setDropdownOpen(!dropdownOpen)} className="flex-row items-center gap-1 border-r px-4 py-3" style={{ borderColor: '#d9e5ea' }}>
