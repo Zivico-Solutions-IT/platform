@@ -91,7 +91,6 @@ const CHART_TYPES = [
   ['scatter', 'Scatter Plot', ScatterChart],
 ];
 const INDICATOR_TOOLS = [
-  ['atr', 'AVERAGE TRUE RANGE'],
   ['awesome', 'AWESOME OSCILLATOR'],
   ['bb', 'BOLLINGER BANDS'],
   ['cci', 'COMMODITY CHANNEL'],
@@ -108,7 +107,6 @@ const INDICATOR_TOOLS = [
 const INDICATOR_KEYS = INDICATOR_TOOLS.map(([key]) => key);
 const INDICATOR_LABELS = Object.fromEntries(INDICATOR_TOOLS);
 const INDICATOR_SHORT_NAMES = {
-  atr: 'ATR',
   awesome: 'AO',
   bb: 'BB',
   cci: 'CCI',
@@ -549,23 +547,6 @@ function bollingerBands(items, period, multiplier = 2) {
   }
   return { upper, middle, lower };
 }
-function averageTrueRange(items, period) {
-  const output = [];
-  const ranges = items.map((item, index) => {
-    const high = Number(item.high);
-    const low = Number(item.low);
-    const previousClose = Number(items[index - 1]?.close ?? item.close);
-    return Math.max(high - low, Math.abs(high - previousClose), Math.abs(low - previousClose));
-  });
-  for (let index = period - 1; index < ranges.length; index += 1) {
-    const slice = ranges.slice(index - period + 1, index + 1);
-    output.push({
-      time: Number(items[index].time),
-      value: slice.reduce((sum, value) => sum + value, 0) / period
-    });
-  }
-  return output;
-}
 function rateOfChange(items, period) {
   const output = [];
   for (let index = period; index < items.length; index += 1) {
@@ -601,7 +582,6 @@ function addLine(dataSet, color, width = 1, lineStyle = LightweightCharts.LineSt
 function renderIndicators() {
   if (!data.length) return;
   if (chartType === 'combo') addLine(closeData(data), ${JSON.stringify(ui.accent)}, indicatorLineWidth);
-  if (tools.atr) addLine(averageTrueRange(data, Number(tools.atrPeriod || 14)), ${JSON.stringify(ui.accent)}, indicatorLineWidth);
   if (tools.awesome) {
     addLine(momentumLine(data, Number(tools.awesomeShort || 5)), '#4fc3f7', indicatorLineWidth);
     addLine(momentumLine(data, Number(tools.awesomeLong || 34)), '#f24d58', indicatorLineWidth);
@@ -909,7 +889,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const timeframeHeight = compactToolbar ? 22 : 24;
   const timeframeMinWidth = compactToolbar ? 27 : 32;
   const chartMinHeight = mobile ? Math.min(Math.max(Math.round(height * 0.5), 390), 540) : compactToolbar ? 430 : 520;
-  const indicatorPanelHeight = mobile ? Math.min(Math.max(Math.round(height * 0.54), 300), 430) : 330;
+  const indicatorPanelHeight = mobile ? Math.min(Math.max(Math.round(height * 0.46), 250), 340) : 320;
   const [timeframe, setTimeframe] = useState('15m');
   const [timeframeReady, setTimeframeReady] = useState(false);
   const [chartType, setChartType] = useState('candles');
@@ -938,10 +918,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const [drawings, setDrawings] = useState([]);
   const [activeDrawingTool, setActiveDrawingTool] = useState(null);
   const [pendingDrawingPoint, setPendingDrawingPoint] = useState(null);
-  const [activeIndicator, setActiveIndicator] = useState('atr');
+  const [activeIndicator, setActiveIndicator] = useState('awesome');
   const [tools, setTools] = useState({
-    atr: false,
-    atrPeriod: 14,
     awesome: false,
     awesomeShort: 5,
     awesomeLong: 34,
@@ -1271,7 +1249,6 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const activeChartType = CHART_TYPES.find(([key]) => key === chartType) || CHART_TYPES[0];
   const ActiveChartIcon = activeChartType[2];
   const activeIndicatorAddLabel = ({
-    atr: 'ADD ATR',
     awesome: 'ADD AO',
     bb: 'ADD BB',
     cci: 'ADD CCI',
@@ -1286,7 +1263,6 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
     williams: 'ADD WILLIAMS',
   })[activeIndicator] || 'ADD INDICATOR';
   const activePeriodSetting = ({
-    atr: ['atrPeriod', tools.atrPeriod],
   })[activeIndicator];
   const toggleTool = (key) => setTools((current) => ({ ...current, [key]: !current[key] }));
   const changeToolNumber = (key, delta, min = 1, max = 300, precision = 0) => {
@@ -1996,8 +1972,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         ) : null}
 
         {indicatorOpen ? (
-          <View className="absolute w-[560px] max-w-full flex-row overflow-hidden rounded-lg border shadow-2xl" style={{ right: chartPopoverRight, top: toolbarMenuTop, height: indicatorPanelHeight, backgroundColor: ui.panel, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
-            <View className="w-[210px] border-r" style={{ borderColor: ui.border }}>
+          <View className={`${mobile ? 'w-full rounded-none' : 'w-[520px] rounded-lg'} absolute max-w-full flex-row overflow-hidden border shadow-2xl`} style={{ right: mobile ? 0 : chartPopoverRight, top: toolbarMenuTop, height: indicatorPanelHeight, backgroundColor: ui.panel, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
+            <View className={`${mobile ? 'w-[54%]' : 'w-[198px]'} border-r`} style={{ borderColor: ui.border }}>
               <View className="h-9 justify-center border-b px-3" style={{ borderColor: ui.border }}>
                 <Text className="text-[11px] font-medium uppercase" style={{ color: ui.text }}>Indicators</Text>
               </View>
