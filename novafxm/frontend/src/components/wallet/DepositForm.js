@@ -467,22 +467,22 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                       </View>
                     ) : (
                       <View className="mt-2 flex-row items-center justify-between rounded-2xl border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-                        <Text selectable className="flex-1 pr-3 text-sm font-semimedium" style={{ color: colors.text }}>{assignedAddress?.address}</Text>
+                        <Text
+                          selectable
+                          className="min-w-0 flex-1 pr-3 text-sm font-semimedium"
+                          style={{ color: colors.text, flexWrap: 'wrap', ...(Platform.OS === 'web' ? { wordBreak: 'break-all' } : {}) }}
+                        >
+                          {assignedAddress?.address}
+                        </Text>
                         <Pressable
                           onPress={copyAddress}
-                          className="flex-row items-center rounded-lg border px-3 py-1.5"
-                          style={{ backgroundColor: copied ? `${colors.primary}20` : colors.surface, borderColor: copied ? colors.primary : colors.border }}
+                          className="h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+                          style={{ backgroundColor: copied ? `${colors.primary}20` : colors.surface, borderColor: copied ? colors.primary : colors.border, marginRight: mobile ? 6 : 0 }}
                         >
                           {copied ? (
-                            <>
-                              <Check size={14} color={colors.primary} />
-                              <Text className="ml-1.5 text-xs font-medium" style={{ color: colors.primary }}>Copied!</Text>
-                            </>
+                            <Check size={14} color={colors.primary} />
                           ) : (
-                            <>
-                              <Copy size={14} color={colors.primary} />
-                              <Text className="ml-1.5 text-xs font-medium" style={{ color: colors.primary }}>Copy</Text>
-                            </>
+                            <Copy size={14} color={colors.primary} />
                           )}
                         </Pressable>
                       </View>
