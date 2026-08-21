@@ -31,7 +31,7 @@ function SwitchRow({ active, label, onPress, colors }) {
   );
 }
 
-export default function OrderPanel({ showAvailableMargin = true }) {
+export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 }) {
   const { width, height } = useWindowDimensions();
   const { currentSymbol, openPosition, createPendingOrder, summary } = useDemoTrading();
   const { user } = useAuth();
@@ -50,10 +50,10 @@ export default function OrderPanel({ showAvailableMargin = true }) {
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
   const mobile = width < 760;
-  const panelBackground = darkMode ? '#171b21' : colors.panel;
-  const controlBackground = darkMode ? '#20262d' : colors.surface;
-  const orderSuccess = '#12cf7a';
-  const orderDanger = '#f24d58';
+  const panelBackground = darkMode ? '#171b21' : '#fffefb';
+  const controlBackground = darkMode ? '#20262d' : '#f7f7f4';
+  const orderSuccess = '#239F56';
+  const orderDanger = '#F4605C';
   const mobileActionWidth = Math.max(280, Math.min(width - 24, 460));
   const lotSize = Number(lots) || 0;
   const orderPrice = Number(orderSide === 'BUY' ? currentSymbol.ask : currentSymbol.bid) || currentSymbol.price || 0;
@@ -453,7 +453,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
           <Pressable
             onPress={() => openOrderModal('SELL')}
             className="h-[36px] flex-1 flex-row items-center justify-center gap-1.5 rounded-md"
-            style={{ backgroundColor: '#F15B54' }}
+            style={{ backgroundColor: orderDanger }}
           >
             <Text className="text-[10px] font-bold uppercase text-white">Sell</Text>
             <Text className="text-xs font-bold text-white">{quote(currentSymbol.bid, currentSymbol.decimals)}</Text>
@@ -461,7 +461,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
           <Pressable
             onPress={() => openOrderModal('BUY')}
             className="h-[36px] flex-1 flex-row items-center justify-center gap-1.5 rounded-md"
-            style={{ backgroundColor: '#249F57' }}
+            style={{ backgroundColor: orderSuccess }}
           >
             <Text className="text-[10px] font-bold uppercase text-white">Buy</Text>
             <Text className="text-xs font-bold text-white">{quote(currentSymbol.ask, currentSymbol.decimals)}</Text>
@@ -473,12 +473,12 @@ export default function OrderPanel({ showAvailableMargin = true }) {
   }
 
   return (
-    <View className="h-full rounded-xl border lg:w-[300px]" style={{ backgroundColor: panelBackground, borderColor: colors.border, height: '100%' }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 10 }}>
+    <View className="h-full rounded-2xl border lg:w-[300px]" style={{ backgroundColor: panelBackground, borderColor: colors.border, height: '100%', shadowColor: '#18201C', shadowOpacity: darkMode ? 0 : 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 5 }, elevation: darkMode ? 0 : 2 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14 }}>
         <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="text-base font-bold" style={{ color: colors.text }}>New Trade</Text>
-            <Text className="text-xs font-bold uppercase tracking-wider mt-0.5" style={{ color: colors.muted }}>{currentSymbol.symbol}</Text>
+          <View style={{ paddingLeft: titleInset }}>
+            <Text className="text-[17px] font-bold" style={{ color: colors.text }}>New Trade</Text>
+            <Text className="mt-0.5 text-xs font-bold uppercase tracking-wider" style={{ color: colors.muted }}>{currentSymbol.symbol}</Text>
           </View>
         </View>
 
@@ -500,7 +500,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
           ))}
         </View>
 
-        <View className="mt-2.5 flex-row justify-between rounded-xl px-3 py-2" style={{ backgroundColor: controlBackground }}>
+        <View className="mt-3 flex-row justify-between rounded-2xl px-3.5 py-2.5" style={{ backgroundColor: controlBackground }}>
           <View>
             <Text className="text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Bid</Text>
             <Text className="mt-0.5 text-sm font-bold" style={{ color: colors.danger }}>{quote(currentSymbol.bid, currentSymbol.decimals)}</Text>
@@ -539,7 +539,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
             value={lots}
             onChangeText={setLots}
             keyboardType="decimal-pad"
-            className="h-9 rounded-lg border px-3 text-xs font-bold"
+            className="h-11 rounded-xl border px-3 text-xs font-bold"
             style={{ backgroundColor: controlBackground, borderColor: colors.border, color: colors.text }}
           />
           </View>
@@ -549,7 +549,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
           <Pressable
             disabled={loading}
             onPress={() => setOrderSide('SELL')}
-            className={`h-9 flex-1 items-center justify-center rounded-lg border ${loading ? 'opacity-60' : ''}`}
+            className={`h-11 flex-1 items-center justify-center rounded-xl border ${loading ? 'opacity-60' : ''}`}
             style={{
               backgroundColor: orderSide === 'SELL' ? orderDanger : 'transparent',
               borderColor: orderDanger,
@@ -560,7 +560,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
           <Pressable
             disabled={loading}
             onPress={() => setOrderSide('BUY')}
-            className={`h-9 flex-1 items-center justify-center rounded-lg border ${loading ? 'opacity-60' : ''}`}
+            className={`h-11 flex-1 items-center justify-center rounded-xl border ${loading ? 'opacity-60' : ''}`}
             style={{
               backgroundColor: orderSide === 'BUY' ? orderSuccess : 'transparent',
               borderColor: orderSuccess,
@@ -601,7 +601,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
             </View>
           ) : null}
         </View>
-        <View className="mt-3 rounded-xl border p-2" style={{ backgroundColor: controlBackground, borderColor: colors.border }}>
+        <View className="mt-3 rounded-2xl border p-2.5" style={{ backgroundColor: controlBackground, borderColor: colors.border }}>
           <View className="mb-1.5 flex-row items-center justify-between">
             <Text className="text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Trade snapshot</Text>
             <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colors.success }} />
@@ -617,7 +617,7 @@ export default function OrderPanel({ showAvailableMargin = true }) {
         <Pressable
           disabled={loading || Boolean(pendingOrderError)}
           onPress={open}
-          className={`mt-2.5 h-10 items-center justify-center rounded-lg ${loading || pendingOrderError ? 'opacity-60' : ''}`}
+          className={`mt-3 h-12 items-center justify-center rounded-xl ${loading || pendingOrderError ? 'opacity-60' : ''}`}
           style={{ backgroundColor: orderSide === 'SELL' ? orderDanger : orderSuccess }}
         >
           <Text className="text-[11px] font-bold tracking-wider uppercase text-white">{loading ? 'Placing Order...' : 'Place Order'}</Text>

@@ -1,7 +1,7 @@
 import { Animated, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, Clock3, ListFilter, Wallet } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, ListFilter, Wallet } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
@@ -17,7 +17,7 @@ import BirthdayModal from '../account/BirthdayModal';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 
-function OrderRail({ summary, user, showSummary = true, showAvailableMargin = true }) {
+function OrderRail({ summary, user, showSummary = true, showAvailableMargin = true, titleInset = 0 }) {
   return (
     <View className="h-full overflow-hidden" style={{ width: 300, maxWidth: '100%', overflow: 'hidden', height: '100%' }}>
       <ScrollView 
@@ -26,9 +26,41 @@ function OrderRail({ summary, user, showSummary = true, showAvailableMargin = tr
         style={{ flex: 1 }}
       >
         <BirthdayWidget />
-        <OrderPanel showAvailableMargin={showAvailableMargin} />
+        <OrderPanel showAvailableMargin={showAvailableMargin} titleInset={titleInset} />
         {showSummary ? <AccountSummary summary={summary} user={user} /> : null}
       </ScrollView>
+    </View>
+  );
+}
+
+function CollapsibleOrderRail({ summary, user }) {
+  const { colors } = useAppTheme();
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (collapsed) {
+    return (
+      <Pressable
+        onPress={() => setCollapsed(false)}
+        className="h-12 w-8 items-center justify-center self-start rounded-l-xl border shadow-lg"
+        style={{ backgroundColor: colors.panel, borderColor: colors.border, cursor: 'pointer' }}
+        accessibilityLabel="Show new trade panel"
+      >
+        <ChevronLeft size={17} color={colors.muted} />
+      </Pressable>
+    );
+  }
+
+  return (
+    <View className="relative h-full" style={{ width: 300, maxWidth: '100%' }}>
+      <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} titleInset={30} />
+      <Pressable
+        onPress={() => setCollapsed(true)}
+        className="absolute left-3 top-3 h-7 w-7 items-center justify-center rounded-md"
+        style={{ backgroundColor: `${colors.text}08`, zIndex: 20, elevation: 20, cursor: 'pointer' }}
+        accessibilityLabel="Hide new trade panel"
+      >
+        <ChevronRight size={17} color={colors.muted} />
+      </Pressable>
     </View>
   );
 }
@@ -396,7 +428,7 @@ export default function TradingLayout() {
             <>
               <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
               {!chartFullscreen && (
-                <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} />
+                <CollapsibleOrderRail summary={summary} user={user} />
               )}
             </>
           ) : (
