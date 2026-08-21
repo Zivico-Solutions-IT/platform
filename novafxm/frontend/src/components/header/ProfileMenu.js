@@ -279,7 +279,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
           </View>
 
           {showBonusPosts ? (
-            <View className={mobile ? '' : 'px-[18px]'}>
+            <View className={mobile ? 'px-4' : 'px-[18px]'}>
               <Text className="mb-4 text-sm" style={{ color: palette.muted }}>Latest offers from NovaFXM</Text>
               {bonusLoading ? <Text className="py-8 text-center text-sm" style={{ color: palette.muted }}>Loading bonus offers…</Text> : null}
               {!bonusLoading && bonusPosts.length === 0 ? (
@@ -290,7 +290,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
                 </View>
               ) : null}
               {bonusPosts.map((post) => (
-                <View key={post.id} className="mb-5 overflow-hidden rounded-xl border" style={{ alignSelf: 'center', width: bonusPosts.length === 1 ? '94%' : '84%', borderColor: palette.border, backgroundColor: palette.tile }}>
+                <View key={post.id} className="mb-5 overflow-hidden rounded-xl border" style={{ alignSelf: 'center', width: mobile ? '100%' : (bonusPosts.length === 1 ? '94%' : '84%'), borderColor: palette.border, backgroundColor: palette.tile }}>
                   <Image source={{ uri: post.image }} resizeMode="contain" style={{ width: '100%', height: bonusPosts.length === 1 ? (mobile ? 270 : 310) : bonusPreviewHeight, backgroundColor: palette.card }} />
                   <Text className="p-3 text-base font-medium" style={{ color: palette.text }}>{post.title}</Text>
                 </View>
@@ -300,12 +300,10 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             <View className={mobile ? 'px-5 pt-3' : undefined}>
 
           <View className={`relative mb-4 overflow-hidden rounded-[28px] border px-5 pb-7 pt-6 ${mobile ? '' : 'mx-[18px]'}`} style={{ backgroundColor: darkMode ? palette.card : '#FFFDF9', borderColor: darkMode ? palette.border : '#ECE6D6' }}>
-            {!darkMode ? (
-              <Svg width="166" height="166" viewBox="0 0 166 166" style={{ position: 'absolute', right: -52, top: -52, opacity: 0.7 }}>
-                <Circle cx="83" cy="83" r="82" fill="none" stroke="#E9CB84" strokeWidth="1" />
-                <Circle cx="83" cy="83" r="60" fill="none" stroke="#E9CB84" strokeWidth="1" />
-              </Svg>
-            ) : null}
+            <Svg width="166" height="166" viewBox="0 0 166 166" style={{ position: 'absolute', right: -52, top: -52, opacity: darkMode ? 0.55 : 0.7 }}>
+              <Circle cx="83" cy="83" r="82" fill="none" stroke={darkMode ? palette.accent : '#E9CB84'} strokeWidth="1" />
+              <Circle cx="83" cy="83" r="60" fill="none" stroke={darkMode ? palette.accent : '#E9CB84'} strokeWidth="1" />
+            </Svg>
             <View className="relative flex-row items-center justify-between">
               <Text className="text-[10px] font-bold uppercase" style={{ letterSpacing: 1, color: darkMode ? palette.muted : '#A79F87' }}>Welcome Back</Text>
               <View className="rounded-full border px-3 py-1" style={{ backgroundColor: darkMode ? `${palette.accent}22` : '#FFF9ED', borderColor: darkMode ? palette.accent : '#E9CB84' }}>

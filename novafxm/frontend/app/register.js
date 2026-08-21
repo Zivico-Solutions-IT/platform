@@ -389,20 +389,11 @@ export default function RegisterScreen() {
   const handleFirstNameChange = (text) => setForm({ ...form, name: text + (lastName ? ' ' + lastName : '') });
   const handleLastNameChange = (text) => setForm({ ...form, name: firstName + (text ? ' ' + text : '') });
 
-  const TopControls = () => (
-    <View style={{ position: 'absolute', top: Platform.OS === 'web' ? 22 : 60, right: 24, zIndex: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderColor: 'rgba(1, 69, 33, 0.15)', borderWidth: 1, borderRadius: 100, paddingHorizontal: 12, paddingVertical: 6, gap: 6 }}>
-        <Text style={{ fontSize: 11.5, color: '#4e6b5a', fontWeight: '500' }}>EN</Text>
-      </View>
-    </View>
-  );
-
   return (
     <KeyboardAvoidingView 
       style={{ flex: 1, backgroundColor: '#f0f5f2' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <TopControls />
       <ScrollView 
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 }}
         keyboardShouldPersistTaps="handled"
