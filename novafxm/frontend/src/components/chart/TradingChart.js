@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import {
   Activity,
@@ -897,7 +897,22 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const chartFullscreen = isFullscreen !== undefined ? isFullscreen : localFullscreen;
   const [chartMenuOpen, setChartMenuOpen] = useState(false);
   const [timeframeMenuOpen, setTimeframeMenuOpen] = useState(false);
-  const [symbolMenuOpen, setSymbolMenuOpen] = useState(!mobile);
+  const [symbolMenuOpen, setSymbolMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
+    const toggleMarketWatch = () => {
+      setSymbolMenuOpen((open) => !open);
+      setSymbolTabMenuOpen(false);
+      setTimeframeMenuOpen(false);
+      setChartMenuOpen(false);
+      setIndicatorOpen(false);
+      setSettingsOpen(false);
+      setDrawingOpen(false);
+    };
+    window.addEventListener('novafxm:toggle-market-watch', toggleMarketWatch);
+    return () => window.removeEventListener('novafxm:toggle-market-watch', toggleMarketWatch);
+  }, []);
   const chartCardInset = 10;
   const chartListGap = 10;
   const symbolPanelWidth = mobile ? Math.min(width - 20, 360) : compactToolbar ? 320 : 340;
@@ -1930,7 +1945,17 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         </View>
       </View>
         {symbolMenuOpen ? (
-          <ChartSymbolPanel
+          <Modal
+            visible
+            transparent
+            animationType="fade"
+            onRequestClose={() => {
+              setSymbolTabMenuOpen(false);
+              setSymbolMenuOpen(false);
+            }}
+          >
+            <View style={{ flex: 1, pointerEvents: 'box-none' }}>
+              <ChartSymbolPanel
             currentSymbol={currentSymbol}
             favoriteSymbols={favoriteSymbols}
             filteredSymbols={filteredSymbols}
@@ -1951,8 +1976,10 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
             symbolTab={symbolTab}
             symbolTabMenuOpen={symbolTabMenuOpen}
             setSymbolTabMenuOpen={setSymbolTabMenuOpen}
-            ui={ui}
-          />
+                ui={ui}
+              />
+            </View>
+          </Modal>
         ) : null}
 
         {chartMenuOpen ? (
