@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowDownRight, ArrowUpRight, Briefcase, CandlestickChart, Grid2X2, ListFilter, LogOut, Settings, ShieldCheck, UsersRound, WalletCards } from 'lucide-react-native';
+import { ArrowDownRight, ArrowUpRight, Briefcase, CandlestickChart, FileText, Grid2X2, ListFilter, LogOut, Moon, Settings, ShieldCheck, Sun, UsersRound, WalletCards } from 'lucide-react-native';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
 import OrderPanel from '../order/OrderPanel';
@@ -106,12 +106,13 @@ function MobileSymbolWatchlist({ onSelectSymbol }) {
 export default function TradingLayout() {
   const params = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
-  const { darkMode, colors } = useAppTheme();
+  const { darkMode, colors, toggleDarkMode } = useAppTheme();
   const { user, isAdmin, logout } = useAuth();
   const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
   const [newOrderOpen, setNewOrderOpen] = useState(false);
+  const [marketDrawerOpen, setMarketDrawerOpen] = useState(true);
 
   const newOrderModal = <A5MarketOrderModal visible={newOrderOpen} onClose={() => setNewOrderOpen(false)} />;
 
@@ -152,7 +153,13 @@ export default function TradingLayout() {
           ) : (
             <View className="flex-1 flex-col min-h-0">
               <View className="flex-1 min-h-[340px] min-w-0">
-                <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
+                <TradingChart
+                  isFullscreen={chartFullscreen}
+                  onFullscreenChange={setChartFullscreen}
+                  isAdmin={isAdmin}
+                  symbolMenuOpen={marketDrawerOpen}
+                  onToggleSymbolMenu={setMarketDrawerOpen}
+                />
               </View>
               {!chartFullscreen && !sidePanel ? (
                 <View className="w-full shrink-0">
@@ -267,99 +274,155 @@ export default function TradingLayout() {
     router.replace('/login');
   };
 
-  const railItems = [
-    { key: 'overview', label: 'Overview', icon: Grid2X2, onPress: () => router.push('/dashboard?section=overview') },
-    { key: 'accounts', label: 'Accounts', icon: Briefcase, onPress: () => router.push('/dashboard?section=accounts') },
-    { key: 'verification', label: 'Verification', icon: ShieldCheck, onPress: () => router.push('/verification') },
-    { key: 'deposit', label: 'Deposit', icon: ArrowDownRight, onPress: () => router.push('/dashboard?section=deposit') },
-    { key: 'withdraw', label: 'Withdraw', icon: ArrowUpRight, onPress: () => router.push('/dashboard?section=withdraw') },
-    { key: 'referral', label: 'Referral Programme', icon: UsersRound, onPress: () => router.push('/broker-rewards') },
+  const railNavItems = [
+    { key: 'dashboard', label: 'Dashboard', icon: Grid2X2, onPress: () => router.push('/dashboard?section=overview') },
+    { key: 'markets', label: 'Markets', icon: CandlestickChart, active: marketDrawerOpen, onPress: () => setMarketDrawerOpen((prev) => !prev) },
+    { key: 'orders', label: 'Orders', icon: ListFilter, onPress: () => router.push('/dashboard?section=accounts') },
+    { key: 'portfolio', label: 'Portfolio', icon: Briefcase, onPress: () => router.push('/dashboard?section=accounts') },
+    { key: 'wallet', label: 'Wallet', icon: WalletCards, onPress: () => router.push('/dashboard?section=deposit') },
+    { key: 'reports', label: 'Reports', icon: ShieldCheck, onPress: () => router.push('/verification') },
     { key: 'settings', label: 'Settings', icon: Settings, onPress: () => router.push('/settings?section=profile') },
   ];
 
   return (
     <View className="flex-1 flex-row" style={{ backgroundColor: colors.background }}>
       {!isAdmin && !chartFullscreen ? (
-        <View className="w-[168px] items-center border-r px-2.5 py-3" style={{ backgroundColor: colors.background, borderColor: colors.border }}>
-          <View
-            className="h-[66px] w-full items-center justify-center rounded-xl border"
-            style={{
-              backgroundColor: colors.panel,
-              borderColor: colors.primary + '55',
-              shadowColor: colors.primary,
-              shadowOpacity: 0.08,
-              shadowRadius: 10,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 2,
-            }}
-          >
-            <NovaLogo dark={darkMode} width={146} height={42} />
+        <View
+          className="w-[72px] items-center border-r py-3 px-1 justify-between select-none"
+          style={{ backgroundColor: colors.background, borderColor: colors.border, zIndex: 3300, elevation: 3300 }}
+        >
+          {/* Top Logo */}
+          <View className="items-center justify-center mb-2">
+            <NovaLogo dark={darkMode} width={38} height={38} />
           </View>
-          <View className="mt-4 flex-1 w-full items-stretch justify-between rounded-xl border p-1.5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-            {railItems.map((item) => {
+
+          {/* Vertical Rail Navigation Items */}
+          <View className="flex-1 w-full items-center justify-start gap-3 mt-2">
+            {railNavItems.map((item) => {
               const Icon = item.icon;
+              const isMarkets = item.key === 'markets';
+              const active = isMarkets ? marketDrawerOpen : false;
+
               return (
                 <Pressable
                   key={item.key}
                   onPress={item.onPress}
-                  className="h-[52px] w-full flex-row items-center rounded-lg px-3"
-                  style={{
-                    backgroundColor: item.active ? colors.primary : colors.surface,
-                    borderWidth: item.active ? 0 : 1,
-                    borderColor: colors.border,
-                    shadowColor: item.active ? colors.primary : '#000',
-                    shadowOpacity: item.active ? 0.18 : 0,
-                    shadowRadius: item.active ? 14 : 0,
-                    shadowOffset: { width: 0, height: 8 },
-                    elevation: item.active ? 4 : 0,
-                  }}
+                  className="w-full items-center justify-center py-1.5 px-0.5 rounded-xl relative"
+                  style={{ cursor: 'pointer' }}
                 >
-                  <Icon size={18} color={item.active ? '#ffffff' : colors.text} />
-                  <Text className="ml-2 flex-1 text-[11px] font-semibold" numberOfLines={2} adjustsFontSizeToFit style={{ color: item.active ? '#ffffff' : colors.muted }}>{item.label}</Text>
+                  <View
+                    className="w-10 h-8 rounded-full items-center justify-center"
+                    style={{
+                      backgroundColor: active
+                        ? (darkMode ? 'rgba(16, 185, 129, 0.2)' : '#E6F4EA')
+                        : 'transparent',
+                      borderWidth: active ? 2 : 0,
+                      borderColor: active ? '#10B981' : 'transparent',
+                    }}
+                  >
+                    <Icon size={18} color={active ? '#10B981' : colors.muted} />
+                  </View>
+
+                  {active ? (
+                    <View
+                      className="absolute left-[64px] px-2 py-1 rounded shadow-md border"
+                      style={{
+                        backgroundColor: darkMode ? '#0F172A' : '#1E293B',
+                        borderColor: colors.border,
+                        zIndex: 9999,
+                        elevation: 9999,
+                      }}
+                    >
+                      <Text className="text-white text-[10px] font-bold">Markets</Text>
+                    </View>
+                  ) : null}
+
+                  <Text
+                    className="mt-0.5 text-[9.5px] font-semibold text-center"
+                    style={{ color: active ? '#10B981' : colors.muted }}
+                    numberOfLines={1}
+                  >
+                    {item.label}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
-          <Pressable onPress={signOut} className="mt-4 h-[52px] w-full flex-row items-center rounded-lg border px-3" style={{ backgroundColor: `${colors.danger}10`, borderColor: `${colors.danger}45` }}>
-            <LogOut size={18} color={colors.danger} />
-            <Text className="ml-2 text-[11px] font-semibold" style={{ color: colors.danger }}>Sign Out</Text>
-          </Pressable>
+
+          {/* Bottom Dark Mode / Sign Out toggle */}
+          <View className="w-full items-center gap-2 mt-2">
+            {toggleDarkMode ? (
+              <Pressable
+                onPress={toggleDarkMode}
+                className="items-center justify-center py-1 w-full"
+                style={{ cursor: 'pointer' }}
+              >
+                {darkMode ? <Sun size={17} color={colors.muted} /> : <Moon size={17} color={colors.muted} />}
+                <Text className="mt-0.5 text-[9px] font-semibold text-center" style={{ color: colors.muted }}>
+                  {darkMode ? 'Light' : 'Dark'}
+                </Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              onPress={signOut}
+              className="items-center justify-center py-1 w-full"
+              style={{ cursor: 'pointer' }}
+            >
+              <LogOut size={16} color={colors.danger} />
+              <Text className="mt-0.5 text-[9px] font-semibold text-center" style={{ color: colors.danger }}>
+                Out
+              </Text>
+            </Pressable>
+          </View>
         </View>
       ) : null}
+
       <View className="min-w-0 flex-1">
-      {!chartFullscreen && <TopAccountBar onNewOrder={() => setNewOrderOpen(true)} />}
-      <ScrollView
-        scrollEnabled={!chartFullscreen}
-        keyboardShouldPersistTaps="handled"
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: chartFullscreen ? 0 : (mobile ? 6 : 10), paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 14) }}
-      >
-        <View
-          className={chartFullscreen ? 'flex-1' : (desktop ? 'flex-row gap-3 overflow-hidden' : mobile ? 'gap-1.5 overflow-hidden' : 'gap-3 overflow-hidden')}
-          style={{ height: chartFullscreen ? undefined : chartAreaHeight, overflow: chartFullscreen ? 'visible' : 'hidden' }}
+        {!chartFullscreen && <TopAccountBar onNewOrder={() => setNewOrderOpen(true)} />}
+        <ScrollView
+          scrollEnabled={!chartFullscreen}
+          keyboardShouldPersistTaps="handled"
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, padding: chartFullscreen ? 0 : (mobile ? 6 : 10), paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 14) }}
         >
-          {desktop && !chartFullscreen ? (
-            <>
-              <View className="min-w-0 flex-1">
-                <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              </View>
-              {!isAdmin ? <OrderPanel /> : null}
-            </>
-          ) : (
-            <>
-              <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-            </>
-          )}
-        </View>
-        {!chartFullscreen ? <OpenPositions /> : null}
-      </ScrollView>
-      {mobile && !chartFullscreen && !sidePanel ? <OrderPanel /> : null}
-      <InsufficientFundsModal
-        visible={insufficientFundsVisible}
-        onClose={() => setInsufficientFundsVisible(false)}
-      />
-      <BirthdayModal />
-      {newOrderModal}
+          <View
+            className={chartFullscreen ? 'flex-1' : (desktop ? 'flex-row gap-3 overflow-hidden' : mobile ? 'gap-1.5 overflow-hidden' : 'gap-3 overflow-hidden')}
+            style={{ height: chartFullscreen ? undefined : chartAreaHeight, overflow: chartFullscreen ? 'visible' : 'hidden' }}
+          >
+            {desktop && !chartFullscreen ? (
+              <>
+                <View className="min-w-0 flex-1">
+                  <TradingChart
+                    isFullscreen={chartFullscreen}
+                    onFullscreenChange={setChartFullscreen}
+                    isAdmin={isAdmin}
+                    symbolMenuOpen={marketDrawerOpen}
+                    onToggleSymbolMenu={setMarketDrawerOpen}
+                  />
+                </View>
+                {!isAdmin ? <OrderPanel /> : null}
+              </>
+            ) : (
+              <>
+                <TradingChart
+                  isFullscreen={chartFullscreen}
+                  onFullscreenChange={setChartFullscreen}
+                  isAdmin={isAdmin}
+                  symbolMenuOpen={marketDrawerOpen}
+                  onToggleSymbolMenu={setMarketDrawerOpen}
+                />
+              </>
+            )}
+          </View>
+          {!chartFullscreen ? <OpenPositions /> : null}
+        </ScrollView>
+        {mobile && !chartFullscreen && !sidePanel ? <OrderPanel /> : null}
+        <InsufficientFundsModal
+          visible={insufficientFundsVisible}
+          onClose={() => setInsufficientFundsVisible(false)}
+        />
+        <BirthdayModal />
+        {newOrderModal}
       </View>
     </View>
   );

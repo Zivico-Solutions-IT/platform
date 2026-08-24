@@ -896,7 +896,13 @@ document.addEventListener('message', receiveLiveUpdate);
 </body></html>`;
 }
 
-export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin }) {
+export default function TradingChart({
+  isFullscreen,
+  onFullscreenChange,
+  isAdmin,
+  symbolMenuOpen: externalSymbolMenuOpen,
+  onToggleSymbolMenu: externalToggleSymbolMenu,
+}) {
   const { currentSymbol, openPosition, prices, setSelectedSymbol } = useDemoTrading();
   const { colors } = useAppTheme();
   const { notify } = useToast();
@@ -917,10 +923,18 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const chartFullscreen = isFullscreen !== undefined ? isFullscreen : localFullscreen;
   const [chartMenuOpen, setChartMenuOpen] = useState(false);
   const [timeframeMenuOpen, setTimeframeMenuOpen] = useState(false);
-  const [symbolMenuOpen, setSymbolMenuOpen] = useState(!mobile);
+  const [internalSymbolMenuOpen, setInternalSymbolMenuOpen] = useState(!mobile);
+  const symbolMenuOpen = externalSymbolMenuOpen !== undefined ? externalSymbolMenuOpen : internalSymbolMenuOpen;
+  const setSymbolMenuOpen = (val) => {
+    const nextVal = typeof val === 'function' ? val(symbolMenuOpen) : val;
+    if (externalToggleSymbolMenu) {
+      externalToggleSymbolMenu(nextVal);
+    }
+    setInternalSymbolMenuOpen(nextVal);
+  };
   const chartCardInset = 10;
   const chartListGap = 10;
-  const symbolPanelWidth = mobile ? Math.min(width - 20, 360) : compactToolbar ? 320 : 340;
+  const symbolPanelWidth = mobile ? Math.min(width - 20, 360) : 360;
   const symbolPanelTop = mobile ? 56 : (compactToolbar ? 47 : 51);
   const timeframeMenuLeft = narrowMobileToolbar ? 116 : 126;
   const chartOffsetLeft = symbolMenuOpen && !mobile && !chartFullscreen ? symbolPanelWidth + chartListGap : 0;
