@@ -1,10 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { ChevronDown, Sun, Moon, UserRound, Bell, LayoutDashboard, Activity, Plus, X } from 'lucide-react-native';
+import {
+  ChevronDown,
+  Sun,
+  Moon,
+  UserRound,
+  Bell,
+  LayoutDashboard,
+  Activity,
+  Plus,
+  X,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Shield,
+  Layers,
+} from 'lucide-react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
-import { money, quote } from '../../utils/formatters';
+import { money, quote, percent } from '../../utils/formatters';
 import { storage } from '../../utils/storage';
 import { useAppTheme } from '../../context/ThemeContext';
 import api from '../../services/api';
@@ -19,18 +34,27 @@ import DemoAccountMenu from './DemoAccountMenu';
 import HeaderSidePanel from './HeaderSidePanel';
 import ProfileMenu from './ProfileMenu';
 import NotificationMenu from './NotificationMenu';
-
-const visibleMetricCount = 4;
+import SymbolFlagIcon from '../market/SymbolFlagIcon';
 
 export default function TopAccountBar() {
   const { width } = useWindowDimensions();
-  const { currentSymbol, summary, selectedTradingAccount, setSelectedTradingAccount, sidePanel, setSidePanel, transactions, orderPanelVisible, setOrderPanelVisible } = useDemoTrading();
+  const {
+    currentSymbol,
+    summary,
+    selectedTradingAccount,
+    setSelectedTradingAccount,
+    sidePanel,
+    setSidePanel,
+    transactions,
+    orderPanelVisible,
+    setOrderPanelVisible,
+  } = useDemoTrading();
+
   const params = useLocalSearchParams();
   const { user, isAdmin, refreshUser } = useAuth();
   const { darkMode, colors, toggleTheme } = useAppTheme();
-  const metricsScrollRef = useRef(null);
   const profileHoverCloseRef = useRef(null);
-  const [metricsWidth, setMetricsWidth] = useState(0);
+
   const [menu, setMenu] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [dashboard, setDashboard] = useState(null);
@@ -38,13 +62,10 @@ export default function TopAccountBar() {
   const [readNotificationIds, setReadNotificationIds] = useState([]);
   const [hoveredAction, setHoveredAction] = useState(null);
   const [hasSwitchedToLive, setHasSwitchedToLive] = useState(false);
-  const mobile = width < 1024;
-  const narrowPhone = width < 380;
-  const compactDesktop = !mobile && width < 1450;
-  const twoRowDesktop = !mobile && width < 1200;
-  const isMobileLayout = width < 760;
-  const showHeaderContent = !(isMobileLayout && sidePanel);
-  const iconButtonHoverBg = darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(11, 11, 11, 0.04)';
+
+  const mobile = width < 760;
+  const tablet = width >= 760 && width < 1180;
+  const desktop = width >= 1180;
 
   const fallbackAccount = useMemo(() => ({
     id: 'loading',
@@ -53,7 +74,7 @@ export default function TopAccountBar() {
     status: user?.tradingStatus === 'frozen' ? 'frozen' : 'active',
     balance: summary.balance,
     currency: 'USD',
-  }), [summary.balance, user?.accountType, user?.id, user?.tradingStatus]);
+  }), [summary.balance, user?.accountType, user?.tradingStatus]);
 
   const tradingAccounts = useMemo(() => {
     const list = accounts.length ? accounts : [fallbackAccount];
@@ -64,6 +85,7 @@ export default function TopAccountBar() {
         : account
     ));
   }, [accounts, fallbackAccount, selectedTradingAccount]);
+
   const selectedAccount = tradingAccounts.find((account) => String(account.id) === String(selectedTradingAccount?.id)) || selectedTradingAccount || tradingAccounts[0];
   const selectedAccountBalance = Number.isFinite(Number(selectedAccount?.balance)) ? Number(selectedAccount.balance) : summary.balance;
   const routeAccountId = params.accountId ? String(params.accountId) : '';
@@ -73,31 +95,12 @@ export default function TopAccountBar() {
   const summaryMargin = Number(summary.margin || 0);
   const summaryMarginLevel = Number(summary.marginLevel || 0);
   const summaryNetProfit = Number(summary.openProfit || 0);
-  const summaryBonus = Number(summary.bonus || 0);
-  const summaryFreeFunds = summaryEquity - summaryMargin;
-  const metrics = [
-    ['Balance', `${money(summaryBalance)} USD`],
-    ['Equity', `${money(summaryEquity)} USD`],
-    ['Margin', `${money(summaryMargin)} USD`],
-    ['Margin Level', `${money(summaryMarginLevel)} %`],
-    ['Net Profit', `${money(summaryNetProfit)} USD`],
-    ['Bonus', `${money(summaryBonus)} USD`],
-    ['Free Funds', `${money(summaryFreeFunds)} USD`],
-  ];
-  const desktopMetrics = [
-    ['Balance', money(summaryBalance)],
-    ['Equity', money(summaryEquity)],
-    ['Margin', money(summaryMargin)],
-    ['Margin Level', `${money(summaryMarginLevel)}%`],
-    ['Net Profit', money(summaryNetProfit)],
-    ['Bonus', money(summaryBonus)],
-    ['Free Funds', money(summaryFreeFunds)],
-  ];
-  const desktopHeaderBg = darkMode ? '#02070d' : colors.background;
-  const desktopText = colors.text;
-  const desktopMuted = darkMode ? '#66758a' : colors.muted;
+  const summaryFreeFunds = Math.max(0, summaryEquity - summaryMargin);
 
-  const maxMetricStep = Math.max(metrics.length - visibleMetricCount, 0);
+  const changeNum = Number(currentSymbol?.change || 0);
+  const isPositiveChange = changeNum >= 0;
+  const changeColor = isPositiveChange ? colors.success || '#10B981' : colors.danger || '#EF4444';
+
   const notificationIds = useMemo(() => {
     if (isAdmin) {
       return buildAdminNotificationItems(adminNotificationData, {
@@ -120,14 +123,13 @@ export default function TopAccountBar() {
       .forEach((item) => ids.push(`bank-${item.id}-${item.status}`));
     return ids.filter(Boolean);
   }, [adminNotificationData, colors, dashboard, isAdmin, transactions, user]);
+
   const unreadNotificationCount = notificationIds.filter((id) => !readNotificationIds.includes(id)).length;
 
   useEffect(() => {
     if (!user?.id) return undefined;
     let active = true;
-    const refreshProfile = () => {
-      refreshUser().catch(() => {});
-    };
+    const refreshProfile = () => { refreshUser().catch(() => {}); };
     refreshProfile();
     const retryTimers = [3000, 9000].map((delay) => setTimeout(() => {
       if (active) refreshProfile();
@@ -174,6 +176,7 @@ export default function TopAccountBar() {
         }
       })
       .catch(() => {});
+
     const timer = setInterval(() => {
       dashboardService.getDashboard()
         .then((result) => {
@@ -184,6 +187,7 @@ export default function TopAccountBar() {
         })
         .catch(() => {});
     }, 60000);
+
     return () => {
       active = false;
       clearInterval(timer);
@@ -192,11 +196,11 @@ export default function TopAccountBar() {
   }, [setSelectedTradingAccount, user]);
 
   useEffect(() => {
-    let active = true;
     if (!user || !isAdmin) {
       setAdminNotificationData(emptyAdminNotificationData);
       return undefined;
     }
+    let active = true;
     const load = () => {
       loadAdminNotificationData(api)
         .then((result) => {
@@ -225,7 +229,10 @@ export default function TopAccountBar() {
   useEffect(() => {
     if (!tradingAccounts.length) return;
     const routeAccount = routeAccountId ? tradingAccounts.find((account) => String(account.id) === routeAccountId) : null;
-    if (routeAccount && String(selectedTradingAccount?.id) !== String(routeAccount.id)) { setSelectedTradingAccount(routeAccount); return; }
+    if (routeAccount && String(selectedTradingAccount?.id) !== String(routeAccount.id)) {
+      setSelectedTradingAccount(routeAccount);
+      return;
+    }
 
     const liveAccount = tradingAccounts.find((account) => account.type === 'Live');
     if (liveAccount && selectedTradingAccount?.type === 'Demo' && !hasSwitchedToLive) {
@@ -238,7 +245,11 @@ export default function TopAccountBar() {
     if (!selectedExists) setSelectedTradingAccount(liveAccount || tradingAccounts[0]);
   }, [routeAccountId, selectedTradingAccount?.id, setSelectedTradingAccount, tradingAccounts, hasSwitchedToLive]);
 
-  const selectAccount = (account) => { setSelectedTradingAccount(account); setMenu(null); };
+  const selectAccount = (account) => {
+    setSelectedTradingAccount(account);
+    setMenu(null);
+  };
+
   const updateAccounts = useCallback((nextAccounts = [], preferredAccount = null) => {
     setAccounts(nextAccounts);
     setSelectedTradingAccount((current) => {
@@ -253,337 +264,360 @@ export default function TopAccountBar() {
       return nextAccounts.find((account) => account.type === 'Live') || nextAccounts[0] || current;
     });
   }, [setSelectedTradingAccount]);
-  
+
   const openSidePanel = (panel) => {
     setMenu(null);
     setSidePanel(panel);
   };
 
-  const hoverProps = (action) => ({ onHoverIn: () => setHoveredAction(action), onHoverOut: () => setHoveredAction(null) });
-
-  const cancelProfileHoverClose = () => { if (!profileHoverCloseRef.current) return; clearTimeout(profileHoverCloseRef.current); profileHoverCloseRef.current = null; };
-
-  const openProfileMenu = (action) => { cancelProfileHoverClose(); setHoveredAction(action); setMenu((cur) => (cur === 'profile' ? cur : 'profile')); };
-
-  const profileHoverProps = (action) => ({ onHoverIn: () => openProfileMenu(action), onHoverOut: () => setHoveredAction(null) });
   const goToAdminDashboard = () => {
     setMenu(null);
     router.push('/admin');
   };
+
   const readAllNotifications = (ids = notificationIds) => {
     const next = Array.from(new Set([...readNotificationIds, ...ids]));
     setReadNotificationIds(next);
     if (user?.id) storage.set(`read_notifications_${user.id}`, next).catch(() => {});
   };
 
-  const isMenuActionActive = (action) => {
-    if (menu === 'profile' && (action === 'profile' || action === 'mobile-profile')) return true;
-    if (menu === 'notifications' && (action === 'notifications' || action === 'mobile-notifications')) return true;
-    return false;
-  };
-
-  const iconButtonStyle = (action, baseStyle) => {
-    const active = isMenuActionActive(action);
-    const hovered = hoveredAction === action;
-    return [
-      baseStyle,
-      { cursor: 'pointer' },
-      hovered || active
-        ? {
-            backgroundColor: active ? `${colors.primary}12` : iconButtonHoverBg,
-            borderColor: colors.primary,
-          }
-        : null
-    ];
-  };
-
-  const iconHoverStyle = (action) => {
-    return {};
-  };
-
-  const iconColor = (action) => (hoveredAction === action || isMenuActionActive(action) ? colors.primary : colors.text);
-
-  useEffect(() => () => cancelProfileHoverClose(), []);
-
-  useEffect(() => {
-    if (!metricsWidth || maxMetricStep === 0) return undefined;
-    let step = 0;
-    const itemWidth = (metricsWidth - 24) / visibleMetricCount;
-    const interval = setInterval(() => {
-      step = step >= maxMetricStep ? 0 : step + 1;
-      metricsScrollRef.current?.scrollTo({ x: itemWidth * step, animated: true });
-    }, 3800);
-    return () => clearInterval(interval);
-  }, [maxMetricStep, metricsWidth]);
+  // Header background & border styles
+  const headerBg = darkMode ? '#08100d' : colors.panel;
+  const pillBg = darkMode ? '#0e1c16' : colors.surface;
+  const pillBorder = colors.border;
 
   return (
     <View
-      className={`${mobile ? 'relative z-40 gap-1.5 px-2 py-1.5' : 'relative z-40 py-1'}`}
+      className="z-40 border-b transition-all"
       style={{
-        backgroundColor: mobile ? colors.background : desktopHeaderBg,
+        backgroundColor: headerBg,
         borderColor: colors.border,
-        borderBottomWidth: showHeaderContent ? (mobile ? 0 : 1) : 0,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: mobile ? 0 : (showHeaderContent ? 0.04 : 0),
-        shadowRadius: 12,
-        elevation: mobile ? 0 : (showHeaderContent ? 4 : 0),
-        flexDirection: mobile ? 'column' : 'row',
-        alignItems: mobile ? undefined : 'center',
-        flexWrap: twoRowDesktop ? 'wrap' : 'nowrap',
-        columnGap: mobile ? undefined : (compactDesktop ? 6 : 10),
-        rowGap: twoRowDesktop ? 2 : 0,
-        paddingHorizontal: mobile ? 8 : 16,
-        height: showHeaderContent ? undefined : 0,
-        paddingVertical: showHeaderContent ? undefined : 0,
-        overflow: 'hidden',
       }}
     >
-      {showHeaderContent ? (
-        <>
-          {mobile ? (
-        <View className="gap-2">
-          {/* Brand and utility actions */}
-          <View className="flex-row items-center justify-between">
-            <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
-              <NovaLogo dark={darkMode} width={narrowPhone ? 88 : 100} height={narrowPhone ? 24 : 28} />
-            </Pressable>
-            <View className="flex-row items-center gap-1.5">
-              <Pressable {...hoverProps('mobile-theme')} onPress={toggleTheme} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-theme', { backgroundColor: `${colors.text}08` })}>
-                <View style={iconHoverStyle('mobile-theme')}>{darkMode ? <Sun size={16} color={iconColor('mobile-theme')} /> : <Moon size={16} color={iconColor('mobile-theme')} />}</View>
-              </Pressable>
-              {isAdmin ? (
-                <Pressable {...hoverProps('mobile-admin-dashboard')} onPress={goToAdminDashboard} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-admin-dashboard', { backgroundColor: `${colors.text}08` })}>
-                  <View style={iconHoverStyle('mobile-admin-dashboard')}><LayoutDashboard color={iconColor('mobile-admin-dashboard')} size={16} /></View>
-                </Pressable>
-              ) : null}
-              {user ? (
-                <Pressable {...hoverProps('mobile-notifications')} onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-notifications', { backgroundColor: `${colors.text}08` })}>
-                  <View style={iconHoverStyle('mobile-notifications')}><Bell color={iconColor('mobile-notifications')} size={16} /></View>
-                  {unreadNotificationCount ? (
-                    <View className="absolute items-center justify-center rounded-full bg-danger px-1" style={{ right: -2, top: -2, height: 16, minWidth: 16, borderWidth: 1.5, borderColor: colors.panel }}>
-                      <Text className="text-[9px] font-bold text-white">
-                        {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+      <View className="flex-row items-center justify-between px-3 py-2 lg:px-4">
+        {/* Left Section: Logo - aligned to Market Watch column width on desktop */}
+        <View
+          style={desktop ? { width: width >= 1280 ? 310 : 290, paddingLeft: 4 } : {}}
+          className="flex-row items-center"
+        >
+          <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
+            <NovaLogo dark={darkMode} width={mobile ? 120 : 160} height={mobile ? 32 : 40} />
+          </Pressable>
+        </View>
+
+        {/* Center / Chart Aligned Section: Starts right where market chart begins */}
+        {!mobile ? (
+          <View className="flex-1 flex-row items-center min-w-0 mx-2 gap-2">
+            {/* Active Pair Chip (Desktop/Tablet) */}
+            {currentSymbol ? (
+              <View
+                className="flex-row items-center px-3 py-1.5 rounded-xl border gap-2.5 shrink-0"
+                style={{
+                  backgroundColor: pillBg,
+                  borderColor: pillBorder,
+                }}
+              >
+                <SymbolFlagIcon symbol={currentSymbol.symbol} size={20} />
+                <View>
+                  <Text className="text-xs font-bold" style={{ color: colors.text }}>
+                    {currentSymbol.symbol}
+                  </Text>
+                  <View className="flex-row items-center gap-1.5 mt-0.5">
+                    <Text className="text-xs font-bold" style={{ color: changeColor }}>
+                      {quote(currentSymbol.price || currentSymbol.bid, currentSymbol.decimals)}
+                    </Text>
+                    <View
+                      className="flex-row items-center px-1 rounded"
+                      style={{ backgroundColor: `${changeColor}18` }}
+                    >
+                      {isPositiveChange ? (
+                        <TrendingUp size={9} color={changeColor} style={{ marginRight: 2 }} />
+                      ) : (
+                        <TrendingDown size={9} color={changeColor} style={{ marginRight: 2 }} />
+                      )}
+                      <Text className="text-[9px] font-bold" style={{ color: changeColor }}>
+                        {percent(currentSymbol.change)}
                       </Text>
                     </View>
-                  ) : null}
-                </Pressable>
-              ) : null}
-              {user ? (
-                <Pressable {...hoverProps('mobile-profile')} onPress={() => setMenu(menu === 'profile' ? null : 'profile')} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-profile', { backgroundColor: `${colors.primary}1A` })}>
-                  <View style={iconHoverStyle('mobile-profile')}><UserRound color={colors.primary} size={16} /></View>
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
+                  </View>
+                </View>
+              </View>
+            ) : null}
 
-          {/* Full-width account selector. The account menu is anchored directly below it. */}
+            {/* Core Account Metrics Pills */}
+            {user && !isAdmin ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 6, alignItems: 'center' }}
+                className="flex-1 min-w-0"
+              >
+                {/* Balance */}
+                <View
+                  className="px-3 py-1.5 rounded-xl border min-w-[95px]"
+                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+                >
+                  <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
+                    Balance
+                  </Text>
+                  <Text className="text-xs font-bold" style={{ color: colors.text }}>
+                    ${money(summaryBalance)}
+                  </Text>
+                </View>
+
+                {/* Equity */}
+                <View
+                  className="px-3 py-1.5 rounded-xl border min-w-[95px]"
+                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+                >
+                  <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
+                    Equity
+                  </Text>
+                  <Text className="text-xs font-bold" style={{ color: colors.text }}>
+                    ${money(summaryEquity)}
+                  </Text>
+                </View>
+
+                {/* Free Margin */}
+                <View
+                  className="px-3 py-1.5 rounded-xl border min-w-[95px]"
+                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+                >
+                  <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
+                    Free Margin
+                  </Text>
+                  <Text className="text-xs font-bold" style={{ color: colors.success || '#10B981' }}>
+                    ${money(summaryFreeFunds)}
+                  </Text>
+                </View>
+
+                {/* Margin Level */}
+                <View
+                  className="px-3 py-1.5 rounded-xl border min-w-[85px]"
+                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+                >
+                  <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
+                    Margin Level
+                  </Text>
+                  <Text className="text-xs font-bold" style={{ color: colors.text }}>
+                    {summaryMargin === 0 ? '—' : `${summaryMarginLevel.toFixed(1)}%`}
+                  </Text>
+                </View>
+
+                {/* Net Profit */}
+                <View
+                  className="px-3 py-1.5 rounded-xl border min-w-[85px]"
+                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+                >
+                  <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
+                    Net Profit
+                  </Text>
+                  <Text
+                    className="text-xs font-bold"
+                    style={{
+                      color: summaryNetProfit > 0 ? (colors.success || '#10B981') : summaryNetProfit < 0 ? (colors.danger || '#EF4444') : colors.text,
+                    }}
+                  >
+                    {summaryNetProfit > 0 ? `+$${money(summaryNetProfit)}` : `$${money(summaryNetProfit)}`}
+                  </Text>
+                </View>
+              </ScrollView>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Right Section: Account Badge + Icons (Account, Notifications, Theme) */}
+        <View className="flex-row items-center gap-2">
+          {/* Static account type badge */}
           {user && !isAdmin ? (
-            <Pressable
-              onPress={() => setMenu(menu === 'account' ? null : 'account')}
-              className="h-[44px] w-full flex-row items-center rounded-xl border px-3"
+            <View
+              className="flex-row items-center px-2.5 py-1.5 rounded-xl border"
               style={{
-                backgroundColor: menu === 'account' ? `${colors.primary}12` : colors.panel,
-                borderColor: menu === 'account' ? colors.primary : colors.border,
-                shadowColor: colors.primary,
-                shadowOpacity: menu === 'account' ? 0.14 : 0,
-                shadowRadius: 8,
-                elevation: menu === 'account' ? 2 : 0,
+                backgroundColor: pillBg,
+                borderColor: pillBorder,
               }}
             >
-              <View className="mr-2 flex-row items-center rounded-lg px-2 py-1" style={{ backgroundColor: `${colors.primary}16` }}>
-                <Activity size={13} color={colors.primary} />
-                <Text className="ml-1.5 text-[11px] font-bold uppercase" style={{ color: colors.primary }}>
+              <View
+                className="px-1.5 py-0.5 rounded-md"
+                style={{
+                  backgroundColor: selectedAccount?.type === 'Live' ? `${colors.success || '#10B981'}25` : `${colors.primary}25`,
+                }}
+              >
+                <Text
+                  className="text-[9.5px] font-bold uppercase"
+                  style={{
+                    color: selectedAccount?.type === 'Live' ? (colors.success || '#10B981') : colors.primary,
+                  }}
+                >
                   {selectedAccount?.type || 'Demo'}
                 </Text>
               </View>
-              <Text className="flex-1 text-[11px] font-bold" numberOfLines={1} style={{ color: colors.text }}>
-                {money(selectedAccountBalance)} {selectedAccount?.currency || 'USD'}
-              </Text>
-              <ChevronDown
-                size={15}
-                color={colors.muted}
-                style={{ transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }] }}
-              />
+            </View>
+          ) : null}
+
+          {/* Admin Dashboard */}
+          {isAdmin ? (
+            <Pressable
+              onPress={goToAdminDashboard}
+              className="w-9 h-9 items-center justify-center rounded-xl border"
+              style={{ backgroundColor: pillBg, borderColor: pillBorder, cursor: 'pointer' }}
+            >
+              <LayoutDashboard size={16} color={colors.primary} />
             </Pressable>
           ) : null}
-        </View>
-      ) : (
-        <View style={{ marginBottom: mobile ? 12 : 0, marginRight: mobile ? 0 : (compactDesktop ? 6 : 14), justifyContent: 'center' }}>
-          <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
-            <NovaLogo dark={darkMode} width={compactDesktop ? 165 : 205} height={compactDesktop ? 46 : 56} />
-          </Pressable>
-        </View>
-      )}
-      {mobile && !isAdmin ? (
-        <ScrollView 
-          ref={metricsScrollRef} 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          className="h-[58px] mt-3 mx-3" 
-          contentContainerStyle={{ paddingHorizontal: 2, gap: 6 }} 
-          onLayout={({ nativeEvent }) => setMetricsWidth(nativeEvent.layout.width)} 
-          style={{ backgroundColor: 'transparent' }}
-        >
-          {metrics.map(([label, value]) => (
-            <View 
-              key={label} 
-              className="justify-center h-full rounded-xl border px-2"
+
+          {/* 1. Account / Profile Menu */}
+          {user ? (
+            <Pressable
+              onPress={() => setMenu(menu === 'profile' ? null : 'profile')}
+              className="w-9 h-9 items-center justify-center rounded-xl border"
               style={{
-                width: metricsWidth ? (metricsWidth - 24) / visibleMetricCount : 100,
-                backgroundColor: darkMode ? 'rgba(0, 103, 79, 0.16)' : 'rgba(0, 103, 79, 0.07)',
-                borderColor: darkMode ? 'rgba(211, 211, 211, 0.16)' : 'rgba(0, 103, 79, 0.16)',
+                backgroundColor: menu === 'profile' ? `${colors.primary}20` : pillBg,
+                borderColor: menu === 'profile' ? colors.primary : pillBorder,
+                cursor: 'pointer',
               }}
             >
-              <View className="mb-1 h-1 w-5 rounded-full" style={{ backgroundColor: colors.primary }} />
-              <Text className="text-[8px] font-bold tracking-widest uppercase mb-0.5" numberOfLines={1} style={{ color: colors.muted }}>{label}</Text>
-              <Text className="text-[10px] font-bold tracking-tight" numberOfLines={1} style={{ color: label === 'Net Profit' && summary.openProfit < 0 ? colors.danger : (label === 'Net Profit' && summary.openProfit > 0 ? colors.success : colors.text) }}>{value}</Text>
-            </View>
-          ))}
-        </ScrollView>
-      ) : !mobile && !isAdmin ? (
-        <View
-          className={`${twoRowDesktop ? 'h-[50px]' : compactDesktop ? 'h-[52px]' : 'h-[58px]'} flex-row items-center px-2 gap-1.5`}
-          style={twoRowDesktop ? { flexBasis: '100%', width: '100%', order: 2 } : { flex: 1, minWidth: 0 }}
-        >
-          {desktopMetrics.map(([label, value]) => (
-            <View
-              key={label}
-              className="min-w-0 justify-center rounded-xl border px-2.5"
+              <UserRound size={16} color={colors.primary} />
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => router.push('/login')}
+              className="px-3.5 py-1.5 rounded-xl bg-primary"
+              style={{ backgroundColor: colors.primary }}
+            >
+              <Text className="text-xs font-bold text-white uppercase">Log In</Text>
+            </Pressable>
+          )}
+
+          {/* 2. Notifications */}
+          {user ? (
+            <Pressable
+              onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')}
+              className="relative w-9 h-9 items-center justify-center rounded-xl border"
               style={{
-                flex: 1,
-                height: compactDesktop ? 42 : 46,
-                backgroundColor: darkMode ? 'rgba(0, 103, 79, 0.16)' : 'rgba(0, 103, 79, 0.07)',
-                borderColor: darkMode ? 'rgba(211, 211, 211, 0.16)' : 'rgba(0, 103, 79, 0.16)',
+                backgroundColor: menu === 'notifications' ? `${colors.primary}20` : pillBg,
+                borderColor: menu === 'notifications' ? colors.primary : pillBorder,
+                cursor: 'pointer',
               }}
             >
-              <View className="flex-row items-center">
-                <View className="mr-1.5 h-5 w-1 rounded-full" style={{ backgroundColor: colors.primary }} />
-                <View className="min-w-0 flex-1">
-                  <Text className={`${compactDesktop ? 'text-[8px]' : 'text-[9px]'} font-bold uppercase tracking-wider`} numberOfLines={1} style={{ color: desktopMuted }}>{label}</Text>
-                  <Text className={`${compactDesktop ? 'text-xs' : 'text-[14px]'} font-bold`} numberOfLines={1} style={{ color: label === 'Net Profit' && summaryNetProfit < 0 ? colors.danger : (label === 'Net Profit' && summaryNetProfit > 0 ? colors.success : desktopText) }}>
-                    {label === 'Net Profit' && summaryNetProfit > 0 ? `+${value}` : value}
+              <Bell size={16} color={colors.text} />
+              {unreadNotificationCount ? (
+                <View
+                  className="absolute -top-1 -right-1 w-4 h-4 items-center justify-center rounded-full bg-danger"
+                  style={{ backgroundColor: colors.danger || '#EF4444' }}
+                >
+                  <Text className="text-[9px] font-bold text-white">
+                    {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                   </Text>
                 </View>
-              </View>
+              ) : null}
+            </Pressable>
+          ) : null}
+
+          {/* 3. Dark Mode / Theme Toggle */}
+          <Pressable
+            onPress={toggleTheme}
+            className="w-9 h-9 items-center justify-center rounded-xl border"
+            style={{ backgroundColor: pillBg, borderColor: pillBorder, cursor: 'pointer' }}
+          >
+            {darkMode ? <Sun size={16} color={colors.text} /> : <Moon size={16} color={colors.text} />}
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Mobile Sub-Header: Active Pair & Balance Scrolling Bar */}
+      {mobile && user && !isAdmin ? (
+        <View className="px-3 pb-2 pt-0.5 border-t" style={{ borderColor: `${colors.border}40` }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+            <View
+              className="flex-row items-center px-2.5 py-1 rounded-lg border gap-1.5"
+              style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+            >
+              <SymbolFlagIcon symbol={currentSymbol.symbol} size={16} />
+              <Text className="text-[11px] font-bold" style={{ color: colors.text }}>
+                {currentSymbol.symbol}
+              </Text>
+              <Text className="text-[11px] font-bold" style={{ color: changeColor }}>
+                {quote(currentSymbol.price || currentSymbol.bid, currentSymbol.decimals)}
+              </Text>
             </View>
-          ))}
+
+            <View
+              className="px-2.5 py-1 rounded-lg border"
+              style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+            >
+              <Text className="text-[10px] font-bold" style={{ color: colors.text }}>
+                Equity: ${money(summaryEquity)}
+              </Text>
+            </View>
+
+            <View
+              className="px-2.5 py-1 rounded-lg border"
+              style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+            >
+              <Text className="text-[10px] font-bold" style={{ color: colors.success || '#10B981' }}>
+                Free: ${money(summaryFreeFunds)}
+              </Text>
+            </View>
+
+            <View
+              className="px-2.5 py-1 rounded-lg border"
+              style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+            >
+              <Text
+                className="text-[10px] font-bold"
+                style={{
+                  color: summaryNetProfit >= 0 ? (colors.success || '#10B981') : (colors.danger || '#EF4444'),
+                }}
+              >
+                P&L: {summaryNetProfit >= 0 ? `+$${money(summaryNetProfit)}` : `-$${money(Math.abs(summaryNetProfit))}`}
+              </Text>
+            </View>
+          </ScrollView>
         </View>
       ) : null}
-      {!mobile && isAdmin ? <View style={{ flex: 1 }} /> : null}
-      {!mobile && user && !isAdmin ? (
-        <Pressable
-          {...hoverProps('new-order')}
-          onPress={() => setOrderPanelVisible((visible) => !visible)}
-          className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center justify-center rounded-lg border`}
-          style={iconButtonStyle('new-order', {
-            paddingHorizontal: compactDesktop ? 10 : 14,
-            backgroundColor: orderPanelVisible ? colors.primary : colors.panel,
-            borderColor: colors.primary,
-            gap: 6,
-          })}
-        >
-          {orderPanelVisible
-            ? <X size={15} color="#FFFFFF" />
-            : <Plus size={15} color={colors.primary} />}
-          <Text
-            className={`${compactDesktop ? 'text-[10px]' : 'text-xs'} font-bold`}
-            style={{ color: orderPanelVisible ? '#FFFFFF' : colors.primary }}
-          >
-            New Order
-          </Text>
-        </Pressable>
-      ) : null}
-      {!mobile && user && !isAdmin ? (
-        <Pressable
-          onPress={() => setMenu(menu === 'account' ? null : 'account')}
-          className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center rounded-lg border`}
-          style={{
-            paddingHorizontal: compactDesktop ? 10 : 12,
-            backgroundColor: menu === 'account' ? colors.surface : colors.panel,
-            borderColor: menu === 'account' ? colors.primary : colors.border,
-            shadowColor: colors.primary,
-            shadowOpacity: menu === 'account' ? (darkMode ? 0.3 : 0.2) : 0,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: menu === 'account' ? 3 : 0,
-            cursor: 'pointer',
-          }}
-        >
-          <View className="mr-2 flex-row items-center justify-center rounded px-2 py-1" style={{ backgroundColor: `${colors.primary}1A` }}>
-            <Activity size={12} color={colors.primary} className="mr-1.5" />
-            <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.primary }}>
-              {selectedAccount?.type || 'Demo'}
-            </Text>
-          </View>
-          <ChevronDown
-            size={14}
-            color={colors.muted}
-            style={{
-              transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }],
-            }}
-          />
-        </Pressable>
-      ) : null}
-      {isAdmin ? (
-        <Pressable {...hoverProps('admin-dashboard')} onPress={goToAdminDashboard} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('admin-dashboard', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('admin-dashboard')}><LayoutDashboard size={20} color={iconColor('admin-dashboard')} /></View>
-        </Pressable>
-      ) : null}
-      <Pressable {...hoverProps('theme')} onPress={toggleTheme} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('theme', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
-        <View style={iconHoverStyle('theme')}>{darkMode ? <Sun size={20} color={iconColor('theme')} /> : <Moon size={20} color={iconColor('theme')} />}</View>
-      </Pressable>
-      {user ? (
-        <Pressable {...hoverProps('notifications')} onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('notifications', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('notifications')}><Bell size={20} color={iconColor('notifications')} /></View>
-          {unreadNotificationCount ? (
-            <Text className="absolute right-0 top-0 min-w-[18px] rounded-full bg-danger px-1 text-center text-[10px] font-medium text-white">
-              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-            </Text>
-          ) : null}
-        </Pressable>
-      ) : null}
-      {user ? (
-        <Pressable {...hoverProps('profile')} onPress={() => setMenu(menu === 'profile' ? null : 'profile')} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('profile', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('profile')}><UserRound size={20} color={iconColor('profile')} /></View>
-        </Pressable>
-      ) : null}
-        </>
-      ) : null}
+
+      {/* Modals & Dropdowns */}
       <Modal visible={Boolean(menu)} transparent animationType="fade" onRequestClose={() => setMenu(null)}>
         <Pressable className="flex-1" style={{ flex: 1 }} onPress={() => setMenu(null)}>
           <View style={{ flex: 1 }} pointerEvents="box-none">
-            {menu === 'account' ? (
-              <Pressable onPress={(event) => event.stopPropagation()}>
-                <DemoAccountMenu
-                  accounts={tradingAccounts}
-                  selectedAccount={selectedAccount}
-                  onSelectAccount={selectAccount}
-                  onClose={() => setMenu(null)}
-                  onOpenPanel={openSidePanel}
-                />
-              </Pressable>
-            ) : null}
             {menu === 'profile' ? (
-              <Pressable onPress={(event) => event.stopPropagation()}>
+              <Pressable
+                onPress={(e) => e.stopPropagation()}
+                style={{
+                  position: 'absolute',
+                  top: mobile ? 0 : 54,
+                  right: mobile ? 0 : 16,
+                  bottom: 0,
+                  width: mobile ? '100%' : 380,
+                }}
+              >
                 <ProfileMenu
                   onClose={() => setMenu(null)}
-                  onHoverIn={cancelProfileHoverClose}
                   onOpenPanel={openSidePanel}
                   selectedAccount={selectedAccount}
+                  accounts={tradingAccounts}
+                  onSelectAccount={selectAccount}
                   deposits={dashboard?.deposits || []}
                   transactions={dashboard?.transactions || transactions || []}
+                  topOffset={mobile ? 0 : 54}
                 />
               </Pressable>
             ) : null}
             {menu === 'notifications' ? (
-              <Pressable onPress={(event) => event.stopPropagation()}>
-                <NotificationMenu onClose={() => setMenu(null)} readIds={readNotificationIds} onReadAll={readAllNotifications} />
+              <Pressable onPress={(e) => e.stopPropagation()}>
+                <NotificationMenu
+                  onClose={() => setMenu(null)}
+                  readIds={readNotificationIds}
+                  onReadAll={readAllNotifications}
+                  leftRail={false}
+                />
               </Pressable>
             ) : null}
           </View>
         </Pressable>
       </Modal>
+
       <Modal visible={Boolean(sidePanel)} transparent animationType="fade" onRequestClose={() => setSidePanel(null)}>
         {sidePanel ? (
           <HeaderSidePanel
@@ -599,4 +633,3 @@ export default function TopAccountBar() {
     </View>
   );
 }
-

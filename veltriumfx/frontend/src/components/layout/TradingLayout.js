@@ -1,146 +1,65 @@
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
-import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { Briefcase, CandlestickChart, ListFilter } from 'lucide-react-native';
+import {
+  Briefcase,
+  CandlestickChart,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  ListFilter,
+  SlidersHorizontal,
+  TrendingUp,
+} from 'lucide-react-native';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
 import OrderPanel from '../order/OrderPanel';
 import SymbolPanel from '../market/SymbolPanel';
 import InsufficientFundsModal from '../order/InsufficientFundsModal';
 import OpenPositions from '../positions/OpenPositions';
-import AccountSummary from '../account/AccountSummary';
+import MarketOverviewWidget from '../market/MarketOverviewWidget';
+import AccountHealthGauge from '../account/AccountHealthGauge';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
 import BirthdayWidget from '../account/BirthdayWidget';
 import BirthdayModal from '../account/BirthdayModal';
 
-import ChartSymbolPanel from '../chart/ChartSymbolPanel';
-
-function OrderRail({ summary, user, showSummary = true, showAvailableMargin = true }) {
-  return (
-    <View className="h-full overflow-hidden" style={{ width: 300, maxWidth: '100%', overflow: 'hidden', height: '100%' }}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: 12, paddingBottom: 12 }}
-        style={{ flex: 1 }}
-      >
-        <BirthdayWidget />
-        <OrderPanel showAvailableMargin={showAvailableMargin} />
-        {showSummary ? <AccountSummary summary={summary} user={user} /> : null}
-      </ScrollView>
-    </View>
-  );
-}
-
-function MobileSymbolWatchlist({ onSelectSymbol }) {
-  const { prices, selectedSymbol, setSelectedSymbol } = useDemoTrading();
-  const { darkMode, colors } = useAppTheme();
-  const [search, setSearch] = useState('');
-  const [symbolTab, setSymbolTab] = useState('Popular');
-  const [symbolTabMenuOpen, setSymbolTabMenuOpen] = useState(false);
-  const [favoriteSymbols, setFavoriteSymbols] = useState([]);
-
-  const symbolTabs = ['Popular', 'Crypto CFD', 'Energies', 'Forex', 'Indices', 'Metals'];
-
-  const ui = useMemo(() => ({
-    background: darkMode ? '#0e1726' : colors.background,
-    menu: darkMode ? '#121e30' : colors.surface,
-    menuBorder: colors.border,
-    border: colors.border,
-    soft: darkMode ? 'rgba(212, 175, 55, 0.12)' : 'rgba(212, 175, 55, 0.15)',
-    control: colors.surface,
-    accent: colors.primary,
-    activeText: '#0B0B0B',
-    text: colors.text,
-    muted: colors.muted,
-    success: colors.success || '#10B981',
-    danger: colors.danger || '#EF4444',
-  }), [darkMode, colors]);
-
-  const toggleFavorite = (sym) => {
-    setFavoriteSymbols((prev) =>
-      prev.includes(sym) ? prev.filter((s) => s !== sym) : [...prev, sym]
-    );
-  };
-
-  const POPULAR_ORDER = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'EUR/CHF', 'EUR/JPY', 'XAU/USD', 'XAG/USD', 'WTI/USD'];
-  const getPopularIndex = (sym) => {
-    const s = String(sym || '').toUpperCase().trim();
-    const idx = POPULAR_ORDER.findIndex((p) => p.toUpperCase() === s || p.toUpperCase().replace('/', '') === s.replace('/', '') || (s.includes('WTI') && p.includes('WTI')));
-    return idx !== -1 ? idx : 999;
-  };
-
-  const filteredSymbols = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    const favSet = new Set(favoriteSymbols);
-    const items = prices.filter((item) => {
-      const matchesSearch = !query || item.symbol.toLowerCase().includes(query) || item.group?.toLowerCase().includes(query);
-      const itemGroup = String(item.group || '').toLowerCase();
-      const matchesTab = symbolTab === 'Favorites'
-        ? favSet.has(item.symbol)
-        : symbolTab === 'Popular'
-          ? item.popular
-          : symbolTab === 'Crypto CFD'
-            ? itemGroup.includes('crypto')
-            : itemGroup.includes(symbolTab.toLowerCase());
-      return matchesSearch && matchesTab;
-    });
-    if (symbolTab === 'Popular') {
-      return items.sort((a, b) => getPopularIndex(a.symbol) - getPopularIndex(b.symbol));
-    }
-    return items;
-  }, [prices, search, symbolTab, favoriteSymbols]);
-
-  return (
-    <ChartSymbolPanel
-      isInline={true}
-      currentSymbol={selectedSymbol}
-      favoriteSymbols={favoriteSymbols}
-      filteredSymbols={filteredSymbols}
-      onSearchChange={setSearch}
-      onSelectSymbol={(sym) => {
-        setSelectedSymbol(sym);
-        if (onSelectSymbol) onSelectSymbol(sym);
-      }}
-      onSelectTab={(tab) => {
-        setSymbolTab(tab);
-        setSymbolTabMenuOpen(false);
-      }}
-      onToggleFavorite={toggleFavorite}
-      search={search}
-      symbolTabs={symbolTabs}
-      symbolTab={symbolTab}
-      symbolTabMenuOpen={symbolTabMenuOpen}
-      setSymbolTabMenuOpen={setSymbolTabMenuOpen}
-      ui={ui}
-    />
-  );
-}
-
 export default function TradingLayout() {
   const params = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
-  const { colors } = useAppTheme();
+  const { darkMode, colors } = useAppTheme();
   const { user, isAdmin } = useAuth();
-  const { summary, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel, orderPanelVisible } = useDemoTrading();
-  const [chartFullscreen, setChartFullscreen] = useState(false);
-  const [mobileTab, setMobileTab] = useState('symbols');
+  const {
+    summary,
+    insufficientFundsVisible,
+    setInsufficientFundsVisible,
+    sidePanel,
+    setSidePanel,
+  } = useDemoTrading();
 
-  const desktop = width >= 1100;
-  const tablet = width >= 760;
+  const [chartFullscreen, setChartFullscreen] = useState(false);
+  const [mobileTab, setMobileTab] = useState('chart'); // 'markets', 'chart', 'positions'
+  const [leftWatchlistVisible, setLeftWatchlistVisible] = useState(true);
+  const [rightOrderPanelVisible, setRightOrderPanelVisible] = useState(true);
+
+  const desktop = width >= 1180;
+  const tablet = width >= 760 && width < 1180;
   const mobile = width < 760;
+
+  // Chart height calculations
   const chartAreaHeight = desktop
-    ? Math.max(560, Math.min(680, height - 150))
+    ? Math.max(520, Math.min(680, height - 220))
     : tablet
-      ? Math.max(540, Math.min(640, height - 170))
-      : Math.max(430, Math.min(560, height - 210));
+      ? Math.max(480, Math.min(620, height - 230))
+      : Math.max(380, Math.min(520, height - 240));
 
   useEffect(() => {
     if (params.panel === 'verification') setSidePanel('verification');
     if (params.panel === 'history') {
       setSidePanel('history');
-      if (mobile) setMobileTab('position');
+      if (mobile) setMobileTab('positions');
     }
     if (params.panel === 'settings') {
       const section = typeof params.section === 'string' && params.section ? params.section : 'profile';
@@ -148,99 +67,133 @@ export default function TradingLayout() {
     }
   }, [mobile, params.panel, params.section, setSidePanel]);
 
+  // Mobile View
   if (mobile) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
         {!chartFullscreen && <TopAccountBar />}
-        <View className="flex-1" style={{ paddingBottom: chartFullscreen ? 0 : 48 }}>
-          {mobileTab === 'symbols' ? (
+
+        <View className="flex-1" style={{ paddingBottom: chartFullscreen ? 0 : 52 }}>
+          {mobileTab === 'markets' ? (
             <View className="flex-1 p-2">
-              <MobileSymbolWatchlist onSelectSymbol={() => setMobileTab('trade')} />
+              <SymbolPanel onSelectSymbol={() => setMobileTab('chart')} />
             </View>
-          ) : mobileTab === 'position' ? (
-            <ScrollView className="flex-1 p-2" contentContainerStyle={{ paddingBottom: 16 }}>
-              <OpenPositions />
+          ) : mobileTab === 'positions' ? (
+            <ScrollView className="flex-1 p-2" contentContainerStyle={{ paddingBottom: 24 }}>
+              <OpenPositions showOverview={false} />
             </ScrollView>
           ) : (
-            <View className="flex-1 flex-col min-h-0">
-              <View className="flex-1 min-h-[340px] min-w-0">
-                <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              </View>
-              {!chartFullscreen && !sidePanel ? (
-                <View className="w-full shrink-0">
-                  <OrderPanel />
+            <View className="flex-1">
+              <ScrollView
+                className="flex-1"
+                contentContainerStyle={{ padding: 6, paddingBottom: 112 }}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={{ height: chartFullscreen ? undefined : chartAreaHeight }} className="overflow-hidden rounded-xl">
+                  <TradingChart
+                    isFullscreen={chartFullscreen}
+                    onFullscreenChange={setChartFullscreen}
+                    isAdmin={isAdmin}
+                  />
                 </View>
-              ) : null}
+                {!chartFullscreen ? (
+                  <View className="mt-2 gap-2.5">
+                    <MarketOverviewWidget />
+                    <AccountHealthGauge />
+                  </View>
+                ) : null}
+              </ScrollView>
+
+              {!chartFullscreen ? <OrderPanel /> : null}
             </View>
           )}
         </View>
 
+        {/* Mobile Bottom Navigation Bar */}
         {!chartFullscreen ? (
           <View
             className="flex-row items-center justify-around border-t"
             style={{
-              backgroundColor: colors.surface,
+              backgroundColor: colors.panel,
               borderColor: colors.border,
               position: 'fixed',
               bottom: 0,
               left: 0,
               right: 0,
-              height: 48,
+              height: 50,
               zIndex: 4000,
               elevation: 4000,
             }}
           >
+            {/* Markets Tab */}
             <Pressable
-              onPress={() => setMobileTab('symbols')}
-              className="items-center justify-center flex-1 py-0.5"
+              onPress={() => setMobileTab('markets')}
+              className="items-center justify-center flex-1 py-1"
             >
               <View
-                className="h-5 w-10 items-center justify-center rounded-full"
-                style={{ backgroundColor: mobileTab === 'symbols' ? `${colors.primary}25` : 'transparent' }}
+                className="items-center justify-center w-8 h-8 rounded-full"
+                style={{
+                  backgroundColor: mobileTab === 'markets' ? `${colors.primary}20` : 'transparent',
+                }}
               >
-                <ListFilter size={16} color={mobileTab === 'symbols' ? colors.primary : colors.muted} />
+                <ListFilter
+                  size={16}
+                  color={mobileTab === 'markets' ? colors.primary : colors.muted}
+                />
               </View>
               <Text
-                className="text-[9px] mt-0.5 font-medium"
-                style={{ color: mobileTab === 'symbols' ? colors.primary : colors.text }}
+                className="text-[9.5px] font-bold"
+                style={{ color: mobileTab === 'markets' ? colors.primary : colors.muted }}
               >
-                Symbols
+                Markets
               </Text>
             </Pressable>
 
+            {/* Chart Tab */}
             <Pressable
-              onPress={() => setMobileTab('trade')}
-              className="items-center justify-center flex-1 py-0.5"
+              onPress={() => setMobileTab('chart')}
+              className="items-center justify-center flex-1 py-1"
             >
               <View
-                className="h-5 w-10 items-center justify-center rounded-full"
-                style={{ backgroundColor: mobileTab === 'trade' ? `${colors.primary}25` : 'transparent' }}
+                className="items-center justify-center w-8 h-8 rounded-full"
+                style={{
+                  backgroundColor: mobileTab === 'chart' ? `${colors.primary}20` : 'transparent',
+                }}
               >
-                <CandlestickChart size={16} color={mobileTab === 'trade' ? colors.primary : colors.muted} />
+                <CandlestickChart
+                  size={16}
+                  color={mobileTab === 'chart' ? colors.primary : colors.muted}
+                />
               </View>
               <Text
-                className="text-[9px] mt-0.5 font-medium"
-                style={{ color: mobileTab === 'trade' ? colors.primary : colors.text }}
+                className="text-[9.5px] font-bold"
+                style={{ color: mobileTab === 'chart' ? colors.primary : colors.muted }}
               >
-                Trade
+                Chart
               </Text>
             </Pressable>
 
+            {/* Positions Tab */}
             <Pressable
-              onPress={() => setMobileTab('position')}
-              className="items-center justify-center flex-1 py-0.5"
+              onPress={() => setMobileTab('positions')}
+              className="items-center justify-center flex-1 py-1"
             >
               <View
-                className="h-5 w-10 items-center justify-center rounded-full"
-                style={{ backgroundColor: mobileTab === 'position' ? `${colors.primary}25` : 'transparent' }}
+                className="items-center justify-center w-8 h-8 rounded-full"
+                style={{
+                  backgroundColor: mobileTab === 'positions' ? `${colors.primary}20` : 'transparent',
+                }}
               >
-                <Briefcase size={16} color={mobileTab === 'position' ? colors.primary : colors.muted} />
+                <Briefcase
+                  size={16}
+                  color={mobileTab === 'positions' ? colors.primary : colors.muted}
+                />
               </View>
               <Text
-                className="text-[9px] mt-0.5 font-medium"
-                style={{ color: mobileTab === 'position' ? colors.primary : colors.text }}
+                className="text-[9.5px] font-bold"
+                style={{ color: mobileTab === 'positions' ? colors.primary : colors.muted }}
               >
-                Position
+                Positions
               </Text>
             </Pressable>
           </View>
@@ -255,40 +208,58 @@ export default function TradingLayout() {
     );
   }
 
+  // Desktop & Tablet 3-Column Responsive Layout
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       {!chartFullscreen && <TopAccountBar />}
-      <ScrollView
-        scrollEnabled={!chartFullscreen}
-        keyboardShouldPersistTaps="handled"
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, padding: chartFullscreen ? 0 : (mobile ? 6 : 12), paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 24) }}
-      >
-        <View
-          className={chartFullscreen ? 'flex-1' : (desktop ? 'flex-row gap-3 overflow-hidden' : mobile ? 'gap-1.5 overflow-hidden' : 'gap-3 overflow-hidden')}
-          style={{ height: chartFullscreen ? undefined : chartAreaHeight, overflow: chartFullscreen ? 'visible' : 'hidden' }}
-        >
-          {desktop ? (
-            <>
-              <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              {!chartFullscreen && orderPanelVisible && (
-                <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} />
-              )}
-            </>
-          ) : (
-            <>
-              <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              {!chartFullscreen && (
-                <View className={tablet ? 'flex-row gap-3' : 'gap-1.5'}>
-                  {!mobile && orderPanelVisible ? <OrderRail summary={summary} user={user} /> : null}
-                </View>
-              )}
-            </>
-          )}
+
+      {/* Main 3-Column Workspace */}
+      <View className="flex-row flex-1 min-h-0 p-2 gap-2.5">
+        {/* Left Column: Market Watch Panel (Desktop) */}
+        {!chartFullscreen && desktop && leftWatchlistVisible ? (
+          <View className="h-full w-[290px] xl:w-[310px] shrink-0">
+            <SymbolPanel />
+          </View>
+        ) : null}
+
+        {/* Center Column: Trading Chart + Bottom Analytics & Positions */}
+        <View className="flex-1 h-full min-w-0 min-h-0">
+          <ScrollView
+            scrollEnabled={!chartFullscreen}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            className="flex-1"
+            contentContainerStyle={{ paddingBottom: 24 }}
+          >
+            {/* Main Candlestick Chart Area */}
+            <View
+              className="overflow-hidden rounded-xl border"
+              style={{
+                height: chartFullscreen ? '100%' : chartAreaHeight,
+                borderColor: colors.border,
+                backgroundColor: colors.panel,
+              }}
+            >
+              <TradingChart
+                isFullscreen={chartFullscreen}
+                onFullscreenChange={setChartFullscreen}
+                isAdmin={isAdmin}
+              />
+            </View>
+
+            {/* Bottom Section: Market Overview Sentiment + Account Health Gauge + Positions/Orders/History */}
+            {!chartFullscreen ? <OpenPositions /> : null}
+          </ScrollView>
         </View>
-        {!chartFullscreen ? <OpenPositions /> : null}
-      </ScrollView>
-      {mobile && !chartFullscreen && !sidePanel ? <OrderPanel /> : null}
+
+        {/* Right Column: Order Ticket Panel (Desktop & Tablet) */}
+        {!chartFullscreen && rightOrderPanelVisible ? (
+          <View className="h-full w-[295px] xl:w-[320px] shrink-0">
+            <OrderPanel />
+          </View>
+        ) : null}
+      </View>
+
       <InsufficientFundsModal
         visible={insufficientFundsVisible}
         onClose={() => setInsufficientFundsVisible(false)}

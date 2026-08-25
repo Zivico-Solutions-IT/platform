@@ -548,76 +548,72 @@ export default function LoginScreen() {
 
   // ─── Login View ───
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: darkMode ? '#041511' : '#F4FBF9' }}>
-      <View className="relative min-h-full items-center justify-center overflow-hidden px-5 py-10">
-        <View pointerEvents="none" className="absolute -right-24 -top-24 h-80 w-80 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(0,103,79,0.24)' : 'rgba(0,103,79,0.12)' }} />
-        <View pointerEvents="none" className="absolute -bottom-28 -left-24 h-96 w-96 rounded-full" style={{ backgroundColor: darkMode ? 'rgba(211,211,211,0.05)' : 'rgba(0,103,79,0.07)' }} />
-        <View pointerEvents="none" className="absolute left-[12%] top-[12%] h-20 w-20 rounded-[24px] border" style={{ borderColor: darkMode ? 'rgba(211,211,211,0.10)' : 'rgba(0,103,79,0.10)', transform: [{ rotate: '20deg' }] }} />
-        <View pointerEvents="none" className="absolute bottom-[16%] right-[14%] h-14 w-14 rounded-full border" style={{ borderColor: darkMode ? 'rgba(211,211,211,0.12)' : 'rgba(0,103,79,0.12)' }} />
+    <ScrollView className="flex-1" style={{ backgroundColor: darkMode ? '#071C18' : '#F3F8F7' }}>
+      <View className="min-h-full items-center justify-center px-3 py-3 sm:px-5 sm:py-8">
         <View 
-          className="relative w-full max-w-md rounded-[30px] px-7 py-10" 
-          style={{ 
-            backgroundColor: darkMode ? '#0B2521' : 'rgba(255,255,255,0.96)', 
-            borderColor: darkMode ? 'rgba(73, 181, 154, 0.42)' : 'rgba(0, 103, 79, 0.20)', 
+          className="w-full max-w-md rounded-[18px] px-6 py-7 sm:px-8 sm:py-9"
+          style={{
+            backgroundColor: darkMode ? '#0B2521' : '#FFFFFF',
+            borderColor: darkMode ? '#285E52' : '#D7E6E2',
             borderWidth: 1,
-            shadowColor: darkMode ? '#000' : '#0B6B59',
-            shadowOffset: { width: 0, height: 16 },
-            shadowOpacity: darkMode ? 0.42 : 0.15,
-            shadowRadius: 36,
-            elevation: 24,
+            shadowColor: '#163D34',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: darkMode ? 0.3 : 0.08,
+            shadowRadius: 14,
+            elevation: 8,
           }}
         >
-        <View pointerEvents="none" className="absolute left-0 right-0 top-0 h-1.5" style={{ backgroundColor: '#00674F' }} />
-
-        {/* Logo Badge */}
-        <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-          <View className="rounded-[18px] px-5 py-2.5" style={{ backgroundColor: darkMode ? '#102F29' : '#FFFFFF', borderColor: darkMode ? '#2D6D5F' : '#B9DBD2', borderWidth: 1, shadowColor: '#075C4C', shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } }}>
-            <NovaLogo dark={darkMode} width={130} height={38} />
-          </View>
+        {/* Logo */}
+        <View className="items-center">
+          <NovaLogo dark={darkMode} width={145} height={44} />
         </View>
 
         {/* Header */}
-        <View className="mt-6 mb-2 items-center">
-          <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(30, 164, 137, 0.16)' : '#E5F2EE', borderColor: darkMode ? '#246758' : '#B9DED4', borderWidth: 1 }}>
+        <View className="mt-3 items-center">
+          <View className="mb-4 rounded-full px-4 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(30, 164, 137, 0.16)' : '#E9F5F1' }}>
             <Text className="text-[9px] font-bold uppercase tracking-[2px]" style={{ color: darkMode ? '#71D8C2' : '#00674F' }}>VeltriumFX Secure Portal</Text>
           </View>
           <Text className="text-center text-[26px] font-bold" style={{ color: colors.text }}>
-            Welcome Back
+            Welcome back
           </Text>
-          <Text className="mt-2 text-center text-[13px] font-medium" style={labelStyle}>
+          <Text className="mt-1.5 text-center text-[13px]" style={labelStyle}>
             Trade smarter. Access your account securely.
           </Text>
         </View>
 
-        <View className="mt-7">
+        <View className="mt-6">
 
           {/* Email Field */}
           <View className="mb-4">
-            <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>Email</Text>
-            <TextInput
-              className="w-full rounded-xl border px-4 py-3 text-[14px]"
-              style={inputStyle}
-              placeholder="example@gmail.com"
-              placeholderTextColor="#9CA3AF"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              autoComplete="email"
-              textContentType="username"
-              importantForAutofill="yes"
-              value={form.email}
-              onChangeText={(email) => setForm((value) => ({ ...value, email }))}
-            />
+            <Text className="mb-1.5 text-[11px] font-semibold" style={{ color: colors.text }}>Email address</Text>
+            <View className="flex-row items-center rounded-lg border px-3" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: darkMode ? colors.border : '#9CC9BD' }}>
+              <Mail size={16} color={darkMode ? colors.muted : '#178267'} />
+              <TextInput
+                className="flex-1 px-3 py-3 text-[13px]"
+                style={{ color: colors.text, caretColor: colors.text, outlineStyle: 'none' }}
+                placeholder="Enter your email address"
+                placeholderTextColor="#9CA3AF"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                autoComplete="email"
+                textContentType="username"
+                importantForAutofill="yes"
+                value={form.email}
+                onChangeText={(email) => setForm((value) => ({ ...value, email }))}
+              />
+            </View>
           </View>
 
           {/* Password Field */}
           <View className="mb-5">
-            <Text className="mb-1.5 text-[11px] font-bold uppercase tracking-wider" style={labelStyle}>Password</Text>
-            <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: inputStyle.borderColor }}>
+            <Text className="mb-1.5 text-[11px] font-semibold" style={{ color: colors.text }}>Password</Text>
+            <View className="flex-row items-center rounded-lg border px-3" style={{ backgroundColor: inputStyle.backgroundColor, borderColor: darkMode ? colors.border : '#9CC9BD' }}>
+              <LockKeyhole size={16} color={darkMode ? colors.muted : '#178267'} />
               <TextInput
-                className="flex-1 px-4 py-3 text-[14px]"
+                className="flex-1 px-3 py-3 text-[13px]"
                 style={{ color: colors.text, ...(Platform.OS === 'web' && !showPassword ? { WebkitTextSecurity: 'disc' } : {}) }}
-                placeholder="****"
+                placeholder="Enter your password"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
@@ -630,7 +626,7 @@ export default function LoginScreen() {
               />
               <TouchableOpacity
                 onPress={() => setShowPassword((value) => !value)}
-                className="px-3 py-2"
+                className="py-2 pl-3"
                 accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
@@ -656,12 +652,12 @@ export default function LoginScreen() {
                   <Text className="text-[10px] font-bold text-white">✓</Text>
                 ) : null}
               </View>
-              <Text className="text-sm" style={labelStyle}>Remember me</Text>
+              <Text className="text-[12px]" style={labelStyle}>Remember me</Text>
             </TouchableOpacity>
 
             {!isCrmHost() && (
               <TouchableOpacity onPress={() => setView('forgot-email')}>
-                <Text className="text-sm font-medium" style={{ color: linkColor }}>
+                <Text className="text-[12px] font-semibold" style={{ color: linkColor }}>
                   Forgot password?
                 </Text>
               </TouchableOpacity>
@@ -677,8 +673,8 @@ export default function LoginScreen() {
           <TouchableOpacity
             onPress={submit}
             disabled={loading}
-            className="w-full items-center rounded-xl py-3 shadow-md"
-            style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#00674F', shadowColor: '#00674F', shadowOpacity: 0.24, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }}
+            className="w-full items-center rounded-lg py-3"
+            style={{ opacity: loading ? 0.7 : 1, backgroundColor: '#007A55', shadowColor: '#00674F', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }}
           >
             <Text className="text-sm font-semibold text-white">
               {loading ? 'Logging in...' : 'Login'}
@@ -688,8 +684,8 @@ export default function LoginScreen() {
 
         {!isCrmHost() && (
           <Link href="/register" asChild>
-            <Pressable className="mt-7 rounded-xl border px-4 py-3" style={{ borderColor: darkMode ? '#315D53' : '#D3D3D3', backgroundColor: darkMode ? '#102F29' : '#F7FAF9' }}>
-              <Text className="text-center text-sm" style={labelStyle}>
+            <Pressable className="mt-4 rounded-lg border px-4 py-3" style={{ borderColor: darkMode ? '#315D53' : '#DDE9E6', backgroundColor: darkMode ? '#102F29' : '#FFFFFF' }}>
+              <Text className="text-center text-[11px]" style={labelStyle}>
                 Don&apos;t have an account?{' '}
                 <Text className="font-semibold" style={{ color: linkColor }}>Sign up</Text>
               </Text>

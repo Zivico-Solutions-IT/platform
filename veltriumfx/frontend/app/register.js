@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { Platform, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity, FlatList } from 'react-native';
+import { FlatList, Image, Platform, Pressable, ScrollView, Text, View, TextInput, TouchableOpacity } from 'react-native';
 import { useAuth } from '../src/hooks/useAuth';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import { Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react-native';
@@ -28,11 +28,20 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [phoneDropdownOpen, setPhoneDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const update = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
   const inputBackground = darkMode ? colors.surface : '#ffffff';
   const placeholderColor = darkMode ? colors.muted : '#9CA3AF';
+  const CountryFlag = ({ code, width = 22, height = 15 }) => (
+    <Image
+      source={{ uri: `https://flagcdn.com/w40/${String(code || '').toLowerCase()}.png` }}
+      style={{ width, height, borderRadius: 2 }}
+      resizeMode="cover"
+      accessibilityLabel={`${code} flag`}
+    />
+  );
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -355,6 +364,7 @@ export default function RegisterScreen() {
       phone: formatPhoneForCountry(country.dialCode, country)
     }));
     setDropdownOpen(false);
+    setPhoneDropdownOpen(false);
     setSearchQuery('');
   };
 
@@ -519,17 +529,13 @@ export default function RegisterScreen() {
         <View pointerEvents="none" className="absolute left-[12%] top-[10%] h-20 w-20 rounded-[24px] border" style={{ borderColor: darkMode ? 'rgba(211,211,211,0.10)' : 'rgba(0,103,79,0.10)', transform: [{ rotate: '20deg' }] }} />
         <View pointerEvents="none" className="absolute bottom-[12%] right-[14%] h-14 w-14 rounded-full border" style={{ borderColor: darkMode ? 'rgba(211,211,211,0.12)' : 'rgba(0,103,79,0.12)' }} />
         <View className="relative w-full max-w-lg rounded-[30px] px-6 py-8" style={{ backgroundColor: darkMode ? '#0B2521' : 'rgba(255,255,255,0.97)', borderColor: darkMode ? '#315D53' : '#D3D3D3', borderWidth: 1, shadowColor: '#00674F', shadowOffset: { width: 0, height: 16 }, shadowOpacity: darkMode ? 0.4 : 0.14, shadowRadius: 36, elevation: 24 }}>
-          <View pointerEvents="none" className="absolute left-0 right-0 top-0 h-1.5" style={{ backgroundColor: '#00674F' }} />
-
-          {/* Logo Badge */}
-          <View className="absolute -top-7 left-0 right-0 z-10 items-center">
-            <View className="rounded-[18px] px-5 py-2.5 shadow-md" style={{ backgroundColor: darkMode ? '#102F29' : '#FFFFFF', borderColor: darkMode ? '#315D53' : '#D3D3D3', borderWidth: 1 }}>
-              <NovaLogo dark={darkMode} width={130} height={38} />
-            </View>
+          {/* Logo */}
+          <View className="items-center">
+            <NovaLogo dark={darkMode} width={145} height={44} />
           </View>
 
           {/* Header */}
-          <View className="mt-7 items-center">
+          <View className="mt-3 items-center">
             <View className="mb-3 rounded-full px-3 py-1.5" style={{ backgroundColor: darkMode ? 'rgba(0,103,79,0.28)' : '#E5F2EE', borderColor: darkMode ? '#246758' : '#B9DED4', borderWidth: 1 }}>
               <Text className="text-[9px] font-bold uppercase tracking-[2px]" style={{ color: darkMode ? '#71D8C2' : '#00674F' }}>Create your trading account</Text>
             </View>
@@ -606,9 +612,12 @@ export default function RegisterScreen() {
                   className="rounded-lg border px-4 py-2.5 flex-row justify-between items-center"
                   style={inputStyle}
                 >
-                  <Text className="text-sm" style={{ color: form.country ? colors.text : colors.muted }}>
-                    {form.country || "Select your country"}
-                  </Text>
+                  <View className="flex-row items-center gap-2">
+                    {selectedCountry ? <CountryFlag code={selectedCountry.code} /> : null}
+                    <Text className="text-sm" style={{ color: form.country ? colors.text : colors.muted }}>
+                      {form.country || "Select your country"}
+                    </Text>
+                  </View>
                   <ChevronDown size={18} color={colors.muted} />
                 </TouchableOpacity>
 
@@ -642,7 +651,10 @@ export default function RegisterScreen() {
                           className="flex-row justify-between items-center px-3 py-2 border-b"
                           style={{ borderColor: colors.border }}
                         >
-                          <Text className="text-sm" style={{ color: colors.text }}>{item.name}</Text>
+                          <View className="flex-row items-center gap-2">
+                            <CountryFlag code={item.code} />
+                            <Text className="text-sm" style={{ color: colors.text }}>{item.name}</Text>
+                          </View>
                           <Text className="text-xs" style={labelStyle}>{item.dialCode}</Text>
                         </TouchableOpacity>
                       )}
@@ -656,18 +668,80 @@ export default function RegisterScreen() {
             </View>
 
             {/* Phone */}
-            <View className="mb-4">
+            <View className="mb-4 z-20">
               <Text className="mb-1.5 text-xs font-medium" style={labelStyle}>Phone *</Text>
-              <TextInput
-                keyboardType="phone-pad"
-                maxLength={20}
-                value={form.phone}
-                onChangeText={handlePhoneChange}
-                placeholder="Enter phone number"
-                placeholderTextColor={placeholderColor}
-                className="rounded-lg border px-4 py-2.5 text-sm"
-                style={inputStyle}
-              />
+              <View className="flex-row items-center rounded-lg border" style={{ backgroundColor: inputBackground, borderColor: colors.border }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setPhoneDropdownOpen((open) => !open);
+                    setDropdownOpen(false);
+                    setSearchQuery('');
+                  }}
+                  className="flex-row items-center self-stretch border-r px-3"
+                  style={{ borderColor: colors.border }}
+                >
+                  {selectedCountry ? (
+                    <CountryFlag code={selectedCountry.code} width={24} height={16} />
+                  ) : (
+                    <Text className="text-lg leading-5">🌐</Text>
+                  )}
+                  <ChevronDown size={14} color={colors.muted} style={{ marginLeft: 6 }} />
+                </TouchableOpacity>
+                <TextInput
+                  keyboardType="phone-pad"
+                  maxLength={20}
+                  value={form.phone}
+                  onChangeText={handlePhoneChange}
+                  placeholder="Enter phone number"
+                  placeholderTextColor={placeholderColor}
+                  className="flex-1 px-4 py-2.5 text-sm"
+                  style={{ color: colors.text, outlineStyle: 'none' }}
+                />
+              </View>
+
+              {phoneDropdownOpen && (
+                <View className="absolute left-0 right-0 top-full mt-1 max-h-80 overflow-hidden rounded-xl border shadow-xl" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+                  <View className="p-2" style={{ borderBottomColor: colors.border, borderBottomWidth: 1 }}>
+                    <View className="flex-row items-center rounded-lg border px-3" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+                      <Search size={17} color={colors.muted} />
+                      <TextInput
+                        className="flex-1 px-2 py-2.5 text-sm"
+                        style={{ color: colors.text, outlineStyle: 'none' }}
+                        placeholder="Search country..."
+                        placeholderTextColor={placeholderColor}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoFocus
+                      />
+                      {searchQuery ? (
+                        <TouchableOpacity onPress={() => setSearchQuery('')}>
+                          <X size={15} color={colors.muted} />
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                  </View>
+                  <FlatList
+                    data={filteredCountries}
+                    keyExtractor={(item) => `phone-${item.code}`}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        onPress={() => handleCountrySelect(item)}
+                        className="flex-row items-center justify-between border-b px-4 py-3"
+                        style={{ borderColor: colors.border }}
+                      >
+                        <View className="flex-row items-center gap-3">
+                          <CountryFlag code={item.code} width={24} height={16} />
+                          <Text className="text-sm font-medium" style={{ color: colors.text }}>{item.name}</Text>
+                        </View>
+                        <Text className="text-sm font-semibold" style={{ color: linkColor }}>{item.dialCode}</Text>
+                      </TouchableOpacity>
+                    )}
+                    showsVerticalScrollIndicator
+                    className="max-h-64"
+                    keyboardShouldPersistTaps="handled"
+                  />
+                </View>
+              )}
             </View>
 
             {/* Password */}

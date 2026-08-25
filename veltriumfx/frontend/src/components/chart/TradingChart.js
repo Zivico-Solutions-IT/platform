@@ -17,6 +17,8 @@ import {
   Trash2,
   TrendingUp,
   X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react-native';
 import ChartGraphSettingsPanel from './ChartGraphSettingsPanel';
 import ChartSymbolPanel from './ChartSymbolPanel';
@@ -258,7 +260,7 @@ const chartUiFromTheme = (colors) => ({
   muted: colors.muted,
   text: colors.text,
   accent: colors.primary,
-  activeText: '#0B0B0B',
+  activeText: '#FFFFFF',
   success: TRADING_CHART_TEAL,
   danger: colors.danger,
   grid: colors.chartGrid,
@@ -889,6 +891,20 @@ function receiveLiveUpdate(event) {
   if (payload && payload.type === 'live-candle') applyLiveCandle(payload.candle);
   if (payload && payload.type === 'older-candles') mergePrependCandles(payload.candles);
   if (payload && payload.type === 'reset-view') setDefaultVisibleRange();
+  if (payload && payload.type === 'zoom-in') {
+    const range = chart.timeScale().getVisibleLogicalRange();
+    if (range) {
+      const delta = (range.to - range.from) * 0.15;
+      chart.timeScale().setVisibleLogicalRange({ from: range.from + delta, to: range.to - delta });
+    }
+  }
+  if (payload && payload.type === 'zoom-out') {
+    const range = chart.timeScale().getVisibleLogicalRange();
+    if (range) {
+      const delta = (range.to - range.from) * 0.2;
+      chart.timeScale().setVisibleLogicalRange({ from: range.from - delta, to: range.to + delta });
+    }
+  }
 }
 window.addEventListener('message', receiveLiveUpdate);
 document.addEventListener('message', receiveLiveUpdate);
@@ -917,7 +933,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const chartFullscreen = isFullscreen !== undefined ? isFullscreen : localFullscreen;
   const [chartMenuOpen, setChartMenuOpen] = useState(false);
   const [timeframeMenuOpen, setTimeframeMenuOpen] = useState(false);
-  const [symbolMenuOpen, setSymbolMenuOpen] = useState(!mobile);
+  const [symbolMenuOpen, setSymbolMenuOpen] = useState(false);
   const chartCardInset = 10;
   const chartListGap = 10;
   const symbolPanelWidth = mobile ? Math.min(width - 20, 360) : compactToolbar ? 320 : 340;
@@ -976,7 +992,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
     williamsPeriod: 14,
     ema50: false,
     bollinger: false,
-    volume: false,
+    volume: true,
     defaultLineWidth: 1,
     grid: true,
     crosshair: true,
@@ -1064,6 +1080,18 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
       const next = Math.round((Number(current || 0.01) + delta) * 100) / 100;
       return Math.min(100, Math.max(0.01, next));
     });
+  }, []);
+
+  const handleZoom = useCallback((direction) => {
+    const message = JSON.stringify({ type: direction > 0 ? 'zoom-in' : 'zoom-out' });
+    if (Platform.OS === 'web') {
+      iframeRef.current?.contentWindow?.postMessage(message, '*');
+      return;
+    }
+    webViewRef.current?.injectJavaScript(`
+      window.dispatchEvent(new MessageEvent('message', { data: ${JSON.stringify(message)} }));
+      true;
+    `);
   }, []);
 
   useEffect(() => {
@@ -1572,6 +1600,12 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                 <IconButton active={drawingOpen || Boolean(activeDrawingTool)} ui={ui} size={22} onPress={toggleDrawingMenu}>
                   <LineChart size={12} color={drawingOpen || activeDrawingTool ? ui.activeText : ui.text} />
                 </IconButton>
+                <IconButton bare ui={ui} size={22} onPress={() => handleZoom(1)}>
+                  <ZoomIn size={12} color={ui.text} />
+                </IconButton>
+                <IconButton bare ui={ui} size={22} onPress={() => handleZoom(-1)}>
+                  <ZoomOut size={12} color={ui.text} />
+                </IconButton>
               </View>
 
               <View className="h-3 w-px" style={{ backgroundColor: ui.border, flexShrink: 0 }} />
@@ -1649,6 +1683,12 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                   </IconButton>
                   <IconButton active={drawingOpen || Boolean(activeDrawingTool)} bare ui={ui} size={iconButtonSize} onPress={toggleDrawingMenu}>
                     <LineChart size={compactToolbar ? 14 : 16} color={drawingOpen || activeDrawingTool ? ui.accent : ui.text} />
+                  </IconButton>
+                  <IconButton bare ui={ui} size={iconButtonSize} onPress={() => handleZoom(1)}>
+                    <ZoomIn size={compactToolbar ? 14 : 16} color={ui.text} />
+                  </IconButton>
+                  <IconButton bare ui={ui} size={iconButtonSize} onPress={() => handleZoom(-1)}>
+                    <ZoomOut size={compactToolbar ? 14 : 16} color={ui.text} />
                   </IconButton>
                 </View>
               </View>

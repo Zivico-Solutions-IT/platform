@@ -37,7 +37,7 @@ function NotificationItem({ Icon, title, body, time, tone, colors, read, onPress
   );
 }
 
-export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
+export default function NotificationMenu({ onClose, readIds = [], onReadAll, leftRail = false }) {
   const { colors } = useAppTheme();
   const { user, isAdmin } = useAuth();
   const { transactions, setSidePanel } = useDemoTrading();
@@ -175,8 +175,9 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
       style={{
         width: isMobile ? 310 : 360,
         maxWidth: '92%',
-        top: isMobile ? 54 : 74,
-        right: 12,
+        top: isMobile ? 54 : leftRail ? 120 : 74,
+        right: leftRail ? undefined : 12,
+        left: leftRail ? 64 : undefined,
         backgroundColor: colors.panel,
         borderColor: colors.border,
         shadowColor: '#000',

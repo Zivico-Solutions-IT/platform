@@ -5545,3 +5545,29 @@ Error: Error
     at async ReferralReward.findAll (D:\platform\veltriumfx\node_modules\sequelize\lib\model.js:1140:21)
     at async exports.referralRewards (D:\platform\veltriumfx\src\controllers\adminController.js:1986:21)
 --------------------------------------------------
+
+Date: 2026-08-24T10:07:29.558Z
+Method: POST
+URL: /api/auth/login
+Body: {
+  "email": "kalanichamodya8@gmail.com",
+  "password": "Kalani12"
+}
+Error: SequelizeHostNotReachableError: connect EHOSTUNREACH 187.127.213.250:3306
+    at ConnectionManager.connect (C:\Users\MSI\platform\veltriumfx\node_modules\sequelize\lib\dialects\mysql\connection-manager.js:98:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConnectionManager._connect (C:\Users\MSI\platform\veltriumfx\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:222:24)
+--------------------------------------------------
+
+Date: 2026-08-24T10:07:30.610Z
+Method: POST
+URL: /api/auth/login
+Body: {
+  "email": "kalanichamodya8@gmail.com",
+  "password": "Kalani12"
+}
+Error: SequelizeHostNotReachableError: connect EHOSTUNREACH 187.127.213.250:3306
+    at ConnectionManager.connect (C:\Users\MSI\platform\veltriumfx\node_modules\sequelize\lib\dialects\mysql\connection-manager.js:98:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ConnectionManager._connect (C:\Users\MSI\platform\veltriumfx\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:222:24)
+--------------------------------------------------
