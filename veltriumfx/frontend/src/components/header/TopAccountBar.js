@@ -36,6 +36,20 @@ import ProfileMenu from './ProfileMenu';
 import NotificationMenu from './NotificationMenu';
 import SymbolFlagIcon from '../market/SymbolFlagIcon';
 
+function HeaderMetric({ icon: Icon, label, value, accent, colors, valueColor }) {
+  return (
+    <View className="flex-row items-center px-2 py-1" style={{ minWidth: 112 }}>
+      <View className="h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}20` }}>
+        <Icon size={19} color={accent} strokeWidth={2.2} />
+      </View>
+      <View className="ml-2 min-w-0">
+        <Text className="text-[8.5px] font-bold uppercase tracking-wider" numberOfLines={1} style={{ color: colors.muted }}>{label}</Text>
+        <Text className="mt-0.5 text-xs font-bold" numberOfLines={1} style={{ color: valueColor || colors.text }}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
 export default function TopAccountBar() {
   const { width } = useWindowDimensions();
   const {
@@ -311,34 +325,29 @@ export default function TopAccountBar() {
             {/* Active Pair Chip (Desktop/Tablet) */}
             {currentSymbol ? (
               <View
-                className="flex-row items-center px-3 py-1.5 rounded-xl border gap-2.5 shrink-0"
+                className="flex-row items-center px-3 py-1 gap-2.5 shrink-0"
                 style={{
-                  backgroundColor: pillBg,
-                  borderColor: pillBorder,
+                  minHeight: 48,
+                  borderLeftWidth: 1,
+                  borderRightWidth: 1,
+                  borderColor: colors.border,
                 }}
               >
-                <SymbolFlagIcon symbol={currentSymbol.symbol} size={20} />
+                <SymbolFlagIcon symbol={currentSymbol.symbol} size={32} />
                 <View>
-                  <Text className="text-xs font-bold" style={{ color: colors.text }}>
-                    {currentSymbol.symbol}
-                  </Text>
-                  <View className="flex-row items-center gap-1.5 mt-0.5">
-                    <Text className="text-xs font-bold" style={{ color: changeColor }}>
+                  <View className="flex-row items-center gap-1">
+                    <Text className="text-sm font-bold" style={{ color: colors.text }}>
+                      {currentSymbol.symbol}
+                    </Text>
+                    <ChevronDown size={13} color={colors.muted} strokeWidth={2.2} />
+                  </View>
+                  <View className="mt-0.5 flex-row items-center gap-2">
+                    <Text className="text-sm font-bold" style={{ color: changeColor }}>
                       {quote(currentSymbol.price || currentSymbol.bid, currentSymbol.decimals)}
                     </Text>
-                    <View
-                      className="flex-row items-center px-1 rounded"
-                      style={{ backgroundColor: `${changeColor}18` }}
-                    >
-                      {isPositiveChange ? (
-                        <TrendingUp size={9} color={changeColor} style={{ marginRight: 2 }} />
-                      ) : (
-                        <TrendingDown size={9} color={changeColor} style={{ marginRight: 2 }} />
-                      )}
-                      <Text className="text-[9px] font-bold" style={{ color: changeColor }}>
-                        {percent(currentSymbol.change)}
-                      </Text>
-                    </View>
+                    <Text className="text-[10px] font-bold" style={{ color: changeColor }}>
+                      {percent(currentSymbol.change)}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -353,48 +362,19 @@ export default function TopAccountBar() {
                 className="flex-1 min-w-0"
               >
                 {/* Balance */}
-                <View
-                  className="px-3 py-1.5 rounded-xl border min-w-[95px]"
-                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
-                >
-                  <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
-                    Balance
-                  </Text>
-                  <Text className="text-xs font-bold" style={{ color: colors.text }}>
-                    ${money(summaryBalance)}
-                  </Text>
-                </View>
+                <HeaderMetric icon={Wallet} label="Balance" value={`$${money(summaryBalance)}`} accent="#3b82f6" colors={colors} />
 
                 {/* Equity */}
-                <View
-                  className="px-3 py-1.5 rounded-xl border min-w-[95px]"
-                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
-                >
-                  <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
-                    Equity
-                  </Text>
-                  <Text className="text-xs font-bold" style={{ color: colors.text }}>
-                    ${money(summaryEquity)}
-                  </Text>
-                </View>
+                <HeaderMetric icon={Shield} label="Equity" value={`$${money(summaryEquity)}`} accent="#8b5cf6" colors={colors} />
 
                 {/* Free Margin */}
-                <View
-                  className="px-3 py-1.5 rounded-xl border min-w-[95px]"
-                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
-                >
-                  <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
-                    Free Margin
-                  </Text>
-                  <Text className="text-xs font-bold" style={{ color: colors.success || '#10B981' }}>
-                    ${money(summaryFreeFunds)}
-                  </Text>
-                </View>
+                <HeaderMetric icon={Layers} label="Free Margin" value={`$${money(summaryFreeFunds)}`} accent="#f5a623" colors={colors} />
 
                 {/* Margin Level */}
+                <HeaderMetric icon={Activity} label="Margin Level" value={summaryMargin === 0 ? '—' : `${summaryMarginLevel.toFixed(1)}%`} accent="#22b8cf" colors={colors} />
                 <View
                   className="px-3 py-1.5 rounded-xl border min-w-[85px]"
-                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+                  style={{ display: 'none', backgroundColor: pillBg, borderColor: pillBorder }}
                 >
                   <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
                     Margin Level
@@ -405,9 +385,10 @@ export default function TopAccountBar() {
                 </View>
 
                 {/* Net Profit */}
+                <HeaderMetric icon={TrendingUp} label="Net Profit" value={summaryNetProfit > 0 ? `+$${money(summaryNetProfit)}` : `$${money(summaryNetProfit)}`} accent="#52c41a" colors={colors} valueColor={summaryNetProfit > 0 ? (colors.success || '#10B981') : summaryNetProfit < 0 ? (colors.danger || '#EF4444') : colors.text} />
                 <View
                   className="px-3 py-1.5 rounded-xl border min-w-[85px]"
-                  style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+                  style={{ display: 'none', backgroundColor: pillBg, borderColor: pillBorder }}
                 >
                   <Text className="text-[8.5px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>
                     Net Profit
@@ -528,51 +509,28 @@ export default function TopAccountBar() {
       {/* Mobile Sub-Header: Active Pair & Balance Scrolling Bar */}
       {mobile && user && !isAdmin ? (
         <View className="px-3 pb-2 pt-0.5 border-t" style={{ borderColor: `${colors.border}40` }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center', gap: 4 }}>
             <View
-              className="flex-row items-center px-2.5 py-1 rounded-lg border gap-1.5"
-              style={{ backgroundColor: pillBg, borderColor: pillBorder }}
+              className="flex-row items-center px-2.5 py-1 gap-2"
+              style={{ borderRightWidth: 1, borderColor: colors.border }}
             >
-              <SymbolFlagIcon symbol={currentSymbol.symbol} size={16} />
-              <Text className="text-[11px] font-bold" style={{ color: colors.text }}>
-                {currentSymbol.symbol}
-              </Text>
-              <Text className="text-[11px] font-bold" style={{ color: changeColor }}>
-                {quote(currentSymbol.price || currentSymbol.bid, currentSymbol.decimals)}
-              </Text>
+              <SymbolFlagIcon symbol={currentSymbol.symbol} size={28} />
+              <View>
+                <View className="flex-row items-center gap-1">
+                  <Text className="text-[11px] font-bold" style={{ color: colors.text }}>{currentSymbol.symbol}</Text>
+                  <ChevronDown size={11} color={colors.muted} />
+                </View>
+                <View className="mt-0.5 flex-row items-center gap-1.5">
+                  <Text className="text-[11px] font-bold" style={{ color: changeColor }}>{quote(currentSymbol.price || currentSymbol.bid, currentSymbol.decimals)}</Text>
+                  <Text className="text-[9px] font-bold" style={{ color: changeColor }}>{percent(currentSymbol.change)}</Text>
+                </View>
+              </View>
             </View>
-
-            <View
-              className="px-2.5 py-1 rounded-lg border"
-              style={{ backgroundColor: pillBg, borderColor: pillBorder }}
-            >
-              <Text className="text-[10px] font-bold" style={{ color: colors.text }}>
-                Equity: ${money(summaryEquity)}
-              </Text>
-            </View>
-
-            <View
-              className="px-2.5 py-1 rounded-lg border"
-              style={{ backgroundColor: pillBg, borderColor: pillBorder }}
-            >
-              <Text className="text-[10px] font-bold" style={{ color: colors.success || '#10B981' }}>
-                Free: ${money(summaryFreeFunds)}
-              </Text>
-            </View>
-
-            <View
-              className="px-2.5 py-1 rounded-lg border"
-              style={{ backgroundColor: pillBg, borderColor: pillBorder }}
-            >
-              <Text
-                className="text-[10px] font-bold"
-                style={{
-                  color: summaryNetProfit >= 0 ? (colors.success || '#10B981') : (colors.danger || '#EF4444'),
-                }}
-              >
-                P&L: {summaryNetProfit >= 0 ? `+$${money(summaryNetProfit)}` : `-$${money(Math.abs(summaryNetProfit))}`}
-              </Text>
-            </View>
+            <HeaderMetric icon={Wallet} label="Balance" value={`$${money(summaryBalance)}`} accent="#3b82f6" colors={colors} />
+            <HeaderMetric icon={Shield} label="Equity" value={`$${money(summaryEquity)}`} accent="#8b5cf6" colors={colors} />
+            <HeaderMetric icon={Layers} label="Free Margin" value={`$${money(summaryFreeFunds)}`} accent="#f5a623" colors={colors} />
+            <HeaderMetric icon={Activity} label="Margin Level" value={summaryMargin === 0 ? '—' : `${summaryMarginLevel.toFixed(1)}%`} accent="#22b8cf" colors={colors} />
+            <HeaderMetric icon={TrendingUp} label="Net Profit" value={summaryNetProfit > 0 ? `+$${money(summaryNetProfit)}` : `$${money(summaryNetProfit)}`} accent="#52c41a" colors={colors} valueColor={summaryNetProfit > 0 ? (colors.success || '#10B981') : summaryNetProfit < 0 ? (colors.danger || '#EF4444') : colors.text} />
           </ScrollView>
         </View>
       ) : null}

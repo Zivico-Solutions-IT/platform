@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Smartphone,
   UploadCloud,
+  UserRound,
   Wallet,
   WalletCards,
   X,
@@ -20,6 +21,8 @@ import CustomButton from '../common/CustomButton';
 import CustomInput from '../common/CustomInput';
 import { useAppTheme } from '../../context/ThemeContext';
 import { walletService } from '../../services/walletService';
+import { useDemoTrading } from '../../hooks/useDemoTrading';
+import { money } from '../../utils/formatters';
 
 const paymentMethods = [
   { label: 'TRC20', description: 'TRC20 network transfer', icon: WalletCards, accent: '#EF0027' },
@@ -53,6 +56,44 @@ const displayCurrencies = [
   { code: 'USD', symbol: '$' },
 ];
 
+function DepositSupportInfo({ colors, mobile }) {
+  return (
+    <View className="mt-5 w-full gap-3" style={{ position: 'relative', minHeight: mobile ? undefined : 305 }}>
+      <View className="rounded-xl border p-4 shadow-sm" style={{ position: mobile ? 'relative' : 'absolute', top: 0, right: 0, bottom: mobile ? undefined : 0, width: mobile ? '100%' : 'calc(50% - 6px)', backgroundColor: colors.surface, borderColor: colors.border }}>
+        <View className="flex-row items-center">
+          <View className="h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: '#12cf7a18' }}><ShieldCheck size={19} color="#12cf7a" /></View>
+          <Text className="ml-3 text-base font-medium" style={{ color: colors.text }}>Deposit Progress</Text>
+        </View>
+        <View className="mt-4 gap-4">
+          {['Request Submitted', 'Waiting for Review', 'Approved', 'Funds Credited'].map((item, index) => (
+            <View key={item} className="min-w-0 flex-row items-start">
+              <View className="h-6 w-6 items-center justify-center rounded-full border" style={{ backgroundColor: index === 0 ? '#12cf7a' : colors.surface, borderColor: index === 0 ? '#12cf7a' : colors.border }}>
+                {index === 0 ? <CheckCircle2 size={13} color="#0B0B0B" /> : <Clock3 size={12} color={colors.muted} />}
+              </View>
+              <View className="ml-2 min-w-0 flex-1">
+                <Text className="text-xs font-medium" style={{ color: colors.text }}>{item}</Text>
+                <Text className="mt-1 text-[10px] leading-4" style={{ color: colors.muted }}>{index === 0 ? 'You submit your deposit request' : index === 1 ? 'Admin is reviewing your request' : index === 2 ? 'Your deposit has been approved' : 'Amount added to your wallet'}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+      <View className="rounded-xl border p-4 shadow-sm" style={{ marginRight: mobile ? 0 : 'calc(50% + 6px)', backgroundColor: colors.surface, borderColor: colors.border }}>
+          <View className="flex-row items-center"><Clock3 size={19} color="#12cf7a" /><Text className="ml-2 text-sm font-medium" style={{ color: colors.text }}>Estimated Processing Time</Text></View>
+          <Text className="mt-3 text-xs leading-5" style={{ color: colors.muted }}>Standard review: 5 - 30 Minutes</Text>
+          <Text className="text-xs leading-5" style={{ color: colors.muted }}>Weekends and holidays: up to 24 hours</Text>
+      </View>
+      <View className="rounded-xl border p-4 shadow-sm" style={{ marginRight: mobile ? 0 : 'calc(50% + 6px)', backgroundColor: colors.surface, borderColor: colors.border }}>
+          <View className="flex-row items-center"><UploadCloud size={19} color="#D4AF37" /><Text className="ml-2 text-sm font-medium" style={{ color: colors.text }}>Receipt Checklist</Text></View>
+          <Text className="mt-2 text-xs leading-5" style={{ color: colors.muted }}>Before submitting, make sure your receipt clearly shows:</Text>
+          <View className="mt-3 gap-2">
+            {['Paid amount', 'Payment date', 'Payment method', 'Sender account details'].map((item) => <View key={item} className="flex-row items-center"><CheckCircle2 size={13} color="#12cf7a" /><Text className="ml-1.5 text-xs" style={{ color: colors.text }}>{item}</Text></View>)}
+          </View>
+      </View>
+    </View>
+  );
+}
+
 function fileName(file) {
   return file?.name || 'Receipt selected';
 }
@@ -71,6 +112,7 @@ const qrUrl = (value) => `https://api.qrserver.com/v1/create-qr-code/?size=220x2
 export default function DepositForm({ onSubmit, loading, disabled, disabledMessage }) {
   const { width } = useWindowDimensions();
   const { colors } = useAppTheme();
+  const { selectedTradingAccount, summary } = useDemoTrading();
   const receiptInputRef = useRef(null);
   const [form, setForm] = useState({ amount: '', paymentMethod: 'TRC20', note: '' });
   const [selectedCurrency, setSelectedCurrency] = useState(displayCurrencies[0]);
@@ -266,32 +308,42 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
     }
   };
   return (
-    <View className="flex-1 overflow-hidden rounded-3xl border shadow-lg" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-      <View className={`${mobile ? 'px-4 py-4' : 'px-5 py-4'} border-b`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+    <View className="flex-1 overflow-hidden rounded-2xl border shadow-lg" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <View className={`${mobile ? 'm-3 px-3 py-3' : 'm-3 px-4 py-3'} rounded-xl border`} style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
         <View className="flex-row items-center justify-between">
-          <View className="min-w-0 flex-1 pr-3">
-            <Text className={`${mobile ? 'text-lg' : 'text-xl'} font-medium`} numberOfLines={1} style={{ color: colors.text }}>Deposit Funds</Text>
-            <Text className="mt-1 text-sm" style={{ color: colors.muted }}>Submit a funding request with receipt proof.</Text>
+          <View className="min-w-0 flex-1 flex-row items-center pr-4">
+            <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${colors.primary}12` }}>
+              <UserRound size={19} color={colors.primary} />
+            </View>
+            <View className="ml-3 min-w-0 flex-1">
+              <Text className="text-[10px]" style={{ color: colors.muted }}>Selected Account</Text>
+              <Text className="mt-0.5 text-sm font-medium" numberOfLines={1} style={{ color: colors.text }}>{selectedTradingAccount?.name || `${selectedTradingAccount?.type || 'Live'} account 1`}</Text>
+            </View>
           </View>
-          <View className="h-10 w-10 items-center justify-center rounded-2xl bg-primary/15">
-            <Wallet size={22} color="#D4AF37" />
+          <View className="flex-1 flex-row items-center border-l pl-4" style={{ borderColor: colors.border }}>
+            <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${colors.primary}12` }}>
+              <Wallet size={19} color={colors.primary} />
+            </View>
+            <View className="ml-3">
+              <Text className="text-[10px]" style={{ color: colors.muted }}>Available Balance</Text>
+              <Text className="mt-0.5 text-sm font-medium" style={{ color: colors.text }}>{money(summary?.freeFunds ?? summary?.balance ?? selectedTradingAccount?.balance ?? 0)} USD</Text>
+            </View>
           </View>
         </View>
       </View>
 
       <View className={`${mobile ? 'gap-3 p-4' : 'gap-5 p-5'} xl:flex-row`}>
         <View className="flex-1">
-          <View className={`${mobile ? 'mb-3' : 'mb-4'} flex-row flex-wrap gap-2`}>
+          <View className={`${mobile ? 'mb-3' : 'mb-4'} flex-row items-center px-2`}>
             {[
-              [1, 'Deposit Methods'],
-              [2, 'Deposit Confirmation'],
-            ].map(([value, label]) => (
-              <View
-                key={value}
-                className="flex-row items-center rounded-full border px-3 py-2"
-                style={{ backgroundColor: step === value ? `${colors.primary}1a` : colors.surface, borderColor: step === value ? colors.primary : colors.border }}
-              >
-                <Text className="text-xs font-medium" style={{ color: step === value ? colors.primary : colors.muted }}>{value}. {label}</Text>
+              [1, 'Payment Details'],
+              [2, 'Upload Receipt'],
+              [3, 'Confirmation'],
+            ].map(([value, label], index) => (
+              <View key={value} className="flex-1 flex-row items-center">
+                <View className="h-6 w-6 items-center justify-center rounded-full" style={{ backgroundColor: step >= value ? colors.primary : `${colors.muted}20` }}><Text className="text-[10px] font-bold" style={{ color: step >= value ? '#FFFFFF' : colors.muted }}>{value}</Text></View>
+                <Text className="ml-2 text-[10px] font-medium" numberOfLines={1} style={{ color: step >= value ? colors.primary : colors.muted }}>{label}</Text>
+                {index < 2 ? <View className="mx-3 h-px flex-1" style={{ backgroundColor: step > value ? colors.primary : colors.border }} /> : null}
               </View>
             ))}
           </View>
@@ -344,7 +396,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
 
           {step === 1 ? (
             <>
-              <Text className={`${mobile ? 'mb-2' : 'mb-3'} text-[11px] font-bold uppercase tracking-wider`} style={{ color: colors.muted }}>Payment Method</Text>
+              <Text className={`${mobile ? 'mb-2' : 'mb-2'} text-[11px] font-medium`} style={{ color: colors.text }}>Payment Method</Text>
               <View className={`${mobile ? 'mb-2' : 'mb-3'}`}>
                 {mobile ? (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
@@ -370,7 +422,7 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                     })}
                   </ScrollView>
                 ) : (
-                  <View className="flex-row flex-wrap gap-2">
+                  <View className="flex-row gap-2">
                     {paymentMethodGroups.map((group) => {
                       const GroupIcon = group.icon;
                       const active = activePaymentGroup.title === group.title;
@@ -378,37 +430,22 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                         <Pressable
                           key={group.title}
                           onPress={() => selectPaymentGroup(group)}
-                          className="min-h-[34px] flex-row items-center rounded-full border px-3 py-1.5"
+                          className="min-h-[38px] flex-1 flex-row items-center justify-center rounded-lg border px-3 py-1.5"
                           style={{
                             backgroundColor: active ? `${colors.primary}20` : colors.surface,
                             borderColor: active ? colors.primary : colors.border,
                           }}
                         >
                           <GroupIcon size={13} color={active ? colors.primary : group.accent} />
-                          <Text className="ml-1.5 text-[11px] font-medium" numberOfLines={1} style={{ color: active ? colors.primary : colors.text }}>{group.title}</Text>
-                          <Text className="ml-1 text-[9px]" style={{ color: active ? colors.primary : colors.muted }}>({group.methods.length})</Text>
-                          {active ? <CheckCircle2 className="ml-1.5" size={13} color={colors.primary} /> : null}
+                          <Text className="ml-1.5 text-[11px] font-medium" numberOfLines={1} style={{ color: active ? colors.primary : colors.text }}>{group.title === 'Bank' ? 'Bank Transfer' : group.title}</Text>
                         </Pressable>
                       );
                     })}
                   </View>
                 )}
               </View>
-              <View className={`${mobile ? 'mb-4' : 'mb-5'} rounded-xl border p-3`} style={{ backgroundColor: `${paymentPanelAccent}0d`, borderColor: `${paymentPanelAccent}35` }}>
-                <View className="mb-3 flex-row items-center justify-between gap-3">
-                  <View className="min-w-0 flex-1 flex-row items-center">
-                    <View className="mr-3 h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${paymentPanelAccent}1f` }}>
-                      <ActivePaymentGroupIcon size={18} color={paymentPanelAccent} />
-                    </View>
-                    <View className="min-w-0 flex-1">
-                      <Text className="text-sm font-medium" numberOfLines={1} style={{ color: colors.text }}>{activePaymentGroup.title}</Text>
-                      <Text className="mt-0.5 text-[10px]" numberOfLines={1} style={{ color: colors.muted }}>{activePaymentGroup.subtitle}</Text>
-                    </View>
-                  </View>
-                  <View className="rounded-full px-2.5 py-1" style={{ backgroundColor: `${paymentPanelAccent}20` }}>
-                    <Text className="text-[10px] font-medium" style={{ color: paymentPanelAccent }}>{activePaymentGroup.methods.length} methods</Text>
-                  </View>
-                </View>
+              <Text className="mb-2 text-[11px] font-medium" style={{ color: colors.text }}>Select Network</Text>
+              <View className={`${mobile ? 'mb-4' : 'mb-5'}`}>
                 <View className="flex-row flex-wrap gap-2">
                   {activePaymentGroup.methods.map(({ label, description, icon: Icon, accent: methodAccent }) => {
                     const selected = form.paymentMethod === label;
@@ -530,21 +567,21 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
                       </View>
                     ) : (
                       <View className="mt-2 flex-row items-center justify-between rounded-2xl border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
-                        <Text selectable className="flex-1 pr-3 text-sm font-semimedium" style={{ color: colors.text }}>{assignedAddress?.address}</Text>
+                        <Text selectable numberOfLines={mobile ? 2 : 1} className="min-w-0 flex-1 pr-3 text-sm font-semimedium" style={{ color: colors.text, lineHeight: 19 }}>{assignedAddress?.address}</Text>
                         <Pressable
                           onPress={copyAddress}
-                          className="flex-row items-center rounded-lg border px-3 py-1.5"
+                          className={mobile ? "h-9 w-9 shrink-0 items-center justify-center rounded-lg border" : "flex-row items-center rounded-lg border px-3 py-1.5"}
                           style={{ backgroundColor: copied ? `${colors.primary}20` : colors.surface, borderColor: copied ? colors.primary : colors.border }}
                         >
                           {copied ? (
                             <>
                               <Check size={14} color={colors.primary} />
-                              <Text className="ml-1.5 text-xs font-medium" style={{ color: colors.primary }}>Copied!</Text>
+                              {!mobile ? <Text className="ml-1.5 text-xs font-medium" style={{ color: colors.primary }}>Copied!</Text> : null}
                             </>
                           ) : (
                             <>
                               <Copy size={14} color={colors.primary} />
-                              <Text className="ml-1.5 text-xs font-medium" style={{ color: colors.primary }}>Copy</Text>
+                              {!mobile ? <Text className="ml-1.5 text-xs font-medium" style={{ color: colors.primary }}>Copy</Text> : null}
                             </>
                           )}
                         </Pressable>
@@ -653,9 +690,10 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
               <CustomButton title="Submit Deposit Request" onPress={submit} loading={loading} disabled={disabled} variant="success" />
             </>
           )}
+          <DepositSupportInfo colors={colors} mobile={mobile} />
         </View>
 
-        <View className="w-full gap-4 xl:w-[280px]">
+        <View className="w-full gap-4 xl:w-[280px]" style={{ display: 'none' }}>
           <View className="rounded-2xl border p-5 shadow-sm" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
             <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-success/10">
               <ShieldCheck size={24} color="#12cf7a" />

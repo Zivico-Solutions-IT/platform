@@ -5,6 +5,9 @@ import {
   BadgeCheck,
   CheckCircle2,
   Camera,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   Edit3,
   Eye,
@@ -13,8 +16,10 @@ import {
   History,
   LockKeyhole,
   LogOut,
+  Mail,
   Menu,
   Moon,
+  Phone,
   Plus,
   Save,
   ShieldCheck,
@@ -23,6 +28,7 @@ import {
   UploadCloud,
   UserRound,
   Wallet,
+  Globe2,
   X,
 } from 'lucide-react-native';
 import { Animated, Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
@@ -208,7 +214,7 @@ function AccountPanel({ dashboard, selectedAccount, summary, colors, onAccountsC
           <View className="mt-4 flex-row flex-wrap items-center justify-between gap-4">
             <View className="min-w-0 flex-1 flex-row items-center">
               <View className="h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: colors.primary }}>
-                <Wallet size={25} color="#0B0B0B" />
+                <Wallet size={25} color="#FFFFFF" />
               </View>
               <View className="ml-4 min-w-0 flex-1">
                 <Text className={`${mobile ? 'text-lg' : 'text-xl'} font-medium`} numberOfLines={1} style={{ color: colors.text }}>{activeAccount.type || 'Demo'} Account</Text>
@@ -237,8 +243,8 @@ function AccountPanel({ dashboard, selectedAccount, summary, colors, onAccountsC
               className="flex-1 flex-row items-center justify-center rounded-lg px-4 py-4"
               style={{ backgroundColor: demoCount >= 2 ? colors.panel : colors.primary, opacity: busyType === 'Demo' ? 0.7 : 1 }}
             >
-              <Plus size={17} color={demoCount >= 2 ? colors.muted : '#0B0B0B'} />
-              <Text className="ml-2 font-medium" style={{ color: demoCount >= 2 ? colors.muted : '#0B0B0B' }}>{busyType === 'Demo' ? 'Creating...' : 'New Demo'}</Text>
+              <Plus size={17} color={demoCount >= 2 ? colors.muted : '#FFFFFF'} />
+              <Text className="ml-2 font-medium" style={{ color: demoCount >= 2 ? colors.muted : '#FFFFFF' }}>{busyType === 'Demo' ? 'Creating...' : 'New Demo'}</Text>
             </Pressable>
             <Pressable
               onPress={() => setConfirmType('Live')}
@@ -261,7 +267,7 @@ function AccountPanel({ dashboard, selectedAccount, summary, colors, onAccountsC
                   <Text className="text-center font-medium" style={{ color: colors.text }}>Cancel</Text>
                 </Pressable>
                 <Pressable onPress={() => createAccount(confirmType)} disabled={Boolean(busyType)} className="flex-1 rounded-lg px-4 py-3" style={{ backgroundColor: colors.primary, opacity: busyType ? 0.7 : 1 }}>
-                  <Text className="text-center font-medium text-medium">{busyType ? 'Creating...' : 'Confirm'}</Text>
+                  <Text className="text-center font-medium text-white">{busyType ? 'Creating...' : 'Confirm'}</Text>
                 </Pressable>
               </View>
             </View>
@@ -301,14 +307,42 @@ function AccountPanel({ dashboard, selectedAccount, summary, colors, onAccountsC
   );
 }
 
-function Field({ label, value, onChangeText, placeholder, editable = true, secureTextEntry = false, colors, compactMobile = false, noFlex = false }) {
+function Field({ label, value, onChangeText, placeholder, editable = true, secureTextEntry = false, colors, compactMobile = false, noFlex = false, icon: Icon, inputType }) {
   const [visible, setVisible] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [monthMenuOpen, setMonthMenuOpen] = useState(false);
+  const [yearMenuOpen, setYearMenuOpen] = useState(false);
+  const selectedMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value || '');
+  const selectedDate = selectedMatch ? new Date(Number(selectedMatch[3]), Number(selectedMatch[2]) - 1, Number(selectedMatch[1])) : null;
+  const [calendarMonth, setCalendarMonth] = useState(selectedDate || new Date());
   const { width } = useWindowDimensions();
   const isMobile = width < 992;
   const compact = isMobile && compactMobile;
+  const isWebDate = Platform.OS === 'web' && inputType === 'date';
+  const dateInputValue = isWebDate && /^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/.test(value || '')
+    ? String(value).replace(/^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/, '$3-$2-$1')
+    : value;
+  const handleChangeText = (nextValue) => {
+    if (isWebDate && /^(\d{4})-(\d{2})-(\d{2})$/.test(nextValue || '')) {
+      onChangeText?.(String(nextValue).replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$3/$2/$1'));
+      return;
+    }
+    onChangeText?.(nextValue);
+  };
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const calendarYear = calendarMonth.getFullYear();
+  const calendarMonthIndex = calendarMonth.getMonth();
+  const firstWeekday = new Date(calendarYear, calendarMonthIndex, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonthIndex + 1, 0).getDate();
+  const calendarDays = Array.from({ length: 42 }, (_, index) => {
+    const day = index - firstWeekday + 1;
+    return day >= 1 && day <= daysInMonth ? day : null;
+  });
+  const today = new Date();
 
   return (
-    <View className={compact || noFlex ? 'w-full' : 'flex-1'} style={{ marginBottom: compact ? 14 : isMobile ? 24 : 16 }}>
+    <View className={compact || noFlex ? 'w-full' : 'flex-1'} style={{ marginBottom: compact ? 14 : isMobile ? 24 : 16, position: 'relative', zIndex: calendarOpen ? 50 : 1 }}>
       <Text className="text-sm font-medium" style={{ color: colors.text, ...(compact ? { lineHeight: 17 } : {}) }}>{label}</Text>
       <View
         className="flex-row items-center rounded-lg border"
@@ -320,24 +354,79 @@ function Field({ label, value, onChangeText, placeholder, editable = true, secur
           opacity: editable ? 1 : 0.7,
         }}
       >
+        {Icon && !isWebDate ? (
+          <View className="pl-3">
+            <Icon size={17} color={colors.muted} />
+          </View>
+        ) : null}
         <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          editable={editable}
+          value={isWebDate ? value : dateInputValue}
+          onChangeText={handleChangeText}
+          editable={isWebDate ? false : editable}
           placeholder={placeholder}
           placeholderTextColor={colors.muted}
           secureTextEntry={secureTextEntry && !visible}
           autoCapitalize={secureTextEntry ? 'none' : undefined}
           autoCorrect={secureTextEntry ? false : undefined}
+          type={Platform.OS === 'web' && !isWebDate ? inputType : undefined}
           className="flex-1 px-4 py-3"
           style={{ color: colors.text, ...(compact ? { paddingVertical: 9 } : {}) }}
         />
+        {isWebDate && Icon ? (
+          <View className="px-3 py-3">
+            <Icon size={18} color={colors.primary} />
+          </View>
+        ) : null}
+        {isWebDate ? (
+          <Pressable onPress={() => { setCalendarMonth(selectedDate || new Date()); setCalendarOpen((open) => !open); }} accessibilityLabel="Open date of birth calendar" style={{ position: 'absolute', inset: 0, cursor: 'pointer' }} />
+        ) : null}
         {secureTextEntry ? (
           <Pressable onPress={() => setVisible((current) => !current)} className="px-3 py-3" accessibilityLabel={visible ? 'Hide password' : 'Show password'}>
             {visible ? <Eye size={18} color={colors.muted} /> : <EyeOff size={18} color={colors.muted} />}
           </Pressable>
         ) : null}
       </View>
+      {isWebDate && calendarOpen ? (
+        <View style={{ position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, width: compact ? 202 : 218, maxWidth: 'calc(100vw - 24px)', padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, boxShadow: '0 14px 32px rgba(0,0,0,0.20)', zIndex: 100 }}>
+          <View className="mb-2 flex-row items-center justify-between" style={{ zIndex: 120 }}>
+            <Pressable onPress={() => setCalendarMonth(new Date(calendarYear, calendarMonthIndex - 1, 1))} className="h-7 w-7 items-center justify-center rounded-md" style={{ backgroundColor: `${colors.primary}18` }}><ChevronLeft size={15} color={colors.primary} /></Pressable>
+            <View className="flex-row items-center gap-1" style={{ zIndex: 120 }}>
+              <View style={{ position: 'relative', width: compact ? 70 : 78 }}>
+                <Pressable onPress={() => { setMonthMenuOpen((open) => !open); setYearMenuOpen(false); }} className="h-7 flex-row items-center justify-between rounded-md border px-1.5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+                  <Text numberOfLines={1} className="text-[11px] font-semibold" style={{ color: colors.text }}>{monthNames[calendarMonthIndex]}</Text>
+                  <Text className="text-[9px]" style={{ color: colors.primary }}>▼</Text>
+                </Pressable>
+                {monthMenuOpen ? (
+                  <ScrollView style={{ position: 'absolute', top: 31, left: 0, width: 92, maxHeight: 126, borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.surface, boxShadow: '0 8px 20px rgba(0,0,0,0.18)', zIndex: 150 }} showsVerticalScrollIndicator>
+                    {monthNames.map((month, index) => <Pressable key={month} onPress={() => { setCalendarMonth(new Date(calendarYear, index, 1)); setMonthMenuOpen(false); }} className="px-2 py-1.5" style={{ backgroundColor: index === calendarMonthIndex ? colors.primary : 'transparent' }}><Text className="text-[11px]" style={{ color: index === calendarMonthIndex ? '#FFFFFF' : colors.text }}>{month}</Text></Pressable>)}
+                  </ScrollView>
+                ) : null}
+              </View>
+              <View style={{ position: 'relative', width: compact ? 52 : 56 }}>
+                <Pressable onPress={() => { setYearMenuOpen((open) => !open); setMonthMenuOpen(false); }} className="h-7 flex-row items-center justify-between rounded-md border px-1" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+                  <Text className="text-[11px] font-semibold" style={{ color: colors.text }}>{calendarYear}</Text>
+                  <Text className="text-[9px]" style={{ color: colors.primary }}>▼</Text>
+                </Pressable>
+                {yearMenuOpen ? (
+                  <ScrollView style={{ position: 'absolute', top: 31, right: 0, width: 66, maxHeight: 126, borderWidth: 1, borderColor: colors.border, borderRadius: 8, backgroundColor: colors.surface, boxShadow: '0 8px 20px rgba(0,0,0,0.18)', zIndex: 150 }} showsVerticalScrollIndicator>
+                    {Array.from({ length: 101 }, (_, index) => today.getFullYear() - index).map((year) => <Pressable key={year} onPress={() => { setCalendarMonth(new Date(year, calendarMonthIndex, 1)); setYearMenuOpen(false); }} className="px-2 py-1.5" style={{ backgroundColor: year === calendarYear ? colors.primary : 'transparent' }}><Text className="text-[11px]" style={{ color: year === calendarYear ? '#FFFFFF' : colors.text }}>{year}</Text></Pressable>)}
+                  </ScrollView>
+                ) : null}
+              </View>
+            </View>
+            <Pressable onPress={() => setCalendarMonth(new Date(calendarYear, calendarMonthIndex + 1, 1))} disabled={calendarYear === today.getFullYear() && calendarMonthIndex >= today.getMonth()} className="h-7 w-7 items-center justify-center rounded-md" style={{ backgroundColor: `${colors.primary}18`, opacity: calendarYear === today.getFullYear() && calendarMonthIndex >= today.getMonth() ? 0.35 : 1 }}><ChevronRight size={15} color={colors.primary} /></Pressable>
+          </View>
+          <View className="flex-row">{['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => <Text key={day} className="py-1 text-center text-xs font-medium" style={{ width: '14.285%', color: colors.muted }}>{day}</Text>)}</View>
+          <View className="flex-row flex-wrap">
+            {calendarDays.map((day, index) => {
+              const candidate = day ? new Date(calendarYear, calendarMonthIndex, day) : null;
+              const disabled = candidate && candidate > today;
+              const chosen = day && selectedDate && candidate.toDateString() === selectedDate.toDateString();
+              return <Pressable key={index} disabled={!day || disabled} onPress={() => { handleChangeText(`${calendarYear}-${String(calendarMonthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`); setCalendarOpen(false); }} className="items-center justify-center" style={{ width: '14.285%', height: 29 }}><View className="h-7 w-7 items-center justify-center rounded-md" style={{ backgroundColor: chosen ? colors.primary : 'transparent' }}><Text className="text-[11px] font-medium" style={{ color: !day || disabled ? `${colors.muted}55` : chosen ? '#FFFFFF' : colors.text }}>{day || ''}</Text></View></Pressable>;
+            })}
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -798,7 +887,7 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
                   <input ref={profileImageInputRef} accept="image/*" style={{ display: 'none' }} type="file" onChange={selectProfileImage} />
                 ) : null}
                 <Pressable onPress={openProfileImagePicker} className={isMobileLayout ? "-mt-7 ml-14 h-7 w-7 items-center justify-center rounded-full" : "-mt-8 ml-20 h-9 w-9 items-center justify-center rounded-full"} style={{ backgroundColor: colors.primary }}>
-                  <Camera size={isMobileLayout ? 12 : 16} color="#0B0B0B" />
+                  <Camera size={isMobileLayout ? 12 : 16} color="#FFFFFF" />
                 </Pressable>
                 <View className="mt-3 flex-row flex-wrap justify-center gap-1.5">
                   <Pressable onPress={openProfileImagePicker} className="rounded-lg border px-2.5 py-1.5" style={{ borderColor: colors.primary }}>
@@ -821,14 +910,14 @@ function SettingsPanel({ colors, darkMode, toggleTheme, user, updateProfile, ini
               </View>
               <View className="flex-1">
                 <View className={isMobileLayout ? "gap-2" : "gap-4 lg:flex-row"}>
-                  <Field label="Full Name" value={profile.name} onChangeText={(name) => setProfile((current) => ({ ...current, name }))} placeholder="Your full name" colors={colors} compactMobile />
-                  <Field label="Email Address" value={profile.email} editable={false} placeholder="email@example.com" colors={colors} compactMobile />
+                  <Field label="Full Name" value={profile.name} onChangeText={(name) => setProfile((current) => ({ ...current, name }))} placeholder="Your full name" colors={colors} icon={UserRound} compactMobile />
+                  <Field label="Email Address" value={profile.email} editable={false} placeholder="email@example.com" colors={colors} icon={Mail} compactMobile />
                 </View>
                 <View className={isMobileLayout ? "gap-2" : "gap-4 lg:flex-row"}>
-                  <Field label="Country" value={profile.country} onChangeText={(country) => setProfile((current) => ({ ...current, country }))} placeholder="Sri Lanka" colors={colors} compactMobile />
-                  <Field label="Phone Number" value={profile.phone} onChangeText={(phone) => setProfile((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" colors={colors} compactMobile />
+                  <Field label="Country" value={profile.country} onChangeText={(country) => setProfile((current) => ({ ...current, country }))} placeholder="Sri Lanka" colors={colors} icon={Globe2} compactMobile />
+                  <Field label="Phone Number" value={profile.phone} onChangeText={(phone) => setProfile((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" colors={colors} icon={Phone} compactMobile />
                 </View>
-                <Field label="Date of Birth" value={profile.dateOfBirth} onChangeText={(dateOfBirth) => setProfile((current) => ({ ...current, dateOfBirth }))} placeholder="DD / MM / YYYY" colors={colors} compactMobile />
+                <Field label="Date of Birth" value={profile.dateOfBirth} onChangeText={(dateOfBirth) => setProfile((current) => ({ ...current, dateOfBirth }))} placeholder="DD / MM / YYYY" colors={colors} icon={CalendarDays} inputType="date" compactMobile />
                 {isMobileLayout ? (
                   <CustomButton title={busy ? 'Saving...' : 'Save Profile'} onPress={saveProfile} disabled={busy} className="mt-3 self-center px-6" compact={isMobileLayout} />
                 ) : null}
@@ -990,7 +1079,7 @@ function VerificationStepCard({ title, description, badge, active, complete, loc
         <View className="h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: complete ? `${colors.success}22` : active ? `${colors.primary}22` : colors.surface }}>
           <Icon size={22} color={complete ? colors.success : active ? colors.primary : colors.text} />
         </View>
-        <Text className="rounded-full px-3 py-1 text-[10px] font-medium uppercase" style={{ backgroundColor: active ? colors.primary : colors.surface, color: active ? '#0B0B0B' : colors.muted }}>
+        <Text className="rounded-full px-3 py-1 text-[10px] font-medium uppercase" style={{ backgroundColor: active ? colors.primary : colors.surface, color: active ? '#FFFFFF' : colors.muted }}>
           {badge}
         </Text>
       </View>

@@ -11,7 +11,6 @@ import {
   Settings2,
   ShieldCheck,
   X,
-  HelpCircle,
   Check,
   Copy,
   Repeat2,
@@ -19,7 +18,6 @@ import {
 } from 'lucide-react-native';
 import {
   Animated,
-  DeviceEventEmitter,
   Image,
   Platform,
   Pressable,
@@ -488,15 +486,26 @@ export default function ProfileMenu({
                 <>
                   {/* Account Level & Volume Card */}
                   <View
-                    className={`${mobile ? 'mb-2 p-3' : 'mb-3.5 p-4'} rounded-xl`}
-                    style={{ backgroundColor: palette.card }}
+                    className={`${mobile ? 'mb-2 p-3' : 'mb-3.5 p-4'} overflow-hidden rounded-xl`}
+                    style={{
+                      backgroundColor: showUpgradePrompt ? (darkMode ? '#10251f' : '#eaf8f4') : palette.card,
+                      borderWidth: showUpgradePrompt && darkMode ? 1 : 0,
+                      borderColor: showUpgradePrompt && darkMode ? '#1f4a3e' : 'transparent',
+                    }}
                   >
                     {showUpgradePrompt ? (
-                      <View>
-                        <Text className="text-base font-medium" style={{ color: palette.text }}>
+                      <View style={{ minHeight: mobile ? 126 : 136 }}>
+                        <Image
+                          source={require('../../../assets/trading-level-growth.png')}
+                          resizeMode="contain"
+                          pointerEvents="none"
+                          style={{ position: 'absolute', right: -12, bottom: -8, width: mobile ? 154 : 174, height: mobile ? 124 : 138, opacity: darkMode ? 0.72 : 0.96 }}
+                        />
+                        <View style={{ maxWidth: mobile ? '68%' : '64%', zIndex: 2 }}>
+                        <Text className="text-base font-medium" style={{ color: darkMode ? '#f2fffb' : '#12362f' }}>
                           Upgrade Your Trading Level
                         </Text>
-                        <Text className="mt-2 text-xs leading-5" style={{ color: palette.muted }}>
+                        <Text className="mt-1.5 text-xs leading-5" style={{ color: darkMode ? '#a7c7bd' : '#55766f' }}>
                           Make your first deposit to activate your account level and unlock exclusive trading benefits.
                         </Text>
                         <Pressable
@@ -504,11 +513,12 @@ export default function ProfileMenu({
                             event?.stopPropagation?.();
                             openPanel('deposit');
                           }}
-                          className="mt-4 self-start rounded-lg px-4 py-2"
-                          style={{ backgroundColor: palette.accent }}
+                          className="mt-3 self-start rounded-lg px-4 py-2"
+                          style={{ backgroundColor: darkMode ? '#0d907b' : '#087a68' }}
                         >
                           <Text className="text-xs font-medium text-white">Deposit Now</Text>
                         </Pressable>
+                        </View>
                       </View>
                     ) : (
                       <>
@@ -555,7 +565,10 @@ export default function ProfileMenu({
                   {/* Trading Accounts Switcher Section - Directly Below Account/Level Card */}
                   <View
                     className={`${mobile ? 'mb-2.5 p-3' : 'mb-4 p-3.5'} rounded-xl border`}
-                    style={{ backgroundColor: palette.card, borderColor: palette.border }}
+                    style={{
+                      backgroundColor: darkMode ? palette.card : '#f3fbf9',
+                      borderColor: darkMode ? palette.border : '#c9e7df',
+                    }}
                   >
                     <View className="flex-row items-center justify-between mb-2.5">
                       <View className="flex-row items-center gap-2">
@@ -600,8 +613,8 @@ export default function ProfileMenu({
                               width: '48.5%',
                               flexBasis: '48.5%',
                               maxWidth: '48.5%',
-                              backgroundColor: selected ? `${brandColor}15` : palette.tile,
-                              borderColor: selected ? brandColor : palette.border,
+                              backgroundColor: selected ? `${brandColor}10` : (darkMode ? palette.tile : '#fbfefd'),
+                              borderColor: selected ? `${brandColor}bb` : (darkMode ? palette.border : '#d7eee8'),
                               cursor: 'pointer',
                             }}
                           >
@@ -727,20 +740,6 @@ export default function ProfileMenu({
                 funding
                 grid
               />
-              {user?.role === 'user' && (
-                <MenuAction
-                  icon={HelpCircle}
-                  title="Support AI"
-                  onPress={() => {
-                    onClose?.();
-                    DeviceEventEmitter.emit('openSupportChat');
-                  }}
-                  palette={palette}
-                  compact={mobile}
-                  funding
-                  grid
-                />
-              )}
               <MenuAction icon={LogOut} title="Sign Out" onPress={signOut} danger palette={palette} compact={mobile} funding grid />
               </View>
             </>

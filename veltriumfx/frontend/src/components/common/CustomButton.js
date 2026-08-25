@@ -9,7 +9,7 @@ const variants = {
 };
 
 const labelColors = {
-  primary: 'text-medium',
+  primary: 'text-white',
   success: 'text-white',
   danger: 'text-white',
   secondary: '',
@@ -39,10 +39,14 @@ export default function CustomButton({ title, onPress, variant = 'primary', load
       style={secondaryStyle}
     >
       {loading
-        ? <ActivityIndicator color={variant === 'primary' ? '#0B0B0B' : (secondaryTextColor || '#fff')} size={compact ? 'small' : undefined} />
+        ? <ActivityIndicator color={variant === 'primary' ? '#FFFFFF' : (secondaryTextColor || '#fff')} size={compact ? 'small' : undefined} />
         : <Text
             className={`font-medium ${secondaryTextColor ? '' : labelColor} ${compact ? 'text-xs' : 'text-sm'}`}
-            style={secondaryTextColor ? { color: secondaryTextColor } : undefined}
+            style={secondaryTextColor
+              ? { color: secondaryTextColor }
+              : variant === 'primary'
+                ? { color: '#FFFFFF' }
+                : undefined}
           >
             {title}
           </Text>

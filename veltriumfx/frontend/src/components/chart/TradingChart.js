@@ -939,7 +939,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   const symbolPanelWidth = mobile ? Math.min(width - 20, 360) : compactToolbar ? 320 : 340;
   const symbolPanelTop = mobile ? 56 : (compactToolbar ? 47 : 51);
   const timeframeMenuLeft = narrowMobileToolbar ? 116 : 126;
-  const chartOffsetLeft = symbolMenuOpen && !mobile && !chartFullscreen ? symbolPanelWidth + chartListGap : 0;
+  const chartOffsetLeft = 0;
   const chartPopoverLeft = chartOffsetLeft > 0 ? chartOffsetLeft + chartCardInset : 4;
   const chartPopoverRight = 8;
   const [hoveredSymbol, setHoveredSymbol] = useState(null);
@@ -1560,7 +1560,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
       zIndex: 9000,
       elevation: 9000,
     }
-    : { minHeight: chartMinHeight, height: '100%', backgroundColor: ui.background, borderColor: ui.border };
+    : { minHeight: mobile ? chartMinHeight : 0, height: '100%', backgroundColor: ui.background, borderColor: ui.border };
 
   return (
     <View className="relative flex-1 overflow-hidden border" style={chartRootStyle}>
@@ -1568,11 +1568,10 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         {mobile ? (
           <View className="px-0.5 py-0.5">
             {/* Row 1: Active Symbol Selector & Price/Change/Spread */}
-            <View className="flex-row items-center justify-between">
-              <Pressable onPress={toggleSymbolMenu} className="min-w-0 flex-row items-center rounded px-1 py-0.5" style={{ backgroundColor: symbolMenuOpen ? ui.soft : 'transparent', cursor: 'pointer' }}>
+            <View className="flex-row items-center justify-between" style={{ display: 'none' }}>
+              <View className="min-w-0 flex-row items-center rounded px-1 py-0.5">
                 <Text className="max-w-[96px] text-xs font-bold" numberOfLines={1} style={{ color: ui.text }}>{currentSymbol.symbol}</Text>
-                <ChevronDown size={13} color={symbolMenuOpen ? ui.accent : ui.muted} strokeWidth={2.4} />
-              </Pressable>
+              </View>
               <View className="flex-row items-center" style={{ gap: 6 }}>
                 <Text className="text-xs font-bold" numberOfLines={1} style={{ color: priceTone }}>{quote(currentSymbol.price, currentSymbol.decimals)}</Text>
                 <Text className="text-[10px] font-medium" numberOfLines={1} style={{ color: priceTone }}>{percent(currentSymbol.change)}</Text>
@@ -1642,13 +1641,12 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         ) : (
           <>
             <View className="flex-row flex-wrap items-center" style={{ columnGap: compactToolbar ? 6 : 10, rowGap: 3 }}>
-              <Pressable onPress={toggleSymbolMenu} className="flex-row items-center rounded-md px-1.5" style={{ height: compactToolbar ? 24 : 28, backgroundColor: symbolMenuOpen ? ui.soft : 'transparent', cursor: 'pointer', gap: compactToolbar ? 5 : 7 }}>
+              <View className="flex-row items-center rounded-md px-1.5" style={{ display: 'none', height: compactToolbar ? 24 : 28, gap: compactToolbar ? 5 : 7 }}>
                 <Text className="font-medium" style={{ color: ui.text, fontSize: compactToolbar ? 12 : 14 }}>{currentSymbol.symbol}</Text>
-                <ChevronDown size={13} color={symbolMenuOpen ? ui.accent : ui.muted} strokeWidth={2.4} />
                 <Text className="font-medium" style={{ color: priceTone, fontSize: compactToolbar ? 12 : 14 }}>{quote(currentSymbol.price, currentSymbol.decimals)}</Text>
                 <Text className="font-medium" style={{ color: priceTone, fontSize: compactToolbar ? 10 : 12 }}>{percent(currentSymbol.change)}</Text>
                 <Text className="text-[10px]" style={{ color: ui.muted }}>Spread: {fixedSpreadText}</Text>
-              </Pressable>
+              </View>
               <View className="min-w-0 flex-1 flex-row flex-wrap items-center" style={{ columnGap: 1, rowGap: 1, minHeight: compactToolbar ? 22 : 28 }}>
                 {TIMEFRAMES.map((entry) => (
                   <Pressable
@@ -1671,7 +1669,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                     <Text className="font-medium" style={{ color: entry === viewRange ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
                   </Pressable>
                 ))}
-                <View className="flex-row items-center" style={{ marginLeft: 'auto', paddingLeft: compactToolbar ? 8 : 12, columnGap: compactToolbar ? 2 : 4 }}>
+                <View className="flex-row items-center" style={{ display: 'none', marginLeft: 'auto', paddingLeft: compactToolbar ? 8 : 12, columnGap: compactToolbar ? 2 : 4 }}>
                   <IconButton active={chartMenuOpen} bare ui={ui} size={iconButtonSize} onPress={toggleChartMenu}>
                     <ActiveChartIcon size={compactToolbar ? 14 : 17} color={chartMenuOpen ? ui.accent : ui.text} />
                   </IconButton>
@@ -1724,8 +1722,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         </View>
       ) : null}
 
-      <View className="flex-1 p-2.5" style={{ marginLeft: chartOffsetLeft, backgroundColor: ui.background, zIndex: 0, elevation: 0 }}>
-        <View className="flex-1 overflow-hidden rounded-lg border shadow-2xl" style={{ backgroundColor: ui.menu, borderColor: ui.menuBorder }}>
+      <View className="flex-1 p-2.5" style={{ marginLeft: chartOffsetLeft, paddingLeft: mobile ? 10 : 58, backgroundColor: ui.background, zIndex: 0, elevation: 0 }}>
+        <View className="relative flex-1 rounded-lg border shadow-2xl" style={{ backgroundColor: ui.menu, borderColor: ui.menuBorder }}>
           {Platform.OS === 'web' ? (
             <iframe
               key={chartRenderKey}
@@ -1746,6 +1744,31 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
               style={{ backgroundColor: colors.chartBackground, zIndex: 0, elevation: 0 }}
             />
           )}
+          {!mobile ? (
+            <View
+              className="absolute items-center rounded-lg border p-1 shadow-lg"
+              style={{ top: 0, left: -50, backgroundColor: ui.toolbar, borderColor: ui.border, rowGap: 2, zIndex: 80, elevation: 80 }}
+            >
+              <IconButton active={chartMenuOpen} bare ui={ui} size={iconButtonSize} onPress={toggleChartMenu}>
+                <ActiveChartIcon size={compactToolbar ? 14 : 17} color={chartMenuOpen ? ui.accent : ui.text} />
+              </IconButton>
+              <IconButton active={indicatorOpen} bare ui={ui} size={iconButtonSize} onPress={toggleIndicatorMenu}>
+                <IndicatorGlyph active={indicatorOpen} activeColor={ui.accent} ui={ui} size={compactToolbar ? 10 : 12} />
+              </IconButton>
+              <IconButton active={settingsOpen} bare ui={ui} size={iconButtonSize} onPress={toggleSettingsMenu}>
+                <Settings size={compactToolbar ? 14 : 16} color={settingsOpen ? ui.accent : ui.text} />
+              </IconButton>
+              <IconButton active={drawingOpen || Boolean(activeDrawingTool)} bare ui={ui} size={iconButtonSize} onPress={toggleDrawingMenu}>
+                <LineChart size={compactToolbar ? 14 : 16} color={drawingOpen || activeDrawingTool ? ui.accent : ui.text} />
+              </IconButton>
+              <IconButton bare ui={ui} size={iconButtonSize} onPress={() => handleZoom(1)}>
+                <ZoomIn size={compactToolbar ? 14 : 16} color={ui.text} />
+              </IconButton>
+              <IconButton bare ui={ui} size={iconButtonSize} onPress={() => handleZoom(-1)}>
+                <ZoomOut size={compactToolbar ? 14 : 16} color={ui.text} />
+              </IconButton>
+            </View>
+          ) : null}
           {chartFullscreen && !mobile && !isAdmin ? (
             <View className="absolute" style={{ top: compactToolbar ? 28 : 34, left: 12, width: 274, zIndex: 70, elevation: 70 }}>
               {quickTradeMessage ? (
@@ -1978,34 +2001,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
           ) : null}
         </View>
       </View>
-        {symbolMenuOpen ? (
-          <ChartSymbolPanel
-            currentSymbol={currentSymbol}
-            favoriteSymbols={favoriteSymbols}
-            filteredSymbols={filteredSymbols}
-            hoveredSymbol={hoveredSymbol}
-            onClose={() => {
-              setSymbolTabMenuOpen(false);
-              setSymbolMenuOpen(false);
-            }}
-            onHoverSymbol={setHoveredSymbol}
-            onSearchChange={setSymbolSearch}
-            onSelectSymbol={selectSymbol}
-            onSelectTab={selectSymbolTab}
-            onToggleFavorite={toggleFavoriteSymbol}
-            search={symbolSearch}
-            symbolPanelTop={symbolPanelTop}
-            symbolPanelWidth={symbolPanelWidth}
-            symbolTabs={symbolTabs}
-            symbolTab={symbolTab}
-            symbolTabMenuOpen={symbolTabMenuOpen}
-            setSymbolTabMenuOpen={setSymbolTabMenuOpen}
-            ui={ui}
-          />
-        ) : null}
-
         {chartMenuOpen ? (
-          <View className="absolute w-[132px] rounded-xl border p-1.5 shadow-2xl" style={{ right: chartPopoverRight, top: toolbarMenuTop, backgroundColor: ui.menu, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
+          <View className="absolute w-[132px] rounded-xl border p-1.5 shadow-2xl" style={{ left: mobile ? undefined : 58, right: mobile ? chartPopoverRight : undefined, top: toolbarMenuTop, backgroundColor: ui.menu, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
             {CHART_TYPES.map(([key, label, Icon]) => (
               <Pressable
                 key={key}
@@ -2021,7 +2018,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         ) : null}
 
         {indicatorOpen ? (
-          <View className="absolute w-[560px] max-w-full flex-row overflow-hidden rounded-lg border shadow-2xl" style={{ right: chartPopoverRight, top: toolbarMenuTop, height: indicatorPanelHeight, backgroundColor: ui.panel, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
+          <View className="absolute w-[560px] max-w-full flex-row overflow-hidden rounded-lg border shadow-2xl" style={{ left: mobile ? undefined : 58, right: mobile ? chartPopoverRight : undefined, top: toolbarMenuTop, height: indicatorPanelHeight, backgroundColor: ui.panel, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
             <View className="w-[210px] border-r" style={{ borderColor: ui.border }}>
               <View className="h-9 justify-center border-b px-3" style={{ borderColor: ui.border }}>
                 <Text className="text-[11px] font-medium uppercase" style={{ color: ui.text }}>Indicators</Text>
@@ -2464,7 +2461,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
 
         {settingsOpen ? (
           <ChartGraphSettingsPanel
-            right={chartPopoverRight}
+            left={mobile ? undefined : 58}
+            right={mobile ? chartPopoverRight : undefined}
             top={toolbarMenuTop}
             tools={tools}
             toggleTool={toggleTool}
@@ -2473,7 +2471,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
           />
         ) : null}
       {drawingOpen ? (
-        <View className="absolute w-[194px] rounded-xl border p-2 shadow-2xl" style={{ right: chartPopoverRight, top: toolbarMenuTop, backgroundColor: ui.menu, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
+        <View className="absolute w-[194px] rounded-xl border p-2 shadow-2xl" style={{ left: mobile ? undefined : 58, right: mobile ? chartPopoverRight : undefined, top: toolbarMenuTop, backgroundColor: ui.menu, borderColor: ui.menuBorder, zIndex: 3000, elevation: 3000 }}>
           {DRAWING_TOOLS.map(([key, label]) => {
             const danger = key === 'clear';
             const active = key === activeDrawingTool;

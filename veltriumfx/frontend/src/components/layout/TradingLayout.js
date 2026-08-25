@@ -25,6 +25,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
 import BirthdayWidget from '../account/BirthdayWidget';
 import BirthdayModal from '../account/BirthdayModal';
+import { storage } from '../../utils/storage';
 
 export default function TradingLayout() {
   const params = useLocalSearchParams();
@@ -41,6 +42,7 @@ export default function TradingLayout() {
 
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('chart'); // 'markets', 'chart', 'positions'
+  const [mobileTabReady, setMobileTabReady] = useState(false);
   const [leftWatchlistVisible, setLeftWatchlistVisible] = useState(true);
   const [rightOrderPanelVisible, setRightOrderPanelVisible] = useState(true);
 
@@ -50,10 +52,27 @@ export default function TradingLayout() {
 
   // Chart height calculations
   const chartAreaHeight = desktop
-    ? Math.max(520, Math.min(680, height - 220))
+    ? Math.max(480, height - 76)
     : tablet
-      ? Math.max(480, Math.min(620, height - 230))
+      ? Math.max(450, height - 76)
       : Math.max(380, Math.min(520, height - 240));
+
+  useEffect(() => {
+    let active = true;
+    storage.get('veltrium_mobile_trading_tab', 'chart')
+      .then((savedTab) => {
+        if (active && ['markets', 'chart', 'positions'].includes(savedTab)) setMobileTab(savedTab);
+      })
+      .finally(() => {
+        if (active) setMobileTabReady(true);
+      });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!mobile || !mobileTabReady) return;
+    storage.set('veltrium_mobile_trading_tab', mobileTab).catch(() => {});
+  }, [mobile, mobileTab, mobileTabReady]);
 
   useEffect(() => {
     if (params.panel === 'verification') setSidePanel('verification');
