@@ -1,7 +1,7 @@
 import { Animated, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowDown, ArrowUp, BarChart3, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, FileText, Grid2X2, ListFilter, LogOut, Moon, Settings, ShoppingBag, Sun, Wallet } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, ListFilter, Wallet } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
@@ -17,49 +17,6 @@ import BirthdayModal from '../account/BirthdayModal';
 import { storage } from '../../utils/storage';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
-
-function DesktopNavigationRail({ onLogout }) {
-  const { darkMode, colors, toggleTheme } = useAppTheme();
-  const items = [
-    { label: 'Dashboard', icon: Grid2X2, action: () => router.push('/dashboard') },
-    {
-      label: 'Markets',
-      icon: BarChart3,
-      active: true,
-      action: () => {
-        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:toggle-market-watch'));
-      },
-    },
-    { label: 'Orders', icon: ShoppingBag, action: () => router.push({ pathname: '/trading', params: { panel: 'history' } }) },
-    { label: 'Portfolio', icon: Briefcase, action: () => router.push({ pathname: '/trading', params: { panel: 'history' } }) },
-    { label: 'Wallet', icon: Wallet, action: () => router.push('/wallet') },
-    { label: 'Reports', icon: FileText, action: () => router.push({ pathname: '/trading', params: { panel: 'history' } }) },
-    { label: 'Settings', icon: Settings, action: () => router.push('/settings') },
-  ];
-
-  return (
-    <View className="h-full items-center border rounded-xl overflow-hidden" style={{ width: 70, flexShrink: 0, backgroundColor: colors.panel, borderColor: colors.border }}>
-      <View className="flex-1 w-full items-center pt-2">
-        {items.map(({ label, icon: Icon, active, action }) => (
-          <Pressable key={label} onPress={action} className="w-full items-center justify-center py-2" style={{ cursor: 'pointer' }}>
-            <View className="items-center justify-center rounded-lg" style={{ width: 38, height: 34, backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }}>
-              <Icon size={17} color={active ? colors.success : colors.muted} strokeWidth={active ? 2.2 : 1.8} />
-            </View>
-            <Text className="mt-0.5 text-[8px] font-medium" style={{ color: active ? colors.text : colors.muted }}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <Pressable onPress={toggleTheme} className="items-center justify-center py-2" style={{ width: '100%', cursor: 'pointer' }}>
-        {darkMode ? <Sun size={16} color={colors.muted} /> : <Moon size={16} color={colors.muted} />}
-        <Text className="mt-1 text-[8px]" style={{ color: colors.muted }}>{darkMode ? 'Light' : 'Dark'}</Text>
-      </Pressable>
-      <Pressable onPress={onLogout} className="items-center justify-center py-3 border-t" style={{ width: '100%', borderColor: colors.border, cursor: 'pointer' }}>
-        <LogOut size={16} color={colors.danger} />
-        <Text className="mt-1 text-[8px] font-medium" style={{ color: colors.danger }}>Logout</Text>
-      </Pressable>
-    </View>
-  );
-}
 
 function OrderRail({ summary, user, showSummary = true, showAvailableMargin = true, titleInset = 0 }) {
   return (
@@ -274,7 +231,7 @@ export default function TradingLayout() {
   const params = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
   const { colors } = useAppTheme();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { summary, selectedTradingAccount, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
@@ -483,26 +440,14 @@ export default function TradingLayout() {
   }
 
   return (
-    <View className="flex-1 flex-row" style={{ backgroundColor: colors.background }}>
-      {desktop && !chartFullscreen ? (
-        <View style={{ paddingLeft: 6, paddingTop: 6, paddingBottom: 6 }}>
-          <DesktopNavigationRail onLogout={logout} />
-        </View>
-      ) : null}
-      <View className="flex-1 min-w-0">
-        {!chartFullscreen && <TopAccountBar />}
-        <View className="flex-1 flex-row min-h-0">
-        <ScrollView
-          scrollEnabled={!chartFullscreen}
-          keyboardShouldPersistTaps="handled"
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            flexGrow: 1,
-            padding: chartFullscreen ? 0 : (mobile ? 6 : 12),
-            paddingTop: chartFullscreen ? 0 : (desktop ? 0 : (mobile ? 6 : 12)),
-            paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 24),
-          }}
-        >
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      {!chartFullscreen && <TopAccountBar />}
+      <ScrollView
+        scrollEnabled={!chartFullscreen}
+        keyboardShouldPersistTaps="handled"
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, padding: chartFullscreen ? 0 : (mobile ? 6 : 12), paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 24) }}
+      >
         <View
           className={chartFullscreen ? 'flex-1' : (desktop ? 'flex-row gap-3 overflow-hidden' : mobile ? 'gap-1.5 overflow-hidden' : 'gap-3 overflow-hidden')}
           style={{ height: chartFullscreen ? undefined : chartAreaHeight, overflow: chartFullscreen ? 'visible' : 'hidden' }}
@@ -526,9 +471,7 @@ export default function TradingLayout() {
           )}
         </View>
         {!chartFullscreen ? <OpenPositions /> : null}
-        </ScrollView>
-        </View>
-      </View>
+      </ScrollView>
       {mobile && !chartFullscreen && !sidePanel ? <OrderPanel /> : null}
       <InsufficientFundsModal
         visible={insufficientFundsVisible}
