@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
-import { ChevronDown, Sun, Moon, UserRound, Wallet, WalletCards, ArrowUp, Bell, BellRing, LayoutDashboard } from 'lucide-react-native';
+import { Image, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { ChevronDown, UserRound, ArrowUp, Bell, LayoutDashboard } from 'lucide-react-native';
 import Svg, { Polyline, Defs, LinearGradient, Stop, Polygon, Circle, RadialGradient } from 'react-native-svg';
 import { useAuth } from '../../hooks/useAuth';
 import { useDemoTrading } from '../../hooks/useDemoTrading';
@@ -15,24 +15,20 @@ import {
   emptyAdminNotificationData,
   loadAdminNotificationData,
 } from '../../utils/adminNotifications';
-import NovaLogo from '../brand/NovaLogo';
 import DemoAccountMenu from './DemoAccountMenu';
 import FundingMenu from './FundingMenu';
 import HeaderSidePanel from './HeaderSidePanel';
 import ProfileMenu from './ProfileMenu';
 import NotificationMenu from './NotificationMenu';
-
-const visibleMetricCount = 4;
+import NovaLogo from '../brand/NovaLogo';
 
 export default function TopAccountBar() {
   const { width } = useWindowDimensions();
   const { currentSymbol, summary, selectedTradingAccount, setSelectedTradingAccount, sidePanel, setSidePanel, transactions } = useDemoTrading();
   const params = useLocalSearchParams();
   const { user, isAdmin, refreshUser } = useAuth();
-  const { darkMode, colors, toggleTheme } = useAppTheme();
-  const metricsScrollRef = useRef(null);
+  const { darkMode, colors } = useAppTheme();
   const profileHoverCloseRef = useRef(null);
-  const [metricsWidth, setMetricsWidth] = useState(0);
   const [menu, setMenu] = useState(null);
   const [accountMenuAnchor, setAccountMenuAnchor] = useState(null);
   const [accounts, setAccounts] = useState([]);
@@ -43,7 +39,6 @@ export default function TopAccountBar() {
   const mobile = width < 1024;
   const narrowPhone = width < 380;
   const compactDesktop = !mobile && width < 1450;
-  // Keep the account selector and trading metrics on one desktop header row.
   const twoRowDesktop = false;
   const isMobileLayout = width < 760;
   const showHeaderContent = !(isMobileLayout && sidePanel);
@@ -76,31 +71,6 @@ export default function TopAccountBar() {
   const accountBadgeLabel = selectedAccountIsLive ? 'Live' : 'Demo';
   const routeAccountId = params.accountId ? String(params.accountId) : '';
 
-  const summaryBalance = Number(summary.balance || 0);
-  const summaryEquity = Number(summary.equity || 0);
-  const summaryMargin = Number(summary.margin || 0);
-  const summaryMarginLevel = Number(summary.marginLevel || 0);
-  const summaryNetProfit = Number(summary.openProfit || 0);
-  const summaryBonus = Number(summary.bonus || 0);
-  const summaryFreeFunds = summaryEquity - summaryMargin;
-  const mobileMetrics = [
-    ['Balance', `${money(summaryBalance)} USD`],
-    ['Equity', `${money(summaryEquity)} USD`],
-    ['Margin', `${money(summaryMargin)} USD`],
-    ['Margin Level', `${money(summaryMarginLevel)} %`],
-    ['Net Profit', `${money(summaryNetProfit)} USD`],
-    ['Bonus', `${money(summaryBonus)} USD`],
-    ['Free Funds', `${money(summaryFreeFunds)} USD`],
-  ];
-  const desktopMetrics = [
-    ['Balance', money(summaryBalance)],
-    ['Equity', money(summaryEquity)],
-    ['Margin', money(summaryMargin)],
-    ['Margin Level', `${money(summaryMarginLevel)}%`],
-    ['Net Profit', money(summaryNetProfit)],
-    ['Bonus', money(summaryBonus)],
-    ['Free Funds', money(summaryFreeFunds)],
-  ];
   const symbolPrice = Number(currentSymbol?.price || currentSymbol?.bid || 0);
   const symbolChange = Number(currentSymbol?.change || 0);
   const desktopHeaderBg = darkMode ? '#02070d' : colors.background;
@@ -110,8 +80,6 @@ export default function TopAccountBar() {
   const sparklinePoints = symbolChange >= 0
     ? '2,34 15,31 26,32 37,24 48,27 58,10 67,18 78,20 90,7 100,12 112,4'
     : '2,7 15,12 26,10 37,18 48,16 58,29 67,22 78,25 90,33 100,28 112,35';
-
-  const maxMetricStep = Math.max(mobileMetrics.length - visibleMetricCount, 0);
 
   const notificationIds = useMemo(() => {
     if (isAdmin) {
@@ -288,7 +256,13 @@ export default function TopAccountBar() {
   const openProfileMenu = (action) => { cancelProfileHoverClose(); setHoveredAction(action); setMenu((cur) => (cur === 'profile' ? cur : 'profile')); };
 
   const profileHoverProps = (action) => ({ onHoverIn: () => openProfileMenu(action), onHoverOut: () => setHoveredAction(null) });
-  const openWalletMenu = () => setMenu((current) => (current === 'wallet' ? null : 'wallet'));
+  const openWalletMenu = () => setMenu('wallet');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    window.addEventListener('novafxm:open-wallet-funding', openWalletMenu);
+    return () => window.removeEventListener('novafxm:open-wallet-funding', openWalletMenu);
+  }, [openWalletMenu]);
   const goToAdminDashboard = () => {
     setMenu(null);
     router.push('/admin');
@@ -329,17 +303,6 @@ export default function TopAccountBar() {
 
   useEffect(() => () => cancelProfileHoverClose(), []);
 
-  useEffect(() => {
-    if (!metricsWidth || maxMetricStep === 0) return undefined;
-    let step = 0;
-    const cardWidth = (metricsWidth - 18) / visibleMetricCount;
-    const interval = setInterval(() => {
-      step = step >= maxMetricStep ? 0 : step + 1;
-      metricsScrollRef.current?.scrollTo({ x: (cardWidth + 6) * step, animated: true });
-    }, 3800);
-    return () => clearInterval(interval);
-  }, [maxMetricStep, metricsWidth]);
-
   return (
     <View
       className={`${mobile ? 'relative z-40 gap-1.5 px-2 py-1.5' : 'relative z-40 py-1'}`}
@@ -367,15 +330,13 @@ export default function TopAccountBar() {
         <>
           {mobile ? (
         <View className="gap-2">
-          {/* Row 1: Logo & Utility Icons */}
+          {/* Brand-free compact utility header */}
           <View className="flex-row items-center justify-between">
-            <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
-              <NovaLogo dark={darkMode} width={narrowPhone ? 108 : 130} height={narrowPhone ? 28 : 34} />
-            </Pressable>
+            <View>
+              <Text className="text-xs font-bold" style={{ color: colors.text }}>Trading</Text>
+              <Text className="text-[9px]" style={{ color: colors.muted }}>Market terminal</Text>
+            </View>
             <View className="flex-row items-center gap-1.5">
-              <Pressable {...hoverProps('mobile-theme')} onPress={toggleTheme} className={`${narrowPhone ? 'h-[32px] w-[30px]' : 'h-[38px] w-[34px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-theme', { backgroundColor: 'transparent' })}>
-                <View style={iconHoverStyle('mobile-theme')}>{darkMode ? <Sun size={18} color={colors.text} /> : <Moon size={18} color={colors.text} />}</View>
-              </Pressable>
               {isAdmin ? (
                 <Pressable {...hoverProps('mobile-admin-dashboard')} onPress={goToAdminDashboard} className={`${narrowPhone ? 'h-[32px] w-[32px]' : 'h-[36px] w-[36px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-admin-dashboard', { backgroundColor: `${colors.text}08` })}>
                   <View style={iconHoverStyle('mobile-admin-dashboard')}><LayoutDashboard color={iconColor('mobile-admin-dashboard')} size={16} /></View>
@@ -395,7 +356,9 @@ export default function TopAccountBar() {
               ) : null}
               {user ? (
                 <Pressable {...hoverProps('mobile-profile')} onPress={() => setMenu(menu === 'profile' ? null : 'profile')} className={`${narrowPhone ? 'h-[32px] w-[30px]' : 'h-[38px] w-[34px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-profile', { backgroundColor: 'transparent' })}>
-                  <View style={iconHoverStyle('mobile-profile')}><UserRound color={darkMode ? '#A7B1BF' : '#AEB4BD'} size={19} strokeWidth={1.8} /></View>
+                  <View style={iconHoverStyle('mobile-profile')}>
+                    {user?.profileImage ? <Image source={{ uri: user.profileImage }} resizeMode="cover" style={{ width: 27, height: 27, borderRadius: 14 }} /> : <UserRound color={darkMode ? '#A7B1BF' : '#AEB4BD'} size={19} strokeWidth={1.8} />}
+                  </View>
                 </Pressable>
               ) : null}
             </View>
@@ -433,178 +396,47 @@ export default function TopAccountBar() {
           </View>
         </View>
       ) : (
-        <View style={{ marginBottom: mobile ? 12 : 0, marginRight: mobile ? 0 : (compactDesktop ? 4 : 12), justifyContent: 'center' }}>
-          <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }}>
-            <NovaLogo dark={darkMode} width={compactDesktop ? 125 : 155} height={compactDesktop ? 33 : 42} />
+        <View className="flex-row items-center" style={{ columnGap: compactDesktop ? 8 : 12 }}>
+          <Pressable onPress={() => router.push('/')} style={{ cursor: 'pointer' }} accessibilityLabel="Home">
+            <NovaLogo dark={darkMode} width={compactDesktop ? 102 : 122} height={compactDesktop ? 28 : 32} />
           </Pressable>
-        </View>
-      )}
-      {!mobile && (
-        <>
-          <View className={`${compactDesktop ? 'h-[58px]' : 'h-[68px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
-          <View
-            className={`${compactDesktop ? 'h-[58px]' : 'h-[68px]'} flex-row items-center justify-center`}
-            style={{ paddingHorizontal: compactDesktop ? 16 : 28 }}
-          >
-            <View style={{ width: compactDesktop ? 84 : 112 }} className="justify-center">
-              <View className="flex-row justify-between items-center mb-1">
-                <Text className="text-[8px] font-bold tracking-widest uppercase" style={{ color: desktopMuted }}>Vol Rate</Text>
-                <Text className="text-[8px] font-black tracking-widest uppercase" style={{ color: symbolChange < 0 ? colors.danger : colors.success }}>
-                  {percent(symbolChange)}
-                </Text>
-              </View>
-              {(() => {
-                const symbolStr = currentSymbol?.symbol || 'BTC';
-                const isUp = symbolChange >= 0;
-                const width = compactDesktop ? 84 : 112;
-                const height = 18;
-                const stepX = width / 11;
-                
-                let points = [];
-                let lastX = 0;
-                let lastY = 0;
-                for (let i = 0; i < 12; i++) {
-                  const seed = (symbolStr.charCodeAt(i % symbolStr.length) || i) * (i + 1);
-                  const rawY = 2 + (seed % 12);
-                  const trendOffset = isUp ? (12 - i) * 0.4 : i * 0.4;
-                  const y = Math.max(1, Math.min(17, (rawY * 0.5) + trendOffset));
-                  lastX = (i * stepX).toFixed(1);
-                  lastY = y.toFixed(1);
-                  points.push(`${lastX},${lastY}`);
-                }
-                const pointsStr = points.join(' ');
-                const lineColor = isUp ? colors.success : colors.danger;
-                
-                return (
-                  <View className="overflow-hidden" style={{ height: 18, width }}>
-                    <Svg width={width} height={18} viewBox={`0 0 ${width} 18`}>
-                      <Defs>
-                        <LinearGradient id="volSpark" x1="0" y1="0" x2="0" y2="1">
-                          <Stop offset="0" stopColor={lineColor} stopOpacity="0.6" />
-                          <Stop offset="1" stopColor={lineColor} stopOpacity="0.0" />
-                        </LinearGradient>
-                        <RadialGradient id="glow" cx="50%" cy="50%" r="50%">
-                          <Stop offset="0%" stopColor={lineColor} stopOpacity="0.7" />
-                          <Stop offset="100%" stopColor={lineColor} stopOpacity="0" />
-                        </RadialGradient>
-                      </Defs>
-                      <Polygon points={`${pointsStr} ${width},18 0,18`} fill="url(#volSpark)" />
-                      <Polyline points={pointsStr} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <Circle cx={lastX} cy={lastY} r="5" fill="url(#glow)" />
-                      <Circle cx={lastX} cy={lastY} r="1.5" fill={darkMode ? '#fff' : lineColor} />
-                    </Svg>
-                  </View>
-                );
-              })()}
-            </View>
-          </View>
-          <View className={`${compactDesktop ? 'h-[58px]' : 'h-[68px]'} w-px`} style={{ backgroundColor: desktopDivider }} />
-        </>
-      )}
-      {mobile && !isAdmin ? (
-        <ScrollView
-          ref={metricsScrollRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mx-2 mt-3 h-[54px]"
-          contentContainerStyle={{ gap: 6 }}
-          onLayout={({ nativeEvent }) => setMetricsWidth(nativeEvent.layout.width)}
-        >
-          {mobileMetrics.map(([label, value], index) => (
-            <View 
-              key={label} 
-              className="h-[54px] justify-center rounded-2xl border px-3"
+          {user && !isAdmin ? (
+            <Pressable
+              onPress={() => setMenu(menu === 'account' ? null : 'account')}
+              onLayout={(event) => setAccountMenuAnchor(event.nativeEvent.layout)}
+              className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center justify-between rounded-xl`}
               style={{
-                width: metricsWidth ? (metricsWidth - 18) / visibleMetricCount : 82,
-                backgroundColor: index === 0 ? `${colors.success}10` : colors.panel,
-                borderColor: index === 0 ? `${colors.success}55` : colors.border,
-                shadowColor: '#101828',
-                shadowOpacity: darkMode ? 0.16 : 0.04,
+                width: compactDesktop ? 172 : 190,
+                paddingHorizontal: compactDesktop ? 10 : 12,
+                backgroundColor: darkMode ? '#1E232A' : '#FFFFFF',
+                borderWidth: 1,
+                borderColor: darkMode ? '#353C45' : '#E2E5E9',
+                shadowColor: '#111827',
+                shadowOpacity: menu === 'account' ? 0.14 : 0.04,
+                shadowRadius: 8,
                 shadowOffset: { width: 0, height: 3 },
-                shadowRadius: 7,
-                elevation: 1,
+                elevation: menu === 'account' ? 2 : 1,
+                cursor: 'pointer',
               }}
             >
-              <Text className="mb-1 text-[8px] font-bold tracking-[0.7px] uppercase" numberOfLines={1} style={{ color: index === 0 ? colors.success : colors.muted }}>{label}</Text>
-              <Text className="text-[10px] font-bold tracking-tight" numberOfLines={1} style={{ color: label === 'Net Profit' && summary.openProfit < 0 ? colors.danger : (label === 'Net Profit' && summary.openProfit > 0 ? colors.success : colors.text) }}>{value}</Text>
-            </View>
-          ))}
-        </ScrollView>
-      ) : !mobile && !isAdmin ? (
-        <View
-          className={`${twoRowDesktop ? 'h-[42px]' : compactDesktop ? 'h-[58px]' : 'h-[68px]'} flex-row items-center px-2`}
-          style={twoRowDesktop ? { flexBasis: '100%', width: '100%', order: 2 } : { flex: 1, minWidth: 0 }}
-        >
-          {desktopMetrics.map(([label, value], index) => (
-            <View
-              key={label}
-              className={`min-w-0 justify-center ${compactDesktop ? 'px-3' : 'px-4'}`}
-              style={{
-                width: `${100 / desktopMetrics.length}%`,
-                borderLeftWidth: index === 0 ? 0 : 1,
-                borderColor: desktopDivider,
-              }}
-            >
-              <Text className={`${compactDesktop ? 'text-[9px]' : 'text-[11px]'} font-bold uppercase tracking-wider`} numberOfLines={1} style={{ color: desktopMuted, letterSpacing: compactDesktop ? 0.45 : 0.65 }}>{label}</Text>
-              <Text className={`mt-1 ${compactDesktop ? 'text-[13px]' : 'text-[17px]'} font-bold`} numberOfLines={1} style={{ color: label === 'Net Profit' && summaryNetProfit < 0 ? colors.danger : desktopText }}>
-                {label === 'Net Profit' && summaryNetProfit > 0 ? `+${value}` : value}
-              </Text>
-            </View>
-          ))}
+              <View className="mr-2 rounded-full px-2.5 py-1" style={{ backgroundColor: accountBadgeColor }}>
+                <Text className="text-[11px] font-bold" style={{ color: selectedAccountIsLive ? '#FFFFFF' : '#5F4300' }}>{accountBadgeLabel}</Text>
+              </View>
+              <Text className="mr-2 text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>${money(selectedAccountBalance)}</Text>
+              <ChevronDown size={14} color={colors.muted} style={{ transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }] }} />
+            </Pressable>
+          ) : null}
         </View>
-      ) : null}
-      {!mobile && isAdmin ? <View style={{ flex: 1 }} /> : null}
-      {!mobile && user && !isAdmin ? (
-        <Pressable
-          onPress={() => setMenu(menu === 'account' ? null : 'account')}
-          onLayout={(event) => setAccountMenuAnchor(event.nativeEvent.layout)}
-          className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center justify-between rounded-xl`}
-          style={{
-            width: compactDesktop ? 136 : 145,
-            paddingHorizontal: compactDesktop ? 10 : 12,
-            backgroundColor: darkMode ? '#1E232A' : '#FFFFFF',
-            borderWidth: 1,
-            borderColor: darkMode ? '#353C45' : '#E2E5E9',
-            shadowColor: '#111827',
-            shadowOpacity: menu === 'account' ? 0.14 : 0.04,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 3 },
-            elevation: menu === 'account' ? 2 : 1,
-            cursor: 'pointer',
-            transform: [{ translateX: -26 }],
-          }}
-        >
-          <View className="mr-2 rounded-full px-2.5 py-1" style={{ backgroundColor: accountBadgeColor }}>
-            <Text className="text-[11px] font-bold" style={{ color: selectedAccountIsLive ? '#FFFFFF' : '#5F4300' }}>
-              {accountBadgeLabel}
-            </Text>
-          </View>
-          <Text className="mr-2 text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>${money(selectedAccountBalance)}</Text>
-          <ChevronDown
-            size={14}
-            color={colors.muted}
-            style={{
-              transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }],
-            }}
-          />
-        </Pressable>
-      ) : null}
+      )}
+      {!mobile ? <View style={{ flex: 1 }} /> : null}
       {isAdmin ? (
         <Pressable {...hoverProps('admin-dashboard')} onPress={goToAdminDashboard} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('admin-dashboard', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
           <View style={iconHoverStyle('admin-dashboard')}><LayoutDashboard size={20} color={iconColor('admin-dashboard')} /></View>
         </Pressable>
       ) : null}
-      <Pressable {...hoverProps('theme')} onPress={toggleTheme} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('theme', { width: compactDesktop ? 42 : 48, height: compactDesktop ? 42 : 48, backgroundColor: 'transparent' })}>
-        <View style={iconHoverStyle('theme')}>{darkMode ? <Sun size={22} strokeWidth={2.1} color={iconColor('theme')} /> : <Moon size={22} strokeWidth={2.1} color={iconColor('theme')} />}</View>
-      </Pressable>
-      {user && !isAdmin ? (
-        <Pressable {...hoverProps('wallet')} onPress={openWalletMenu} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('wallet', { width: compactDesktop ? 42 : 48, height: compactDesktop ? 42 : 48, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('wallet')}><WalletCards size={22} strokeWidth={2.1} color={iconColor('wallet')} /></View>
-        </Pressable>
-      ) : null}
       {user ? (
         <Pressable {...hoverProps('notifications')} onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('notifications', { width: compactDesktop ? 42 : 48, height: compactDesktop ? 42 : 48, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('notifications')}><BellRing size={22} strokeWidth={2.1} color={iconColor('notifications')} /></View>
+          <View style={iconHoverStyle('notifications')}><Bell size={22} strokeWidth={2.1} color={iconColor('notifications')} /></View>
           {unreadNotificationCount ? (
             <Text className="absolute right-0 top-0 min-w-[18px] rounded-full bg-danger px-1 text-center text-[10px] font-medium text-white">
               {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
@@ -614,7 +446,9 @@ export default function TopAccountBar() {
       ) : null}
       {user ? (
         <Pressable {...hoverProps('profile')} onPress={() => setMenu(menu === 'profile' ? null : 'profile')} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('profile', { width: compactDesktop ? 42 : 48, height: compactDesktop ? 42 : 48, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('profile')}><UserRound size={22} strokeWidth={2.1} color={iconColor('profile')} /></View>
+          <View style={iconHoverStyle('profile')}>
+            {user?.profileImage ? <Image source={{ uri: user.profileImage }} resizeMode="cover" style={{ width: compactDesktop ? 30 : 34, height: compactDesktop ? 30 : 34, borderRadius: 999 }} /> : <UserRound size={22} strokeWidth={2.1} color={iconColor('profile')} />}
+          </View>
         </Pressable>
       ) : null}
         </>
@@ -627,6 +461,7 @@ export default function TopAccountBar() {
                 <DemoAccountMenu
                   accounts={tradingAccounts}
                   selectedAccount={selectedAccount}
+                  summary={summary}
                   onSelectAccount={selectAccount}
                   onClose={() => setMenu(null)}
                   onOpenPanel={openSidePanel}
@@ -645,6 +480,7 @@ export default function TopAccountBar() {
                   onClose={() => setMenu(null)}
                   onHoverIn={cancelProfileHoverClose}
                   onOpenPanel={openSidePanel}
+                  onOpenWallet={openWalletMenu}
                   selectedAccount={selectedAccount}
                   deposits={dashboard?.deposits || []}
                   transactions={dashboard?.transactions || transactions || []}

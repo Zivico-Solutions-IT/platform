@@ -32,7 +32,7 @@ const baseColumns = [
   ['Take Profit', 115],
 ];
 
-export default function OpenPositions() {
+export default function OpenPositions({ compact = false }) {
   const { width } = useWindowDimensions();
   const { positions, closedPositions, pendingOrders, closePosition, cancelPendingOrder } = useDemoTrading();
   const { darkMode, colors } = useAppTheme();
@@ -117,7 +117,9 @@ export default function OpenPositions() {
   const modalBg = darkMode ? '#12161c' : '#fafaf6';
   const overlayBg = darkMode ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.5)';
   const borderCol = darkMode ? '#1f242d' : '#e6e6e2';
-  const mobile = width < 760;
+  // Drawers use the same concise card presentation as the mobile terminal,
+  // even when they are opened from a desktop screen.
+  const mobile = compact || width < 760;
   const baseTableWidth = baseColumns.reduce((total, [, columnWidth]) => total + columnWidth, 0);
   const tableWidth = Math.min(Math.max(width - 32, 1040), 1440);
   const scale = tableWidth / baseTableWidth;

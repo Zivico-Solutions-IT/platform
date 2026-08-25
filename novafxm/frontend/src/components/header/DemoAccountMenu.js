@@ -1,4 +1,4 @@
-import { Check, Circle, Monitor, Repeat2 } from 'lucide-react-native';
+import { Check, Circle, Copy, Monitor, Repeat2 } from 'lucide-react-native';
 import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { useAuth } from '../../hooks/useAuth';
 import { useAppTheme } from '../../context/ThemeContext';
@@ -21,7 +21,7 @@ function accountLabel(account) {
   return account?.name || `${account?.type || 'Demo'} account`;
 }
 
-export default function DemoAccountMenu({ accounts = [], selectedAccount, onSelectAccount, onClose, onOpenPanel, anchor }) {
+export default function DemoAccountMenu({ accounts = [], selectedAccount, summary = {}, onSelectAccount, onClose, onOpenPanel, anchor }) {
   const { user } = useAuth();
   const { darkMode, colors } = useAppTheme();
   const { notify } = useToast();
@@ -44,6 +44,13 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
   const menuBackground = darkMode ? '#1E232A' : colors.panel;
   const cardBackground = darkMode ? '#242B33' : colors.surface;
   const defaultBorder = darkMode ? '#353C45' : colors.border;
+  const activeBalance = Number(activeAccount?.balance || summary.balance || 0);
+  const activeEquity = Number(summary.equity ?? activeBalance);
+  const activeMargin = Number(summary.margin || 0);
+  const activeProfit = Number(summary.openProfit || 0);
+  const activeFreeMargin = activeEquity - activeMargin;
+  const activeMarginLevel = Number(summary.marginLevel || 0);
+  const activeLive = String(activeAccount?.type || '').toLowerCase() === 'live';
   
   const isMobile = width < 992;
 
@@ -56,8 +63,8 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
     <View
       className="absolute z-50 rounded-[20px] border p-2.5 shadow-2xl"
       style={{
-        width: isMobile ? Math.max(0, width - 24) : 382,
-        maxWidth: isMobile ? Math.max(0, width - 24) : 382,
+        width: isMobile ? Math.max(0, width - 24) : 420,
+        maxWidth: isMobile ? Math.max(0, width - 24) : 420,
         top: isMobile ? 96 : 60,
         left: isMobile ? 12 : (anchor ? Math.max(12, anchor.x - 26) : 'auto'),
         right: isMobile ? undefined : (anchor ? 'auto' : 190),
@@ -70,6 +77,41 @@ export default function DemoAccountMenu({ accounts = [], selectedAccount, onSele
         transform: [{ translateY: 2 }],
       }}
     >
+      <View className="mb-3 rounded-2xl border p-4" style={{ backgroundColor: cardBackground, borderColor: defaultBorder }}>
+        <View className="flex-row items-center justify-between">
+          <View className="min-w-0 flex-1">
+            <View className="flex-row items-center gap-2">
+              <View className="rounded-full px-2.5 py-1" style={{ backgroundColor: activeLive ? `${colors.success}18` : `${colors.primary}20` }}>
+                <Text className="text-[11px] font-bold" style={{ color: activeLive ? colors.success : colors.primary }}>{activeLive ? 'Live' : 'Demo'}</Text>
+              </View>
+              <Text className="text-xs font-medium" numberOfLines={1} style={{ color: colors.muted }}>{accountLabel(activeAccount)}</Text>
+            </View>
+            <Text className="mt-2 text-lg font-bold" style={{ color: colors.text }}>{money(activeEquity)} {activeAccount?.currency || 'USD'}</Text>
+            <View className="mt-1 flex-row items-center">
+              <Text className="text-xs" style={{ color: colors.muted }}>{accountReference(activeAccount)}</Text>
+              <Copy size={13} color={colors.muted} style={{ marginLeft: 6 }} />
+            </View>
+          </View>
+          <Text className="text-sm font-bold" style={{ color: activeProfit >= 0 ? colors.success : colors.danger }}>{activeProfit >= 0 ? '+' : ''}{money(activeProfit)}</Text>
+        </View>
+        <View className="my-3 h-px" style={{ backgroundColor: defaultBorder }} />
+        {[
+          ['Equity', activeEquity],
+          ['Unrealized P/L', activeProfit],
+          ['Balance', activeBalance],
+          ['Margin', activeMargin],
+          ['Free Margin', activeFreeMargin],
+          ['Margin Level', activeMarginLevel ? `${money(activeMarginLevel)}%` : '—'],
+        ].map(([label, value]) => (
+          <View key={label} className="mb-1 flex-row items-center justify-between">
+            <Text className="text-[13px]" style={{ color: colors.muted }}>{label}</Text>
+            <Text className="text-[13px] font-bold" style={{ color: label === 'Unrealized P/L' && activeProfit < 0 ? colors.danger : colors.text }}>
+              {typeof value === 'string' ? value : money(value)}
+            </Text>
+          </View>
+        ))}
+      </View>
+      <Text className="mb-2 px-1 text-xs font-bold uppercase tracking-wider" style={{ color: colors.muted }}>Switch Account</Text>
       {tradingAccounts.map((account) => {
         const selected = String(account.id) === String(activeAccount?.id);
         const live = account.type === 'Live';

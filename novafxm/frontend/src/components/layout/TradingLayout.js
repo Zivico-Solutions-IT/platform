@@ -1,7 +1,7 @@
 import { Animated, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowDown, ArrowUp, BarChart3, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, FileText, Grid2X2, ListFilter, LogOut, Moon, Settings, ShoppingBag, Sun, Wallet } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, BarChart3, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, FileText, Grid2X2, ListFilter, LogOut, Moon, Settings, ShoppingBag, Sun, Wallet, X } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
@@ -18,10 +18,10 @@ import { storage } from '../../utils/storage';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 
-function DesktopNavigationRail({ onLogout }) {
-  const { darkMode, colors, toggleTheme } = useAppTheme();
+function DesktopNavigationRail({ onOpenPositions }) {
+  const { darkMode, colors } = useAppTheme();
   const items = [
-    { label: 'Dashboard', icon: Grid2X2, action: () => router.push('/dashboard') },
+    { label: 'Home', icon: Grid2X2, action: () => router.push('/dashboard') },
     {
       label: 'Markets',
       icon: BarChart3,
@@ -30,40 +30,92 @@ function DesktopNavigationRail({ onLogout }) {
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:toggle-market-watch'));
       },
     },
-    { label: 'Orders', icon: ShoppingBag, action: () => router.push({ pathname: '/trading', params: { panel: 'history' } }) },
-    { label: 'Portfolio', icon: Briefcase, action: () => router.push({ pathname: '/trading', params: { panel: 'history' } }) },
-    { label: 'Wallet', icon: Wallet, action: () => router.push('/wallet') },
-    { label: 'Reports', icon: FileText, action: () => router.push({ pathname: '/trading', params: { panel: 'history' } }) },
-    { label: 'Settings', icon: Settings, action: () => router.push('/settings') },
+    { label: 'Positions', icon: Briefcase, action: onOpenPositions },
+    {
+      label: 'Wallet',
+      icon: Wallet,
+      action: () => {
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:open-wallet-funding'));
+      },
+    },
   ];
 
   return (
-    <View className="h-full items-center border rounded-xl overflow-hidden" style={{ width: 70, flexShrink: 0, backgroundColor: colors.panel, borderColor: colors.border }}>
-      <View className="flex-1 w-full items-center pt-2">
+    <View className="h-full items-center border-r overflow-hidden" style={{ width: 56, flexShrink: 0, backgroundColor: colors.panel, borderColor: colors.border }}>
+      <View className="w-full items-center pt-7">
         {items.map(({ label, icon: Icon, active, action }) => (
-          <Pressable key={label} onPress={action} className="w-full items-center justify-center py-2" style={{ cursor: 'pointer' }}>
-            <View className="items-center justify-center rounded-lg" style={{ width: 38, height: 34, backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }}>
-              <Icon size={17} color={active ? colors.success : colors.muted} strokeWidth={active ? 2.2 : 1.8} />
+          <Pressable key={label} onPress={action} className="mb-6 items-center justify-center rounded-lg" style={{ width: 38, height: 38, cursor: 'pointer', backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }} accessibilityLabel={label}>
+            <View className="items-center justify-center">
+              <Icon size={22} color={active ? colors.success : colors.muted} strokeWidth={active ? 2.2 : 1.8} />
             </View>
-            <Text className="mt-0.5 text-[8px] font-medium" style={{ color: active ? colors.text : colors.muted }}>{label}</Text>
           </Pressable>
         ))}
       </View>
-      <Pressable onPress={toggleTheme} className="items-center justify-center py-2" style={{ width: '100%', cursor: 'pointer' }}>
-        {darkMode ? <Sun size={16} color={colors.muted} /> : <Moon size={16} color={colors.muted} />}
-        <Text className="mt-1 text-[8px]" style={{ color: colors.muted }}>{darkMode ? 'Light' : 'Dark'}</Text>
-      </Pressable>
-      <Pressable onPress={onLogout} className="items-center justify-center py-3 border-t" style={{ width: '100%', borderColor: colors.border, cursor: 'pointer' }}>
-        <LogOut size={16} color={colors.danger} />
-        <Text className="mt-1 text-[8px] font-medium" style={{ color: colors.danger }}>Logout</Text>
-      </Pressable>
     </View>
+  );
+}
+
+function LeftPositionsDrawer({ onClose }) {
+  const { width, height } = useWindowDimensions();
+  const { darkMode, colors } = useAppTheme();
+  // Match the Market Watch drawer: a concise fixed-width panel beside the rail.
+  const panelWidth = Math.min(410, Math.max(0, width - 56));
+  const slideAnim = useRef(new Animated.Value(-panelWidth)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const panelBackground = darkMode ? colors.panel : '#FBFAF6';
+
+  useEffect(() => {
+    slideAnim.setValue(-panelWidth);
+    fadeAnim.setValue(0);
+    Animated.parallel([
+      Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+    ]).start();
+  }, [fadeAnim, panelWidth, slideAnim]);
+
+  return (
+    <Animated.View
+      className="z-50 overflow-hidden shadow-2xl"
+      style={{
+        position: 'absolute',
+        left: 56,
+        top: 0,
+        width: panelWidth,
+        height,
+        paddingTop: 20,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
+        backgroundColor: panelBackground,
+        borderRightWidth: 1,
+        borderRightColor: colors.border,
+        borderTopRightRadius: 20,
+        borderBottomRightRadius: 20,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowRadius: 28,
+        opacity: fadeAnim,
+        transform: [{ translateX: slideAnim }],
+      }}
+    >
+      <View className="flex-row items-center justify-between border-b px-[18px] pb-4 pt-2" style={{ borderColor: colors.border }}>
+        <View>
+          <Text className="text-2xl font-bold" style={{ color: colors.text }}>Positions</Text>
+          <Text className="mt-1 text-xs" style={{ color: colors.muted }}>Open trades, orders and history</Text>
+        </View>
+        <Pressable onPress={onClose} className="h-9 w-9 items-center justify-center rounded-[10px]" style={{ backgroundColor: darkMode ? colors.surface : '#F4F2ED' }} accessibilityLabel="Close positions panel">
+          <X size={19} color={colors.muted} strokeWidth={2.2} />
+        </Pressable>
+      </View>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 16, paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
+        <OpenPositions compact />
+      </ScrollView>
+    </Animated.View>
   );
 }
 
 function OrderRail({ summary, user, showSummary = true, showAvailableMargin = true, titleInset = 0 }) {
   return (
-    <View className="h-full overflow-hidden" style={{ width: 300, maxWidth: '100%', overflow: 'hidden', height: '100%' }}>
+    <View className="h-full overflow-hidden" style={{ width: 252, maxWidth: '100%', overflow: 'hidden', height: '100%' }}>
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ gap: 12, paddingBottom: 12 }}
@@ -95,7 +147,7 @@ function CollapsibleOrderRail({ summary, user }) {
   }
 
   return (
-    <View className="relative h-full" style={{ width: 300, maxWidth: '100%' }}>
+    <View className="relative h-full" style={{ width: 252, maxWidth: '100%' }}>
       <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} titleInset={30} />
       <Pressable
         onPress={() => setCollapsed(true)}
@@ -274,9 +326,10 @@ export default function TradingLayout() {
   const params = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
   const { colors } = useAppTheme();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { summary, selectedTradingAccount, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
+  const [positionsDrawerOpen, setPositionsDrawerOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
   const [mobileTabRestored, setMobileTabRestored] = useState(false);
   const mobileContentAnimation = useRef(new Animated.Value(1)).current;
@@ -285,7 +338,7 @@ export default function TradingLayout() {
   const tablet = width >= 760;
   const mobile = width < 760;
   const chartAreaHeight = desktop
-    ? Math.max(560, Math.min(680, height - 150))
+    ? Math.max(560, Math.min(720, height - 112))
     : tablet
       ? Math.max(540, Math.min(640, height - 170))
       : Math.max(430, Math.min(560, height - 210));
@@ -483,10 +536,10 @@ export default function TradingLayout() {
   }
 
   return (
-    <View className="flex-1 flex-row" style={{ backgroundColor: colors.background }}>
+    <View className="relative flex-1 flex-row" style={{ backgroundColor: colors.background }}>
       {desktop && !chartFullscreen ? (
-        <View style={{ paddingLeft: 6, paddingTop: 6, paddingBottom: 6 }}>
-          <DesktopNavigationRail onLogout={logout} />
+        <View style={{ paddingRight: 1 }}>
+          <DesktopNavigationRail onOpenPositions={() => setPositionsDrawerOpen(true)} />
         </View>
       ) : null}
       <View className="flex-1 min-w-0">
@@ -498,13 +551,13 @@ export default function TradingLayout() {
           style={{ flex: 1 }}
           contentContainerStyle={{
             flexGrow: 1,
-            padding: chartFullscreen ? 0 : (mobile ? 6 : 12),
-            paddingTop: chartFullscreen ? 0 : (desktop ? 0 : (mobile ? 6 : 12)),
-            paddingBottom: chartFullscreen ? 0 : (mobile ? 16 : 24),
+            padding: chartFullscreen ? 0 : (desktop ? 8 : (mobile ? 6 : 12)),
+            paddingTop: chartFullscreen ? 0 : (desktop ? 6 : (mobile ? 6 : 12)),
+            paddingBottom: chartFullscreen ? 0 : (desktop ? 8 : (mobile ? 16 : 24)),
           }}
         >
         <View
-          className={chartFullscreen ? 'flex-1' : (desktop ? 'flex-row gap-3 overflow-hidden' : mobile ? 'gap-1.5 overflow-hidden' : 'gap-3 overflow-hidden')}
+          className={chartFullscreen ? 'flex-1' : (desktop ? 'flex-row gap-2 overflow-hidden' : mobile ? 'gap-1.5 overflow-hidden' : 'gap-3 overflow-hidden')}
           style={{ height: chartFullscreen ? undefined : chartAreaHeight, overflow: chartFullscreen ? 'visible' : 'hidden' }}
         >
           {desktop ? (
@@ -525,7 +578,6 @@ export default function TradingLayout() {
             </>
           )}
         </View>
-        {!chartFullscreen ? <OpenPositions /> : null}
         </ScrollView>
         </View>
       </View>
@@ -535,6 +587,7 @@ export default function TradingLayout() {
         onClose={() => setInsufficientFundsVisible(false)}
       />
       <BirthdayModal />
+      {positionsDrawerOpen ? <LeftPositionsDrawer onClose={() => setPositionsDrawerOpen(false)} /> : null}
     </View>
   );
 }

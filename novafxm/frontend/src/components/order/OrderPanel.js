@@ -473,8 +473,8 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
   }
 
   return (
-    <View className="h-full rounded-2xl border lg:w-[300px]" style={{ backgroundColor: panelBackground, borderColor: colors.border, height: '100%', shadowColor: '#18201C', shadowOpacity: darkMode ? 0 : 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: 5 }, elevation: darkMode ? 0 : 2 }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 14 }}>
+    <View className="h-full rounded-xl border lg:w-[252px]" style={{ backgroundColor: panelBackground, borderColor: colors.border, height: '100%', shadowColor: '#18201C', shadowOpacity: darkMode ? 0 : 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: darkMode ? 0 : 2 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 12 }}>
         <View className="flex-row items-center justify-between">
           <View style={{ paddingLeft: titleInset }}>
             <Text className="text-[17px] font-bold" style={{ color: colors.text }}>New Trade</Text>

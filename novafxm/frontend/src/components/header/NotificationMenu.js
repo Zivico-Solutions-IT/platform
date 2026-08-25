@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { AlertTriangle, Bell, CheckCircle2, CreditCard, ShieldCheck, Wallet, X } from 'lucide-react-native';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -63,8 +63,16 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
   const { transactions, setSidePanel } = useDemoTrading();
   const [dashboard, setDashboard] = useState(null);
   const [adminData, setAdminData] = useState(emptyAdminNotificationData);
-  const { width } = useWindowDimensions();
-  const isMobile = width < 760;
+  const { width, height } = useWindowDimensions();
+  // On web this panel is rendered inside a modal portal. Use the browser
+  // viewport so it remains docked to the right edge instead of inheriting a
+  // narrow parent measurement.
+  const viewportWidth = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : width;
+  const isMobile = viewportWidth < 760;
+  const panelWidth = isMobile ? viewportWidth : 410;
+  const panelHeight = height;
+  const slideAnim = useRef(new Animated.Value(410)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     let active = true;
@@ -191,68 +199,46 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
   const mobileTheme = darkMode
     ? { background: '#111827', header: '#161D27', surface: '#1B2430', unreadSurface: '#20281F', border: '#2C3746', text: '#F4F7FB', muted: '#A7B1BF', subtle: '#768295', close: '#222C38' }
     : { background: '#F6F5F1', header: '#FFFFFF', surface: '#FFFFFF', unreadSurface: '#FBF9F4', border: '#ECEAE3', text: '#1B1F27', muted: '#8A8F7C', subtle: '#B3B8AE', close: '#F4F2ED' };
+  const panelBackground = darkMode ? colors.panel : '#FBFAF6';
 
-  if (!isMobile) {
-    return (
-      <View
-        className="absolute z-50 overflow-hidden rounded-xl border shadow-2xl"
-        style={{
-          width: 360,
-          maxWidth: '92%',
-          top: 74,
-          right: 12,
-          backgroundColor: colors.panel,
-          borderColor: colors.border,
-          shadowColor: '#000',
-          shadowOpacity: 0.18,
-          shadowRadius: 24,
-          elevation: 12,
-        }}
-      >
-        <View className="flex-row items-center justify-between border-b px-4 py-3" style={{ borderColor: colors.border }}>
-          <View>
-            <Text className="text-sm font-medium" style={{ color: colors.text }}>{isAdmin ? 'Admin Notifications' : 'Notifications'}</Text>
-            <Text className="text-[10px] font-semimedium uppercase" style={{ color: colors.muted }}>{isAdmin ? 'Requests waiting for action' : `${unreadCount} unread`}</Text>
-          </View>
-          <View className="flex-row items-center gap-2">
-            <Pressable onPress={() => onReadAll?.(notifications.map((item) => item.id))} className="rounded-md px-3 py-2" style={{ backgroundColor: colors.surface }}>
-              <Text className="text-xs font-medium" style={{ color: colors.primary }}>Read all</Text>
-            </Pressable>
-            <Pressable onPress={onClose} className="h-8 w-8 items-center justify-center rounded-md" style={{ backgroundColor: colors.surface }}>
-              <X size={16} color={colors.text} />
-            </Pressable>
-          </View>
-        </View>
-        <ScrollView style={{ maxHeight: 430 }} showsVerticalScrollIndicator={false}>
-          {notifications.length ? notifications.map((item, index) => (
-            <NotificationItem
-              key={`${item.id}-${index}`}
-              colors={colors}
-              compact
-              read={readIds.includes(item.id)}
-              {...item}
-              onPress={() => {
-                onReadAll?.([item.id]);
-                item.onPress?.();
-              }}
-            />
-          )) : (
-            <Text className="p-5 text-sm" style={{ color: colors.muted }}>{isAdmin ? 'No new admin notifications.' : 'No account notifications yet.'}</Text>
-          )}
-        </ScrollView>
-      </View>
-    );
-  }
+  useEffect(() => {
+    slideAnim.setValue(panelWidth);
+    fadeAnim.setValue(0);
+    Animated.parallel([
+      Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
+    ]).start();
+  }, [fadeAnim, panelWidth, slideAnim]);
 
   return (
-    <View
-      className="absolute inset-0 z-50 items-center"
+    <Animated.View
+      className="z-50 overflow-hidden shadow-2xl"
       style={{
-        backgroundColor: mobileTheme.background,
+        // Keep this drawer on the same explicit right-side anchor as ProfileMenu.
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        bottom: isMobile ? 0 : undefined,
+        left: isMobile ? 0 : undefined,
+        width: isMobile ? '100%' : panelWidth,
+        height: panelHeight,
+        paddingTop: isMobile ? 0 : 20,
+        paddingBottom: isMobile ? 0 : 20,
+        paddingHorizontal: isMobile ? 0 : 20,
+        backgroundColor: panelBackground,
+        borderLeftWidth: isMobile ? 0 : 1,
+        borderLeftColor: mobileTheme.border,
+        borderTopLeftRadius: isMobile ? 0 : 20,
+        borderBottomLeftRadius: isMobile ? 0 : 20,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowRadius: 28,
+        opacity: fadeAnim,
+        transform: [{ translateX: slideAnim }],
       }}
     >
-      <View className="w-full flex-1 overflow-hidden" style={{ backgroundColor: mobileTheme.background }}>
-        <View className="flex-row items-start justify-between border-b px-5 pb-[18px] pt-[22px]" style={{ backgroundColor: mobileTheme.header, borderColor: mobileTheme.border }}>
+      <View className="w-full flex-1 overflow-hidden" style={{ backgroundColor: panelBackground }}>
+        <View className="flex-row items-start justify-between border-b px-5 pb-[18px] pt-[22px]" style={{ backgroundColor: panelBackground, borderColor: mobileTheme.border }}>
           <View className="flex-row flex-1 pr-3">
             <View className="mr-3 h-[38px] w-[38px] items-center justify-center rounded-[11px]" style={{ backgroundColor: '#FBF3E2' }}>
               <Bell size={18} color="#B8891E" strokeWidth={2} />
@@ -266,7 +252,7 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
             <X size={15} color={mobileTheme.muted} strokeWidth={2.2} />
           </Pressable>
         </View>
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 22 }} style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: isMobile ? 20 : 18, paddingTop: 14, paddingBottom: 22 }} style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
           <View className="mb-[10px] flex-row justify-end">
             <Pressable onPress={() => onReadAll?.(notifications.map((item) => item.id))}>
               <Text className="text-[13px] font-bold" style={{ color: '#B8891E' }}>Mark all as read</Text>
@@ -295,6 +281,6 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
           <Text className="pb-1 pt-4 text-center text-xs" style={{ color: mobileTheme.muted }}>You&apos;re all caught up</Text>
         </ScrollView>
       </View>
-    </View>
+    </Animated.View>
   );
 }

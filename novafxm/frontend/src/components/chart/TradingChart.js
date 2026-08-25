@@ -1675,7 +1675,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
       ) : null}
 
       <View className="flex-1 p-2.5" style={{ marginLeft: chartOffsetLeft, backgroundColor: ui.background, zIndex: 0, elevation: 0 }}>
-        <View className="flex-1 overflow-hidden rounded-lg border shadow-2xl" style={{ backgroundColor: ui.menu, borderColor: ui.menuBorder }}>
+        <View className="flex-1 overflow-hidden rounded-md border" style={{ backgroundColor: ui.menu, borderColor: ui.menuBorder }}>
           {Platform.OS === 'web' ? (
             <iframe
               key={chartRenderKey}

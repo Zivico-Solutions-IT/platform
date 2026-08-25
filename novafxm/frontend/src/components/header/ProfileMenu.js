@@ -5,8 +5,11 @@ import {
   Gift,
   ArrowLeft,
   LogOut,
+  Moon,
   Settings2,
   ShieldCheck,
+  Sun,
+  WalletCards,
   X,
   ChevronRight,
 } from 'lucide-react-native';
@@ -89,14 +92,14 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
   );
 }
 
-export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPanel, selectedAccount, deposits = [], transactions = [] }) {
+export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPanel, onOpenWallet, selectedAccount, deposits = [], transactions = [] }) {
   const { user: sessionUser, logout, isAdmin } = useAuth();
   const [user, setProfileUser] = useState(sessionUser);
   const [bonusPosts, setBonusPosts] = useState([]);
   const [bonusCount, setBonusCount] = useState(0);
   const [bonusLoading, setBonusLoading] = useState(false);
   const [showBonusPosts, setShowBonusPosts] = useState(false);
-  const { colors, darkMode } = useAppTheme();
+  const { colors, darkMode, toggleTheme } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const slideAnim = useRef(new Animated.Value(410)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -362,6 +365,20 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             icon={Settings2}
             title="Settings"
             onPress={() => openPanel('settings')}
+            palette={palette}
+          />
+          {!isAdmin ? (
+            <MenuAction
+              icon={WalletCards}
+              title="Wallet & Funding"
+              onPress={() => onOpenWallet?.()}
+              palette={palette}
+            />
+          ) : null}
+          <MenuAction
+            icon={darkMode ? Sun : Moon}
+            title={darkMode ? 'Light Mode' : 'Dark Mode'}
+            onPress={toggleTheme}
             palette={palette}
           />
           <MenuAction
