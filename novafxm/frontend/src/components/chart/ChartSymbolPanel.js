@@ -50,7 +50,8 @@ export default function ChartSymbolPanel({
       backgroundColor: ui.menu, borderColor: ui.menuBorder,
     } : {
       position: Platform.OS === 'web' ? 'fixed' : 'absolute',
-      left: Platform.OS === 'web' ? 82 : 10,
+      // Desktop rail is 56px wide. Align the drawer directly against it.
+      left: Platform.OS === 'web' ? 56 : 10,
       top: Platform.OS === 'web' ? 8 : symbolPanelTop,
       bottom: Platform.OS === 'web' ? 8 : 10,
       width: symbolPanelWidth,
@@ -86,7 +87,7 @@ export default function ChartSymbolPanel({
 
       <View ref={containerRef} style={{ zIndex: 3400 }}>
         <Pressable onPress={() => !favoritesActive && setSymbolTabMenuOpen((open) => !open)} className="flex-row items-center h-10 px-3 border-b" style={{ borderColor: ui.border, backgroundColor: ui.dark ? ui.control : '#f8fbfc' }}>
-          <Text className="mr-1 text-[11px]">ðŸ”¥</Text><Text className="flex-1 text-[11px] font-bold" style={{ color: ui.text }}>{favoritesActive ? 'Favorites' : selectedCategory}</Text>
+          <Text className="flex-1 text-[11px] font-bold" style={{ color: ui.text }}>{favoritesActive ? 'Favorites' : selectedCategory}</Text>
           <View className="w-2 h-2 mr-2 rounded-full" style={{ backgroundColor: ui.accent }} />{!favoritesActive ? <ChevronDown size={14} color={ui.muted} /> : null}
         </Pressable>
         {symbolTabMenuOpen && !favoritesActive ? <View className="absolute left-2 right-2 top-10 p-1 border rounded-lg shadow-xl" style={{ backgroundColor: ui.menu, borderColor: ui.menuBorder, zIndex: 3500 }}>
@@ -105,7 +106,16 @@ export default function ChartSymbolPanel({
             <Pressable onPress={(event) => { event?.stopPropagation?.(); onToggleFavorite?.(item.symbol); }} className="items-center justify-center w-7 h-8"><Star size={14} color={favorite ? '#e8b923' : ui.muted} fill={favorite ? '#e8b923' : 'transparent'} /></Pressable>
             <View className="flex-1 min-w-0"><View className="flex-row items-center"><Text className="text-xs font-bold" numberOfLines={1} style={{ color: ui.text }}>{item.symbol}</Text><Text className="ml-1 text-[8px]" style={{ color: ui.muted }}>{Number(item.spread || 0).toFixed(1)}</Text></View><Text className="mt-1 text-[9px]" numberOfLines={1} style={{ color: ui.muted }}>{MARKET_NAMES[item.symbol] || item.group || 'Global Market'}</Text></View>
             <MiniTrend symbol={item.symbol} positive={positive} color={tone} />
-            <View className="items-end ml-1" style={{ width: 72 }}><Text className="text-[10px] font-bold" style={{ color: ui.text }}>{quote(item.bid ?? item.price, item.decimals)}</Text><Text className="text-[9px]" style={{ color: ui.muted }}>{quote(item.ask ?? item.price, item.decimals)}</Text></View>
+            <View className="items-end ml-1" style={{ width: 78 }}>
+              <View className="flex-row items-center">
+                <Text className="mr-1 text-[7px] font-bold uppercase" style={{ color: ui.muted }}>Bid</Text>
+                <Text className="text-[10px] font-bold" style={{ color: ui.danger }}>{quote(item.bid ?? item.price, item.decimals)}</Text>
+              </View>
+              <View className="mt-0.5 flex-row items-center">
+                <Text className="mr-1 text-[7px] font-bold uppercase" style={{ color: ui.muted }}>Ask</Text>
+                <Text className="text-[9px] font-bold" style={{ color: ui.success }}>{quote(item.ask ?? item.price, item.decimals)}</Text>
+              </View>
+            </View>
             <View className="items-center justify-center ml-1 rounded-md" style={{ width: 43, height: 22, backgroundColor: positive ? (ui.dark ? '#123d33' : '#e7f8f0') : (ui.dark ? '#4a2227' : '#fff0f1') }}><Text className="text-[8px] font-bold" style={{ color: tone }}>{percent(change)}</Text></View>
             <ChevronRight size={13} color={active ? ui.accent : ui.muted} />
           </Pressable>;

@@ -9,6 +9,7 @@ import { money, percent, quote } from '../../utils/formatters';
 import { storage } from '../../utils/storage';
 import { useAppTheme } from '../../context/ThemeContext';
 import api from '../../services/api';
+import { apiBaseUrl } from '../../services/apiConfig';
 import { dashboardService } from '../../services/dashboardService';
 import {
   buildAdminNotificationItems,
@@ -43,6 +44,12 @@ export default function TopAccountBar() {
   const isMobileLayout = width < 760;
   const showHeaderContent = !(isMobileLayout && sidePanel);
   const iconButtonHoverBg = darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(11, 11, 11, 0.04)';
+  const rawProfileImage = user?.profileImage?.url || user?.profileImage || user?.avatarUrl || user?.avatar || null;
+  const profileImageUri = rawProfileImage && /^(https?:|data:)/i.test(String(rawProfileImage))
+    ? rawProfileImage
+    : rawProfileImage
+      ? `${apiBaseUrl().replace(/\/api\/?$/, '')}/${String(rawProfileImage).replace(/^\/+/, '')}`
+      : null;
 
   const fallbackAccount = useMemo(() => ({
     // Display-only while the real accounts request is in flight. Never make
@@ -73,6 +80,7 @@ export default function TopAccountBar() {
 
   const symbolPrice = Number(currentSymbol?.price || currentSymbol?.bid || 0);
   const symbolChange = Number(currentSymbol?.change || 0);
+  const symbolSpread = Number(currentSymbol?.spreadPoints ?? currentSymbol?.spread ?? 0);
   const desktopHeaderBg = darkMode ? '#02070d' : colors.background;
   const desktopDivider = darkMode ? '#172536' : colors.border;
   const desktopText = colors.text;
@@ -263,6 +271,18 @@ export default function TopAccountBar() {
     window.addEventListener('novafxm:open-wallet-funding', openWalletMenu);
     return () => window.removeEventListener('novafxm:open-wallet-funding', openWalletMenu);
   }, [openWalletMenu]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const openNotifications = () => setMenu('notifications');
+    const openProfile = () => setMenu('profile');
+    window.addEventListener('novafxm:open-notifications', openNotifications);
+    window.addEventListener('novafxm:open-profile', openProfile);
+    return () => {
+      window.removeEventListener('novafxm:open-notifications', openNotifications);
+      window.removeEventListener('novafxm:open-profile', openProfile);
+    };
+  }, []);
   const goToAdminDashboard = () => {
     setMenu(null);
     router.push('/admin');
@@ -357,7 +377,7 @@ export default function TopAccountBar() {
               {user ? (
                 <Pressable {...hoverProps('mobile-profile')} onPress={() => setMenu(menu === 'profile' ? null : 'profile')} className={`${narrowPhone ? 'h-[32px] w-[30px]' : 'h-[38px] w-[34px]'} relative items-center justify-center rounded-full`} style={iconButtonStyle('mobile-profile', { backgroundColor: 'transparent' })}>
                   <View style={iconHoverStyle('mobile-profile')}>
-                    {user?.profileImage ? <Image source={{ uri: user.profileImage }} resizeMode="cover" style={{ width: 27, height: 27, borderRadius: 14 }} /> : <UserRound color={darkMode ? '#A7B1BF' : '#AEB4BD'} size={19} strokeWidth={1.8} />}
+                    {profileImageUri ? <Image source={{ uri: profileImageUri }} resizeMode="cover" style={{ width: 27, height: 27, borderRadius: 14 }} /> : <UserRound color={darkMode ? '#A7B1BF' : '#AEB4BD'} size={19} strokeWidth={1.8} />}
                   </View>
                 </Pressable>
               ) : null}
@@ -426,29 +446,68 @@ export default function TopAccountBar() {
               <ChevronDown size={14} color={colors.muted} style={{ transform: [{ rotate: menu === 'account' ? '180deg' : '0deg' }] }} />
             </Pressable>
           ) : null}
+          <Pressable
+            onPress={() => {
+              if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:toggle-market-watch'));
+            }}
+            className="flex-row items-center rounded-lg border px-2 py-1"
+            style={{
+              maxWidth: compactDesktop ? 190 : 270,
+              backgroundColor: darkMode ? '#101B29' : '#F7FAF8',
+              borderColor: darkMode ? '#20334A' : '#DCE7DF',
+              cursor: 'pointer',
+            }}
+            accessibilityLabel="Open market watch"
+          >
+            <View className="mr-1.5 h-2 w-2 rounded-full" style={{ backgroundColor: colors.success }} />
+            <Text className="text-[11px] font-bold" style={{ color: desktopText }}>{currentSymbol?.symbol || 'Markets'}</Text>
+            <ChevronDown size={11} color={desktopMuted} style={{ marginLeft: 2 }} />
+            <Text className="ml-1.5 text-[11px] font-bold" style={{ color: symbolChange >= 0 ? colors.success : colors.danger }}>{quote(symbolPrice, currentSymbol?.decimals)}</Text>
+            {!compactDesktop ? <Text className="ml-1 text-[9px] font-semibold" style={{ color: symbolChange >= 0 ? colors.success : colors.danger }}>{percent(symbolChange)}</Text> : null}
+            {!compactDesktop ? <Text className="ml-1.5 text-[8px]" style={{ color: desktopMuted }}>Spread: {symbolSpread.toFixed(1)}</Text> : null}
+          </Pressable>
         </View>
       )}
-      {!mobile ? <View style={{ flex: 1 }} /> : null}
+      {!mobile ? (
+        <View className="flex-1 items-center justify-center">
+          {!compactDesktop ? (
+            <View className="flex-row items-center rounded-xl border px-2.5 py-1.5" style={{ backgroundColor: darkMode ? '#101B29' : '#FBFCFA', borderColor: darkMode ? '#20334A' : '#E1EAE3' }}>
+              <View className="flex-row items-center rounded-lg px-2.5 py-1.5" style={{ backgroundColor: darkMode ? '#113D35' : '#E8F8F0' }}>
+                <View className="mr-1.5 h-2 w-2 rounded-full" style={{ backgroundColor: colors.success }} />
+                <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.success }}>Market live</Text>
+              </View>
+              <View className="mx-3 h-7 w-px" style={{ backgroundColor: desktopDivider }} />
+              <View>
+                <Text className="text-[9px] font-bold uppercase tracking-wider" style={{ color: desktopMuted }}>Bid</Text>
+                <Text className="text-sm font-bold" style={{ color: colors.danger }}>{quote(currentSymbol?.bid ?? symbolPrice, currentSymbol?.decimals)}</Text>
+              </View>
+              <View className="mx-3 h-7 w-px" style={{ backgroundColor: desktopDivider }} />
+              <View>
+                <Text className="text-[9px] font-bold uppercase tracking-wider" style={{ color: desktopMuted }}>Ask</Text>
+                <Text className="text-sm font-bold" style={{ color: colors.success }}>{quote(currentSymbol?.ask ?? symbolPrice, currentSymbol?.decimals)}</Text>
+              </View>
+              <Svg width={72} height={28} viewBox="0 0 112 40" style={{ marginLeft: 12 }}>
+                <Polyline points={sparklinePoints} fill="none" stroke={symbolChange >= 0 ? colors.success : colors.danger} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {isAdmin ? (
         <Pressable {...hoverProps('admin-dashboard')} onPress={goToAdminDashboard} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('admin-dashboard', { width: compactDesktop ? 40 : 44, height: compactDesktop ? 40 : 44, backgroundColor: 'transparent' })}>
           <View style={iconHoverStyle('admin-dashboard')}><LayoutDashboard size={20} color={iconColor('admin-dashboard')} /></View>
         </Pressable>
       ) : null}
       {user ? (
-        <Pressable {...hoverProps('notifications')} onPress={() => setMenu(menu === 'notifications' ? null : 'notifications')} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('notifications', { width: compactDesktop ? 42 : 48, height: compactDesktop ? 42 : 48, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('notifications')}><Bell size={22} strokeWidth={2.1} color={iconColor('notifications')} /></View>
-          {unreadNotificationCount ? (
-            <Text className="absolute right-0 top-0 min-w-[18px] rounded-full bg-danger px-1 text-center text-[10px] font-medium text-white">
-              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
-            </Text>
-          ) : null}
-        </Pressable>
-      ) : null}
-      {user ? (
-        <Pressable {...hoverProps('profile')} onPress={() => setMenu(menu === 'profile' ? null : 'profile')} className="hidden items-center justify-center rounded-full lg:flex" style={iconButtonStyle('profile', { width: compactDesktop ? 42 : 48, height: compactDesktop ? 42 : 48, backgroundColor: 'transparent' })}>
-          <View style={iconHoverStyle('profile')}>
-            {user?.profileImage ? <Image source={{ uri: user.profileImage }} resizeMode="cover" style={{ width: compactDesktop ? 30 : 34, height: compactDesktop ? 30 : 34, borderRadius: 999 }} /> : <UserRound size={22} strokeWidth={2.1} color={iconColor('profile')} />}
-          </View>
+        <Pressable
+          onPress={() => {
+            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:open-new-order'));
+          }}
+          className="hidden items-center justify-center rounded-lg px-4 lg:flex"
+          style={{ height: compactDesktop ? 34 : 38, backgroundColor: colors.primary, cursor: 'pointer' }}
+          accessibilityLabel="Open new order"
+        >
+          <Text className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#FFFFFF' }}>New Order</Text>
         </Pressable>
       ) : null}
         </>

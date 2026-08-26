@@ -14,13 +14,13 @@ const ORDER_TYPES = [
   { value: 'stop', label: 'Stop Order' },
 ];
 
-function SwitchRow({ active, label, onPress, colors }) {
+function SwitchRow({ active, label, onPress, colors, background, border, text, activeColor }) {
   return (
-    <Pressable onPress={onPress} className="flex-row items-center justify-between rounded-lg border px-3 py-2" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-      <Text className="text-xs font-medium" style={{ color: colors.text }}>{label}</Text>
+    <Pressable onPress={onPress} className="flex-row items-center justify-between rounded-lg border px-3 py-2" style={{ backgroundColor: background || colors.surface, borderColor: border || colors.border }}>
+      <Text className="text-xs font-medium" style={{ color: text || colors.text }}>{label}</Text>
       <View
         className="h-6 w-11 justify-center rounded-full px-1"
-        style={{ backgroundColor: active ? colors.success : colors.border }}
+        style={{ backgroundColor: active ? (activeColor || colors.success) : (border || colors.border) }}
       >
         <View
           className="h-4 w-4 rounded-full bg-white"
@@ -31,7 +31,7 @@ function SwitchRow({ active, label, onPress, colors }) {
   );
 }
 
-export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 }) {
+export default function OrderPanel({ showAvailableMargin = true, titleInset = 0, popup = false }) {
   const { width, height } = useWindowDimensions();
   const { currentSymbol, openPosition, createPendingOrder, summary } = useDemoTrading();
   const { user } = useAuth();
@@ -54,6 +54,15 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
   const controlBackground = darkMode ? '#20262d' : '#f7f7f4';
   const orderSuccess = '#239F56';
   const orderDanger = '#F4605C';
+  // Keep the platform palette intact; these only create a clearer ticket layout.
+  const ticketBackground = panelBackground;
+  const ticketSurface = controlBackground;
+  const ticketSurfaceRaised = darkMode ? '#20262d' : '#F1F4F1';
+  const ticketBorder = darkMode ? colors.border : '#DEE5E0';
+  const ticketText = colors.text;
+  const ticketMuted = colors.muted;
+  const ticketBuy = orderSuccess;
+  const ticketSell = orderDanger;
   const mobileActionWidth = Math.max(280, Math.min(width - 24, 460));
   const lotSize = Number(lots) || 0;
   const orderPrice = Number(orderSide === 'BUY' ? currentSymbol.ask : currentSymbol.bid) || currentSymbol.price || 0;
@@ -122,14 +131,14 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
     notify({ type, title, message: text });
   };
 
-  const validateRiskLevels = () => {
-    const livePrice = Number(orderSide === 'BUY' ? currentSymbol.ask : currentSymbol.bid);
+  const validateRiskLevels = (side = orderSide) => {
+    const livePrice = Number(side === 'BUY' ? currentSymbol.ask : currentSymbol.bid);
     const stop = Number(stopLoss);
     const profit = Number(takeProfit);
     if (!Number.isFinite(livePrice) || livePrice <= 0) return 'Live price is not available.';
     if (tpSlOn && stopLoss && (!Number.isFinite(stop) || stop <= 0)) return 'Enter a valid Stop Loss price.';
     if (tpSlOn && takeProfit && (!Number.isFinite(profit) || profit <= 0)) return 'Enter a valid Take Profit price.';
-    if (orderSide === 'BUY') {
+    if (side === 'BUY') {
       if (tpSlOn && takeProfit && profit <= livePrice) return 'BUY Take Profit must be above the live price.';
       if (tpSlOn && stopLoss && stop >= livePrice) return 'BUY Stop Loss must be below the live price.';
     } else {
@@ -139,7 +148,7 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
     return '';
   };
 
-  const getPendingOrderError = () => {
+  const getPendingOrderError = (side = orderSide) => {
     if (orderType === 'spot') return '';
     const price = Number(entryPrice);
     if (!entryPrice || !Number.isFinite(price) || price <= 0) return '';
@@ -148,7 +157,7 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
     const bid = Number(currentSymbol.bid) || Number(currentSymbol.price) || 0;
 
     if (orderType === 'limit') {
-      if (orderSide === 'BUY') {
+      if (side === 'BUY') {
         if (price >= ask) {
           return 'Buy Limit price must be below the current Ask price.';
         }
@@ -158,7 +167,7 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
         }
       }
     } else if (orderType === 'stop') {
-      if (orderSide === 'BUY') {
+      if (side === 'BUY') {
         if (price <= ask) {
           return 'Buy Stop price must be above the current Ask price.';
         }
@@ -185,7 +194,7 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
     setOrderType(type);
   };
 
-  const open = async () => {
+  const open = async (side = orderSide) => {
     if (!user) {
       router.push('/login');
       return;
@@ -208,7 +217,7 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
       showMessage(pendingOrderError);
       return;
     }
-    const riskError = validateRiskLevels();
+    const riskError = validateRiskLevels(side);
     if (riskError) {
       showMessage(riskError);
       return;
@@ -217,15 +226,15 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
     setMessage('');
     try {
       if (orderType === 'spot') {
-        await openPosition(orderSide, lots, {
+        await openPosition(side, lots, {
           stopLoss: tpSlOn && stopLoss ? stopLoss : null,
           takeProfit: tpSlOn && takeProfit ? takeProfit : null,
         });
-        showMessage(`${orderSide} order opened successfully.`, 'success', 'Order placed');
+        showMessage(`${side} order opened successfully.`, 'success', 'Order placed');
         setOrderModal(false);
       } else {
         await createPendingOrder({
-          side: orderSide,
+          side,
           lots,
           orderType,
           entryPrice,
@@ -473,57 +482,52 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
   }
 
   return (
-    <View className="h-full rounded-xl border lg:w-[252px]" style={{ backgroundColor: panelBackground, borderColor: colors.border, height: '100%', shadowColor: '#18201C', shadowOpacity: darkMode ? 0 : 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: darkMode ? 0 : 2 }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 12 }}>
+    <View className={`${popup ? 'w-full' : 'h-full lg:w-[252px]'} overflow-hidden rounded-xl border`} style={{ backgroundColor: ticketBackground, borderColor: ticketBorder, height: popup ? undefined : '100%', shadowColor: '#18201C', shadowOpacity: darkMode ? 0 : 0.035, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: darkMode ? 0 : 1 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 14 }}>
         <View className="flex-row items-center justify-between">
           <View style={{ paddingLeft: titleInset }}>
-            <Text className="text-[17px] font-bold" style={{ color: colors.text }}>New Trade</Text>
-            <Text className="mt-0.5 text-xs font-bold uppercase tracking-wider" style={{ color: colors.muted }}>{currentSymbol.symbol}</Text>
+            <View className="flex-row items-center">
+              <View className="mr-2 h-2 w-2 rounded-full" style={{ backgroundColor: colors.success }} />
+              <Text className="text-[15px] font-bold" style={{ color: ticketText }}>Trade ticket</Text>
+            </View>
+            <Text className="mt-1 text-xs font-bold uppercase tracking-wider" style={{ color: ticketMuted }}>{currentSymbol.symbol}</Text>
+          </View>
+          <View className="rounded-full px-2 py-1" style={{ backgroundColor: activeTabBackground }}>
+            <Text className="text-[9px] font-bold uppercase" style={{ color: colors.primary }}>Live</Text>
           </View>
         </View>
 
-        <View className="mt-3 flex-row items-center justify-between gap-1.5">
+        <View className="mt-4 flex-row rounded-lg p-1" style={{ backgroundColor: ticketSurfaceRaised }}>
           {ORDER_TYPES.map((type) => (
             <Pressable
               key={type.value}
               onPress={() => selectOrderType(type.value)}
-              className="rounded-full px-2.5 py-1.5"
+              className="flex-1 items-center justify-center rounded-md py-2"
               style={{ backgroundColor: orderType === type.value ? activeTabBackground : 'transparent' }}
             >
               <Text
-                className="text-[10px] font-medium"
-                style={{ color: orderType === type.value ? colors.primary : colors.text }}
+                className="text-[9px] font-bold"
+                style={{ color: orderType === type.value ? colors.primary : ticketMuted }}
               >
-                {type.label}
+                {type.value === 'spot' ? 'Market' : type.label.replace(' Order', '')}
               </Text>
             </Pressable>
           ))}
         </View>
 
-        <View className="mt-3 flex-row justify-between rounded-2xl px-3.5 py-2.5" style={{ backgroundColor: controlBackground }}>
-          <View>
-            <Text className="text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Bid</Text>
-            <Text className="mt-0.5 text-sm font-bold" style={{ color: colors.danger }}>{quote(currentSymbol.bid, currentSymbol.decimals)}</Text>
-          </View>
-          <View>
-            <Text className="text-right text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Ask</Text>
-            <Text className="mt-0.5 text-sm font-bold" style={{ color: colors.success }}>{quote(currentSymbol.ask, currentSymbol.decimals)}</Text>
-          </View>
-        </View>
-
         <View className={`mt-2.5 ${orderType === 'spot' ? '' : 'flex-row gap-2'}`}>
           {orderType !== 'spot' ? (
             <View className="flex-1">
-              <Text className="mb-1.5 text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Entry Price</Text>
+              <Text className="mb-1.5 text-[10px] font-bold tracking-wider uppercase" style={{ color: ticketMuted }}>Entry Price</Text>
               <TextInput
                 value={entryPrice}
                 onChangeText={(value) => { setEntryPrice(value); setEntryPriceTouched(true); }}
                 keyboardType="decimal-pad"
                 className="h-9 rounded-lg border px-3 text-xs font-bold"
                 style={{ 
-                  backgroundColor: controlBackground, 
-                  borderColor: showPendingOrderError ? colors.danger : colors.border,
-                  color: colors.text 
+                  backgroundColor: ticketSurface, 
+                  borderColor: showPendingOrderError ? colors.danger : ticketBorder,
+                  color: ticketText
                 }}
               />
               {showPendingOrderError ? (
@@ -534,44 +538,19 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
             </View>
           ) : null}
           <View className={orderType === 'spot' ? '' : 'flex-1'}>
-          <Text className="mb-1.5 text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Volume (lots)</Text>
+          <Text className="mb-1.5 text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Volume · lots</Text>
           <TextInput
             value={lots}
             onChangeText={setLots}
             keyboardType="decimal-pad"
-            className="h-11 rounded-xl border px-3 text-xs font-bold"
-            style={{ backgroundColor: controlBackground, borderColor: colors.border, color: colors.text }}
+            className="h-11 rounded-lg border px-3 text-sm font-bold"
+            style={{ backgroundColor: ticketSurface, borderColor: ticketBorder, color: ticketText }}
           />
           </View>
           </View>
 
-        <View className="mt-3 flex-row gap-2">
-          <Pressable
-            disabled={loading}
-            onPress={() => setOrderSide('SELL')}
-            className={`h-11 flex-1 items-center justify-center rounded-xl border ${loading ? 'opacity-60' : ''}`}
-            style={{
-              backgroundColor: orderSide === 'SELL' ? orderDanger : 'transparent',
-              borderColor: orderDanger,
-            }}
-          >
-            <Text className="text-[11px] font-bold tracking-wider uppercase" style={{ color: orderSide === 'SELL' ? '#FFFFFF' : orderDanger }}>SELL</Text>
-          </Pressable>
-          <Pressable
-            disabled={loading}
-            onPress={() => setOrderSide('BUY')}
-            className={`h-11 flex-1 items-center justify-center rounded-xl border ${loading ? 'opacity-60' : ''}`}
-            style={{
-              backgroundColor: orderSide === 'BUY' ? orderSuccess : 'transparent',
-              borderColor: orderSuccess,
-            }}
-          >
-            <Text className="text-[11px] font-bold tracking-wider uppercase" style={{ color: orderSide === 'BUY' ? '#FFFFFF' : orderSuccess }}>BUY</Text>
-          </Pressable>
-        </View>
-
         <View className="mt-3">
-          <SwitchRow active={tpSlOn} onPress={() => setTpSlOn((value) => !value)} label="TP/SL" colors={colors} />
+          <SwitchRow active={tpSlOn} onPress={() => setTpSlOn((value) => !value)} label="Risk controls" colors={colors} background={ticketSurface} border={ticketBorder} text={ticketText} activeColor={ticketBuy} />
           {tpSlOn ? (
             <View className="mt-2 flex-row gap-2">
               <View className="flex-1">
@@ -580,10 +559,10 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
                   onChangeText={setTakeProfit}
                   onFocus={handleTakeProfitFocus}
                   placeholder="Take Profit"
-                  placeholderTextColor={colors.muted}
+                  placeholderTextColor={ticketMuted}
                   keyboardType="numbers-and-punctuation"
                   className="h-9 rounded-lg border px-3 text-xs font-bold"
-                  style={{ color: colors.text, borderColor: colors.border, backgroundColor: controlBackground }}
+                  style={{ color: ticketText, borderColor: ticketBorder, backgroundColor: ticketSurface }}
                 />
               </View>
               <View className="flex-1">
@@ -592,36 +571,46 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0 
                   onChangeText={setStopLoss}
                   onFocus={handleStopLossFocus}
                   placeholder="Stop Loss"
-                  placeholderTextColor={colors.muted}
+                  placeholderTextColor={ticketMuted}
                   keyboardType="numbers-and-punctuation"
                   className="h-9 rounded-lg border px-3 text-xs font-bold"
-                  style={{ color: colors.text, borderColor: colors.border, backgroundColor: controlBackground }}
+                  style={{ color: ticketText, borderColor: ticketBorder, backgroundColor: ticketSurface }}
                 />
               </View>
             </View>
           ) : null}
         </View>
-        <View className="mt-3 rounded-2xl border p-2.5" style={{ backgroundColor: controlBackground, borderColor: colors.border }}>
+        <View className="mt-3 rounded-lg border p-2.5" style={{ backgroundColor: ticketSurface, borderColor: ticketBorder }}>
           <View className="mb-1.5 flex-row items-center justify-between">
-            <Text className="text-[10px] font-bold tracking-wider uppercase" style={{ color: colors.muted }}>Trade snapshot</Text>
+            <Text className="text-[10px] font-bold tracking-wider uppercase" style={{ color: ticketMuted }}>Order estimate</Text>
             <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colors.success }} />
           </View>
           {snapshotRows.map(([label, value]) => (
             <View key={label} className="mb-1 flex-row items-center justify-between">
-              <Text className="text-[10px]" style={{ color: colors.muted }}>{label}</Text>
-              <Text className="text-[10px] font-bold" style={{ color: colors.text }}>{value}</Text>
+              <Text className="text-[10px]" style={{ color: ticketMuted }}>{label}</Text>
+              <Text className="text-[10px] font-bold" style={{ color: ticketText }}>{value}</Text>
             </View>
           ))}
         </View>
-        {message || !user ? <Text className="mt-1.5 text-[9px]" style={{ color: colors.muted }}>{message || 'Log in to place trades.'}</Text> : null}
-        <Pressable
-          disabled={loading || Boolean(pendingOrderError)}
-          onPress={open}
-          className={`mt-3 h-12 items-center justify-center rounded-xl ${loading || pendingOrderError ? 'opacity-60' : ''}`}
-          style={{ backgroundColor: orderSide === 'SELL' ? orderDanger : orderSuccess }}
-        >
-          <Text className="text-[11px] font-bold tracking-wider uppercase text-white">{loading ? 'Placing Order...' : 'Place Order'}</Text>
-        </Pressable>
+        {message || !user ? <Text className="mt-1.5 text-[9px]" style={{ color: ticketMuted }}>{message || 'Log in to place trades.'}</Text> : null}
+        <View className="mt-3 flex-row gap-2">
+          <Pressable
+            disabled={loading || Boolean(pendingOrderError)}
+            onPress={() => { setOrderSide('SELL'); open('SELL'); }}
+            className={`h-12 flex-1 items-center justify-center rounded-lg ${loading || pendingOrderError ? 'opacity-60' : ''}`}
+            style={{ backgroundColor: ticketSell }}
+          >
+            <Text className="text-[11px] font-bold tracking-wider uppercase text-white">{loading ? 'Sending...' : `Sell ${quote(currentSymbol.bid, currentSymbol.decimals)}`}</Text>
+          </Pressable>
+          <Pressable
+            disabled={loading || Boolean(pendingOrderError)}
+            onPress={() => { setOrderSide('BUY'); open('BUY'); }}
+            className={`h-12 flex-1 items-center justify-center rounded-lg ${loading || pendingOrderError ? 'opacity-60' : ''}`}
+            style={{ backgroundColor: ticketBuy }}
+          >
+            <Text className="text-[11px] font-bold tracking-wider uppercase text-white">{loading ? 'Sending...' : `Buy ${quote(currentSymbol.ask, currentSymbol.decimals)}`}</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </View>
   );

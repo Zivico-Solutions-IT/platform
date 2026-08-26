@@ -1,7 +1,7 @@
-import { Animated, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowDown, ArrowUp, BarChart3, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, FileText, Grid2X2, ListFilter, LogOut, Moon, Settings, ShoppingBag, Sun, Wallet, X } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, BarChart3, Bell, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, FileText, Grid2X2, ListFilter, LogOut, Moon, Settings, ShoppingBag, Sun, UserRound, Wallet, X } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
@@ -18,14 +18,14 @@ import { storage } from '../../utils/storage';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 
-function DesktopNavigationRail({ onOpenPositions }) {
+function DesktopNavigationRail({ onOpenPositions, onOpenSettings }) {
   const { darkMode, colors } = useAppTheme();
+  const [activeItem, setActiveItem] = useState('Markets');
   const items = [
-    { label: 'Home', icon: Grid2X2, action: () => router.push('/dashboard') },
+    { label: 'Dashboard', icon: Grid2X2, action: () => router.replace('/dashboard') },
     {
       label: 'Markets',
       icon: BarChart3,
-      active: true,
       action: () => {
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:toggle-market-watch'));
       },
@@ -38,18 +38,46 @@ function DesktopNavigationRail({ onOpenPositions }) {
         if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:open-wallet-funding'));
       },
     },
+    {
+      label: 'Profile',
+      icon: UserRound,
+      action: () => {
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:open-profile'));
+      },
+    },
   ];
 
   return (
     <View className="h-full items-center border-r overflow-hidden" style={{ width: 56, flexShrink: 0, backgroundColor: colors.panel, borderColor: colors.border }}>
-      <View className="w-full items-center pt-7">
-        {items.map(({ label, icon: Icon, active, action }) => (
-          <Pressable key={label} onPress={action} className="mb-6 items-center justify-center rounded-lg" style={{ width: 38, height: 38, cursor: 'pointer', backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }} accessibilityLabel={label}>
+      <View className="flex-1 w-full items-center pt-7">
+        {items.map(({ label, icon: Icon, action }) => {
+          const active = activeItem === label;
+          return (
+          <Pressable key={label} onPress={() => { setActiveItem(label); action(); }} className="mb-6 items-center justify-center rounded-lg" style={{ width: 38, height: 38, cursor: 'pointer', backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }} accessibilityLabel={label}>
             <View className="items-center justify-center">
               <Icon size={22} color={active ? colors.success : colors.muted} strokeWidth={active ? 2.2 : 1.8} />
             </View>
           </Pressable>
-        ))}
+          );
+        })}
+      </View>
+      <View className="w-full items-center">
+        <Pressable
+          onPress={() => { setActiveItem('Notifications'); if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:open-notifications')); }}
+          className="mb-2 items-center justify-center rounded-lg"
+          style={{ width: 38, height: 38, cursor: 'pointer', backgroundColor: activeItem === 'Notifications' ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent' }}
+          accessibilityLabel="Notifications"
+        >
+          <Bell size={21} color={activeItem === 'Notifications' ? colors.success : colors.muted} strokeWidth={1.8} />
+        </Pressable>
+        <Pressable
+          onPress={() => { setActiveItem('Settings'); onOpenSettings(); }}
+          className="mb-5 items-center justify-center rounded-lg"
+          style={{ width: 38, height: 38, cursor: 'pointer', backgroundColor: activeItem === 'Settings' ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent' }}
+          accessibilityLabel="Settings"
+        >
+          <Settings size={21} color={activeItem === 'Settings' ? colors.success : colors.muted} strokeWidth={1.8} />
+        </Pressable>
       </View>
     </View>
   );
@@ -148,7 +176,7 @@ function CollapsibleOrderRail({ summary, user }) {
 
   return (
     <View className="relative h-full" style={{ width: 252, maxWidth: '100%' }}>
-      <OrderRail summary={summary} user={user} showSummary={false} showAvailableMargin={false} titleInset={30} />
+      <OrderPanel showAvailableMargin={false} titleInset={30} />
       <Pressable
         onPress={() => setCollapsed(true)}
         className="absolute left-3 top-3 h-7 w-7 items-center justify-center rounded-md"
@@ -330,6 +358,7 @@ export default function TradingLayout() {
   const { summary, selectedTradingAccount, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [positionsDrawerOpen, setPositionsDrawerOpen] = useState(false);
+  const [desktopOrderModalOpen, setDesktopOrderModalOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
   const [mobileTabRestored, setMobileTabRestored] = useState(false);
   const mobileContentAnimation = useRef(new Animated.Value(1)).current;
@@ -338,10 +367,19 @@ export default function TradingLayout() {
   const tablet = width >= 760;
   const mobile = width < 760;
   const chartAreaHeight = desktop
-    ? Math.max(560, Math.min(720, height - 112))
+    // Let the trading surface use the remaining desktop viewport rather than
+    // stopping at a fixed 720px height and leaving an empty band underneath.
+    ? Math.max(560, height - 76)
     : tablet
       ? Math.max(540, Math.min(640, height - 170))
       : Math.max(430, Math.min(560, height - 210));
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const openOrderTicket = () => setDesktopOrderModalOpen(true);
+    window.addEventListener('novafxm:open-new-order', openOrderTicket);
+    return () => window.removeEventListener('novafxm:open-new-order', openOrderTicket);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -539,7 +577,7 @@ export default function TradingLayout() {
     <View className="relative flex-1 flex-row" style={{ backgroundColor: colors.background }}>
       {desktop && !chartFullscreen ? (
         <View style={{ paddingRight: 1 }}>
-          <DesktopNavigationRail onOpenPositions={() => setPositionsDrawerOpen(true)} />
+          <DesktopNavigationRail onOpenPositions={() => setPositionsDrawerOpen(true)} onOpenSettings={() => setSidePanel('settings')} />
         </View>
       ) : null}
       <View className="flex-1 min-w-0">
@@ -563,9 +601,6 @@ export default function TradingLayout() {
           {desktop ? (
             <>
               <TradingChart isFullscreen={chartFullscreen} onFullscreenChange={setChartFullscreen} isAdmin={isAdmin} />
-              {!chartFullscreen && (
-                <CollapsibleOrderRail summary={summary} user={user} />
-              )}
             </>
           ) : (
             <>
@@ -582,6 +617,31 @@ export default function TradingLayout() {
         </View>
       </View>
       {mobile && !chartFullscreen && !sidePanel ? <OrderPanel /> : null}
+      {desktop && !chartFullscreen ? (
+        <Modal visible={desktopOrderModalOpen} transparent animationType="fade" onRequestClose={() => setDesktopOrderModalOpen(false)}>
+          <Pressable
+            className="flex-1 items-end"
+            style={{ backgroundColor: 'rgba(15, 23, 42, 0.34)', paddingTop: 70, paddingRight: 18 }}
+            onPress={() => setDesktopOrderModalOpen(false)}
+          >
+            <Pressable
+              onPress={(event) => event.stopPropagation()}
+              className="relative overflow-hidden rounded-xl"
+              style={{ width: 340, maxWidth: width - 36 }}
+            >
+              <OrderPanel showAvailableMargin={false} titleInset={28} popup />
+              <Pressable
+                onPress={() => setDesktopOrderModalOpen(false)}
+                className="absolute right-3 top-3 h-7 w-7 items-center justify-center rounded-md"
+                style={{ backgroundColor: 'rgba(15, 23, 42, 0.06)', cursor: 'pointer' }}
+                accessibilityLabel="Close new order"
+              >
+                <X size={17} color={colors.muted} />
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      ) : null}
       <InsufficientFundsModal
         visible={insufficientFundsVisible}
         onClose={() => setInsufficientFundsVisible(false)}

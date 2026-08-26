@@ -50,11 +50,11 @@ export default function FundingMenu({ selectedAccount, summary, onClose, onSwitc
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const contentAnim = useRef(new Animated.Value(0)).current;
   const mobile = width < 760;
-  const panelWidth = mobile ? width : 380;
+  const panelWidth = mobile ? width : Math.min(410, Math.max(0, width - 56));
   // On phones, funding is a bottom sheet rather than a full-screen page.
   // Leave a visible strip of the trading screen above it for context.
   const panelHeight = mobile ? Math.min(height - 88, 680) : height;
-  const entranceDistance = mobile ? panelHeight : panelWidth;
+  const entranceDistance = mobile ? panelHeight : -panelWidth;
   const balance = Number.isFinite(Number(selectedAccount?.balance))
     ? Number(selectedAccount.balance)
     : Number(summary?.balance || 0);
@@ -98,10 +98,10 @@ export default function FundingMenu({ selectedAccount, summary, onClose, onSwitc
       className="overflow-hidden shadow-2xl"
       style={{
         position: 'absolute',
-        right: 0,
+        right: mobile ? 0 : undefined,
         top: mobile ? undefined : 0,
         bottom: 0,
-        left: mobile ? 0 : undefined,
+        left: mobile ? 0 : 56,
         zIndex: 50,
         width: mobile ? '100%' : panelWidth,
         height: panelHeight,
@@ -109,11 +109,11 @@ export default function FundingMenu({ selectedAccount, summary, onClose, onSwitc
         paddingBottom: mobile ? 24 : 20,
         paddingHorizontal: 15,
         backgroundColor: darkMode ? colors.panel : '#FBFAF7',
-        borderLeftWidth: mobile ? 0 : 1,
-        borderLeftColor: colors.border,
-        borderTopLeftRadius: mobile ? 24 : 20,
-        borderTopRightRadius: mobile ? 24 : 0,
-        borderBottomLeftRadius: mobile ? 0 : 20,
+        borderRightWidth: mobile ? 0 : 1,
+        borderRightColor: colors.border,
+        borderTopLeftRadius: mobile ? 24 : 0,
+        borderTopRightRadius: mobile ? 24 : 20,
+        borderBottomRightRadius: mobile ? 0 : 20,
         shadowColor: '#000',
         shadowOpacity: 0.3,
         shadowRadius: 28,

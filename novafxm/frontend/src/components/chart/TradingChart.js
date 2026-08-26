@@ -1538,7 +1538,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
 
   return (
     <View className="relative flex-1 overflow-hidden border" style={chartRootStyle}>
-      <View className="relative border-b px-2 py-1.5 sm:px-3" style={{ backgroundColor: ui.toolbar, borderColor: ui.border, zIndex: 1000, elevation: 1000 }}>
+      <View className="relative border-b px-2 py-1.5 sm:px-3" style={{ display: mobile ? 'flex' : 'none', backgroundColor: ui.toolbar, borderColor: ui.border, zIndex: 1000, elevation: 1000 }}>
         {mobile ? (
           <View className="px-0.5 py-0.5">
             {/* Row 1: Active Symbol Selector & Price/Change/Spread */}
@@ -1617,31 +1617,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
                 <Text className="font-medium" style={{ color: priceTone, fontSize: compactToolbar ? 10 : 12 }}>{percent(currentSymbol.change)}</Text>
                 <Text className="text-[10px]" style={{ color: ui.muted }}>Spread: {fixedSpreadText}</Text>
               </Pressable>
-              <View className="min-w-0 flex-1 flex-row flex-wrap items-center" style={{ columnGap: 1, rowGap: 1, minHeight: compactToolbar ? 22 : 28 }}>
-                <View className="flex-row flex-wrap items-center" style={{ marginLeft: 'auto', columnGap: 1, rowGap: 1 }}>
-                  {TIMEFRAMES.map((entry) => (
-                    <Pressable
-                      key={entry}
-                      onPress={() => selectTimeframe(entry)}
-                      className="items-center justify-center rounded"
-                      style={{ height: timeframeHeight, minWidth: timeframeMinWidth, paddingHorizontal: compactToolbar ? 5 : 8, backgroundColor: entry === timeframe ? ui.controlActive : 'transparent' }}
-                    >
-                      <Text className="font-medium" style={{ color: entry === timeframe ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
-                    </Pressable>
-                  ))}
-                  <View className="mx-2 h-5 w-px" style={{ backgroundColor: ui.border }} />
-                  {VIEW_RANGES.map((entry) => (
-                    <Pressable
-                      key={entry}
-                      onPress={() => setViewRange(entry)}
-                      className="items-center justify-center rounded"
-                      style={{ height: timeframeHeight, minWidth: compactToolbar ? 48 : 58, paddingHorizontal: compactToolbar ? 6 : 9, backgroundColor: entry === viewRange ? ui.controlActive : 'transparent' }}
-                    >
-                      <Text className="font-medium" style={{ color: entry === viewRange ? ui.activeText : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
+              <View className="flex-1" />
             </View>
           </>
         )}
@@ -1674,7 +1650,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         </View>
       ) : null}
 
-      <View className="flex-1 p-2.5" style={{ marginLeft: chartOffsetLeft, backgroundColor: ui.background, zIndex: 0, elevation: 0 }}>
+      <View className="flex-1 px-2.5 pb-2.5" style={{ marginLeft: chartOffsetLeft, paddingTop: mobile ? 10 : 18, backgroundColor: ui.background, zIndex: 0, elevation: 0 }}>
         <View className="flex-1 overflow-hidden rounded-md border" style={{ backgroundColor: ui.menu, borderColor: ui.menuBorder }}>
           {Platform.OS === 'web' ? (
             <iframe
@@ -1944,6 +1920,41 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
           ) : null}
         </View>
       </View>
+      {!mobile ? (
+        <View className="h-10 flex-row items-stretch border-t px-3" style={{ backgroundColor: ui.toolbar, borderColor: ui.border }}>
+          <View className="flex-row items-stretch">
+            {TIMEFRAMES.map((entry) => {
+              const active = entry === timeframe;
+              return (
+                <Pressable
+                  key={entry}
+                  onPress={() => selectTimeframe(entry)}
+                  className="items-center justify-center"
+                  style={{ minWidth: compactToolbar ? 30 : 36, paddingHorizontal: compactToolbar ? 4 : 6, borderBottomWidth: active ? 2 : 0, borderBottomColor: active ? ui.accent : 'transparent' }}
+                >
+                  <Text className="font-medium" style={{ color: active ? ui.text : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View className="flex-1" />
+          <View className="flex-row items-stretch">
+            {VIEW_RANGES.map((entry) => {
+              const active = entry === viewRange;
+              return (
+                <Pressable
+                  key={entry}
+                  onPress={() => setViewRange(entry)}
+                  className="items-center justify-center"
+                  style={{ minWidth: compactToolbar ? 46 : 56, paddingHorizontal: compactToolbar ? 5 : 8, borderBottomWidth: active ? 2 : 0, borderBottomColor: active ? ui.accent : 'transparent' }}
+                >
+                  <Text className="font-medium" style={{ color: active ? ui.text : ui.muted, fontSize: compactToolbar ? 10 : 12 }}>{entry}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
         {symbolMenuOpen ? (
           <Modal
             visible

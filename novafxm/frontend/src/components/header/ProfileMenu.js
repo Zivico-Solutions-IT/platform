@@ -9,7 +9,6 @@ import {
   Settings2,
   ShieldCheck,
   Sun,
-  WalletCards,
   X,
   ChevronRight,
 } from 'lucide-react-native';
@@ -107,7 +106,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const mobile = width < 990;
   const initials = useMemo(() => initialsFor(user), [user]);
   const verified = user?.verificationStatus === 'approved';
-  const panelWidth = width < 500 ? width : 410;
+  const panelWidth = mobile ? width : Math.min(410, Math.max(0, width - 56));
   const panelHeight = height;
   const bonusPreviewHeight = mobile ? 170 : 195;
   const displayName = user?.name || 'Nova FXM Client';
@@ -176,7 +175,7 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   }, [sessionUser?.id]);
 
   useEffect(() => {
-    slideAnim.setValue(panelWidth);
+    slideAnim.setValue(mobile ? panelWidth : -panelWidth);
     fadeAnim.setValue(0);
     contentAnim.setValue(0);
 
@@ -219,10 +218,10 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
       className="overflow-hidden shadow-2xl"
       style={{
         position: 'absolute',
-        right: 0,
+        right: mobile ? 0 : undefined,
         top: 0,
         bottom: mobile ? 0 : undefined,
-        left: mobile ? 0 : undefined,
+        left: mobile ? 0 : 56,
         zIndex: 50,
         width: mobile ? '100%' : panelWidth,
         height: panelHeight,
@@ -230,10 +229,10 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
         paddingBottom: mobile ? 0 : 20,
         paddingHorizontal: mobile ? 0 : 20,
         backgroundColor: palette.panel,
-        borderLeftWidth: mobile ? 0 : 1,
-        borderLeftColor: palette.border,
-        borderTopLeftRadius: mobile ? 0 : 20,
-        borderBottomLeftRadius: mobile ? 0 : 20,
+        borderRightWidth: mobile ? 0 : 1,
+        borderRightColor: palette.border,
+        borderTopRightRadius: mobile ? 0 : 20,
+        borderBottomRightRadius: mobile ? 0 : 20,
         shadowColor: '#000',
         shadowOpacity: 0.3,
         shadowRadius: 28,
@@ -367,14 +366,6 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
             onPress={() => openPanel('settings')}
             palette={palette}
           />
-          {!isAdmin ? (
-            <MenuAction
-              icon={WalletCards}
-              title="Wallet & Funding"
-              onPress={() => onOpenWallet?.()}
-              palette={palette}
-            />
-          ) : null}
           <MenuAction
             icon={darkMode ? Sun : Moon}
             title={darkMode ? 'Light Mode' : 'Dark Mode'}
