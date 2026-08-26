@@ -910,8 +910,13 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
       setSettingsOpen(false);
       setDrawingOpen(false);
     };
+    const closeMarketWatch = () => setSymbolMenuOpen(false);
     window.addEventListener('novafxm:toggle-market-watch', toggleMarketWatch);
-    return () => window.removeEventListener('novafxm:toggle-market-watch', toggleMarketWatch);
+    window.addEventListener('novafxm:close-market-watch', closeMarketWatch);
+    return () => {
+      window.removeEventListener('novafxm:toggle-market-watch', toggleMarketWatch);
+      window.removeEventListener('novafxm:close-market-watch', closeMarketWatch);
+    };
   }, []);
   const chartCardInset = 10;
   const chartListGap = 10;
@@ -1386,9 +1391,9 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
     setSelectedSymbol(symbol);
     setHoveredSymbol(null);
     setSymbolTabMenuOpen(false);
-    if (chartFullscreen || mobile) {
-      setSymbolMenuOpen(false);
-    }
+    // A selection is a completed Market Watch action on every layout. Close
+    // the drawer so the newly selected instrument's chart is immediately visible.
+    setSymbolMenuOpen(false);
   };
   const applyDrawingTool = (key) => {
     if (key === 'clear') {
@@ -1673,7 +1678,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
             />
           )}
           {!mobile ? (
-            <View className="absolute flex-row items-center" style={{ left: 8, top: 7, zIndex: 80, elevation: 80, columnGap: compactToolbar ? 2 : 4 }}>
+            <View className="absolute flex-row items-center" style={{ right: compactToolbar ? 48 : 112, top: 7, zIndex: 80, elevation: 80, columnGap: compactToolbar ? 2 : 4 }}>
               <IconButton active={chartMenuOpen} bare ui={ui} size={iconButtonSize} onPress={toggleChartMenu}>
                 <ActiveChartIcon size={compactToolbar ? 14 : 17} color={chartMenuOpen ? ui.accent : ui.text} />
               </IconButton>
@@ -1954,19 +1959,9 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
             })}
           </View>
         </View>
-      ) : null}
+        ) : null}
         {symbolMenuOpen ? (
-          <Modal
-            visible
-            transparent
-            animationType="fade"
-            onRequestClose={() => {
-              setSymbolTabMenuOpen(false);
-              setSymbolMenuOpen(false);
-            }}
-          >
-            <View style={{ flex: 1, pointerEvents: 'box-none' }}>
-              <ChartSymbolPanel
+          <ChartSymbolPanel
             currentSymbol={currentSymbol}
             favoriteSymbols={favoriteSymbols}
             filteredSymbols={filteredSymbols}
@@ -1987,10 +1982,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
             symbolTab={symbolTab}
             symbolTabMenuOpen={symbolTabMenuOpen}
             setSymbolTabMenuOpen={setSymbolTabMenuOpen}
-                ui={ui}
-              />
-            </View>
-          </Modal>
+            ui={ui}
+          />
         ) : null}
 
         {chartMenuOpen ? (

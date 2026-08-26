@@ -50,10 +50,12 @@ export default function ChartSymbolPanel({
       backgroundColor: ui.menu, borderColor: ui.menuBorder,
     } : {
       position: Platform.OS === 'web' ? 'fixed' : 'absolute',
-      // Desktop rail is 56px wide. Align the drawer directly against it.
-      left: Platform.OS === 'web' ? 56 : 10,
-      top: Platform.OS === 'web' ? 8 : symbolPanelTop,
-      bottom: Platform.OS === 'web' ? 8 : 10,
+      // This panel is rendered inside the chart surface. Offset it back over
+      // the surface padding so it sits flush against the navigation rail and
+      // fills the same available height as the other desktop drawers.
+      left: Platform.OS === 'web' ? -8 : 10,
+      top: Platform.OS === 'web' ? -6 : symbolPanelTop,
+      bottom: Platform.OS === 'web' ? -8 : 10,
       width: symbolPanelWidth,
       backgroundColor: ui.menu, borderColor: ui.menuBorder, zIndex: 3200, elevation: 3200,
     }}>

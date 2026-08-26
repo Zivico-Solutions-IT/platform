@@ -11,7 +11,9 @@ import {
   CreditCard,
   Plus,
   Gift,
+  Home,
   ShieldCheck,
+  TrendingUp,
   Wallet,
   X,
 } from 'lucide-react-native';
@@ -49,6 +51,89 @@ function Stat({ label, value, colors, mobile = false }) {
     <View className="flex-1 rounded-xl border p-4" style={{ minWidth: mobile ? '48%' : 150, backgroundColor: colors.surface, borderColor: colors.border }}>
       <Text className="text-xs font-semimedium uppercase" style={{ color: colors.muted }}>{label}</Text>
       <Text className={`${mobile ? 'text-base' : 'text-xl'} mt-2 font-medium`} numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.text }}>{value}</Text>
+    </View>
+  );
+}
+
+function HomeMarketRow({ symbol, name, value, change, positive, colors }) {
+  return (
+    <View className="flex-row items-center justify-between border-b py-3 last:border-b-0" style={{ borderColor: colors.border }}>
+      <View className="flex-row items-center">
+        <View className="mr-3 h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: positive ? '#18B96818' : '#F4605C16' }}>
+          <TrendingUp size={17} color={positive ? colors.success : colors.danger} />
+        </View>
+        <View>
+          <Text className="text-sm font-semibold" style={{ color: colors.text }}>{symbol}</Text>
+          <Text className="mt-0.5 text-[11px]" style={{ color: colors.muted }}>{name}</Text>
+        </View>
+      </View>
+      <View className="items-end">
+        <Text className="text-sm font-semibold" style={{ color: colors.text }}>{value}</Text>
+        <Text className="mt-0.5 text-[11px] font-semibold" style={{ color: positive ? colors.success : colors.danger }}>{positive ? '+' : ''}{change}</Text>
+      </View>
+    </View>
+  );
+}
+
+function HomeLanding({ user, wallet, accounts, liveTrades, colors, mobile, onTrade, onDeposit, onAccounts }) {
+  const firstName = String(user?.name || '').trim().split(/\s+/)[0] || 'Trader';
+  const balance = Number(wallet?.balance || 0);
+  const activeAccounts = accounts.filter((account) => account.status === 'active').length;
+  const openTrades = liveTrades.filter((trade) => ['open', 'pending'].includes(String(trade.status || '').toLowerCase())).length;
+
+  return (
+    <View className="gap-4">
+      <View className={`${mobile ? 'p-5' : 'p-8'} overflow-hidden rounded-3xl`} style={{ backgroundColor: colors.primary }}>
+        <View className="absolute -right-16 -top-20 h-56 w-56 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.18)' }} />
+        <View className="absolute -bottom-28 right-24 h-52 w-52 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }} />
+        <View className="relative max-w-[700px]">
+          <View className="mb-4 flex-row items-center self-start rounded-full px-3 py-1.5" style={{ backgroundColor: 'rgba(12,20,16,0.12)' }}>
+            <Home size={14} color="#172018" />
+            <Text className="ml-2 text-xs font-semibold" style={{ color: '#172018' }}>NOVA FXM HOME</Text>
+          </View>
+          <Text className={`${mobile ? 'text-3xl' : 'text-5xl'} font-bold leading-tight`} style={{ color: '#111711' }}>Trade with confidence, {firstName}.</Text>
+          <Text className={`${mobile ? 'text-sm' : 'text-base'} mt-3 max-w-[560px] leading-6`} style={{ color: '#273125' }}>Manage your funds, explore live markets, and place your next trade from one secure workspace.</Text>
+          <View className="mt-6 flex-row flex-wrap gap-3">
+            <Pressable onPress={onTrade} className="rounded-xl px-5 py-3" style={{ backgroundColor: '#182219' }}>
+              <Text className="font-semibold text-white">Start Trading</Text>
+            </Pressable>
+            <Pressable onPress={onDeposit} className="rounded-xl border px-5 py-3" style={{ borderColor: 'rgba(24,34,25,0.32)', backgroundColor: 'rgba(255,255,255,0.32)' }}>
+              <Text className="font-semibold" style={{ color: '#182219' }}>Add Funds</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+
+      <View className="gap-4 lg:flex-row">
+        <View className="flex-[1.15] rounded-3xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+          <View className="flex-row items-start justify-between">
+            <View>
+              <Text className="text-lg font-semibold" style={{ color: colors.text }}>Your portfolio</Text>
+              <Text className="mt-1 text-sm" style={{ color: colors.muted }}>A quick view of your account</Text>
+            </View>
+            <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${colors.primary}26` }}><Wallet size={19} color={colors.primary} /></View>
+          </View>
+          <Text className="mt-7 text-xs font-semibold uppercase" style={{ color: colors.muted }}>Available balance</Text>
+          <Text className="mt-1 text-3xl font-bold" style={{ color: colors.text }}>${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+          <View className="mt-6 flex-row gap-3">
+            <View className="flex-1 rounded-2xl p-3" style={{ backgroundColor: colors.surface }}><Text className="text-xs" style={{ color: colors.muted }}>Active accounts</Text><Text className="mt-1 text-lg font-bold" style={{ color: colors.text }}>{activeAccounts}</Text></View>
+            <View className="flex-1 rounded-2xl p-3" style={{ backgroundColor: colors.surface }}><Text className="text-xs" style={{ color: colors.muted }}>Open trades</Text><Text className="mt-1 text-lg font-bold" style={{ color: colors.text }}>{openTrades}</Text></View>
+          </View>
+          <Pressable onPress={onAccounts} className="mt-5 flex-row items-center self-start"><Text className="font-semibold" style={{ color: colors.primary }}>Manage accounts</Text><ArrowUpRight size={16} color={colors.primary} style={{ marginLeft: 6 }} /></Pressable>
+        </View>
+
+        <View className="flex-1 rounded-3xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+          <View className="mb-2 flex-row items-center justify-between"><View><Text className="text-lg font-semibold" style={{ color: colors.text }}>Market highlights</Text><Text className="mt-1 text-sm" style={{ color: colors.muted }}>Popular instruments</Text></View><TrendingUp size={20} color={colors.primary} /></View>
+          <HomeMarketRow symbol="EUR/USD" name="Euro / US Dollar" value="1.08420" change="0.18%" positive colors={colors} />
+          <HomeMarketRow symbol="XAU/USD" name="Gold" value="2,338.60" change="0.42%" positive colors={colors} />
+          <HomeMarketRow symbol="BTC/USD" name="Bitcoin" value="67,410.20" change="0.31%" positive={false} colors={colors} />
+          <Pressable onPress={onTrade} className="mt-4 items-center rounded-xl py-3" style={{ backgroundColor: colors.surface }}><Text className="text-sm font-semibold" style={{ color: colors.text }}>View markets</Text></Pressable>
+        </View>
+      </View>
+
+      <View className="rounded-3xl border p-5" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+        <View className="flex-row flex-wrap items-center justify-between gap-3"><View><Text className="text-lg font-semibold" style={{ color: colors.text }}>Ready when you are</Text><Text className="mt-1 text-sm" style={{ color: colors.muted }}>Fund your account or go straight to the trading terminal.</Text></View><View className="flex-row gap-3"><Pressable onPress={onDeposit} className="rounded-xl px-4 py-3" style={{ backgroundColor: `${colors.success}18` }}><Text className="font-semibold" style={{ color: colors.success }}>Deposit</Text></Pressable><Pressable onPress={onTrade} className="rounded-xl px-4 py-3" style={{ backgroundColor: `${colors.primary}26` }}><Text className="font-semibold" style={{ color: colors.primary }}>Trade now</Text></Pressable></View></View>
+      </View>
     </View>
   );
 }
@@ -654,8 +739,8 @@ export default function DashboardScreen() {
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }} contentContainerClassName="mx-auto w-full max-w-[1180px] p-3 sm:p-4 lg:p-8">
       <View className="mb-5 flex-row flex-wrap items-center justify-between gap-3">
         <View className="min-w-0 flex-1">
-          <Text className={`${mobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>Account Dashboard</Text>
-          <Text className="mt-1" style={{ color: colors.muted }}>{user?.email || 'Manage accounts, funds, and rewards'}</Text>
+          <Text className={`${mobile ? 'text-2xl' : 'text-3xl'} font-medium`} style={{ color: colors.text }}>Home</Text>
+          <Text className="mt-1" style={{ color: colors.muted }}>{user?.email || 'Your personal trading workspace'}</Text>
         </View>
         <View className="relative flex-row flex-wrap items-center justify-end gap-3">
           <Pressable
@@ -679,7 +764,7 @@ export default function DashboardScreen() {
               </View>
             </Pressable>
           </Modal>
-          <Link href="/trading" asChild><Pressable><Text style={{ color: '#D4AF37' }}>Back to Trading</Text></Pressable></Link>
+          <Link href="/trading" asChild><Pressable><Text style={{ color: '#D4AF37' }}>Open Trading</Text></Pressable></Link>
           <Pressable onPress={signOut}><Text className="text-danger">Sign Out</Text></Pressable>
         </View>
       </View>
@@ -687,48 +772,17 @@ export default function DashboardScreen() {
       <DashboardTabs activeKey={activeSection} onSectionChange={setActiveSection} userRole={user?.role} />
 
       {activeSection === 'overview' ? (
-        <View className="mb-5 flex-row flex-wrap gap-3">
-          <Stat label="Balance" value={`${Number(wallet.balance || 0).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
-          <Stat label="Equity" value={`${Number(wallet.equity || wallet.balance || 0).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
-          <Stat label="Free Funds" value={`${Number(wallet.freeFunds || 0).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
-          {referral ? <Stat label="Referral Commission" value={`${Number(referral.commission || 0).toFixed(2)} USD`} colors={colors} mobile={mobile} /> : null}
-        </View>
-      ) : null}
-
-      {activeSection === 'overview' ? (
-        <View className="gap-4 lg:flex-row">
-          <View className="flex-1 gap-4">
-            <Card title="Account Details" colors={colors} mobile={mobile}>
-              <Text style={{ color: colors.text }}>Name: {dashboard?.user?.name || user?.name || '-'}</Text>
-              <Text className="mt-2" style={{ color: colors.text }}>Email: {dashboard?.user?.email || user?.email || '-'}</Text>
-              <Text className="mt-2" style={{ color: colors.text }}>Phone: {dashboard?.user?.phone || '-'}</Text>
-              <Text className="mt-2" style={{ color: colors.text }}>Trading Status: {dashboard?.user?.tradingStatus || 'active'}</Text>
-            </Card>
-            {referral ? (
-              <Card title="Broker Referral" colors={colors} mobile={mobile}>
-                <Text style={{ color: colors.muted }}>Share this URL. New users who register from it are linked to you.</Text>
-                <TextInput
-                  editable={false}
-                  value={referralText}
-                  className="mt-4 rounded-xl border p-3"
-                  style={{ backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }}
-                />
-                <CustomButton title={copied ? 'Copied' : 'Copy Referral URL'} onPress={copyReferral} className="mt-4" />
-              </Card>
-            ) : null}
-          </View>
-          <View className="flex-1">
-            <Card title="Live Account Activity" colors={colors} mobile={mobile}>
-              <LiveActivityPanel
-                activeView={activityView}
-                onChangeView={setActivityView}
-                trades={liveTrades}
-                transactions={transactions}
-                colors={colors}
-              />
-            </Card>
-          </View>
-        </View>
+        <HomeLanding
+          user={dashboardUser}
+          wallet={wallet}
+          accounts={accounts}
+          liveTrades={liveTrades}
+          colors={colors}
+          mobile={mobile}
+          onTrade={() => router.push('/trading')}
+          onDeposit={() => setActiveSection('deposit')}
+          onAccounts={() => setActiveSection('accounts')}
+        />
       ) : null}
 
       {activeSection === 'accounts' ? (

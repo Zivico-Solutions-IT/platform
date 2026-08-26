@@ -230,6 +230,7 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0,
           stopLoss: tpSlOn && stopLoss ? stopLoss : null,
           takeProfit: tpSlOn && takeProfit ? takeProfit : null,
         });
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:new-position'));
         showMessage(`${side} order opened successfully.`, 'success', 'Order placed');
         setOrderModal(false);
       } else {
@@ -492,7 +493,7 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0,
             </View>
             <Text className="mt-1 text-xs font-bold uppercase tracking-wider" style={{ color: ticketMuted }}>{currentSymbol.symbol}</Text>
           </View>
-          <View className="rounded-full px-2 py-1" style={{ backgroundColor: activeTabBackground }}>
+          <View className="rounded-full px-2 py-1" style={{ backgroundColor: activeTabBackground, marginRight: popup ? 34 : 0 }}>
             <Text className="text-[9px] font-bold uppercase" style={{ color: colors.primary }}>Live</Text>
           </View>
         </View>
@@ -550,7 +551,7 @@ export default function OrderPanel({ showAvailableMargin = true, titleInset = 0,
           </View>
 
         <View className="mt-3">
-          <SwitchRow active={tpSlOn} onPress={() => setTpSlOn((value) => !value)} label="Risk controls" colors={colors} background={ticketSurface} border={ticketBorder} text={ticketText} activeColor={ticketBuy} />
+          <SwitchRow active={tpSlOn} onPress={() => setTpSlOn((value) => !value)} label="TP/SL" colors={colors} background={ticketSurface} border={ticketBorder} text={ticketText} activeColor={ticketBuy} />
           {tpSlOn ? (
             <View className="mt-2 flex-row gap-2">
               <View className="flex-1">

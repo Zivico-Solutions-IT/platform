@@ -1,7 +1,7 @@
 import { Animated, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ArrowDown, ArrowUp, BarChart3, Bell, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, FileText, Grid2X2, ListFilter, LogOut, Moon, Settings, ShoppingBag, Sun, UserRound, Wallet, X } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, BarChart3, Bell, Briefcase, CandlestickChart, ChevronLeft, ChevronRight, Clock3, FileText, ListFilter, LogOut, Moon, Settings, ShoppingBag, Sun, UserRound, Wallet, X } from 'lucide-react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import TopAccountBar from '../header/TopAccountBar';
 import TradingChart from '../chart/TradingChart';
@@ -18,11 +18,24 @@ import { storage } from '../../utils/storage';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 
-function DesktopNavigationRail({ onOpenPositions, onOpenSettings }) {
+function DesktopNavigationRail({ onOpenPositions, onOpenSettings, onBeforeOpen, positionsAttention, onPositionsViewed }) {
   const { darkMode, colors } = useAppTheme();
-  const [activeItem, setActiveItem] = useState('Markets');
+  const [activeItem, setActiveItem] = useState(null);
+  const positionPulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!positionsAttention) {
+      positionPulse.stopAnimation();
+      positionPulse.setValue(1);
+      return undefined;
+    }
+    const animation = Animated.loop(Animated.sequence([
+      Animated.timing(positionPulse, { toValue: 1.32, duration: 550, useNativeDriver: true }),
+      Animated.timing(positionPulse, { toValue: 1, duration: 550, useNativeDriver: true }),
+    ]));
+    animation.start();
+    return () => animation.stop();
+  }, [positionPulse, positionsAttention]);
   const items = [
-    { label: 'Dashboard', icon: Grid2X2, action: () => router.replace('/dashboard') },
     {
       label: 'Markets',
       icon: BarChart3,
@@ -52,28 +65,30 @@ function DesktopNavigationRail({ onOpenPositions, onOpenSettings }) {
       <View className="flex-1 w-full items-center pt-7">
         {items.map(({ label, icon: Icon, action }) => {
           const active = activeItem === label;
+          const showPositionAlert = label === 'Positions' && positionsAttention;
           return (
-          <Pressable key={label} onPress={() => { setActiveItem(label); action(); }} className="mb-6 items-center justify-center rounded-lg" style={{ width: 38, height: 38, cursor: 'pointer', backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }} accessibilityLabel={label}>
-            <View className="items-center justify-center">
+          <Pressable key={label} onPress={() => { if (label === 'Positions') onPositionsViewed?.(); onBeforeOpen?.(label); setActiveItem(label); action(); }} className="relative mb-4 items-center justify-center rounded-xl" style={{ width: 44, height: 44, cursor: 'pointer', backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }} accessibilityLabel={showPositionAlert ? 'New open position — open Positions' : label}>
+            <View className="relative items-center justify-center">
               <Icon size={22} color={active ? colors.success : colors.muted} strokeWidth={active ? 2.2 : 1.8} />
             </View>
+            {showPositionAlert ? <Animated.View className="absolute right-0 top-0 h-[17px] min-w-[17px] items-center justify-center rounded-full border-2" style={{ backgroundColor: colors.danger, transform: [{ scale: positionPulse }], borderColor: darkMode ? colors.panel : '#FFFFFF' }}><Text className="text-[9px] font-bold text-white">1</Text></Animated.View> : null}
           </Pressable>
           );
         })}
       </View>
       <View className="w-full items-center">
         <Pressable
-          onPress={() => { setActiveItem('Notifications'); if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:open-notifications')); }}
-          className="mb-2 items-center justify-center rounded-lg"
-          style={{ width: 38, height: 38, cursor: 'pointer', backgroundColor: activeItem === 'Notifications' ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent' }}
+          onPress={() => { onBeforeOpen?.('Notifications'); setActiveItem('Notifications'); if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:open-notifications')); }}
+          className="mb-3 items-center justify-center rounded-xl"
+          style={{ width: 44, height: 44, cursor: 'pointer', backgroundColor: activeItem === 'Notifications' ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent' }}
           accessibilityLabel="Notifications"
         >
           <Bell size={21} color={activeItem === 'Notifications' ? colors.success : colors.muted} strokeWidth={1.8} />
         </Pressable>
         <Pressable
-          onPress={() => { setActiveItem('Settings'); onOpenSettings(); }}
-          className="mb-5 items-center justify-center rounded-lg"
-          style={{ width: 38, height: 38, cursor: 'pointer', backgroundColor: activeItem === 'Settings' ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent' }}
+          onPress={() => { onBeforeOpen?.('Settings'); setActiveItem('Settings'); onOpenSettings(); }}
+          className="mb-5 items-center justify-center rounded-xl"
+          style={{ width: 44, height: 44, cursor: 'pointer', backgroundColor: activeItem === 'Settings' ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent' }}
           accessibilityLabel="Settings"
         >
           <Settings size={21} color={activeItem === 'Settings' ? colors.success : colors.muted} strokeWidth={1.8} />
@@ -355,13 +370,16 @@ export default function TradingLayout() {
   const { width, height } = useWindowDimensions();
   const { colors } = useAppTheme();
   const { user, isAdmin } = useAuth();
-  const { summary, selectedTradingAccount, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
+  const { summary, selectedTradingAccount, positions, insufficientFundsVisible, setInsufficientFundsVisible, sidePanel, setSidePanel } = useDemoTrading();
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [positionsDrawerOpen, setPositionsDrawerOpen] = useState(false);
+  const [positionsAttention, setPositionsAttention] = useState(false);
   const [desktopOrderModalOpen, setDesktopOrderModalOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState('symbols');
   const [mobileTabRestored, setMobileTabRestored] = useState(false);
   const mobileContentAnimation = useRef(new Animated.Value(1)).current;
+  const positionAttentionTimer = useRef(null);
+  const previousPositionCount = useRef(null);
 
   const desktop = width >= 1100;
   const tablet = width >= 760;
@@ -373,6 +391,40 @@ export default function TradingLayout() {
     : tablet
       ? Math.max(540, Math.min(640, height - 170))
       : Math.max(430, Math.min(560, height - 210));
+
+  const closeDesktopPanels = () => {
+    setPositionsDrawerOpen(false);
+    setSidePanel(null);
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:close-market-watch'));
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const showNewPositionAttention = () => {
+      setPositionsAttention(true);
+      if (positionAttentionTimer.current) clearTimeout(positionAttentionTimer.current);
+      positionAttentionTimer.current = setTimeout(() => setPositionsAttention(false), 10000);
+    };
+    window.addEventListener('novafxm:new-position', showNewPositionAttention);
+    return () => {
+      window.removeEventListener('novafxm:new-position', showNewPositionAttention);
+      if (positionAttentionTimer.current) clearTimeout(positionAttentionTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const currentCount = positions?.length || 0;
+    if (previousPositionCount.current === null) {
+      previousPositionCount.current = currentCount;
+      return;
+    }
+    if (currentCount > previousPositionCount.current) {
+      setPositionsAttention(true);
+      if (positionAttentionTimer.current) clearTimeout(positionAttentionTimer.current);
+      positionAttentionTimer.current = setTimeout(() => setPositionsAttention(false), 10000);
+    }
+    previousPositionCount.current = currentCount;
+  }, [positions]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
@@ -577,7 +629,13 @@ export default function TradingLayout() {
     <View className="relative flex-1 flex-row" style={{ backgroundColor: colors.background }}>
       {desktop && !chartFullscreen ? (
         <View style={{ paddingRight: 1 }}>
-          <DesktopNavigationRail onOpenPositions={() => setPositionsDrawerOpen(true)} onOpenSettings={() => setSidePanel('settings')} />
+          <DesktopNavigationRail
+            onBeforeOpen={closeDesktopPanels}
+            positionsAttention={positionsAttention}
+            onPositionsViewed={() => setPositionsAttention(false)}
+            onOpenPositions={() => setPositionsDrawerOpen(true)}
+            onOpenSettings={() => setSidePanel('settings')}
+          />
         </View>
       ) : null}
       <View className="flex-1 min-w-0">

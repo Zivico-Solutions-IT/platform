@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Image, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Image, Modal, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { ChevronDown, UserRound, ArrowUp, Bell, LayoutDashboard } from 'lucide-react-native';
 import Svg, { Polyline, Defs, LinearGradient, Stop, Polygon, Circle, RadialGradient } from 'react-native-svg';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,6 +23,40 @@ import ProfileMenu from './ProfileMenu';
 import NotificationMenu from './NotificationMenu';
 import NovaLogo from '../brand/NovaLogo';
 
+function RotatingAccountMetric({ summary, colors, darkMode }) {
+  const [metricIndex, setMetricIndex] = useState(0);
+  const transition = useRef(new Animated.Value(1)).current;
+  const metrics = useMemo(() => [
+    { label: 'Equity', value: `$${money(summary?.equity || 0)}` },
+    { label: 'Unrealized P/L', value: `${Number(summary?.openProfit || 0) >= 0 ? '+' : '-'}$${money(Math.abs(Number(summary?.openProfit || 0)))}`, tone: Number(summary?.openProfit || 0) >= 0 ? colors.success : colors.danger },
+    { label: 'Balance', value: `$${money(summary?.balance || 0)}` },
+    { label: 'Margin', value: `$${money(summary?.margin || 0)}` },
+    { label: 'Free Margin', value: `$${money(summary?.freeFunds || 0)}` },
+    { label: 'Margin Level', value: `${Number(summary?.marginLevel || 0).toFixed(2)}%` },
+  ], [colors.danger, colors.success, summary?.balance, summary?.equity, summary?.freeFunds, summary?.margin, summary?.marginLevel, summary?.openProfit]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      Animated.timing(transition, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
+        setMetricIndex((current) => (current + 1) % metrics.length);
+        transition.setValue(0);
+        Animated.timing(transition, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+      });
+    }, 2800);
+    return () => clearInterval(timer);
+  }, [metrics.length, transition]);
+
+  const metric = metrics[metricIndex] || metrics[0];
+  return (
+    <View className="h-[42px] min-w-[150px] overflow-hidden rounded-xl border px-3 py-1" style={{ backgroundColor: darkMode ? '#101B29' : '#FBFCFA', borderColor: darkMode ? '#20334A' : '#E1EAE3' }}>
+      <Animated.View style={{ opacity: transition, transform: [{ translateY: transition.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
+        <Text className="text-[9px] font-bold uppercase tracking-wider" style={{ color: colors.muted }}>{metric.label}</Text>
+        <Text className="mt-0.5 text-sm font-bold" style={{ color: metric.tone || colors.text }}>{metric.value}</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function TopAccountBar() {
   const { width } = useWindowDimensions();
   const { currentSymbol, summary, selectedTradingAccount, setSelectedTradingAccount, sidePanel, setSidePanel, transactions } = useDemoTrading();
@@ -40,6 +74,8 @@ export default function TopAccountBar() {
   const mobile = width < 1024;
   const narrowPhone = width < 380;
   const compactDesktop = !mobile && width < 1450;
+  const showRotatingMetric = !mobile && width >= 1120;
+  const compactHeaderStats = width < 1350;
   const twoRowDesktop = false;
   const isMobileLayout = width < 760;
   const showHeaderContent = !(isMobileLayout && sidePanel);
@@ -470,27 +506,26 @@ export default function TopAccountBar() {
       )}
       {!mobile ? (
         <View className="flex-1 items-center justify-center">
-          {!compactDesktop ? (
-            <View className="flex-row items-center rounded-xl border px-2.5 py-1.5" style={{ backgroundColor: darkMode ? '#101B29' : '#FBFCFA', borderColor: darkMode ? '#20334A' : '#E1EAE3' }}>
-              <View className="flex-row items-center rounded-lg px-2.5 py-1.5" style={{ backgroundColor: darkMode ? '#113D35' : '#E8F8F0' }}>
-                <View className="mr-1.5 h-2 w-2 rounded-full" style={{ backgroundColor: colors.success }} />
-                <Text className="text-[10px] font-bold uppercase tracking-wider" style={{ color: colors.success }}>Market live</Text>
+          <View className="flex-row items-center" style={{ columnGap: compactHeaderStats ? 6 : 10 }}>
+            {showRotatingMetric ? <RotatingAccountMetric summary={summary} colors={colors} darkMode={darkMode} /> : null}
+            <View className="flex-row items-center rounded-xl border px-2 py-1" style={{ backgroundColor: darkMode ? '#101B29' : '#FBFCFA', borderColor: darkMode ? '#20334A' : '#E1EAE3' }}>
+              <View className="flex-row items-center rounded-lg px-2 py-1" style={{ backgroundColor: darkMode ? '#113D35' : '#E8F8F0' }}>
+                <View className="mr-1 h-2 w-2 rounded-full" style={{ backgroundColor: colors.success }} />
+                <Text className="text-[9px] font-bold uppercase tracking-wider" style={{ color: colors.success }}>Market Live</Text>
               </View>
-              <View className="mx-3 h-7 w-px" style={{ backgroundColor: desktopDivider }} />
+              <View className={`${compactHeaderStats ? 'mx-2' : 'mx-3'} h-7 w-px`} style={{ backgroundColor: desktopDivider }} />
               <View>
-                <Text className="text-[9px] font-bold uppercase tracking-wider" style={{ color: desktopMuted }}>Bid</Text>
-                <Text className="text-sm font-bold" style={{ color: colors.danger }}>{quote(currentSymbol?.bid ?? symbolPrice, currentSymbol?.decimals)}</Text>
+                <Text className="text-[8px] font-bold uppercase tracking-wider" style={{ color: desktopMuted }}>Bid</Text>
+                <Text className="text-[12px] font-bold" style={{ color: colors.danger }}>{quote(currentSymbol?.bid ?? symbolPrice, currentSymbol?.decimals)}</Text>
               </View>
-              <View className="mx-3 h-7 w-px" style={{ backgroundColor: desktopDivider }} />
+              <View className={`${compactHeaderStats ? 'mx-2' : 'mx-3'} h-7 w-px`} style={{ backgroundColor: desktopDivider }} />
               <View>
-                <Text className="text-[9px] font-bold uppercase tracking-wider" style={{ color: desktopMuted }}>Ask</Text>
-                <Text className="text-sm font-bold" style={{ color: colors.success }}>{quote(currentSymbol?.ask ?? symbolPrice, currentSymbol?.decimals)}</Text>
+                <Text className="text-[8px] font-bold uppercase tracking-wider" style={{ color: desktopMuted }}>Ask</Text>
+                <Text className="text-[12px] font-bold" style={{ color: colors.success }}>{quote(currentSymbol?.ask ?? symbolPrice, currentSymbol?.decimals)}</Text>
               </View>
-              <Svg width={72} height={28} viewBox="0 0 112 40" style={{ marginLeft: 12 }}>
-                <Polyline points={sparklinePoints} fill="none" stroke={symbolChange >= 0 ? colors.success : colors.danger} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
+              {!compactHeaderStats ? <Svg width={62} height={26} viewBox="0 0 112 40" style={{ marginLeft: 9 }}><Polyline points={sparklinePoints} fill="none" stroke={symbolChange >= 0 ? colors.success : colors.danger} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></Svg> : null}
             </View>
-          ) : null}
+          </View>
         </View>
       ) : null}
       {isAdmin ? (

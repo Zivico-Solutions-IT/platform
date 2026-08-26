@@ -176,7 +176,7 @@ export default function OpenPositions({ compact = false }) {
   return (
     <View className={`${mobile ? 'mt-2 rounded-lg' : 'mt-3 rounded-lg'} border`} style={{ backgroundColor: panelBackground, borderColor: colors.border, zIndex: 100, elevation: 100 }}>
       <View className="flex-row items-center justify-between border-b px-5" style={{ borderColor: colors.border, zIndex: 200, elevation: 200 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center' }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1" contentContainerStyle={{ alignItems: 'center' }}>
           {[
             ['open', `Positions (${positions.length})`],
             ['pending', `Orders (${pendingOrders?.length || 0})`],
@@ -188,12 +188,21 @@ export default function OpenPositions({ compact = false }) {
           ))}
         </ScrollView>
         {!mobile && tab === 'open' && positions.length ? (
-          <Pressable onPress={() => setConfirmCloseAll(true)} disabled={closingAll} className="h-8 flex-row items-center rounded-md border px-3 my-1" style={{ backgroundColor: colors.panel, borderColor: colors.border, opacity: closingAll ? 0.6 : 1 }}>
-            <X size={14} color={colors.text} />
-            <Text className="ml-2 text-xs font-medium" style={{ color: colors.text }}>Close All Positions</Text>
+          <Pressable onPress={() => setConfirmCloseAll(true)} disabled={closingAll} className="my-1 h-8 flex-row items-center rounded-md border px-3" style={{ backgroundColor: `${colors.danger}12`, borderColor: `${colors.danger}55`, opacity: closingAll ? 0.6 : 1 }}>
+            <X size={14} color={colors.danger} />
+            <Text className="ml-1.5 text-xs font-semibold" style={{ color: colors.danger }}>Close All Positions</Text>
           </Pressable>
         ) : null}
       </View>
+
+      {mobile && tab === 'open' && positions.length ? (
+        <View className="flex-row justify-end border-b px-4 py-2" style={{ backgroundColor: panelBackground, borderColor: colors.border }}>
+          <Pressable onPress={() => setConfirmCloseAll(true)} disabled={closingAll} className="h-8 flex-row items-center rounded-md border px-3" style={{ backgroundColor: `${colors.danger}12`, borderColor: `${colors.danger}55`, opacity: closingAll ? 0.6 : 1 }}>
+            <X size={14} color={colors.danger} />
+            <Text className="ml-1.5 text-xs font-semibold" style={{ color: colors.danger }}>Close all</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {tab === 'closed' ? (
         <View className="flex-row items-center justify-between border-b px-5 py-2" style={{ backgroundColor: tableBackground, borderColor: colors.border, zIndex: 300, elevation: 300 }}>

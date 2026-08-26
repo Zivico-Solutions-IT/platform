@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-na
 import { useAppTheme } from '../../context/ThemeContext';
 
 const allTabs = [
-  { key: 'overview', label: 'Overview', section: 'overview' },
+  { key: 'overview', label: 'Home', section: 'overview' },
   { key: 'accounts', label: 'Accounts', section: 'accounts' },
   { key: 'verification', label: 'Verification', route: '/verification' },
   { key: 'deposit', label: 'Deposit', section: 'deposit' },

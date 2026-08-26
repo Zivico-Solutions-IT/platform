@@ -58,7 +58,7 @@ function MenuTile({ icon: Icon, title, subtitle, badge, onPress, palette }) {
   );
 }
 
-function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
+function MenuAction({ icon: Icon, title, onPress, danger = false, toggleOn, palette }) {
   const [pressed, setPressed] = useState(false);
   return (
     <Pressable
@@ -86,7 +86,11 @@ function MenuAction({ icon: Icon, title, onPress, danger = false, palette }) {
       <Text style={{ flex: 1, marginLeft: 12, fontSize: 14, fontWeight: danger ? '700' : '600', color: danger ? palette.danger : palette.text }}>
         {title}
       </Text>
-      {!danger ? <ChevronRight size={16} color={palette.chevron} strokeWidth={2} /> : null}
+      {typeof toggleOn === 'boolean' ? (
+        <View className="h-6 w-11 justify-center rounded-full px-1" style={{ backgroundColor: toggleOn ? palette.accent : palette.border }}>
+          <View className="h-4 w-4 rounded-full bg-white" style={{ alignSelf: toggleOn ? 'flex-end' : 'flex-start' }} />
+        </View>
+      ) : !danger ? <ChevronRight size={16} color={palette.chevron} strokeWidth={2} /> : null}
     </Pressable>
   );
 }
@@ -368,8 +372,9 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
           />
           <MenuAction
             icon={darkMode ? Sun : Moon}
-            title={darkMode ? 'Light Mode' : 'Dark Mode'}
+            title="Mode"
             onPress={toggleTheme}
+            toggleOn={darkMode}
             palette={palette}
           />
           <MenuAction
