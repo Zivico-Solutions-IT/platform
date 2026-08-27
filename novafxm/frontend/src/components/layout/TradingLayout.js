@@ -21,7 +21,15 @@ import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 function DesktopNavigationRail({ onOpenPositions, onOpenSettings, onBeforeOpen, onCloseAll, positionsAttention, onPositionsViewed }) {
   const { darkMode, colors } = useAppTheme();
   const [activeItem, setActiveItem] = useState(null);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const positionPulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const updateNotificationCount = (event) => setUnreadNotificationCount(Number(event?.detail?.count || 0));
+    setUnreadNotificationCount(Number(window.__novafxmUnreadNotificationCount || 0));
+    window.addEventListener('novafxm:notification-count', updateNotificationCount);
+    return () => window.removeEventListener('novafxm:notification-count', updateNotificationCount);
+  }, []);
   useEffect(() => {
     if (!positionsAttention) {
       positionPulse.stopAnimation();
@@ -86,7 +94,7 @@ function DesktopNavigationRail({ onOpenPositions, onOpenSettings, onBeforeOpen, 
             originalAction();
           };
           return (
-          <Pressable key={label} onPress={() => { if (label === 'Positions') onPositionsViewed?.(); onBeforeOpen?.(label); setActiveItem(label); action(); }} className="relative mb-4 items-center justify-center rounded-xl" style={{ width: 44, height: 44, cursor: 'pointer', backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }} accessibilityLabel={showPositionAlert ? 'New open position — open Positions' : label}>
+          <Pressable key={label} onPress={() => toggleRailItem(label, originalAction)} className="relative mb-4 items-center justify-center rounded-xl" style={{ width: 44, height: 44, cursor: 'pointer', backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }} accessibilityLabel={showPositionAlert ? 'New open position — open Positions' : label}>
             {showPositionAlert ? <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -5, right: -5, bottom: -5, left: -5, borderRadius: 16, borderWidth: 2, borderColor: '#E1AD1B', backgroundColor: '#FFE58A', opacity: positionPulse.interpolate({ inputRange: [1, 1.4], outputRange: [0.7, 0] }), transform: [{ scale: positionPulse.interpolate({ inputRange: [1, 1.4], outputRange: [0.96, 1.2] }) }] }} /> : null}
             {showPositionAlert ? <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: 12, borderWidth: 1.5, borderColor: '#D9AC38', backgroundColor: '#FFF4C8', opacity: positionPulse.interpolate({ inputRange: [1, 1.4], outputRange: [0.75, 1] }) }} /> : null}
             <Animated.View className="relative items-center justify-center" style={showPositionAlert ? { transform: [{ scale: positionPulse.interpolate({ inputRange: [1, 1.4], outputRange: [1, 1.12] }) }] } : undefined}>
@@ -113,6 +121,7 @@ function DesktopNavigationRail({ onOpenPositions, onOpenSettings, onBeforeOpen, 
           accessibilityLabel="Notifications"
         >
           <Bell size={21} color={activeItem === 'Notifications' ? colors.success : colors.muted} strokeWidth={1.8} />
+          {unreadNotificationCount ? <View pointerEvents="none" className="absolute items-center justify-center rounded-full bg-danger px-1" style={{ right: -3, top: -3, minWidth: 16, height: 16, borderWidth: 1.5, borderColor: colors.panel }}><Text className="text-[9px] font-bold text-white">{unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}</Text></View> : null}
         </Pressable>
         <Pressable
           onPress={() => {

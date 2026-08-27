@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
-import { ChevronRight, Search, Star, X } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Search, Star, X } from 'lucide-react-native';
 import Svg, { Polyline } from 'react-native-svg';
 import { percent, quote } from '../../utils/formatters';
 
@@ -32,6 +32,7 @@ export default function ChartSymbolPanel({
 }) {
   const { width } = useWindowDimensions();
   const mobile = width < 760;
+  const tabScrollRef = useRef(null);
   const favoriteSymbolSet = new Set(favoriteSymbols);
   const selectedSymbol = typeof currentSymbol === 'string' ? currentSymbol : currentSymbol?.symbol;
 
@@ -66,21 +67,28 @@ export default function ChartSymbolPanel({
           <Search size={15} color={ui.muted} />
           <TextInput value={search} onChangeText={onSearchChange} placeholder="Search symbols (e.g. XAU, BTC, EUR)..." placeholderTextColor={ui.muted} className="flex-1 h-10 ml-2 text-xs" style={{ color: ui.text, outlineStyle: 'none' }} />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-2" contentContainerStyle={{ alignItems: 'center', gap: 0, minWidth: '100%', paddingHorizontal: 1 }}>
-          {['Favorites', ...symbolTabs].map((entry, index) => {
+        <View className="mt-2 flex-row items-center">
+          <Pressable onPress={() => tabScrollRef.current?.scrollTo?.({ x: 0, animated: true })} className="items-center justify-center" style={{ width: 18, height: 32 }} accessibilityLabel="Show earlier categories">
+            <ChevronLeft size={16} color={ui.muted} />
+          </Pressable>
+          <ScrollView ref={tabScrollRef} horizontal showsHorizontalScrollIndicator={false} className="flex-1" contentContainerStyle={{ alignItems: 'center', gap: 0, minWidth: '100%', paddingHorizontal: 1 }}>
+            {['Favorites', ...symbolTabs].map((entry, index) => {
             const active = entry === symbolTab;
             return (
               <View key={entry} className="flex-row items-center">
                 {index > 0 ? <View className="mx-[5px] h-3 w-px" style={{ backgroundColor: ui.border }} /> : null}
                 <Pressable onPress={() => onSelectTab(entry)} className="h-8 flex-row items-center justify-center" style={{ borderBottomWidth: active ? 2 : 0, borderBottomColor: active ? ui.accent : 'transparent' }}>
-                  {entry === 'Favorites' ? <Star size={13} color={active ? ui.accent : ui.muted} fill={active ? ui.accent : 'transparent'} /> : null}
-                  <Text className={entry === 'Favorites' ? 'ml-1 font-semibold' : 'font-semibold'} style={{ fontSize: 11, color: active ? ui.accent : ui.muted }}>{entry}</Text>
+                  <Text className="font-semibold" style={{ fontSize: 11, color: active ? ui.accent : ui.muted }}>{entry}</Text>
                   {entry === 'Favorites' ? <Text className="ml-1 text-[9px] font-bold" style={{ color: active ? ui.accent : ui.muted }}>{favoriteSymbols.length}</Text> : null}
                 </Pressable>
               </View>
             );
-          })}
-        </ScrollView>
+            })}
+          </ScrollView>
+          <Pressable onPress={() => tabScrollRef.current?.scrollToEnd?.({ animated: true })} className="items-center justify-center" style={{ width: 18, height: 32 }} accessibilityLabel="Show more categories">
+            <ChevronRight size={16} color={ui.muted} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView className="flex-1 min-h-0" showsVerticalScrollIndicator persistentScrollbar style={Platform.OS === 'web' ? { overflowY: 'scroll', scrollbarGutter: 'stable' } : null}>

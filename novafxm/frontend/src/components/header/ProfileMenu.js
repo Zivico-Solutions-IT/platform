@@ -119,10 +119,10 @@ export default function ProfileMenu({ onClose, onHoverIn, onHoverOut, onOpenPane
   const liveTradingLevel = user?.tradingLevel || 'Standard';
   const profileAccountId = String(Number(selectedAccount?.id || 0) + 4999).padStart(6, '0');
   const palette = {
-    panel: darkMode ? colors.panel : '#FBFAF6',
-    tile: darkMode ? colors.surface : '#FFFFFF',
-    card: darkMode ? colors.surface : '#FFFFFF',
-    border: darkMode ? colors.border : '#ECEAE3',
+    panel: colors.panel,
+    tile: colors.surface,
+    card: colors.panel,
+    border: colors.border,
     text: colors.text,
     muted: colors.muted,
     accent: colors.primary,

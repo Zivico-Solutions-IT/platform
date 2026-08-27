@@ -150,6 +150,12 @@ export default function TopAccountBar() {
   const unreadNotificationCount = notificationIds.filter((id) => !readNotificationIds.includes(id)).length;
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.__novafxmUnreadNotificationCount = unreadNotificationCount;
+    window.dispatchEvent(new CustomEvent('novafxm:notification-count', { detail: { count: unreadNotificationCount } }));
+  }, [unreadNotificationCount]);
+
+  useEffect(() => {
     if (!user?.id) return undefined;
     let active = true;
     const refreshProfile = () => {
@@ -391,9 +397,14 @@ export default function TopAccountBar() {
         <View className="gap-2">
           {/* Brand-free compact utility header */}
           <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-xs font-bold" style={{ color: colors.text }}>Trading</Text>
-              <Text className="text-[9px]" style={{ color: colors.muted }}>Market terminal</Text>
+            <Pressable onPress={() => router.push('/')} style={{ width: narrowPhone ? 92 : 106 }} accessibilityLabel="Home">
+              <NovaLogo dark={darkMode} width={narrowPhone ? 88 : 102} height={narrowPhone ? 25 : 28} />
+            </Pressable>
+            <View className="flex-1 items-center px-1">
+              <View className="rounded-xl border px-2.5 py-1.5" style={{ minWidth: narrowPhone ? 108 : 122, backgroundColor: darkMode ? '#1E232A' : '#FBFAF7', borderColor: darkMode ? '#353C45' : '#E2E5E9' }}>
+                <Text className="text-[8px] font-bold uppercase tracking-wide" style={{ color: colors.muted }}>Equity</Text>
+                <Text className="mt-0.5 text-sm font-bold" style={{ color: colors.text }}>${money(summary?.equity ?? summary?.balance ?? 0)}</Text>
+              </View>
             </View>
             <View className="flex-row items-center gap-1.5">
               {isAdmin ? (

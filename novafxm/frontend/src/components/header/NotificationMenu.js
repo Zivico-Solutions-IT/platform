@@ -198,8 +198,8 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
   const unreadCount = notifications.filter((item) => !readIds.includes(item.id)).length;
   const mobileTheme = darkMode
     ? { background: '#111827', header: '#161D27', surface: '#1B2430', unreadSurface: '#20281F', border: '#2C3746', text: '#F4F7FB', muted: '#A7B1BF', subtle: '#768295', close: '#222C38' }
-    : { background: '#F6F5F1', header: '#FFFFFF', surface: '#FFFFFF', unreadSurface: '#FBF9F4', border: '#ECEAE3', text: '#1B1F27', muted: '#8A8F7C', subtle: '#B3B8AE', close: '#F4F2ED' };
-  const panelBackground = darkMode ? colors.panel : '#FBFAF6';
+    : { background: colors.panel, header: colors.panel, surface: colors.panel, unreadSurface: colors.surface, border: colors.border, text: colors.text, muted: colors.muted, subtle: '#A0A6A1', close: colors.surface };
+  const panelBackground = colors.panel;
 
   useEffect(() => {
     slideAnim.setValue(-panelWidth);

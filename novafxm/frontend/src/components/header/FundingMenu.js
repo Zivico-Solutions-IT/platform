@@ -108,7 +108,7 @@ export default function FundingMenu({ selectedAccount, summary, onClose, onSwitc
         paddingTop: 22,
         paddingBottom: mobile ? 24 : 20,
         paddingHorizontal: 15,
-        backgroundColor: darkMode ? colors.panel : '#FBFAF7',
+        backgroundColor: colors.panel,
         borderRightWidth: mobile ? 0 : 1,
         borderRightColor: colors.border,
         borderTopLeftRadius: mobile ? 24 : 0,
