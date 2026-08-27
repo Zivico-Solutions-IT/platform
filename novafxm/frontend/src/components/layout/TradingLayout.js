@@ -18,7 +18,7 @@ import { storage } from '../../utils/storage';
 
 import ChartSymbolPanel from '../chart/ChartSymbolPanel';
 
-function DesktopNavigationRail({ onOpenPositions, onOpenSettings, onBeforeOpen, positionsAttention, onPositionsViewed }) {
+function DesktopNavigationRail({ onOpenPositions, onOpenSettings, onBeforeOpen, onCloseAll, positionsAttention, onPositionsViewed }) {
   const { darkMode, colors } = useAppTheme();
   const [activeItem, setActiveItem] = useState(null);
   const positionPulse = useRef(new Animated.Value(1)).current;
@@ -29,8 +29,9 @@ function DesktopNavigationRail({ onOpenPositions, onOpenSettings, onBeforeOpen, 
       return undefined;
     }
     const animation = Animated.loop(Animated.sequence([
-      Animated.timing(positionPulse, { toValue: 1.32, duration: 550, useNativeDriver: true }),
-      Animated.timing(positionPulse, { toValue: 1, duration: 550, useNativeDriver: true }),
+      Animated.timing(positionPulse, { toValue: 1, duration: 120, useNativeDriver: true }),
+      Animated.timing(positionPulse, { toValue: 1.4, duration: 520, useNativeDriver: true }),
+      Animated.timing(positionPulse, { toValue: 1, duration: 520, useNativeDriver: true }),
     ]));
     animation.start();
     return () => animation.stop();
@@ -59,26 +60,54 @@ function DesktopNavigationRail({ onOpenPositions, onOpenSettings, onBeforeOpen, 
       },
     },
   ];
+  const toggleRailItem = (label, action) => {
+    if (activeItem === label) {
+      setActiveItem(null);
+      onCloseAll?.();
+      return;
+    }
+    if (label === 'Positions') onPositionsViewed?.();
+    onBeforeOpen?.(label);
+    setActiveItem(label);
+    action();
+  };
 
   return (
     <View className="h-full items-center border-r overflow-hidden" style={{ width: 56, flexShrink: 0, backgroundColor: colors.panel, borderColor: colors.border }}>
       <View className="flex-1 w-full items-center pt-7">
-        {items.map(({ label, icon: Icon, action }) => {
+        {items.map(({ label, icon: Icon, action: originalAction }) => {
           const active = activeItem === label;
           const showPositionAlert = label === 'Positions' && positionsAttention;
+          const action = () => {
+            if (active) {
+              setActiveItem(null);
+              return;
+            }
+            originalAction();
+          };
           return (
           <Pressable key={label} onPress={() => { if (label === 'Positions') onPositionsViewed?.(); onBeforeOpen?.(label); setActiveItem(label); action(); }} className="relative mb-4 items-center justify-center rounded-xl" style={{ width: 44, height: 44, cursor: 'pointer', backgroundColor: active ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent', borderWidth: active ? 1 : 0, borderColor: active ? colors.success : 'transparent' }} accessibilityLabel={showPositionAlert ? 'New open position — open Positions' : label}>
-            <View className="relative items-center justify-center">
-              <Icon size={22} color={active ? colors.success : colors.muted} strokeWidth={active ? 2.2 : 1.8} />
-            </View>
-            {showPositionAlert ? <Animated.View className="absolute right-0 top-0 h-[17px] min-w-[17px] items-center justify-center rounded-full border-2" style={{ backgroundColor: colors.danger, transform: [{ scale: positionPulse }], borderColor: darkMode ? colors.panel : '#FFFFFF' }}><Text className="text-[9px] font-bold text-white">1</Text></Animated.View> : null}
+            {showPositionAlert ? <Animated.View pointerEvents="none" style={{ position: 'absolute', top: -5, right: -5, bottom: -5, left: -5, borderRadius: 16, borderWidth: 2, borderColor: '#E1AD1B', backgroundColor: '#FFE58A', opacity: positionPulse.interpolate({ inputRange: [1, 1.4], outputRange: [0.7, 0] }), transform: [{ scale: positionPulse.interpolate({ inputRange: [1, 1.4], outputRange: [0.96, 1.2] }) }] }} /> : null}
+            {showPositionAlert ? <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: 12, borderWidth: 1.5, borderColor: '#D9AC38', backgroundColor: '#FFF4C8', opacity: positionPulse.interpolate({ inputRange: [1, 1.4], outputRange: [0.75, 1] }) }} /> : null}
+            <Animated.View className="relative items-center justify-center" style={showPositionAlert ? { transform: [{ scale: positionPulse.interpolate({ inputRange: [1, 1.4], outputRange: [1, 1.12] }) }] } : undefined}>
+              <Icon size={22} color={showPositionAlert ? '#A87900' : active ? colors.success : colors.muted} strokeWidth={showPositionAlert || active ? 2.2 : 1.8} />
+            </Animated.View>
           </Pressable>
           );
         })}
       </View>
       <View className="w-full items-center">
         <Pressable
-          onPress={() => { onBeforeOpen?.('Notifications'); setActiveItem('Notifications'); if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:open-notifications')); }}
+          onPress={() => {
+            if (activeItem === 'Notifications') {
+              setActiveItem(null);
+              onCloseAll?.();
+              return;
+            }
+            onBeforeOpen?.('Notifications');
+            setActiveItem('Notifications');
+            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:open-notifications'));
+          }}
           className="mb-3 items-center justify-center rounded-xl"
           style={{ width: 44, height: 44, cursor: 'pointer', backgroundColor: activeItem === 'Notifications' ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent' }}
           accessibilityLabel="Notifications"
@@ -86,7 +115,16 @@ function DesktopNavigationRail({ onOpenPositions, onOpenSettings, onBeforeOpen, 
           <Bell size={21} color={activeItem === 'Notifications' ? colors.success : colors.muted} strokeWidth={1.8} />
         </Pressable>
         <Pressable
-          onPress={() => { onBeforeOpen?.('Settings'); setActiveItem('Settings'); onOpenSettings(); }}
+          onPress={() => {
+            if (activeItem === 'Settings') {
+              setActiveItem(null);
+              onCloseAll?.();
+              return;
+            }
+            onBeforeOpen?.('Settings');
+            setActiveItem('Settings');
+            onOpenSettings();
+          }}
           className="mb-5 items-center justify-center rounded-xl"
           style={{ width: 44, height: 44, cursor: 'pointer', backgroundColor: activeItem === 'Settings' ? (darkMode ? '#123f43' : '#e0faf5') : 'transparent' }}
           accessibilityLabel="Settings"
@@ -395,7 +433,10 @@ export default function TradingLayout() {
   const closeDesktopPanels = () => {
     setPositionsDrawerOpen(false);
     setSidePanel(null);
-    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('novafxm:close-market-watch'));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('novafxm:close-market-watch'));
+      window.dispatchEvent(new CustomEvent('novafxm:close-header-menus'));
+    }
   };
 
   useEffect(() => {
@@ -403,7 +444,7 @@ export default function TradingLayout() {
     const showNewPositionAttention = () => {
       setPositionsAttention(true);
       if (positionAttentionTimer.current) clearTimeout(positionAttentionTimer.current);
-      positionAttentionTimer.current = setTimeout(() => setPositionsAttention(false), 10000);
+      positionAttentionTimer.current = setTimeout(() => setPositionsAttention(false), 15000);
     };
     window.addEventListener('novafxm:new-position', showNewPositionAttention);
     return () => {
@@ -421,7 +462,7 @@ export default function TradingLayout() {
     if (currentCount > previousPositionCount.current) {
       setPositionsAttention(true);
       if (positionAttentionTimer.current) clearTimeout(positionAttentionTimer.current);
-      positionAttentionTimer.current = setTimeout(() => setPositionsAttention(false), 10000);
+      positionAttentionTimer.current = setTimeout(() => setPositionsAttention(false), 15000);
     }
     previousPositionCount.current = currentCount;
   }, [positions]);
@@ -631,6 +672,7 @@ export default function TradingLayout() {
         <View style={{ paddingRight: 1 }}>
           <DesktopNavigationRail
             onBeforeOpen={closeDesktopPanels}
+            onCloseAll={closeDesktopPanels}
             positionsAttention={positionsAttention}
             onPositionsViewed={() => setPositionsAttention(false)}
             onOpenPositions={() => setPositionsDrawerOpen(true)}

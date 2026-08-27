@@ -214,9 +214,10 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
     <Animated.View
       className="z-50 overflow-hidden shadow-2xl"
       style={{
-        // Match the Profile drawer: dock to the left and slide in from the left.
+        // Match the Profile and Funding drawers: keep the desktop navigation
+        // rail visible and dock this drawer immediately after it.
         position: 'absolute',
-        left: 0,
+        left: isMobile ? 0 : 56,
         top: 0,
         bottom: isMobile ? 0 : undefined,
         right: isMobile ? 0 : undefined,

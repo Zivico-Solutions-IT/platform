@@ -312,11 +312,14 @@ export default function TopAccountBar() {
     if (typeof window === 'undefined') return undefined;
     const openNotifications = () => setMenu('notifications');
     const openProfile = () => setMenu('profile');
+    const closeMenus = () => setMenu(null);
     window.addEventListener('novafxm:open-notifications', openNotifications);
     window.addEventListener('novafxm:open-profile', openProfile);
+    window.addEventListener('novafxm:close-header-menus', closeMenus);
     return () => {
       window.removeEventListener('novafxm:open-notifications', openNotifications);
       window.removeEventListener('novafxm:open-profile', openProfile);
+      window.removeEventListener('novafxm:close-header-menus', closeMenus);
     };
   }, []);
   const goToAdminDashboard = () => {

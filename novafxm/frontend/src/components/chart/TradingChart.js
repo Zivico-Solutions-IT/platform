@@ -920,7 +920,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
   }, []);
   const chartCardInset = 10;
   const chartListGap = 10;
-  const symbolPanelWidth = mobile ? Math.min(width - 20, 360) : compactToolbar ? 320 : 340;
+  const symbolPanelWidth = mobile ? Math.min(width - 20, 360) : compactToolbar ? 320 : 390;
   const symbolPanelTop = mobile ? 56 : (compactToolbar ? 47 : 51);
   const timeframeMenuLeft = narrowMobileToolbar ? 116 : 126;
   const chartOffsetLeft = symbolMenuOpen && !mobile && !chartFullscreen ? symbolPanelWidth + chartListGap : 0;
@@ -1391,9 +1391,8 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
     setSelectedSymbol(symbol);
     setHoveredSymbol(null);
     setSymbolTabMenuOpen(false);
-    // A selection is a completed Market Watch action on every layout. Close
-    // the drawer so the newly selected instrument's chart is immediately visible.
-    setSymbolMenuOpen(false);
+    // Keep Market Watch open after a symbol selection so traders can compare
+    // instruments without having to reopen the drawer each time.
   };
   const applyDrawingTool = (key) => {
     if (key === 'clear') {
@@ -1926,7 +1925,7 @@ export default function TradingChart({ isFullscreen, onFullscreenChange, isAdmin
         </View>
       </View>
       {!mobile ? (
-        <View className="h-10 flex-row items-stretch border-t px-3" style={{ backgroundColor: ui.toolbar, borderColor: ui.border }}>
+        <View className="h-10 flex-row items-stretch border-t px-3" style={{ marginLeft: chartOffsetLeft, backgroundColor: ui.toolbar, borderColor: ui.border }}>
           <View className="flex-row items-stretch">
             {TIMEFRAMES.map((entry) => {
               const active = entry === timeframe;
