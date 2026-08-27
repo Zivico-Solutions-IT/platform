@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { ChevronDown, ChevronRight, Search, Star, X } from 'lucide-react-native';
 import Svg, { Polyline } from 'react-native-svg';
 import { percent, quote } from '../../utils/formatters';
@@ -31,6 +31,8 @@ export default function ChartSymbolPanel({
   symbolTabMenuOpen, setSymbolTabMenuOpen, ui, isInline = false,
 }) {
   const containerRef = useRef(null);
+  const { width } = useWindowDimensions();
+  const mobile = width < 760;
   const favoritesActive = symbolTab === 'Favorites';
   const favoriteSymbolSet = new Set(favoriteSymbols);
   const selectedSymbol = typeof currentSymbol === 'string' ? currentSymbol : currentSymbol?.symbol;
@@ -60,7 +62,7 @@ export default function ChartSymbolPanel({
       backgroundColor: ui.menu, borderColor: ui.menuBorder, zIndex: 3200, elevation: 3200,
     }}>
       <View className="px-3 pt-3 pb-2 border-b" style={{ borderColor: ui.border, zIndex: 3300 }}>
-        <View className="flex-row items-start justify-between">
+        {!mobile ? <View className="flex-row items-start justify-between">
           <View>
             <View className="flex-row items-center">
               <Text className="text-sm font-bold tracking-wide" style={{ color: ui.text }}>MARKET WATCH</Text>
@@ -72,8 +74,8 @@ export default function ChartSymbolPanel({
             <Text className="mt-0.5 text-[10px]" style={{ color: ui.muted }}>Real-time market rates &amp; quotes</Text>
           </View>
           {onClose ? <Pressable onPress={onClose} className="items-center justify-center w-8 h-8 rounded-full" style={{ backgroundColor: ui.control }}><X size={16} color={ui.muted} /></Pressable> : null}
-        </View>
-        <View className="flex-row items-center h-10 px-3 mt-3 border rounded-lg" style={{ backgroundColor: ui.control, borderColor: ui.border }}>
+        </View> : (onClose ? <View className="flex-row justify-end"><Pressable onPress={onClose} className="items-center justify-center w-8 h-8 rounded-full" style={{ backgroundColor: ui.control }}><X size={16} color={ui.muted} /></Pressable></View> : null)}
+        <View className="flex-row items-center h-10 px-3 border rounded-lg" style={{ marginTop: mobile ? 0 : 12, backgroundColor: ui.control, borderColor: ui.border }}>
           <Search size={15} color={ui.muted} />
           <TextInput value={search} onChangeText={onSearchChange} placeholder="Search symbols (e.g. XAU, BTC, EUR)..." placeholderTextColor={ui.muted} className="flex-1 h-10 ml-2 text-xs" style={{ color: ui.text, outlineStyle: 'none' }} />
         </View>

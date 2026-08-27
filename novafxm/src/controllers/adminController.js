@@ -1360,12 +1360,71 @@ exports.trades = async (req, res, next) => {
         tradingAccountId: { [Op.in]: sequelize.literal("(SELECT `id` FROM `trading_accounts` WHERE `type` = 'Live')") },
       },
       include: [
-        { model: User, attributes: leanUserAttributes, where: userWhere },
+        { model: User, attributes: leanUserAttributes, where: userWhere, include: [{ model: Wallet, as: 'wallet', attributes: ['balance', 'equity', 'margin', 'freeFunds'] }] },
+        { model: TradingAccount, as: 'tradingAccount', attributes: ['id', 'name', 'type', 'balance', 'leverage'] },
       ],
       order: [['createdAt', 'DESC']],
       limit: listLimit(req.query.limit),
     });
-    return res.json({ trades: rows, total: count });
+    const prices = new Map((await tradingView.getPrices()).map((item) => [item.symbol, item]));
+    return res.json({
+      trades: rows.map((trade) => {
+        const values = trade.toJSON();
+        if (values.status !== 'open') return values;
+        const quote = prices.get(values.symbol);
+        const currentPrice = Number(quote?.price || values.openPrice);
+        return { ...values, currentPrice, profit: money(profitFor(values, currentPrice)) };
+      }),
+      total: count,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.updateOpenTrade = async (req, res, next) => {
+  try {
+    const trade = await Trade.findByPk(req.params.id);
+    if (!trade) throw apiError('Trade not found.', 404);
+    if (trade.status !== 'open') throw apiError('Only open trades can be edited.', 400);
+
+    const side = req.body.side === 'SELL' ? 'SELL' : req.body.side === 'BUY' ? 'BUY' : null;
+    const lots = Number(req.body.lots);
+    const openedAt = new Date(req.body.createdAt);
+    if (!side || !Number.isFinite(lots) || lots <= 0) throw apiError('A valid side and lot size are required.');
+    if (Number.isNaN(openedAt.getTime())) throw apiError('A valid open date and time are required.');
+
+    const [user, account] = await Promise.all([
+      User.findByPk(trade.userId),
+      TradingAccount.findOne({ where: { id: trade.tradingAccountId, userId: trade.userId } }),
+    ]);
+    if (!user || !account || account.type !== 'Live') throw apiError('Live trading account not found.', 404);
+
+    const historicalPrice = await getHistoricalPriceHelper(trade.symbol, openedAt);
+    if (!historicalPrice) throw apiError('The market price for this time could not be found. Please choose another time.');
+    const openPrice = Number(historicalPrice);
+    const margin = money((lots * contractSize(trade.symbol) * openPrice) / Math.max(1, Number(account.leverage || user.leverage || DEFAULT_LEVERAGE)));
+    const prices = new Map((await tradingView.getPrices()).map((item) => [item.symbol, item]));
+    let updatedTrade;
+    let summary;
+
+    await sequelize.transaction(async (transaction) => {
+      const lockedTrade = await Trade.findByPk(trade.id, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!lockedTrade || lockedTrade.status !== 'open') throw apiError('This trade is no longer open.', 400);
+      await lockedTrade.update({ side, lots, openPrice, entryPrice: openPrice, margin, createdAt: openedAt }, { transaction });
+      const wallet = await Wallet.findOne({ where: { userId: trade.userId }, transaction, lock: transaction.LOCK.UPDATE });
+      const openTrades = await Trade.findAll({ where: { userId: trade.userId, status: 'open' }, transaction });
+      summary = buildSummary(wallet, openTrades, prices);
+      await updateSnapshot(wallet, summary, transaction);
+      updatedTrade = lockedTrade.toJSON();
+    });
+
+    const currentPrice = Number(prices.get(updatedTrade.symbol)?.price || updatedTrade.openPrice);
+    return res.json({
+      trade: { ...updatedTrade, currentPrice, profit: money(profitFor(updatedTrade, currentPrice)) },
+      account: { id: account.id, balance: money(account.balance), leverage: account.leverage },
+      summary,
+    });
   } catch (error) {
     return next(error);
   }

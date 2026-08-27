@@ -71,7 +71,7 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
   const isMobile = viewportWidth < 760;
   const panelWidth = isMobile ? viewportWidth : 410;
   const panelHeight = height;
-  const slideAnim = useRef(new Animated.Value(410)).current;
+  const slideAnim = useRef(new Animated.Value(-410)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -202,7 +202,7 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
   const panelBackground = darkMode ? colors.panel : '#FBFAF6';
 
   useEffect(() => {
-    slideAnim.setValue(panelWidth);
+    slideAnim.setValue(-panelWidth);
     fadeAnim.setValue(0);
     Animated.parallel([
       Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
@@ -214,22 +214,22 @@ export default function NotificationMenu({ onClose, readIds = [], onReadAll }) {
     <Animated.View
       className="z-50 overflow-hidden shadow-2xl"
       style={{
-        // Keep this drawer on the same explicit right-side anchor as ProfileMenu.
+        // Match the Profile drawer: dock to the left and slide in from the left.
         position: 'absolute',
-        right: 0,
+        left: 0,
         top: 0,
         bottom: isMobile ? 0 : undefined,
-        left: isMobile ? 0 : undefined,
+        right: isMobile ? 0 : undefined,
         width: isMobile ? '100%' : panelWidth,
         height: panelHeight,
         paddingTop: isMobile ? 0 : 20,
         paddingBottom: isMobile ? 0 : 20,
         paddingHorizontal: isMobile ? 0 : 20,
         backgroundColor: panelBackground,
-        borderLeftWidth: isMobile ? 0 : 1,
-        borderLeftColor: mobileTheme.border,
-        borderTopLeftRadius: isMobile ? 0 : 20,
-        borderBottomLeftRadius: isMobile ? 0 : 20,
+        borderRightWidth: isMobile ? 0 : 1,
+        borderRightColor: mobileTheme.border,
+        borderTopRightRadius: isMobile ? 0 : 20,
+        borderBottomRightRadius: isMobile ? 0 : 20,
         shadowColor: '#000',
         shadowOpacity: 0.3,
         shadowRadius: 28,

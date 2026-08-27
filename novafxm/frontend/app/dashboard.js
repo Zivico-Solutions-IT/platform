@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Animated, Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -445,8 +445,42 @@ function NotificationRow({ Icon, title, body, time, tone, colors, read, onPress 
 }
 
 function DashboardNotificationMenu({ notifications, readIds, unreadCount, colors, onClose, onReadAll }) {
+  const { width } = useWindowDimensions();
+  const mobile = width < 760;
+  const panelWidth = mobile ? width : 410;
+  const slideAnim = useRef(new Animated.Value(panelWidth)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    slideAnim.setValue(panelWidth);
+    fadeAnim.setValue(0);
+    Animated.parallel([
+      Animated.timing(slideAnim, { toValue: 0, duration: 280, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }, [fadeAnim, panelWidth, slideAnim]);
+
   return (
-    <View className="w-[380px] max-w-[92vw] overflow-hidden rounded-2xl border shadow-2xl" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+    <Pressable
+      onPress={(event) => event.stopPropagation?.()}
+      style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: mobile ? '100%' : panelWidth,
+      }}
+    >
+      <Animated.View
+        className="flex-1 overflow-hidden border shadow-2xl"
+        style={{
+        backgroundColor: colors.panel,
+        borderColor: colors.border,
+        borderLeftWidth: mobile ? 0 : 1,
+        opacity: fadeAnim,
+        transform: [{ translateX: slideAnim }],
+      }}
+      >
       <View className="flex-row items-center justify-between border-b px-4 py-3" style={{ borderColor: colors.border }}>
         <View>
           <Text className="text-base font-medium" style={{ color: colors.text }}>Notifications</Text>
@@ -461,7 +495,7 @@ function DashboardNotificationMenu({ notifications, readIds, unreadCount, colors
           </Pressable>
         </View>
       </View>
-      <ScrollView style={{ maxHeight: 430 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
         {notifications.length ? notifications.map((item) => (
           <NotificationRow
             key={item.id}
@@ -477,7 +511,8 @@ function DashboardNotificationMenu({ notifications, readIds, unreadCount, colors
           <Text className="p-5 text-sm" style={{ color: colors.muted }}>No account notifications yet.</Text>
         )}
       </ScrollView>
-    </View>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -757,10 +792,8 @@ export default function DashboardScreen() {
           </Pressable>
           <Modal visible={notificationsOpen} transparent animationType="fade" onRequestClose={() => setNotificationsOpen(false)}>
             <Pressable className="flex-1" style={{ backgroundColor: 'rgba(0,0,0,0.12)' }} onPress={() => setNotificationsOpen(false)}>
-              <View className="absolute right-4 top-16">
-                <Pressable onPress={(event) => event.stopPropagation?.()}>
-                  <DashboardNotificationMenu notifications={notifications} readIds={readNotificationIds} unreadCount={unreadNotificationCount} colors={colors} onClose={() => setNotificationsOpen(false)} onReadAll={readAllNotifications} />
-                </Pressable>
+              <View className="absolute inset-0">
+                <DashboardNotificationMenu notifications={notifications} readIds={readNotificationIds} unreadCount={unreadNotificationCount} colors={colors} onClose={() => setNotificationsOpen(false)} onReadAll={readAllNotifications} />
               </View>
             </Pressable>
           </Modal>

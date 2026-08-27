@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useRouter, usePathname } from 'expo-router';
 import { Alert, Animated, Image, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { AlertTriangle, ArrowLeft, Bell, Camera, ChevronDown, Plus, ChevronUp, CreditCard, Eye, EyeOff, LogOut, Moon, RefreshCw, Search, Settings, ShieldCheck, Sun, TrendingUp, TrendingDown, UserRound, Wallet, X, Users, Coins, ArrowUpRight, ArrowDownRight, Copy, UsersRound } from 'lucide-react-native';
+import { AlertTriangle, ArrowLeft, Bell, Camera, ChevronDown, Plus, ChevronUp, CreditCard, Edit3, Eye, EyeOff, LogOut, Moon, RefreshCw, Search, Settings, ShieldCheck, Sun, TrendingUp, TrendingDown, UserRound, Wallet, X, Users, Coins, ArrowUpRight, ArrowDownRight, Copy, UsersRound } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 import Svg, { Path, Circle, Line, Text as SvgText, G, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { io } from 'socket.io-client';
@@ -352,8 +352,46 @@ function AdminNotificationRow({ Icon, title, body, time, tone, colors, onPress }
 }
 
 function AdminNotificationMenu({ notifications, colors, darkMode, onClose, onReadAll }) {
+  const { width } = useWindowDimensions();
+  const mobile = width < 760;
+  const panelWidth = mobile ? width : 410;
+  const slideAnim = useRef(new Animated.Value(panelWidth)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    slideAnim.setValue(panelWidth);
+    fadeAnim.setValue(0);
+    Animated.parallel([
+      Animated.timing(slideAnim, { toValue: 0, duration: 280, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }, [fadeAnim, panelWidth, slideAnim]);
+
   return (
-    <View className="w-[400px] max-w-[92vw] overflow-hidden rounded-2xl border shadow-2xl" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
+    <Pressable
+      onPress={(event) => event.stopPropagation?.()}
+      style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: mobile ? '100%' : panelWidth,
+      }}
+    >
+      <Animated.View
+        className="flex-1 overflow-hidden shadow-2xl"
+        style={{
+        backgroundColor: colors.panel,
+        borderColor: colors.border,
+        borderLeftWidth: mobile ? 0 : 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: darkMode ? 0.3 : 0.08,
+        shadowRadius: 16,
+        opacity: fadeAnim,
+        transform: [{ translateX: slideAnim }],
+      }}
+      >
       <View className="flex-row items-center justify-between border-b px-4 py-3" style={{ borderColor: colors.border }}>
         <View>
           <Text className="text-base font-medium" style={{ color: colors.text }}>Admin Notifications</Text>
@@ -368,12 +406,15 @@ function AdminNotificationMenu({ notifications, colors, darkMode, onClose, onRea
           </Pressable>
         </View>
       </View>
-      {notifications.length ? notifications.map((item) => (
-        <AdminNotificationRow key={item.id} colors={colors} {...item} />
-      )) : (
-        <Text className="p-5 text-sm" style={{ color: colors.muted }}>No new admin notifications.</Text>
-      )}
-    </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        {notifications.length ? notifications.map((item) => (
+          <AdminNotificationRow key={item.id} colors={colors} {...item} />
+        )) : (
+          <Text className="p-5 text-sm" style={{ color: colors.muted }}>No new admin notifications.</Text>
+        )}
+      </ScrollView>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -1642,6 +1683,10 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const [addTradeLoading, setAddTradeLoading] = useState(false);
   const [addTradeError, setAddTradeError] = useState('');
   const [addTradeSuccess, setAddTradeSuccess] = useState('');
+  const [editingTrade, setEditingTrade] = useState(null);
+  const [editTradeForm, setEditTradeForm] = useState({ side: 'BUY', lots: '', createdAt: '', openPrice: '' });
+  const [editTradeLoading, setEditTradeLoading] = useState(false);
+  const [editTradeError, setEditTradeError] = useState('');
   const [openUserProfileLoading, setOpenUserProfileLoading] = useState(false);
 
   const [marketPrices, setMarketPrices] = useState([]);
@@ -2117,6 +2162,69 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     if (normalized.includes('BTC') || normalized.includes('ETH') || normalized === 'US500') return 1;
     if (normalized.includes('XAU') || normalized.includes('OIL')) return 100;
     return 100000;
+  };
+
+  const tradeDateInput = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (number) => String(number).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
+  const openTradeEditor = (trade) => {
+    setEditingTrade(trade);
+    setEditTradeError('');
+    setEditTradeForm({
+      side: trade.side,
+      lots: String(trade.lots),
+      createdAt: tradeDateInput(trade.createdAt),
+      openPrice: String(trade.openPrice || ''),
+    });
+  };
+
+  const updateEditedOpenTime = async (createdAt) => {
+    setEditTradeForm((current) => ({ ...current, createdAt }));
+    if (!editingTrade?.symbol || !createdAt) return;
+    try {
+      const response = await api.get('/admin/historical-price', { params: { symbol: editingTrade.symbol, date: new Date(createdAt).toISOString() } });
+      if (response.data?.price) setEditTradeForm((current) => ({ ...current, openPrice: String(response.data.price) }));
+    } catch (_) {
+      setEditTradeError('The historical entry price could not be loaded for that time.');
+    }
+  };
+
+  const editTradePreview = useMemo(() => {
+    if (!editingTrade) return null;
+    const current = marketPrices.find((item) => item.symbol === editingTrade.symbol || item.tradingViewSymbol === editingTrade.symbol);
+    const price = Number(current?.price || (editTradeForm.side === 'BUY' ? current?.bid : current?.ask) || editingTrade.currentPrice || editingTrade.openPrice);
+    const openPrice = Number(editTradeForm.openPrice);
+    const lots = Number(editTradeForm.lots);
+    const account = editingTrade.tradingAccount || {};
+    const leverage = Number(account.leverage || 500);
+    const profit = Number.isFinite(price) && openPrice > 0 && lots > 0
+      ? (price - openPrice) * (editTradeForm.side === 'BUY' ? 1 : -1) * lots * getContractSize(editingTrade.symbol)
+      : 0;
+    const margin = calculateRequiredMargin(editingTrade.symbol, lots, openPrice, leverage);
+    return { price, profit, margin, balance: Number(account.balance || 0), wallet: editingTrade.User?.wallet || {} };
+  }, [editTradeForm, editingTrade, marketPrices]);
+
+  const saveOpenTradeEdit = async () => {
+    if (!editingTrade) return;
+    setEditTradeLoading(true);
+    setEditTradeError('');
+    try {
+      await api.put(`/admin/trades/${editingTrade.id}`, {
+        side: editTradeForm.side,
+        lots: Number(editTradeForm.lots),
+        createdAt: editTradeForm.createdAt,
+      });
+      setEditingTrade(null);
+      await load({ silent: true });
+    } catch (requestError) {
+      setEditTradeError(requestError.response?.data?.message || 'Unable to update this trade.');
+    } finally {
+      setEditTradeLoading(false);
+    }
   };
 
   const currentPreviewProfit = useMemo(() => {
@@ -6305,6 +6413,12 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                               </Text>
                             </View>
                           </View>
+                          {adminUser?.role === 'master' && trade.status === 'open' ? (
+                            <Pressable onPress={() => openTradeEditor(trade)} className="mt-1.5 flex-row items-center justify-center gap-1.5 rounded-lg border py-2" style={{ borderColor: colors.primary, backgroundColor: `${colors.primary}12` }}>
+                              <Edit3 size={13} color={colors.primary} />
+                              <Text className="text-xs font-semibold" style={{ color: colors.primary }}>Edit open trade</Text>
+                            </Pressable>
+                          ) : null}
                         </View>
                       );
                     })}
@@ -6313,8 +6427,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                   <ScrollView horizontal contentContainerStyle={{ minWidth: '100%' }}>
                     <View style={{ minWidth: 700, flexGrow: 1 }}>
                       <View className="flex-row border-b px-6 py-3" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
-                        {['Symbol', 'Side', 'Lots', 'Status', 'Profit / Loss', 'Created'].map((heading) => (
-                          <Text key={heading} className="text-xs font-semibold uppercase" style={{ width: heading === 'Created' ? 150 : 110, flexGrow: 1, color: colors.muted }}>{heading}</Text>
+                        {['Symbol', 'Side', 'Lots', 'Status', 'Profit / Loss', 'Created', 'Action'].map((heading) => (
+                          <Text key={heading} className="text-xs font-semibold uppercase" style={{ width: heading === 'Created' ? 150 : heading === 'Action' ? 118 : 110, flexGrow: heading === 'Action' ? 0 : 1, color: colors.muted }}>{heading}</Text>
                         ))}
                       </View>
                       {group.trades.map((trade) => (
@@ -6331,6 +6445,14 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                           </View>
                           <Text className={`text-sm font-semibold ${Number(trade.profit) < 0 ? 'text-danger' : 'text-success'}`} style={{ width: 110, flexGrow: 1 }}>${money(trade.profit)}</Text>
                           <Text className="text-sm" style={{ width: 150, flexGrow: 1, color: colors.muted }}>{dateTime(trade.createdAt)}</Text>
+                          <View style={{ width: 118 }}>
+                            {adminUser?.role === 'master' && trade.status === 'open' ? (
+                              <Pressable onPress={() => openTradeEditor(trade)} className="flex-row items-center justify-center gap-1.5 self-start rounded-lg border px-2.5 py-1.5" style={{ borderColor: colors.primary, backgroundColor: `${colors.primary}12` }}>
+                                <Edit3 size={13} color={colors.primary} />
+                                <Text className="text-xs font-semibold" style={{ color: colors.primary }}>Edit</Text>
+                              </Pressable>
+                            ) : null}
+                          </View>
                         </View>
                       ))}
                     </View>
@@ -6383,18 +6505,87 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       )}
       <Modal visible={notificationsOpen} transparent animationType="fade" onRequestClose={() => setNotificationsOpen(false)}>
         <Pressable className="flex-1" style={{ backgroundColor: 'rgba(0,0,0,0.12)' }} onPress={() => setNotificationsOpen(false)}>
-          <View className="absolute right-4 top-16">
-            <Pressable onPress={(event) => event.stopPropagation?.()}>
-              <AdminNotificationMenu
-                notifications={adminNotifications}
-                colors={colors}
-                darkMode={darkMode}
-                onClose={() => setNotificationsOpen(false)}
-                onReadAll={markAllAdminNotificationsRead}
-              />
-            </Pressable>
+          <View className="absolute inset-0">
+            <AdminNotificationMenu
+              notifications={adminNotifications}
+              colors={colors}
+              darkMode={darkMode}
+              onClose={() => setNotificationsOpen(false)}
+              onReadAll={markAllAdminNotificationsRead}
+            />
           </View>
         </Pressable>
+      </Modal>
+      <Modal visible={Boolean(editingTrade)} transparent animationType="fade" onRequestClose={() => !editTradeLoading && setEditingTrade(null)}>
+        <View className="flex-1 items-center justify-center bg-black/45 p-4">
+          <Pressable className="absolute inset-0" onPress={() => !editTradeLoading && setEditingTrade(null)} />
+          <View className="w-full max-w-[620px] overflow-hidden rounded-2xl border" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+            <View className="flex-row items-center justify-between border-b px-5 py-4" style={{ borderColor: colors.border }}>
+              <View>
+                <Text className="text-lg font-semibold" style={{ color: colors.text }}>Edit Open Trade</Text>
+                <Text className="mt-0.5 text-xs" style={{ color: colors.muted }}>{editingTrade?.User?.name || 'Client'} · {editingTrade?.symbol}</Text>
+              </View>
+              <Pressable disabled={editTradeLoading} onPress={() => setEditingTrade(null)} className="h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: colors.surface }}>
+                <X size={18} color={colors.muted} />
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} style={{ maxHeight: '82vh' }}>
+              <View className="flex-row flex-wrap gap-2">
+                {[
+                  ['Live balance', `$${money(editTradePreview?.balance)} USD`],
+                  ['Used margin', `$${money(editTradePreview?.wallet?.margin)} USD`],
+                  ['Free funds', `$${money(editTradePreview?.wallet?.freeFunds)} USD`],
+                  ['Leverage', `1:${editingTrade?.tradingAccount?.leverage || 500}`],
+                ].map(([label, value]) => (
+                  <View key={label} className="min-w-[130px] flex-1 rounded-xl border p-3" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+                    <Text className="text-[10px] font-semibold uppercase" style={{ color: colors.muted }}>{label}</Text>
+                    <Text className="mt-1 text-sm font-semibold" style={{ color: colors.text }}>{value}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <View>
+                <Text className="mb-2 text-xs font-semibold uppercase" style={{ color: colors.muted }}>Side</Text>
+                <View className="flex-row gap-2">
+                  {['BUY', 'SELL'].map((side) => {
+                    const active = editTradeForm.side === side;
+                    const tone = side === 'BUY' ? colors.success : colors.danger;
+                    return <Pressable key={side} onPress={() => setEditTradeForm((current) => ({ ...current, side }))} className="h-11 flex-1 items-center justify-center rounded-xl border" style={{ backgroundColor: active ? tone : colors.surface, borderColor: active ? tone : colors.border }}><Text className="text-sm font-bold" style={{ color: active ? '#0B0B0B' : colors.text }}>{side}</Text></Pressable>;
+                  })}
+                </View>
+              </View>
+              <View className={mobile ? 'gap-4' : 'flex-row gap-4'}>
+                <View className="flex-1">
+                  <Text className="mb-2 text-xs font-semibold uppercase" style={{ color: colors.muted }}>Lot size</Text>
+                  <CustomInput value={editTradeForm.lots} onChangeText={(lots) => setEditTradeForm((current) => ({ ...current, lots }))} placeholder="e.g. 0.10" />
+                </View>
+                <View className="flex-1">
+                  <Text className="mb-2 text-xs font-semibold uppercase" style={{ color: colors.muted }}>Open date & time</Text>
+                  <DateTimePickerInput value={editTradeForm.createdAt} onChangeText={updateEditedOpenTime} placeholder="Select opening date and time" />
+                </View>
+              </View>
+
+              <View className="rounded-xl border p-4" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+                <Text className="text-xs font-semibold uppercase" style={{ color: colors.muted }}>Updated trade preview</Text>
+                <View className="mt-3 flex-row flex-wrap gap-3">
+                  {[
+                    ['Entry price', editTradeForm.openPrice || '-'],
+                    ['Live price', editTradePreview?.price ? quote(editTradePreview.price, 5) : '-'],
+                    ['Live P/L', `${editTradePreview?.profit >= 0 ? '+' : ''}$${money(editTradePreview?.profit)} USD`, editTradePreview?.profit >= 0 ? colors.success : colors.danger],
+                    ['New margin use', `$${money(editTradePreview?.margin)} USD`],
+                  ].map(([label, value, tone]) => (
+                    <View key={label} className="min-w-[125px] flex-1"><Text className="text-[10px] font-semibold uppercase" style={{ color: colors.muted }}>{label}</Text><Text className="mt-1 text-sm font-semibold" style={{ color: tone || colors.text }}>{value}</Text></View>
+                  ))}
+                </View>
+              </View>
+              {editTradeError ? <Text className="rounded-lg p-3 text-xs" style={{ backgroundColor: `${colors.danger}14`, color: colors.danger }}>{editTradeError}</Text> : null}
+              <View className="flex-row justify-end gap-3">
+                <Pressable disabled={editTradeLoading} onPress={() => setEditingTrade(null)} className="rounded-xl border px-4 py-3" style={{ borderColor: colors.border, backgroundColor: colors.surface }}><Text className="text-sm font-semibold" style={{ color: colors.text }}>Cancel</Text></Pressable>
+                <Pressable disabled={editTradeLoading} onPress={saveOpenTradeEdit} className="rounded-xl px-4 py-3" style={{ backgroundColor: colors.primary, opacity: editTradeLoading ? 0.6 : 1 }}><Text className="text-sm font-bold" style={{ color: '#0B0B0B' }}>{editTradeLoading ? 'Saving...' : 'Save trade changes'}</Text></Pressable>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
       <ScrollView
         ref={mainScrollRef}

@@ -8,6 +8,9 @@ export const isCrmHost = () => (
 
 export const isMasterHost = () => (
   isCrmHost()
+  || (Platform.OS === 'web'
+    && typeof window !== 'undefined'
+    && ['localhost', '127.0.0.1'].includes(window.location.hostname.toLowerCase()))
 );
 
 export const landingRouteFor = (user) => {

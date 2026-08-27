@@ -6129,3 +6129,115 @@ Error: Error: TradingView has no chart data for this symbol
     at C:\Users\MSI\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:309:9
     at C:\Users\MSI\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:392:7
 --------------------------------------------------
+
+Date: 2026-08-26T15:17:30.442Z
+Method: GET
+URL: /api/admin/users?limit=150
+Body: {}
+Error: SequelizeConnectionAcquireTimeoutError: Operation timeout
+    at ConnectionManager.getConnection (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:206:15)
+    at runNextTicks (node:internal/process/task_queues:60:5)
+    at listOnTimeout (node:internal/timers:545:9)
+    at process.processTimers (node:internal/timers:519:7)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:305:26
+    at async MySQLQueryInterface.update (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\query-interface.js:355:12)
+    at async model.save (D:\platform\novafxm\node_modules\sequelize\lib\model.js:2490:35)
+    at async model.update (D:\platform\novafxm\node_modules\sequelize\lib\model.js:2598:12)
+    at async updateSnapshot (D:\platform\novafxm\src\controllers\adminController.js:175:3)
+    at async Promise.all (index 8)
+--------------------------------------------------
+
+Date: 2026-08-26T15:17:30.789Z
+Method: GET
+URL: /api/admin/deposits?limit=250
+Body: {}
+Error: SequelizeConnectionAcquireTimeoutError: Operation timeout
+    at ConnectionManager.getConnection (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:206:15)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:305:26
+    at async MySQLQueryInterface.select (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async Transaction.findAll (D:\platform\novafxm\node_modules\sequelize\lib\model.js:1140:21)
+    at async exports.deposits (D:\platform\novafxm\src\controllers\adminController.js:1162:27)
+--------------------------------------------------
+
+Date: 2026-08-26T15:19:23.360Z
+Method: GET
+URL: /api/dashboard
+Body: {}
+Error: SequelizeConnectionAcquireTimeoutError: Operation timeout
+    at ConnectionManager.getConnection (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:206:15)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:305:26
+    at async MySQLQueryInterface.rawSelect (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\query-interface.js:434:18)
+    at async TradingAccount.aggregate (D:\platform\novafxm\node_modules\sequelize\lib\model.js:1277:19)
+    at async TradingAccount.count (D:\platform\novafxm\node_modules\sequelize\lib\model.js:1306:20)
+    at async ensureDefaultAccounts (D:\platform\novafxm\src\services\dashboardService.js:42:17)
+    at async dashboardForUser (D:\platform\novafxm\src\services\dashboardService.js:109:3)
+    at async exports.dashboard (D:\platform\novafxm\src\controllers\dashboardController.js:14:21)
+--------------------------------------------------
+
+Date: 2026-08-26T15:19:24.071Z
+Method: GET
+URL: /api/admin/withdrawals?limit=250
+Body: {}
+Error: SequelizeConnectionAcquireTimeoutError: Operation timeout
+    at ConnectionManager.getConnection (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:206:15)
+    at runNextTicks (node:internal/process/task_queues:60:5)
+    at listOnTimeout (node:internal/timers:545:9)
+    at process.processTimers (node:internal/timers:519:7)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:305:26
+    at async MySQLQueryInterface.select (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async Transaction.findAll (D:\platform\novafxm\node_modules\sequelize\lib\model.js:1140:21)
+    at async exports.withdrawals (D:\platform\novafxm\src\controllers\adminController.js:1322:30)
+--------------------------------------------------
+
+Date: 2026-08-26T15:19:24.074Z
+Method: GET
+URL: /api/admin/bank-accounts?limit=250
+Body: {}
+Error: SequelizeConnectionAcquireTimeoutError: Operation timeout
+    at ConnectionManager.getConnection (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:206:15)
+    at runNextTicks (node:internal/process/task_queues:60:5)
+    at listOnTimeout (node:internal/timers:545:9)
+    at process.processTimers (node:internal/timers:519:7)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:305:26
+    at async MySQLQueryInterface.rawSelect (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\query-interface.js:434:18)
+    at async BankAccount.aggregate (D:\platform\novafxm\node_modules\sequelize\lib\model.js:1277:19)
+    at async BankAccount.count (D:\platform\novafxm\node_modules\sequelize\lib\model.js:1306:20)
+    at async Promise.all (index 0)
+    at async BankAccount.findAndCountAll (D:\platform\novafxm\node_modules\sequelize\lib\model.js:1322:27)
+--------------------------------------------------
+
+Date: 2026-08-26T16:47:00.792Z
+Method: GET
+URL: /api/trades/open?tradingAccountId=1
+Body: {}
+Error: SequelizeConnectionError: connect ETIMEDOUT
+    at ConnectionManager.connect (D:\platform\novafxm\node_modules\sequelize\lib\dialects\mysql\connection-manager.js:102:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ConnectionManager._connect (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:222:24)
+--------------------------------------------------
+
+Date: 2026-08-26T16:47:01.097Z
+Method: GET
+URL: /api/trades/pending?tradingAccountId=1
+Body: {}
+Error: SequelizeConnectionError: connect ETIMEDOUT
+    at ConnectionManager.connect (D:\platform\novafxm\node_modules\sequelize\lib\dialects\mysql\connection-manager.js:102:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async ConnectionManager._connect (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\connection-manager.js:222:24)
+--------------------------------------------------
+
+Date: 2026-08-26T17:19:05.413Z
+Method: GET
+URL: /api/dashboard
+Body: {}
+Error: Error
+    at Query.run (D:\platform\novafxm\node_modules\sequelize\lib\dialects\mysql\query.js:52:25)
+    at D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:315:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MySQLQueryInterface.select (D:\platform\novafxm\node_modules\sequelize\lib\dialects\abstract\query-interface.js:407:12)
+    at async TradingAccount.findAll (D:\platform\novafxm\node_modules\sequelize\lib\model.js:1140:21)
+    at async TradingAccount.findOne (D:\platform\novafxm\node_modules\sequelize\lib\model.js:1240:12)
+    at async syncExistingAccountBalances (D:\platform\novafxm\src\services\dashboardService.js:73:21)
+    at async dashboardForUser (D:\platform\novafxm\src\services\dashboardService.js:110:3)
+    at async exports.dashboard (D:\platform\novafxm\src\controllers\dashboardController.js:14:21)
+--------------------------------------------------
