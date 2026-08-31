@@ -95,7 +95,22 @@ const countries = [
   { name: 'Zimbabwe', code: '+263' },
 ];
 
-const countryByName = (name) => countries.find((country) => country.name === name);
+const countryByName = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const normalized = raw.toLowerCase();
+  return countries.find((country) => (
+    country.name.toLowerCase() === normalized
+    || country.code === raw
+    || `${country.name} (${country.code})`.toLowerCase() === normalized
+  )) || null;
+};
+const countryFromPhone = (phone) => {
+  const compactPhone = String(phone || '').replace(/[\s()-]/g, '');
+  return [...countries]
+    .sort((left, right) => right.code.length - left.code.length)
+    .find((country) => compactPhone.startsWith(country.code)) || null;
+};
 const phoneWithoutDialCode = (phone) => String(phone || '').replace(/^\+\d{1,4}\s*/, '').trim();
 const digitsOnly = (value) => String(value || '').replace(/\D/g, '');
 const phoneWithCountryCode = (phone, countryName) => {
@@ -247,12 +262,15 @@ function StickyTableHeader({ children }) {
 }
 
 function userToForm(user) {
+  const selectedCountry = countryByName(user?.country) || countryFromPhone(user?.phone);
   return {
     name: user?.name || '',
     email: user?.email || '',
     password: '',
     phone: user?.phone || '',
-    country: user?.country || '',
+    // Older user records sometimes contain a dial code but no country, or a
+    // value such as "India (+91)". Normalize both cases for the selector.
+    country: selectedCountry?.name || user?.country || '',
     dateOfBirth: user?.dateOfBirth || '',
     accountType: user?.accountType || 'Demo',
     leverage: String(user?.leverage || defaultLeverage),
@@ -263,7 +281,7 @@ function userToForm(user) {
 
 function UserFormModal({ mode, user, saving, onClose, onSubmit }) {
   const { darkMode, colors } = useAppTheme();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const mobile = width < 760;
   const [form, setForm] = useState(user ? userToForm(user) : freshEmptyForm());
   const [errors, setErrors] = useState({});
@@ -302,7 +320,7 @@ function UserFormModal({ mode, user, saving, onClose, onSubmit }) {
       >
         <View
           className={mobile ? "flex-1 w-full p-4" : "max-h-[92vh] w-full max-w-[860px] rounded-2xl border p-5"}
-          style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}
+          style={{ height: mobile ? undefined : Math.min(Math.round(height * 0.92), 760), flexDirection: 'column', overflow: 'hidden', backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}
         >
           <View className={`flex-row items-center justify-between ${mobile ? 'mb-3' : 'mb-4'}`}>
             <View className="min-w-0 flex-1 mr-2">
@@ -318,7 +336,7 @@ function UserFormModal({ mode, user, saving, onClose, onSubmit }) {
           {localError ? (
             <Text className="mb-3 rounded-xl border border-danger/40 bg-danger/10 p-3 text-xs text-danger">{localError}</Text>
           ) : null}
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={mobile ? { paddingBottom: 20 } : undefined}>
+          <ScrollView showsVerticalScrollIndicator={true} style={{ flex: 1, flexShrink: 1 }} contentContainerStyle={{ paddingBottom: mobile ? 14 : 18 }}>
             <View className={mobile ? 'gap-0' : 'gap-4 md:flex-row'}>
               <View className={mobile ? '' : 'flex-1'}>
                 <CustomInput label="Full Name" value={form.name} onChangeText={update('name')} placeholder="Client name" autoComplete="off" importantForAutofill="no" error={errors.name} />
@@ -343,11 +361,11 @@ function UserFormModal({ mode, user, saving, onClose, onSubmit }) {
               multiline
               style={mobile ? { minHeight: 60, textAlignVertical: 'top', paddingTop: 8 } : { minHeight: 90, textAlignVertical: 'top', paddingTop: 12 }}
             />
-            <View className={`flex-row justify-end ${mobile ? 'gap-2 mt-1' : 'gap-3 mt-2'}`}>
-              <CustomButton title="Cancel" variant="secondary" onPress={onClose} className={mobile ? "flex-1 h-9 px-3" : "min-w-[120px]"} />
-              <CustomButton title={mobile && mode === 'edit' ? 'Save' : mode === 'edit' ? 'Save Changes' : 'Add User'} loading={saving} onPress={submit} className={mobile ? "flex-1 h-9 px-3" : "min-w-[150px]"} />
-            </View>
           </ScrollView>
+          <View className={`flex-row justify-end border-t pt-3 ${mobile ? 'gap-2' : 'gap-3'}`} style={{ borderColor: colors.border }}>
+            <CustomButton title="Cancel" variant="secondary" onPress={onClose} className={mobile ? "flex-1 h-9 px-3" : "min-w-[120px]"} />
+            <CustomButton title={mobile && mode === 'edit' ? 'Save' : mode === 'edit' ? 'Save Changes' : 'Add User'} loading={saving} onPress={submit} className={mobile ? "flex-1 h-9 px-3" : "min-w-[150px]"} />
+          </View>
         </View>
       </View>
     </Modal>

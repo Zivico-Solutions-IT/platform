@@ -43,6 +43,7 @@ router.put('/users/:id/trading-status', controller.updateTradingStatus);
 router.put('/users/:id/trading-accounts/:accountId/leverage', controller.updateTradingAccountLeverage);
 router.put('/users/:id/trading-accounts/:accountId/status', controller.updateTradingAccountStatus);
 router.put('/users/:id/trading-accounts/:accountId/reset-live', controller.resetLiveAccount);
+router.delete('/users/:id/trading-accounts/:accountId', controller.deleteTradingAccount);
 router.put('/users/:id/reset-demo', controller.resetDemo);
 router.put('/users/:id/notes', controller.updateNotes);
 router.put('/users/:id/verification/approve', controller.reviewVerification('approved'));

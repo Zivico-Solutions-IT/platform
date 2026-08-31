@@ -277,7 +277,7 @@ function ReferralList({ referrals }) {
   );
 }
 
-export default function AdminUsersTable({ users, busyId, onBalance, onReset, onWallet, onTransactions, onSettings, onLeverage, onTradingAccountLeverage, onTradingStatus, onTradingAccountStatus }) {
+export default function AdminUsersTable({ users, busyId, onBalance, onReset, onWallet, onTransactions, onSettings, onLeverage, onTradingAccountLeverage, onTradingStatus, onTradingAccountStatus, onDeleteTradingAccount, canDeleteTradingAccounts = false }) {
   const { width } = useWindowDimensions();
   const { darkMode, colors } = useAppTheme();
   const [expandedUsers, setExpandedUsers] = useState({});
@@ -325,6 +325,7 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
             status: summaryStatus,
             isSummary: true,
           }];
+          const canRemoveAccount = canDeleteTradingAccounts && accounts.length > 1;
 
           return (
             <View key={user.id} className="rounded-2xl border p-3" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16 }}>
@@ -421,6 +422,7 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
                             />
                             <Button title="View Wallet" disabled={blocked} onPress={() => onWallet(user, account)} />
                             <Button title="Transactions" disabled={blocked} onPress={() => onTransactions(user, account)} />
+                            {canRemoveAccount ? <Button title="Delete Account" danger disabled={blocked || !canToggleAccount} onPress={() => ask(`Delete ${account.name || account.type || 'this'} account for ${user.name || user.email}? Open and pending positions will be removed. This cannot be undone.`, () => onDeleteTradingAccount(user, account))} /> : null}
                           </>
                         )}
                       </View>
@@ -440,12 +442,14 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
 
   return (
     <View className="overflow-hidden rounded-2xl border" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16, maxHeight: tableHeight }}>
-      <ScrollView horizontal nestedScrollEnabled>
+      <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={true}>
         <ScrollView
+          className="deep-green-scrollbar"
           nestedScrollEnabled
           stickyHeaderIndices={[0]}
-          style={{ maxHeight: tableHeight }}
-          contentContainerStyle={{ minWidth: 1165 }}
+          showsVerticalScrollIndicator={true}
+          style={{ maxHeight: tableHeight, ...(Platform.OS === 'web' ? { overflowY: 'scroll', scrollbarGutter: 'stable' } : {}) }}
+          contentContainerStyle={{ minWidth: 1165, paddingRight: Platform.OS === 'web' ? 10 : 0 }}
         >
           <StickyTableHeader style={{ minWidth: 1165 }}>
             <Header width={220}>Client Account</Header>
@@ -486,6 +490,7 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
               isSummary: true,
             };
             const visibleAccounts = expanded ? accounts : [summaryAccount];
+            const canRemoveAccount = canDeleteTradingAccounts && accounts.length > 1;
 
             return (
               <View key={user.id} className="flex-row border-b" style={{ borderColor: colors.border }}>
@@ -529,6 +534,7 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
                               <Button title={account.type === 'Live' ? 'Reset Live' : 'Reset Demo'} disabled={blocked || !['Demo', 'Live'].includes(account.type)} onPress={() => ask(account.type === 'Live' ? `Reset ${account.name || 'this live account'} balance to $0?` : `Reset ${user.name}'s demo account to $5,000 and clear open positions?`, () => onReset(user, account))} />
                               <Button title="View Wallet" disabled={blocked} onPress={() => onWallet(user, account)} />
                               <Button title="Transactions" disabled={blocked} onPress={() => onTransactions(user, account)} />
+                              {canRemoveAccount ? <Button title="Delete Account" danger disabled={blocked || !canToggleAccount} onPress={() => ask(`Delete ${account.name || account.type || 'this'} account for ${user.name || user.email}? Open and pending positions will be removed. This cannot be undone.`, () => onDeleteTradingAccount(user, account))} /> : null}
                             </>}
                           </View>
                         </View>

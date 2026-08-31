@@ -997,6 +997,37 @@ exports.updateTradingAccountStatus = async (req, res, next) => {
   }
 };
 
+exports.deleteTradingAccount = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'master') throw apiError('Only the Master administrator can delete trading accounts.', 403);
+    let output;
+    await sequelize.transaction(async (transaction) => {
+      const user = await getUser(req.params.id, transaction);
+      const account = await TradingAccount.findOne({ where: { id: req.params.accountId, userId: user.id }, transaction, lock: transaction.LOCK.UPDATE });
+      if (!account) throw apiError('Trading account not found.', 404);
+      const remainingAccounts = await TradingAccount.findAll({
+        where: { userId: user.id, id: { [Op.ne]: account.id } },
+        order: [['isPrimary', 'DESC'], ['createdAt', 'ASC']], transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (!remainingAccounts.length) throw apiError('A client must keep at least one trading account.', 400);
+      await Trade.destroy({ where: { userId: user.id, tradingAccountId: account.id, status: { [Op.in]: ['pending', 'open'] } }, transaction });
+      const replacement = remainingAccounts[0];
+      if (account.isPrimary) {
+        await replacement.update({ isPrimary: true }, { transaction });
+        const wallet = await Wallet.findOne({ where: { userId: user.id }, transaction, lock: transaction.LOCK.UPDATE });
+        if (wallet) {
+          const balance = money(replacement.balance);
+          await wallet.update({ balance, equity: balance, margin: 0, freeFunds: balance }, { transaction });
+        }
+        await user.update({ accountType: replacement.type }, { transaction });
+      }
+      await account.destroy({ transaction });
+      output = { deletedAccountId: account.id, userId: user.id };
+    });
+    return res.json(output);
+  } catch (error) { return next(error); }
+};
+
 exports.updateNotes = async (req, res, next) => {
   try {
     const adminNotes = String(req.body.adminNotes || '').trim();

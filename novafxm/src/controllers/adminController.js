@@ -1008,6 +1008,65 @@ exports.updateTradingAccountStatus = async (req, res, next) => {
   }
 };
 
+// Trading accounts hold separate balances and open positions.  Only the
+// master console may permanently remove one, and every client must retain at
+// least one account so they can still access the platform afterwards.
+exports.deleteTradingAccount = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'master') throw apiError('Only the Master administrator can delete trading accounts.', 403);
+
+    let output;
+    await sequelize.transaction(async (transaction) => {
+      const user = await getUser(req.params.id, transaction);
+      const account = await TradingAccount.findOne({
+        where: { id: req.params.accountId, userId: user.id },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!account) throw apiError('Trading account not found.', 404);
+
+      const remainingAccounts = await TradingAccount.findAll({
+        where: { userId: user.id, id: { [Op.ne]: account.id } },
+        order: [['isPrimary', 'DESC'], ['createdAt', 'ASC']],
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!remainingAccounts.length) {
+        throw apiError('A client must keep at least one trading account.', 400);
+      }
+
+      // Pending/open positions cannot belong to an account that no longer
+      // exists. Closed-trade and payment history is intentionally retained.
+      await Trade.destroy({
+        where: { userId: user.id, tradingAccountId: account.id, status: { [Op.in]: ['pending', 'open'] } },
+        transaction,
+      });
+
+      const replacement = remainingAccounts[0];
+      if (account.isPrimary) {
+        await replacement.update({ isPrimary: true }, { transaction });
+        const wallet = await Wallet.findOne({ where: { userId: user.id }, transaction, lock: transaction.LOCK.UPDATE });
+        if (wallet) {
+          const replacementBalance = money(replacement.balance);
+          await wallet.update({
+            balance: replacementBalance,
+            equity: replacementBalance,
+            margin: 0,
+            freeFunds: replacementBalance,
+          }, { transaction });
+        }
+        await user.update({ accountType: replacement.type }, { transaction });
+      }
+
+      await account.destroy({ transaction });
+      output = { deletedAccountId: account.id, userId: user.id };
+    });
+    return res.json(output);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 exports.updateNotes = async (req, res, next) => {
   try {
     const adminNotes = String(req.body.adminNotes || '').trim();

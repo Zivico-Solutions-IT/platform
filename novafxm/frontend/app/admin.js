@@ -3925,6 +3925,12 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     status === 'disabled' ? 'Trading account frozen.' : 'Trading account unfrozen.',
   );
 
+  const deleteTradingAccount = (user, account) => action(
+    user.id,
+    () => api.delete(`/admin/users/${user.id}/trading-accounts/${account.id}`),
+    `${account.name || account.type || 'Trading'} account deleted.`,
+  );
+
   const createManagedUser = async (values) => {
     setBusyId('create-user');
     setMessage('');
@@ -6750,6 +6756,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
               onTradingAccountLeverage={saveTradingAccountLeverage}
               onTradingStatus={saveUserTradingStatus}
               onTradingAccountStatus={saveTradingAccountStatus}
+              onDeleteTradingAccount={deleteTradingAccount}
+              canDeleteTradingAccounts={adminUser?.role === 'master'}
             />
           </View>
         ) : null}
