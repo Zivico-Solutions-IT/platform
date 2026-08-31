@@ -16,6 +16,13 @@ const companyProjectFor = async (req) => {
   if (req.projectId) return Project.findByPk(req.projectId);
   return Project.findOne({ where: { identifier: 'novafxm' } });
 };
+const depositAddressScopeFor = async (req) => {
+  const projectId = req.projectId || (await companyProjectFor(req))?.id || null;
+  return {
+    projectId,
+    where: projectId ? { [Op.or]: [{ projectId }, { projectId: null }] } : {},
+  };
+};
 const TRADING_LEVELS = ['Standard', 'Silver', 'Gold', 'Platinum'];
 const STAFF_PERMISSIONS = ['overview', 'marginAlerts', 'users', 'userManagement', 'assignUsers', 'userManagementUsers', 'verifications', 'deposits', 'depositAddresses', 'depositsList', 'referrals', 'withdrawals', 'withdrawalsList', 'withdrawalDetails', 'userLevels', 'trades', 'addTrading', 'symbols', 'bonusPosts'];
 const publicAttributes = { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires'] };
@@ -1194,8 +1201,11 @@ exports.deposits = async (req, res, next) => {
 
 exports.depositMethodAddresses = async (req, res, next) => {
   try {
+    const { where } = await depositAddressScopeFor(req);
     const addresses = await DepositMethodAddress.findAll({
+      where,
       order: [['paymentMethod', 'ASC'], ['createdAt', 'DESC']],
+      skipProjectId: true,
     });
     return res.json({ addresses });
   } catch (error) {
@@ -1205,6 +1215,7 @@ exports.depositMethodAddresses = async (req, res, next) => {
 
 exports.createDepositMethodAddress = async (req, res, next) => {
   try {
+    const { projectId } = await depositAddressScopeFor(req);
     const paymentMethod = String(req.body.paymentMethod || '').trim();
     const address = String(req.body.address || '').trim();
     if (!paymentMethod || !address) throw apiError('Payment method and address are required.', 400);
@@ -1214,6 +1225,7 @@ exports.createDepositMethodAddress = async (req, res, next) => {
       label: clean(req.body.label),
       qrData: clean(req.body.qrData),
       isActive: req.body.isActive !== false,
+      projectId,
     });
     return res.status(201).json({ address: record });
   } catch (error) {
@@ -1223,7 +1235,11 @@ exports.createDepositMethodAddress = async (req, res, next) => {
 
 exports.updateDepositMethodAddress = async (req, res, next) => {
   try {
-    const record = await DepositMethodAddress.findByPk(req.params.id);
+    const { projectId, where } = await depositAddressScopeFor(req);
+    const record = await DepositMethodAddress.findOne({
+      where: { id: req.params.id, ...where },
+      skipProjectId: true,
+    });
     if (!record) throw apiError('Deposit method address not found.', 404);
     const paymentMethod = String(req.body.paymentMethod || record.paymentMethod || '').trim();
     const address = String(req.body.address || record.address || '').trim();
@@ -1234,6 +1250,8 @@ exports.updateDepositMethodAddress = async (req, res, next) => {
       label: clean(req.body.label),
       qrData: clean(req.body.qrData),
       isActive: req.body.isActive !== false,
+      // Editing a legacy global address adopts it into this company.
+      projectId,
     });
     return res.json({ address: record });
   } catch (error) {
@@ -1243,7 +1261,11 @@ exports.updateDepositMethodAddress = async (req, res, next) => {
 
 exports.deleteDepositMethodAddress = async (req, res, next) => {
   try {
-    const record = await DepositMethodAddress.findByPk(req.params.id);
+    const { where } = await depositAddressScopeFor(req);
+    const record = await DepositMethodAddress.findOne({
+      where: { id: req.params.id, ...where },
+      skipProjectId: true,
+    });
     if (!record) throw apiError('Deposit method address not found.', 404);
     await record.destroy();
     return res.json({ message: 'Deposit method address removed.' });

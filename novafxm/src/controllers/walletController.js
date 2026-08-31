@@ -1,4 +1,5 @@
 const sequelize = require('../config/db');
+const { Op } = require('sequelize');
 const { Wallet, Deposit, Withdrawal, Transaction, Trade, BankAccount, TradingAccount, DepositMethodAddress, ReferralReward, User, AdminNotification } = require('../models');
 const tradingView = require('../services/tradingViewService');
 const { getIo } = require('../config/socketIo');
@@ -20,6 +21,13 @@ const isCryptoWithdrawalDetail = (account) => {
   const detail = String(`${account?.bankName || ''} ${account?.branchName || ''}`).toLowerCase();
   return detail.includes('trc20') || detail.includes('bep20');
 };
+
+// Deposit addresses created before tenant scoping have a NULL project_id.
+// They remain valid defaults for a project's users until an admin edits them.
+const depositAddressWhereFor = (projectId, where = {}) => ({
+  ...where,
+  ...(projectId ? { [Op.or]: [{ projectId }, { projectId: null }] } : {}),
+});
 
 exports.claimBirthdayBonus = async (req, res, next) => {
   try {
@@ -141,8 +149,11 @@ exports.transactions = async (req, res, next) => {
 exports.depositMethods = async (req, res, next) => {
   try {
     const addresses = await DepositMethodAddress.findAll({
-      where: { isActive: true },
+      where: depositAddressWhereFor(req.projectId || req.user?.projectId, { isActive: true }),
       order: [['paymentMethod', 'ASC'], ['createdAt', 'DESC']],
+      // The project condition above intentionally includes legacy global
+      // addresses, so do not let the automatic tenant hook narrow it again.
+      skipProjectId: true,
     });
     return res.json({ addresses });
   } catch (error) {
@@ -159,7 +170,10 @@ exports.deposit = async (req, res, next) => {
       return res.status(400).json({ message: `Minimum deposit is ${normalizedCurrency === 'INR' ? '₹' : '$'}${minimum}. Payment method is required.` });
     }
     const assignedAddress = depositAddressId
-      ? await DepositMethodAddress.findOne({ where: { id: depositAddressId, paymentMethod, isActive: true } })
+      ? await DepositMethodAddress.findOne({
+        where: depositAddressWhereFor(req.projectId || req.user?.projectId, { id: depositAddressId, paymentMethod, isActive: true }),
+        skipProjectId: true,
+      })
       : null;
     if (depositAddressId && !assignedAddress) {
       return res.status(400).json({ message: 'Selected deposit address is not available for this payment method.' });
