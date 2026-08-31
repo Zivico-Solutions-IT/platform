@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import {
   BadgeIndianRupee,
@@ -94,6 +94,20 @@ function readFileDataUrl(file) {
 
 const qrUrl = (value) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(value || '')}`;
 
+const addressesForPaymentMethod = (addresses, paymentMethod) => addresses.filter((item) => {
+  if (item.isActive === false) return false;
+  const a = String(item.paymentMethod || '').trim().toLowerCase();
+  const b = String(paymentMethod || '').trim().toLowerCase();
+  if (a === b) return true;
+  if (['usdt', 'trc20', 'bep20', 'erc20', 'crypto'].includes(a) && ['usdt', 'trc20', 'bep20', 'erc20', 'crypto'].includes(b)) {
+    return a === b || a === 'usdt' || b === 'usdt' || a === 'crypto' || b === 'crypto';
+  }
+  if (['bank', 'bank transfer', 'rtgs', 'neft', 'imps', 'net banking'].includes(a) && ['bank', 'bank transfer', 'rtgs', 'neft', 'imps', 'net banking'].includes(b)) {
+    return true;
+  }
+  return false;
+});
+
 export default function DepositForm({ onSubmit, loading, disabled, disabledMessage }) {
   const { width } = useWindowDimensions();
   const { colors, darkMode } = useAppTheme();
@@ -188,19 +202,6 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
   const ActivePaymentGroupIcon = activePaymentGroup.icon;
   const isBankMethod = form.paymentMethod === 'Bank Transfer' || activePaymentGroup.title === 'Bank';
   const selectedSymbol = selectedCurrency.symbol;
-  const selectedMethodAddresses = depositAddresses.filter((item) => {
-    if (item.isActive === false) return false;
-    const a = String(item.paymentMethod || '').trim().toLowerCase();
-    const b = String(form.paymentMethod || '').trim().toLowerCase();
-    if (a === b) return true;
-    if (['usdt', 'trc20', 'bep20', 'erc20', 'crypto'].includes(a) && ['usdt', 'trc20', 'bep20', 'erc20', 'crypto'].includes(b)) {
-      return a === b || a === 'usdt' || b === 'usdt' || a === 'crypto' || b === 'crypto';
-    }
-    if (['bank', 'bank transfer', 'rtgs', 'neft', 'imps', 'net banking'].includes(a) && ['bank', 'bank transfer', 'rtgs', 'neft', 'imps', 'net banking'].includes(b)) {
-      return true;
-    }
-    return false;
-  });
   const mobile = width < 640;
   const activeMethodBasis = mobile ? '48.5%' : activePaymentGroup.methods.length <= 3 ? '31.5%' : '23.5%';
 
@@ -211,25 +212,26 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
     }
   };
 
-  useEffect(() => {
-    let mounted = true;
+  const loadDepositAddresses = useCallback(async () => {
     setAddressesLoading(true);
-    walletService.getDepositMethods()
-      .then((result) => {
-        if (mounted) setDepositAddresses(result.addresses || []);
-      })
-      .catch(() => {
-        if (mounted) setDepositAddresses([]);
-      })
-      .finally(() => {
-        if (mounted) setAddressesLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
+    try {
+      const result = await walletService.getDepositMethods();
+      const addresses = result.addresses || [];
+      setDepositAddresses(addresses);
+      return addresses;
+    } catch {
+      setDepositAddresses([]);
+      return [];
+    } finally {
+      setAddressesLoading(false);
+    }
   }, []);
 
-  const chooseAddress = () => {
+  useEffect(() => {
+    loadDepositAddresses();
+  }, [loadDepositAddresses]);
+
+  const chooseAddress = async () => {
     const rawVal = String(form.amount || '').trim();
     const amountVal = Number(rawVal);
     if (!rawVal || isNaN(amountVal) || amountVal <= 0) {
@@ -242,13 +244,17 @@ export default function DepositForm({ onSubmit, loading, disabled, disabledMessa
       setSuccess(false);
       return;
     }
-    if (!selectedMethodAddresses.length) {
+    // Admins can add or activate an address while this screen is already
+    // open. Fetch again here so the user never has to reload the app.
+    const latestAddresses = await loadDepositAddresses();
+    const availableAddresses = addressesForPaymentMethod(latestAddresses, form.paymentMethod);
+    if (!availableAddresses.length) {
       setMessage(`No active deposit address is configured for ${form.paymentMethod}. Please contact support.`);
       setSuccess(false);
       return;
     }
-    const randomIndex = Math.floor(Math.random() * selectedMethodAddresses.length);
-    setAssignedAddress(selectedMethodAddresses[randomIndex]);
+    const randomIndex = Math.floor(Math.random() * availableAddresses.length);
+    setAssignedAddress(availableAddresses[randomIndex]);
     setMessage('');
     setSuccess(false);
     setStep(2);
