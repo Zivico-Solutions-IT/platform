@@ -336,7 +336,12 @@ function UserFormModal({ mode, user, saving, onClose, onSubmit }) {
           {localError ? (
             <Text className="mb-3 rounded-xl border border-danger/40 bg-danger/10 p-3 text-xs text-danger">{localError}</Text>
           ) : null}
-          <ScrollView showsVerticalScrollIndicator={true} style={{ flex: 1, flexShrink: 1 }} contentContainerStyle={{ paddingBottom: mobile ? 14 : 18 }}>
+          <ScrollView
+            className="deep-green-scrollbar"
+            showsVerticalScrollIndicator={true}
+            style={{ flex: 1, flexShrink: 1, minHeight: 0, ...(Platform.OS === 'web' ? { overflowY: 'scroll', scrollbarGutter: 'stable' } : {}) }}
+            contentContainerStyle={{ paddingBottom: mobile ? 14 : 18 }}
+          >
             <View className={mobile ? 'gap-0' : 'gap-4 md:flex-row'}>
               <View className={mobile ? '' : 'flex-1'}>
                 <CustomInput label="Full Name" value={form.name} onChangeText={update('name')} placeholder="Client name" autoComplete="off" importantForAutofill="no" error={errors.name} />

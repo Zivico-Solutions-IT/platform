@@ -442,15 +442,14 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
 
   return (
     <View className="overflow-hidden rounded-2xl border" style={{ backgroundColor: colors.panel, borderColor: colors.border, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: darkMode ? 0.3 : 0.08, shadowRadius: 16, maxHeight: tableHeight }}>
-      <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={true}>
-        <ScrollView
-          className="deep-green-scrollbar"
-          nestedScrollEnabled
-          stickyHeaderIndices={[0]}
-          showsVerticalScrollIndicator={true}
-          style={{ maxHeight: tableHeight, ...(Platform.OS === 'web' ? { overflowY: 'scroll', scrollbarGutter: 'stable' } : {}) }}
-          contentContainerStyle={{ minWidth: 1165, paddingRight: Platform.OS === 'web' ? 10 : 0 }}
-        >
+      <ScrollView
+        className="deep-green-scrollbar"
+        nestedScrollEnabled
+        showsVerticalScrollIndicator={true}
+        style={{ maxHeight: tableHeight, ...(Platform.OS === 'web' ? { overflowY: 'scroll', scrollbarGutter: 'stable' } : {}) }}
+      >
+        <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={true} contentContainerStyle={{ minWidth: 1165, paddingRight: Platform.OS === 'web' ? 10 : 0 }}>
+          <View style={{ minWidth: 1165 }}>
           <StickyTableHeader style={{ minWidth: 1165 }}>
             <Header width={220}>Client Account</Header>
             <Header width={320}>Account & Controls</Header>
@@ -551,7 +550,8 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
             );
           })}
           {!users.length ? <Text className="p-8 text-center" style={{ color: colors.muted }}>No user accounts found.</Text> : null}
-        </ScrollView>
+          </View>
+      </ScrollView>
       </ScrollView>
     </View>
   );
