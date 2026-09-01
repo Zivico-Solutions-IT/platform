@@ -69,7 +69,8 @@ const viewedNewUsersStorageKey = 'novafxm-admin-viewed-new-users';
 const adminNotificationBaselineKey = 'novafxm-admin-notifications-after';
 
 const payoutTypeFor = (item) => (
-  String(`${item?.bankName || ''} ${item?.branchName || ''}`).toLowerCase().includes('trc20') ? 'TRC20' : 'Bank'
+  String(`${item?.bankName || ''} ${item?.branchName || ''}`).toLowerCase().includes('bep20') ? 'BEP20'
+    : String(`${item?.bankName || ''} ${item?.branchName || ''}`).toLowerCase().includes('trc20') ? 'TRC20' : 'Bank'
 );
 const dateMs = (value) => {
   const parsed = Date.parse(value);
@@ -152,11 +153,11 @@ function readFileDataUrl(file) {
 
 const payoutFieldsFor = (item) => {
   const payoutType = payoutTypeFor(item);
-  if (payoutType === 'TRC20') {
+  if (payoutType === 'TRC20' || payoutType === 'BEP20') {
     return [
       ['Wallet Holder', item.accountHolderName],
-      ['Network', item.bankName || 'USDT TRC20'],
-      ['Token Standard', item.branchName || 'TRC20'],
+      ['Network', item.bankName || `USDT ${payoutType}`],
+      ['Token Standard', item.branchName || payoutType],
       ['Wallet Address', item.accountNumber],
     ];
   }
@@ -5051,7 +5052,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
           );
           })}
         </View>
-        {!filteredBankAccounts.length ? <EmptyRow>No bank or TRC20 withdrawal details submitted.</EmptyRow> : null}
+        {!filteredBankAccounts.length ? <EmptyRow>No bank, TRC20, or BEP20 withdrawal details submitted.</EmptyRow> : null}
       </View>
     </View>
   );

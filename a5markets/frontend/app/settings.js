@@ -254,6 +254,7 @@ function readFileDataUrl(file) {
 const settingsSections = [
   { key: 'profile', icon: UserRound, title: 'Profile', subtitle: 'Edit your profile details' },
   { key: 'security', icon: Shield, title: 'Security', subtitle: 'Password and 2FA' },
+  { key: 'payments', icon: CreditCard, title: 'Payments', subtitle: 'Withdrawal methods' },
 ];
 
 function SettingsMenuItem({ icon: Icon, title, subtitle, active, onPress }) {
@@ -467,7 +468,7 @@ export default function SettingsScreen() {
     profileImage: null,
   });
   const returnToWithdrawPayoutType = String(params.returnTo || '') === 'withdraw'
-    ? (String(params.payoutType || '') === 'TRC20' ? 'TRC20' : 'Bank')
+    ? (['TRC20', 'BEP20'].includes(String(params.payoutType || '')) ? String(params.payoutType) : 'Bank')
     : null;
 
   const loadBankAccounts = useCallback(async ({ silent = false } = {}) => {
@@ -1386,19 +1387,19 @@ export default function SettingsScreen() {
                       </View>
                       <View className="gap-3">
                         <View>
-                          <Text className="text-xs uppercase" style={{ color: colors.muted }}>{account.payoutType === 'TRC20' ? 'Wallet Holder' : 'Account Holder'}</Text>
+                          <Text className="text-xs uppercase" style={{ color: colors.muted }}>{['TRC20', 'BEP20'].includes(account.payoutType) ? 'Wallet Holder' : 'Account Holder'}</Text>
                           <Text className="mt-1 font-medium" style={{ color: colors.text }}>{account.bankAccountHolder || '-'}</Text>
                         </View>
                         <View>
-                          <Text className="text-xs uppercase" style={{ color: colors.muted }}>{account.payoutType === 'TRC20' ? 'Network' : 'Bank Name'}</Text>
+                          <Text className="text-xs uppercase" style={{ color: colors.muted }}>{['TRC20', 'BEP20'].includes(account.payoutType) ? 'Network' : 'Bank Name'}</Text>
                           <Text className="mt-1 font-medium" style={{ color: colors.text }}>{account.bankName || '-'}</Text>
                         </View>
                         <View>
-                          <Text className="text-xs uppercase" style={{ color: colors.muted }}>{account.payoutType === 'TRC20' ? 'Token Standard' : 'Branch'}</Text>
+                          <Text className="text-xs uppercase" style={{ color: colors.muted }}>{['TRC20', 'BEP20'].includes(account.payoutType) ? 'Token Standard' : 'Branch'}</Text>
                           <Text className="mt-1 font-medium" style={{ color: colors.text }}>{account.bankBranch || '-'}</Text>
                         </View>
                         <View>
-                          <Text className="text-xs uppercase" style={{ color: colors.muted }}>{account.payoutType === 'TRC20' ? 'Wallet Address' : 'Account Number'}</Text>
+                          <Text className="text-xs uppercase" style={{ color: colors.muted }}>{['TRC20', 'BEP20'].includes(account.payoutType) ? 'Wallet Address' : 'Account Number'}</Text>
                           <Text className="mt-1 font-medium" style={{ color: colors.text }}>{account.bankAccountNumber || '-'}</Text>
                         </View>
                       </View>

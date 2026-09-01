@@ -550,7 +550,8 @@ export default function DashboardScreen() {
       .filter((item) => ['approved', 'rejected'].includes(item.status))
       .forEach((item) => {
         const approved = item.status === 'approved';
-        const payoutType = String(`${item.bankName || ''} ${item.branchName || ''}`).toLowerCase().includes('trc20') ? 'TRC20' : 'Bank';
+        const payoutDetails = String(`${item.bankName || ''} ${item.branchName || ''}`).toLowerCase();
+        const payoutType = payoutDetails.includes('bep20') ? 'BEP20' : payoutDetails.includes('trc20') ? 'TRC20' : 'Bank';
         const notificationAt = item.reviewedAt || item.updatedAt || item.createdAt;
         items.push({
           id: `bank-${item.id}`,

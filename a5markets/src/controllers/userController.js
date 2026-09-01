@@ -176,10 +176,14 @@ const bankPayload = (body) => ({
   branchName: String(body.branchName || body.bankBranch || '').trim() || null,
   accountNumber: String(body.accountNumber || body.bankAccountNumber || '').trim(),
 });
-const isTrc20Account = (account) => String(`${account?.bankName || ''} ${account?.branchName || ''}`).toLowerCase().includes('trc20');
-const payoutTypeForPayload = (payload) => (isTrc20Account(payload) ? 'TRC20' : 'Bank');
+const payoutTypeForPayload = (account) => {
+  const paymentDetails = String(`${account?.bankName || ''} ${account?.branchName || ''}`).toLowerCase();
+  if (paymentDetails.includes('bep20')) return 'BEP20';
+  if (paymentDetails.includes('trc20')) return 'TRC20';
+  return 'Bank';
+};
 const canEditBankAccount = (account) => ['approved', 'rejected'].includes(account?.status);
-const limitWithdrawalDetails = (accounts) => ['Bank', 'TRC20']
+const limitWithdrawalDetails = (accounts) => ['Bank', 'TRC20', 'BEP20']
   .map((payoutType) => accounts.find((account) => payoutTypeForPayload(account) === payoutType))
   .filter(Boolean);
 const validateBankPayload = (payload) => {
