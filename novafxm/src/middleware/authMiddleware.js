@@ -12,7 +12,7 @@ const EXTERNAL_TENANT_APIS = {
     ? 'https://server.veltriumfx.com/api'
     : 'http://localhost:5001/api',
   a5markets: process.env.NODE_ENV === 'production'
-    ? 'https://server2.a5markets.com/api'
+    ? 'https://server.a5markets.com/api'
     : 'http://localhost:5002/api',
 };
 

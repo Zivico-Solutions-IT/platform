@@ -469,7 +469,7 @@ export default function DashboardScreen() {
       loadDashboard({ silent: true }).catch(() => {});
     }, 60000);
     return () => clearInterval(timer);
-  }, [authLoading, user]);
+  }, [authLoading, user?.id]);
 
   useEffect(() => {
     if (params.section) setActiveSection(String(params.section));
@@ -494,6 +494,7 @@ export default function DashboardScreen() {
   const liveAccounts = accounts.filter((account) => account.type === 'Live');
   const demoAccountCount = demoAccounts.length;
   const liveAccountCount = liveAccounts.length;
+  const selectedLiveAccount = liveAccounts[0] || null;
   const transactions = dashboard?.transactions || [];
   const liveTrades = dashboard?.liveTrades || [];
   const depositTransactions = transactions.filter((item) => item.type === 'deposit');
@@ -789,10 +790,12 @@ export default function DashboardScreen() {
           <WithdrawForm
             onSubmit={(values) => withdraw(values, Boolean(user)).then(loadDashboard)}
             loading={walletLoading}
-            disabled={withdrawalLocked}
-            disabledMessage={withdrawalLockedMessage}
-            summary={wallet}
+            disabled={withdrawalLocked || !selectedLiveAccount}
+            disabledMessage={!selectedLiveAccount ? 'Create or activate a Live account before withdrawals.' : withdrawalLockedMessage}
+            summary={{ ...wallet, balance: Number(selectedLiveAccount?.balance ?? wallet.balance ?? 0) }}
             transactions={transactions}
+            selectedAccount={selectedLiveAccount}
+            savedWithdrawalDetails={bankAccounts}
           />
         </Card>
       ) : null}

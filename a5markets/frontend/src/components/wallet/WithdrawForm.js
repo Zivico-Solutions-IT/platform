@@ -21,7 +21,7 @@ function Option({ active, label, onPress, colors }) {
 }
 
 function DetailOption({ active, detail, onPress, colors }) {
-  const isTrc20 = detail.payoutType === 'TRC20';
+  const isCrypto = ['TRC20', 'BEP20'].includes(detail.payoutType);
   return (
     <Pressable
       onPress={onPress}
@@ -30,17 +30,17 @@ function DetailOption({ active, detail, onPress, colors }) {
     >
       <View className="flex-row flex-wrap items-center justify-between gap-3">
         <Text className="min-w-0 flex-1 text-sm font-medium" numberOfLines={1} style={{ color: colors.text }}>
-          {isTrc20 ? 'USDT TRC20' : detail.bankName}
+          {isCrypto ? `USDT ${detail.payoutType}` : detail.bankName}
         </Text>
         <Text className="rounded-full px-3 py-1 text-[11px] font-bold tracking-wider uppercase" style={{ backgroundColor: colors.panel, color: colors.muted }}>
           {detail.status}
         </Text>
       </View>
       <Text className="mt-2 text-sm" selectable style={{ color: colors.muted }}>
-        {isTrc20 ? 'Wallet address' : 'Account number'}: {detail.bankAccountNumber}
+        {isCrypto ? 'Wallet address' : 'Account number'}: {detail.bankAccountNumber}
       </Text>
       <Text className="mt-1 text-sm" style={{ color: colors.muted }}>
-        {isTrc20 ? 'Wallet holder' : 'Account holder'}: {detail.bankAccountHolder}
+        {isCrypto ? 'Wallet holder' : 'Account holder'}: {detail.bankAccountHolder}
       </Text>
     </Pressable>
   );
@@ -122,6 +122,7 @@ export default function WithdrawForm({
   transactions = [],
   onMissingDetailsPress,
   selectedAccount,
+  savedWithdrawalDetails,
 }) {
   const { width } = useWindowDimensions();
   const { colors } = useAppTheme();
@@ -132,9 +133,8 @@ export default function WithdrawForm({
     savedDetailId: '',
   });
   const [cryptoNetwork, setCryptoNetwork] = useState('TRC20');
-  const [walletId, setWalletId] = useState('');
   const [message, setMessage] = useState('');
-  const [savedDetails, setSavedDetails] = useState([]);
+  const [loadedSavedDetails, setLoadedSavedDetails] = useState([]);
   const accountType = selectedAccount?.type || user?.accountType || 'Demo';
   const liveAccountSelected = String(accountType).toLowerCase() === 'live';
   const mobile = width < 640;
@@ -144,13 +144,25 @@ export default function WithdrawForm({
     .reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const availableBalance = Number(summary.balance || 0);
   const withdrawableBalance = Math.max(availableBalance - pendingWithdrawals, 0);
+  const savedDetails = useMemo(() => {
+    const source = Array.isArray(savedWithdrawalDetails) ? savedWithdrawalDetails : loadedSavedDetails;
+    return source.map((account) => {
+      const paymentDetails = String(`${account.bankName || ''} ${account.bankBranch || account.branchName || ''}`).toLowerCase();
+      return {
+        id: account.id,
+        bankAccountHolder: account.bankAccountHolder || account.accountHolderName || '',
+        bankName: account.bankName || '',
+        bankBranch: account.bankBranch || account.branchName || '',
+        bankAccountNumber: account.bankAccountNumber || account.accountNumber || '',
+        status: String(account.status || 'pending').toLowerCase(),
+        payoutType: paymentDetails.includes('bep20') ? 'BEP20' : paymentDetails.includes('trc20') ? 'TRC20' : 'Bank',
+      };
+    });
+  }, [loadedSavedDetails, savedWithdrawalDetails]);
+  const requestedPayoutType = form.withdrawalMethod === 'Crypto' ? cryptoNetwork : 'Bank';
   const methodDetails = useMemo(() => (
-    savedDetails.filter((item) => (
-      form.withdrawalMethod === 'Crypto'
-        ? item.payoutType === 'TRC20'
-        : item.payoutType === 'Bank'
-    ))
-  ), [form.withdrawalMethod, savedDetails]);
+    savedDetails.filter((item) => item.payoutType === requestedPayoutType)
+  ), [requestedPayoutType, savedDetails]);
   const approvedMethodDetails = useMemo(() => (
     methodDetails.filter((item) => item.status === 'approved')
   ), [methodDetails]);
@@ -159,11 +171,7 @@ export default function WithdrawForm({
   ), [approvedMethodDetails, form.savedDetailId]);
   const update = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
   const setMethod = (withdrawalMethod) => {
-    const matching = savedDetails.filter((item) => (
-      withdrawalMethod === 'Crypto'
-        ? item.payoutType === 'TRC20'
-        : item.payoutType === 'Bank'
-    ));
+    const matching = savedDetails.filter((item) => item.payoutType === (withdrawalMethod === 'Crypto' ? cryptoNetwork : 'Bank'));
     const detail = matching.find((item) => item.status === 'approved') || null;
     setForm((current) => ({
       ...current,
@@ -175,27 +183,19 @@ export default function WithdrawForm({
   useEffect(() => {
     let active = true;
     if (!user) {
-      setSavedDetails([]);
+      setLoadedSavedDetails([]);
       return undefined;
     }
     authService.listBankAccounts()
       .then((result) => {
         if (!active) return;
-        setSavedDetails((result.accounts || []).map((account) => ({
-          id: account.id,
-          bankAccountHolder: account.bankAccountHolder || account.accountHolderName || '',
-          bankName: account.bankName || '',
-          bankBranch: account.bankBranch || account.branchName || '',
-          bankAccountNumber: account.bankAccountNumber || account.accountNumber || '',
-          status: account.status || 'pending',
-          payoutType: String(`${account.bankName || ''} ${account.bankBranch || account.branchName || ''}`).toLowerCase().includes('trc20') ? 'TRC20' : 'Bank',
-        })));
+        setLoadedSavedDetails(result.accounts || []);
       })
       .catch(() => {});
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [savedWithdrawalDetails, user]);
 
   useEffect(() => {
     setForm((current) => {
@@ -205,22 +205,10 @@ export default function WithdrawForm({
   }, [approvedMethodDetails]);
 
   useEffect(() => {
-    if (form.withdrawalMethod === 'Crypto') {
-      const trc20Addresses = [
-        'TRC456328N',
-        'TRC982341M',
-        'TRC710293K'
-      ];
-      const bep20Addresses = [
-        'BEP234567p',
-        'BEP891234q',
-        'BEP567890r'
-      ];
-      const pool = cryptoNetwork === 'TRC20' ? trc20Addresses : bep20Addresses;
-      const randomAddress = pool[Math.floor(Math.random() * pool.length)];
-      setWalletId(randomAddress);
-    }
-  }, [cryptoNetwork, form.withdrawalMethod]);
+    if (form.withdrawalMethod !== 'Crypto') return;
+    const approvedDetail = savedDetails.find((item) => item.payoutType === cryptoNetwork && item.status === 'approved');
+    setForm((current) => ({ ...current, savedDetailId: approvedDetail?.id || '' }));
+  }, [cryptoNetwork, form.withdrawalMethod, savedDetails]);
 
   const submit = async () => {
     try {
@@ -231,15 +219,15 @@ export default function WithdrawForm({
       if (amount > withdrawableBalance) throw new Error('Withdrawal amount exceeds withdrawable balance.');
       let finalSubmitData = {};
       if (form.withdrawalMethod === 'Crypto') {
-        if (!walletId) throw new Error('Wallet ID is missing.');
+        if (!selectedSavedDetail) throw new Error(`Select an approved ${cryptoNetwork} wallet in Settings.`);
         finalSubmitData = {
           amount,
           withdrawalMethod: 'Crypto',
           tradingAccountId: selectedAccount?.id,
-          bankAccountId: null,
-          bankName: `USDT ${cryptoNetwork}`,
-          accountNumber: walletId,
-          accountHolderName: user?.name || 'Self',
+          bankAccountId: selectedSavedDetail.id,
+          bankName: selectedSavedDetail.bankName,
+          accountNumber: selectedSavedDetail.bankAccountNumber,
+          accountHolderName: selectedSavedDetail.bankAccountHolder,
         };
       } else {
         if (!selectedSavedDetail) throw new Error('Select an approved bank withdrawal detail from Settings.');
@@ -297,7 +285,6 @@ export default function WithdrawForm({
             <Option active={cryptoNetwork === 'TRC20'} label="TRC20" onPress={() => setCryptoNetwork('TRC20')} colors={colors} />
             <Option active={cryptoNetwork === 'BEP20'} label="BEP20" onPress={() => setCryptoNetwork('BEP20')} colors={colors} />
           </View>
-          <CustomInput label="Wallet ID" value={walletId} onChangeText={setWalletId} />
         </View>
       ) : null}
 

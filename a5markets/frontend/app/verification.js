@@ -6,6 +6,7 @@ import CustomButton from '../src/components/common/CustomButton';
 import ClientPortalHeader from '../src/components/layout/ClientPortalHeader';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
+import { kycImageDataUrl } from '../src/utils/kycImage';
 
 const GOLD = '#2c79bb';
 const GREEN = '#20c66b';
@@ -41,15 +42,6 @@ function fileName(file) {
   return file?.name || file?.uri?.split('/').pop() || '';
 }
 
-function readFileDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 function DocumentLink({ title, file, inputRef, onSelect, colors }) {
   const openPicker = () => {
     if (Platform.OS === 'web') inputRef.current?.click();
@@ -62,7 +54,7 @@ function DocumentLink({ title, file, inputRef, onSelect, colors }) {
       className="flex-row items-center rounded-xl border p-5"
       style={{ borderColor: file ? GOLD : GREEN, backgroundColor: colors.panel }}
     >
-      {Platform.OS === 'web' ? <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(event) => onSelect(event.target.files?.[0] || null)} /> : null}
+      {Platform.OS === 'web' ? <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" style={{ display: 'none' }} onChange={(event) => onSelect(event.target.files?.[0] || null)} /> : null}
       <View className="h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: SOFT_GREEN }}>
         {file ? <CheckCircle2 size={22} color={GOLD} /> : <FileText size={22} color={GREEN} />}
       </View>
@@ -119,12 +111,12 @@ export default function VerificationScreen() {
     setSubmitError('');
     try {
       await submitVerification({
-        idProofImage: await readFileDataUrl(idProof),
-        addressProofImage: await readFileDataUrl(addressProof),
+        idProofImage: await kycImageDataUrl(idProof),
+        addressProofImage: await kycImageDataUrl(addressProof),
       });
       await refreshUser?.();
-    } catch {
-      setSubmitError('Could not submit documents. Please try again.');
+    } catch (requestError) {
+      setSubmitError(requestError?.message || 'Could not submit documents. Please try again.');
     } finally {
       setSubmitting(false);
     }

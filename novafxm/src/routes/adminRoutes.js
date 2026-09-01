@@ -49,6 +49,7 @@ router.put('/users/:id/trading-accounts/:accountId/reset-live', controller.reset
 router.delete('/users/:id/trading-accounts/:accountId', controller.deleteTradingAccount);
 router.put('/users/:id/reset-demo', controller.resetDemo);
 router.put('/users/:id/notes', controller.updateNotes);
+router.put('/users/:id/verification/documents', controller.uploadVerificationDocuments);
 router.put('/users/:id/verification/approve', controller.reviewVerification('approved'));
 router.put('/users/:id/verification/reject', controller.reviewVerification('rejected'));
 router.get('/deposits', controller.deposits);

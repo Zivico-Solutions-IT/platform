@@ -1096,6 +1096,19 @@ exports.reviewVerification = (verificationStatus) => async (req, res, next) => {
   }
 };
 
+exports.uploadVerificationDocuments = async (req, res, next) => {
+  try {
+    const { idProofImage, addressProofImage } = req.body;
+    if (!isImageData(idProofImage) || !isImageData(addressProofImage)) {
+      throw apiError('Upload both an ID proof and an address proof image.', 400);
+    }
+    const user = await getUser(req.params.id);
+    if (user.role === 'master') throw apiError('Master accounts do not require verification.', 400);
+    await user.update({ idProofImage, addressProofImage, verificationStatus: 'pending', verificationReviewedAt: null, verificationReviewedBy: null });
+    return res.json({ user, message: 'Verification documents uploaded and submitted for review.' });
+  } catch (error) { return next(error); }
+};
+
 exports.resetDemo = async (req, res, next) => {
   try {
     let output;

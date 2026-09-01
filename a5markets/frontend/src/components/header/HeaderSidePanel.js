@@ -1163,7 +1163,7 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
         if (active) setLoading(false);
       });
     return () => { active = false; };
-  }, [activePanelType, user]);
+  }, [activePanelType, user?.id]);
 
   useEffect(() => {
     const nextPanelType = panelTypeFrom(type);
@@ -1357,7 +1357,7 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
         .catch(() => {});
     }, 60000);
     return () => clearInterval(timer);
-  }, [activePanelType, updateAccounts, user]);
+  }, [activePanelType, updateAccounts, user?.id]);
 
   return (
     <View
@@ -1448,6 +1448,7 @@ export default function HeaderSidePanel({ type, selectedAccount, summary, onClos
                   summary={{ balance }}
                   transactions={transactions}
                   selectedAccount={selectedWithdrawAccount}
+                  savedWithdrawalDetails={dashboard?.bankAccounts}
                   onMissingDetailsPress={(payoutType) => {
                     setSettingsInitialSection(['admin', 'agent'].includes(user?.role) ? 'profile' : 'payments');
                     setSettingsReturnPayoutType(['admin', 'agent'].includes(user?.role) ? null : payoutType);

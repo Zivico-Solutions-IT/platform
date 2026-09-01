@@ -6,6 +6,7 @@ import DashboardTabs from '../src/components/layout/DashboardTabs';
 import NovaLogo from '../src/components/brand/NovaLogo';
 import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
+import { kycImageDataUrl } from '../src/utils/kycImage';
 
 const medium = '#0B0B0B';
 const GOLD = '#D4AF37';
@@ -13,15 +14,6 @@ const GREEN = '#014421';
 
 function fileName(file) {
   return file?.name || file?.uri?.split('/').pop() || '';
-}
-
-function readFileDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 }
 
 function UploadBox({ title, file, onSelect, onClear, colors }) {
@@ -45,7 +37,8 @@ function UploadBox({ title, file, onSelect, onClear, colors }) {
         {Platform.OS === 'web' ? (
           <input
             ref={inputRef}
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
             style={{ display: 'none' }}
             type="file"
             onChange={(event) => onSelect(event.target.files?.[0] || null)}
@@ -91,13 +84,13 @@ export default function VerificationUploadScreen() {
     setSuccess('');
     try {
       await submitVerification({
-        idProofImage: await readFileDataUrl(idProof),
-        addressProofImage: await readFileDataUrl(addressProof),
+        idProofImage: await kycImageDataUrl(idProof),
+        addressProofImage: await kycImageDataUrl(addressProof),
       });
       setSuccess('Submit Successfully');
       setTimeout(() => router.replace('/verification'), 1200);
     } catch (requestError) {
-      setError('Submit Failed');
+      setError(requestError?.message || 'Submit Failed');
     } finally {
       setBusy(false);
     }

@@ -1,5 +1,15 @@
 import api from './api';
 
+let currentUserRequest = null;
+
+const getCurrentUser = () => {
+  if (currentUserRequest) return currentUserRequest;
+  currentUserRequest = api.get('/auth/me', { timeout: 45000 })
+    .then((response) => response.data)
+    .finally(() => { currentUserRequest = null; });
+  return currentUserRequest;
+};
+
 export const authService = {
   // Registration creates a user, wallet and trading account and hashes the
   // password. A busy production database can take longer than the generic
@@ -13,7 +23,7 @@ export const authService = {
   // Profile data is small, but a busy shared database can occasionally take
   // longer than the generic API timeout. Keep the authenticated session
   // refresh alive instead of silently retaining stale verification status.
-  me: () => api.get('/auth/me', { timeout: 45000 }).then((response) => response.data),
+  me: getCurrentUser,
   updateProfile: (values) => api.put('/users/profile', values).then((response) => response.data),
   changePassword: (values) => api.put('/users/password', values).then((response) => response.data),
   updateBankDetails: (values) => api.put('/users/bank-details', values).then((response) => response.data),

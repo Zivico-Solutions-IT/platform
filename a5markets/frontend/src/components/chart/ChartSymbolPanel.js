@@ -31,9 +31,11 @@ export default function ChartSymbolPanel({
   ui,
   isInline = false,
 }) {
-  const categoryBlue = ui.accent;
-  const categoryBackground = ui.dark ? '#153a56' : '#d9eaf6';
-  const expandedBackground = ui.dark ? ui.panel : '#eef7fc';
+  const categoryBlue = ui.dark ? '#35d1c5' : '#087f8c';
+  const categoryBackground = ui.dark ? '#123945' : '#e0f4f2';
+  const expandedBackground = ui.dark ? '#102c35' : '#f8fcfc';
+  const tableHeaderBackground = ui.dark ? '#0d2730' : '#eef5f7';
+  const controlBackground = ui.dark ? '#102f39' : '#f7fbfc';
   const selectedSymbol = typeof currentSymbol === 'string' ? currentSymbol : currentSymbol?.symbol;
   const { openPosition } = useDemoTrading();
   const { notify } = useToast();
@@ -104,14 +106,19 @@ export default function ChartSymbolPanel({
         elevation: 3200,
       }}
     >
-      <View className="flex-row border-b" style={{ borderColor: ui.border }}>
+      <View className="flex-row border-b px-1 pt-1" style={{ borderColor: ui.border, backgroundColor: ui.dark ? '#0c222a' : '#fbfdfe' }}>
         {[
           ['symbols', 'Symbols', CircleDollarSign],
           ['calendar', 'Calendar', CalendarDays],
         ].map(([key, label, Icon]) => {
           const active = panelTab === key;
           return (
-            <Pressable key={key} onPress={() => setPanelTab(key)} className="h-12 flex-1 flex-row items-center justify-center border-b-2" style={{ borderColor: active ? categoryBlue : 'transparent' }}>
+            <Pressable
+              key={key}
+              onPress={() => setPanelTab(key)}
+              className="mb-1 h-10 flex-1 flex-row items-center justify-center rounded-lg"
+              style={{ backgroundColor: active ? categoryBackground : 'transparent' }}
+            >
               <Icon size={18} color={active ? categoryBlue : ui.muted} />
               <Text className="ml-2 text-sm font-medium" style={{ color: active ? categoryBlue : ui.muted }}>{label}</Text>
             </Pressable>
@@ -124,9 +131,9 @@ export default function ChartSymbolPanel({
           {Platform.OS === 'web' ? <iframe title="TradingView economic calendar" srcDoc={calendarHtml(ui)} style={{ width: '100%', height: '100%', border: 0 }} /> : <WebView source={{ html: calendarHtml(ui) }} style={{ flex: 1 }} />}
         </View>
       ) : <>
-      <View className="px-3 py-3 border-b" style={{ borderColor: ui.border, zIndex: 3300, elevation: 3300 }}>
+      <View className="px-3 py-3 border-b" style={{ borderColor: ui.border, backgroundColor: ui.dark ? '#0e2831' : '#ffffff', zIndex: 3300, elevation: 3300 }}>
         <View className="flex-row items-center gap-2">
-          <View className="flex-row items-center flex-1 h-10 px-3 border rounded-xl" style={{ backgroundColor: ui.control, borderColor: ui.border }}>
+          <View className="flex-row items-center flex-1 h-10 px-3 border rounded-xl" style={{ backgroundColor: controlBackground, borderColor: ui.dark ? '#28515d' : '#bfd6dc' }}>
             <TextInput
               value={search}
               onChangeText={onSearchChange}
@@ -141,7 +148,7 @@ export default function ChartSymbolPanel({
             <Pressable
               onPress={onClose}
               className="items-center justify-center border rounded-md h-9 w-9"
-              style={{ backgroundColor: ui.control, borderColor: ui.border }}
+              style={{ backgroundColor: controlBackground, borderColor: ui.dark ? '#28515d' : '#bfd6dc' }}
             >
               <ChevronLeft size={16} color={ui.muted} />
             </Pressable>
@@ -149,11 +156,11 @@ export default function ChartSymbolPanel({
         </View>
       </View>
 
-      <View className="flex-row items-center px-5 py-3 border-b" style={{ borderColor: ui.border }}>
-        <Text className="flex-1 text-xs font-medium text-center" style={{ color: ui.muted }}>Symbol</Text>
-        <Text className="w-[48px] text-[11px] font-medium text-center" style={{ color: ui.muted }}>Bid</Text>
-        <Text className="w-[48px] text-[11px] font-medium text-center" style={{ color: ui.muted }}>Spread</Text>
-        <Text className="w-[48px] text-[11px] font-medium text-center" style={{ color: ui.muted }}>Ask</Text>
+      <View className="flex-row items-center px-5 py-3 border-b" style={{ borderColor: ui.border, backgroundColor: tableHeaderBackground }}>
+        <Text className="flex-1 text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: ui.muted }}>Symbol</Text>
+        <Text className="w-[48px] text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: ui.muted }}>Bid</Text>
+        <Text className="w-[48px] text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: ui.muted }}>Spread</Text>
+        <Text className="w-[48px] text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: ui.muted }}>Ask</Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -181,7 +188,7 @@ export default function ChartSymbolPanel({
                 }}
                 className="flex-row items-center h-[50px] px-4"
                 style={{
-                  backgroundColor: expanded ? categoryBackground : categoryIndex % 2 ? (ui.dark ? ui.control : '#f7f8fa') : ui.menu,
+                backgroundColor: expanded ? categoryBackground : categoryIndex % 2 ? (ui.dark ? ui.control : '#f2f8f9') : ui.menu,
                   cursor: 'pointer',
                 }}
               >
@@ -198,14 +205,14 @@ export default function ChartSymbolPanel({
           const bidPositive = Number.isFinite(bidVal) && Number.isFinite(prevBid) && bidVal !== prevBid
             ? bidVal > prevBid
             : Number(item.change) >= 0;
-          const bidTone = bidPositive ? ui.success : ui.danger;
+          const bidTone = bidPositive ? '#0aaf9a' : '#ed5b68';
 
           const askVal = Number(item.ask ?? item.price);
           const prevAsk = Number(item.previousAsk);
           const askPositive = Number.isFinite(askVal) && Number.isFinite(prevAsk) && askVal !== prevAsk
             ? askVal > prevAsk
             : Number(item.change) >= 0;
-          const askTone = askPositive ? ui.success : ui.danger;
+          const askTone = askPositive ? '#0aaf9a' : '#ed5b68';
           const spread = Number.isFinite(askVal) && Number.isFinite(bidVal)
             ? Math.max(0, (askVal - bidVal) * (10 ** Math.max(0, Number(item.decimals || 5) - 1)))
             : Number(item.spread || 0);
@@ -218,14 +225,25 @@ export default function ChartSymbolPanel({
               onHoverIn={() => onHoverSymbol?.(item.symbol)}
               onHoverOut={() => onHoverSymbol?.(null)}
               onPress={() => onSelectSymbol(item.symbol)}
-              className="h-[48px] flex-row items-center px-2.5 border-b"
+              className="h-[50px] flex-row items-center px-2.5"
               style={{
                 backgroundColor: active
                   ? categoryBackground
                   : hovered
-                    ? ui.soft
+                    ? (ui.dark ? '#163b45' : '#edf8f8')
                     : expandedBackground,
-                borderColor: ui.border,
+                borderWidth: 1,
+                borderColor: active ? categoryBlue : (ui.dark ? '#234852' : '#c8dde1'),
+                borderLeftWidth: active ? 4 : 1,
+                borderLeftColor: categoryBlue,
+                borderRadius: 10,
+                marginHorizontal: 8,
+                marginTop: 6,
+                shadowColor: '#062d35',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: active ? 0.12 : 0.04,
+                shadowRadius: 4,
+                elevation: active ? 2 : 0,
                 cursor: 'pointer',
               }}
             >
@@ -235,8 +253,8 @@ export default function ChartSymbolPanel({
                     event?.stopPropagation?.();
                     onToggleFavorite?.(item.symbol);
                   }}
-                  className="items-center justify-center rounded h-7 w-7 mr-1"
-                  style={{ cursor: 'pointer' }}
+                  className="items-center justify-center rounded-lg h-7 w-7 mr-1"
+                  style={{ cursor: 'pointer', backgroundColor: favorite ? `${categoryBlue}1c` : 'transparent' }}
                 >
                   <Star
                     size={15}
@@ -245,9 +263,6 @@ export default function ChartSymbolPanel({
                   />
                 </Pressable>
                 <View className="ml-1 flex-row items-center" style={{ flex: 1, minWidth: 0 }}>
-                  <View className="mr-1.5 h-7 w-7 items-center justify-center rounded border" style={{ backgroundColor: ui.control, borderColor: ui.border }}>
-                    <Text className="text-[10px] font-medium" style={{ color: ui.text }}>{String(item.symbol || '').slice(0, 2)}</Text>
-                  </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text className="text-xs font-medium" numberOfLines={1} ellipsizeMode="tail" style={{ color: active ? (ui.accent || '#17B8B2') : ui.text }}>{item.symbol}</Text>
                   </View>
@@ -259,7 +274,7 @@ export default function ChartSymbolPanel({
                 </Text>
               </View>
               <View style={{ width: 48, alignItems: 'center', justifyContent: 'center' }}>
-                <Text className="text-[11px] font-medium" numberOfLines={1} style={{ color: ui.text }}>
+                <Text className="rounded-md px-1.5 py-0.5 text-[10px] font-bold" numberOfLines={1} style={{ color: ui.text, backgroundColor: ui.dark ? '#17333b' : '#e8f1f3' }}>
                   {Number.isFinite(spread) ? spread.toFixed(1) : '0.0'}
                 </Text>
               </View>
@@ -275,11 +290,11 @@ export default function ChartSymbolPanel({
                   setQuickTradeSymbol((symbol) => symbol === item.symbol ? null : item.symbol);
                 }}
                 className="items-center justify-center rounded-full"
-                style={{ width: 22, height: 30, cursor: 'pointer' }}
+                style={{ width: 24, height: 24, cursor: 'pointer', backgroundColor: quickTradeOpen ? `${categoryBlue}2a` : 'transparent' }}
               >
                 {quickTradeOpen
-                  ? <Minus size={18} color={ui.muted} />
-                  : <Plus size={18} color={ui.muted} />}
+                  ? <Minus size={16} color={categoryBlue} />
+                  : <Plus size={16} color={categoryBlue} />}
               </Pressable>
             </Pressable>
             {quickTradeOpen ? (

@@ -2260,6 +2260,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const [verificationUser, setVerificationUser] = useState(null);
   const [verificationDocumentTab, setVerificationDocumentTab] = useState('all');
   const [verificationImageZoom, setVerificationImageZoom] = useState(null);
+  const [verificationUploadFiles, setVerificationUploadFiles] = useState({ id: null, address: null });
+  const [verificationUploadBusy, setVerificationUploadBusy] = useState(false);
   const [receiptModal, setReceiptModal] = useState(null);
   const [depositDetails, setDepositDetails] = useState(null);
   const [fundingReview, setFundingReview] = useState(null);
@@ -3458,6 +3460,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     if (!user?.id) return;
     setVerificationDocumentTab('all');
     setVerificationImageZoom(null);
+    setVerificationUploadFiles({ id: null, address: null });
     setVerificationUser({ ...user, loading: true });
     try {
       const result = await api.get(`/admin/users/${user.id}/verification`, { timeout: 45000 });
@@ -3465,6 +3468,29 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     } catch (requestError) {
       setVerificationUser(null);
       setError(requestError.response?.data?.message || 'Unable to load verification documents.');
+    }
+  };
+
+  const uploadVerificationDocuments = async () => {
+    if (!verificationUser?.id || !verificationUploadFiles.id || !verificationUploadFiles.address) {
+      setError('Select both ID proof and address proof images.');
+      return;
+    }
+    setVerificationUploadBusy(true);
+    try {
+      const [idProofImage, addressProofImage] = await Promise.all([
+        readFileDataUrl(verificationUploadFiles.id),
+        readFileDataUrl(verificationUploadFiles.address),
+      ]);
+      const result = await api.put(`/admin/users/${verificationUser.id}/verification/documents`, { idProofImage, addressProofImage });
+      setVerificationUser({ ...result.data.user, loading: false });
+      setVerificationUploadFiles({ id: null, address: null });
+      await load({ silent: true });
+      setMessage(result.data.message || 'Verification documents submitted for review.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to upload verification documents.');
+    } finally {
+      setVerificationUploadBusy(false);
     }
   };
 
@@ -7106,6 +7132,19 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                   })()}
                 </View>
               )}
+              {!verificationUser.loading && (!verificationUser.idProofImage || !verificationUser.addressProofImage) ? (
+                <View className="mt-4 rounded-xl border p-4" style={{ backgroundColor: colors.surface, borderColor: colors.border }}>
+                  <Text className="font-medium" style={{ color: colors.text }}>Add verification documents</Text>
+                  <Text className="mt-1 text-xs" style={{ color: colors.muted }}>Upload both documents, then approve the submitted verification.</Text>
+                  {Platform.OS === 'web' ? (
+                    <View className="mt-3 gap-2">
+                      <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setVerificationUploadFiles((current) => ({ ...current, id: event.target.files?.[0] || null }))} />
+                      <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setVerificationUploadFiles((current) => ({ ...current, address: event.target.files?.[0] || null }))} />
+                      <CustomButton title={verificationUploadBusy ? 'Uploading...' : 'Upload documents'} variant="primary" disabled={verificationUploadBusy} onPress={uploadVerificationDocuments} />
+                    </View>
+                  ) : <Text className="mt-3 text-xs" style={{ color: colors.muted }}>Use the web admin portal to upload documents.</Text>}
+                </View>
+              ) : null}
               <View className="mt-4 flex-row flex-wrap justify-end gap-3 pb-2">
                 <CustomButton
                   title="Approve"

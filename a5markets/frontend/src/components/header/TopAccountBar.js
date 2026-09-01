@@ -225,7 +225,7 @@ export default function TopAccountBar({ onNewOrder }) {
       clearInterval(timer);
       retryTimers.forEach(clearTimeout);
     };
-  }, [setSelectedTradingAccount, user]);
+  }, [setSelectedTradingAccount, user?.id]);
 
   useEffect(() => {
     let active = true;
