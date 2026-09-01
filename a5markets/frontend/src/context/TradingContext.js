@@ -27,6 +27,7 @@ export function TradingProvider({ children }) {
   const [insufficientFundsVisible, setInsufficientFundsVisible] = useState(false);
   const protectionToastIdsRef = useRef(new Set());
   const locallyClosedIdsRef = useRef(new Set());
+  const syncInFlightRef = useRef(false);
 
   useEffect(() => {
     async function restore() {
@@ -57,29 +58,35 @@ export function TradingProvider({ children }) {
 
   const syncAccount = useCallback(async () => {
     if (!user || !serverAccount) return;
-    const [open, pending, closed, account, history] = await Promise.all([
-      tradeService.openTrades(selectedAccountId), tradeService.pendingTrades(selectedAccountId), tradeService.closedTrades(selectedAccountId), walletService.getWallet(selectedAccountId), walletService.getTransactions(),
-    ]);
-    const serverOpenIds = new Set((open.trades || []).map((t) => String(t.id)));
-    locallyClosedIdsRef.current.forEach((id) => {
-      if (!serverOpenIds.has(id)) {
-        locallyClosedIdsRef.current.delete(id);
+    if (syncInFlightRef.current) return;
+    syncInFlightRef.current = true;
+    try {
+      const [open, pending, closed, account, history] = await Promise.all([
+        tradeService.openTrades(selectedAccountId), tradeService.pendingTrades(selectedAccountId), tradeService.closedTrades(selectedAccountId), walletService.getWallet(selectedAccountId), walletService.getTransactions(),
+      ]);
+      const serverOpenIds = new Set((open.trades || []).map((t) => String(t.id)));
+      locallyClosedIdsRef.current.forEach((id) => {
+        if (!serverOpenIds.has(id)) {
+          locallyClosedIdsRef.current.delete(id);
+        }
+      });
+      const activeTrades = (open.trades || []).filter((t) => !locallyClosedIdsRef.current.has(String(t.id)));
+      setPositions(activeTrades);
+      setPendingOrders(pending.trades || []);
+      setClosedPositions(closed.trades || []);
+      const bonusVal = account.summary.bonus !== undefined && account.summary.bonus !== null ? Number(account.summary.bonus) : Number(account.wallet?.bonus || 0);
+      setWallet({ balance: Number(account.summary.balance), bonus: bonusVal });
+      if (account.tradingAccount) {
+        setSelectedTradingAccount((current) => (
+          current && String(current.id) === String(account.tradingAccount.id)
+            ? { ...current, ...account.tradingAccount }
+            : current
+        ));
       }
-    });
-    const activeTrades = (open.trades || []).filter((t) => !locallyClosedIdsRef.current.has(String(t.id)));
-    setPositions(activeTrades);
-    setPendingOrders(pending.trades || []);
-    setClosedPositions(closed.trades || []);
-    const bonusVal = account.summary.bonus !== undefined && account.summary.bonus !== null ? Number(account.summary.bonus) : Number(account.wallet?.bonus || 0);
-    setWallet({ balance: Number(account.summary.balance), bonus: bonusVal });
-    if (account.tradingAccount) {
-      setSelectedTradingAccount((current) => (
-        current && String(current.id) === String(account.tradingAccount.id)
-          ? { ...current, ...account.tradingAccount }
-          : current
-      ));
+      setTransactions(history.transactions || []);
+    } finally {
+      syncInFlightRef.current = false;
     }
-    setTransactions(history.transactions || []);
   }, [selectedAccountId, serverAccount, user]);
 
   useEffect(() => {
@@ -90,7 +97,7 @@ export function TradingProvider({ children }) {
     if (!user || !serverAccount) return;
     const interval = setInterval(() => {
       syncAccount().catch(() => {});
-    }, 4000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [syncAccount, user, serverAccount]);
 

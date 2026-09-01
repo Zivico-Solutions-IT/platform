@@ -53,5 +53,13 @@ export function useWallet() {
     [demo],
   );
 
-  return { summary: demo.summary, transactions: demo.transactions, deposit, withdraw, loading, error };
+  return {
+    summary: demo.summary,
+    transactions: demo.transactions,
+    selectedTradingAccount: demo.selectedTradingAccount,
+    deposit,
+    withdraw,
+    loading,
+    error,
+  };
 }

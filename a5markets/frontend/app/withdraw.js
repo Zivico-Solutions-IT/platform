@@ -21,7 +21,7 @@ function AccountSummary({ label, value, colors }) {
 export default function WithdrawScreen() {
   const { user, logout } = useAuth();
   const { colors } = useAppTheme();
-  const { summary, transactions, withdraw, loading } = useWallet();
+  const { summary, transactions, withdraw, loading, selectedTradingAccount: globallySelectedTradingAccount } = useWallet();
   const [accounts, setAccounts] = useState([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [selectedAccountId, setSelectedAccountId] = useState('');
@@ -31,8 +31,12 @@ export default function WithdrawScreen() {
     [accounts],
   );
   const selectedAccount = useMemo(
-    () => liveAccounts.find((account) => String(account.id) === String(selectedAccountId)) || liveAccounts[0] || null,
-    [liveAccounts, selectedAccountId],
+    () => liveAccounts.find((account) => String(account.id) === String(selectedAccountId))
+      || liveAccounts.find((account) => String(account.id) === String(globallySelectedTradingAccount?.id))
+      || (String(globallySelectedTradingAccount?.type || '').toLowerCase() === 'live' ? globallySelectedTradingAccount : null)
+      || liveAccounts[0]
+      || null,
+    [globallySelectedTradingAccount, liveAccounts, selectedAccountId],
   );
   const selectedSummary = useMemo(
     () => ({ ...summary, balance: Number(selectedAccount?.balance ?? summary.balance ?? 0) }),
@@ -41,22 +45,33 @@ export default function WithdrawScreen() {
 
   useEffect(() => {
     let active = true;
-    dashboardService.getDashboard()
-      .then((result) => {
+    const loadAccounts = async () => {
+      try {
+        let result;
+        try {
+          result = await dashboardService.getDashboard();
+        } catch {
+          result = await dashboardService.getAccounts();
+        }
         if (!active) return;
-        const nextAccounts = result.accounts || [];
+        const nextAccounts = Array.isArray(result.accounts) ? result.accounts : [];
         setAccounts(nextAccounts);
-        const firstLive = nextAccounts.find((account) => String(account.type || '').toLowerCase() === 'live' && account.status !== 'frozen');
+        const preferredLive = nextAccounts.find((account) => (
+          String(account.id) === String(globallySelectedTradingAccount?.id)
+          && String(account.type || '').toLowerCase() === 'live'
+          && account.status !== 'frozen'
+        ));
+        const firstLive = preferredLive || nextAccounts.find((account) => String(account.type || '').toLowerCase() === 'live' && account.status !== 'frozen');
         setSelectedAccountId(firstLive?.id ? String(firstLive.id) : '');
-      })
-      .catch(() => {
+      } catch {
         if (active) setAccounts([]);
-      })
-      .finally(() => {
+      } finally {
         if (active) setAccountsLoading(false);
-      });
+      }
+    };
+    loadAccounts();
     return () => { active = false; };
-  }, []);
+  }, [globallySelectedTradingAccount?.id]);
   const signOut = async () => {
     await logout();
     router.replace('/login');
