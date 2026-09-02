@@ -28,6 +28,7 @@ import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { dateTime, money, quote } from '../src/utils/formatters';
 import { calculateRequiredMargin } from '../src/utils/calculations';
+import { kycImageDataUrl } from '../src/utils/kycImage';
 import AnimatedPopup from '../src/components/AnimatedPopup';
 
 const empty = { users: [], birthdays: [], deposits: [], withdrawals: [], bankAccounts: [], depositMethodAddresses: [], trades: [], referralRewards: [], stats: {} };
@@ -3479,8 +3480,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     setVerificationUploadBusy(true);
     try {
       const [idProofImage, addressProofImage] = await Promise.all([
-        readFileDataUrl(verificationUploadFiles.id),
-        readFileDataUrl(verificationUploadFiles.address),
+        kycImageDataUrl(verificationUploadFiles.id),
+        kycImageDataUrl(verificationUploadFiles.address),
       ]);
       const result = await api.put(`/admin/users/${verificationUser.id}/verification/documents`, { idProofImage, addressProofImage });
       setVerificationUser({ ...result.data.user, loading: false });

@@ -28,6 +28,7 @@ import { useAuth } from '../src/hooks/useAuth';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { dateTime, money, quote } from '../src/utils/formatters';
 import { calculateRequiredMargin } from '../src/utils/calculations';
+import { kycImageDataUrl } from '../src/utils/kycImage';
 import AnimatedPopup from '../src/components/AnimatedPopup';
 
 const empty = { users: [], birthdays: [], deposits: [], withdrawals: [], bankAccounts: [], depositMethodAddresses: [], trades: [], referralRewards: [], stats: {} };
@@ -3617,7 +3618,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     if (!verificationUser?.id || !verificationUploadFiles.id || !verificationUploadFiles.address) { setError('Select both ID proof and address proof images.'); return; }
     setVerificationUploadBusy(true);
     try {
-      const [idProofImage, addressProofImage] = await Promise.all([readFileDataUrl(verificationUploadFiles.id), readFileDataUrl(verificationUploadFiles.address)]);
+      const [idProofImage, addressProofImage] = await Promise.all([kycImageDataUrl(verificationUploadFiles.id), kycImageDataUrl(verificationUploadFiles.address)]);
       const result = await api.put(`/admin/users/${verificationUser.id}/verification/documents`, { idProofImage, addressProofImage });
       setVerificationUser({ ...result.data.user, loading: false }); setVerificationUploadFiles({ id: null, address: null }); await load({ silent: true }); setMessage(result.data.message || 'Verification documents submitted for review.');
     } catch (requestError) { setError(requestError.response?.data?.message || 'Unable to upload verification documents.'); } finally { setVerificationUploadBusy(false); }
