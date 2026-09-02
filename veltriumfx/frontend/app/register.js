@@ -6,6 +6,7 @@ import NovaLogo from '../src/components/brand/NovaLogo';
 import { Eye, EyeOff, ChevronDown, Search, X } from 'lucide-react-native';
 import { useAppTheme } from '../src/context/ThemeContext';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import api from '../src/services/api';
 
 export default function RegisterScreen() {
   const { register } = useAuth();
@@ -18,7 +19,8 @@ export default function RegisterScreen() {
     password: '',
     confirmPassword: '',
     accountType: 'Demo',
-    referralCode: String(params.ref || ''),
+    referralCode: '',
+    referralInviteCode: String(params.ref || ''),
     country: '',
     agree: false
   });
@@ -29,10 +31,17 @@ export default function RegisterScreen() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [requiresReferralCode, setRequiresReferralCode] = useState(false);
 
   const update = (key) => (value) => setForm((current) => ({ ...current, [key]: value }));
   const inputBackground = darkMode ? colors.surface : '#ffffff';
   const placeholderColor = darkMode ? colors.muted : '#9CA3AF';
+
+  useEffect(() => {
+    api.get('/auth/registration-status')
+      .then(({ data }) => setRequiresReferralCode(Boolean(data?.requiresReferralCode)))
+      .catch(() => setRequiresReferralCode(false));
+  }, []);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -452,6 +461,11 @@ export default function RegisterScreen() {
     return;
   }
 
+  if (requiresReferralCode && !form.referralCode.trim()) {
+    setError('Referral code is required.');
+    return;
+  }
+
   if (phoneError) {
     setError(phoneError);
     return;
@@ -586,12 +600,14 @@ export default function RegisterScreen() {
 
             {/* Referral Code */}
             <View className="mb-4">
-              <Text className="mb-1.5 text-xs font-medium" style={labelStyle}>Referral Code (Optional)</Text>
+              <Text className="mb-1.5 text-xs font-medium" style={labelStyle}>Referral Code</Text>
               <TextInput
                 placeholder="Enter referral code"
                 className="rounded-lg border px-4 py-2.5 text-sm"
                 style={inputStyle}
                 placeholderTextColor={placeholderColor}
+                autoCapitalize="characters"
+                autoCorrect={false}
                 value={form.referralCode}
                 onChangeText={update('referralCode')}
               />

@@ -29,6 +29,9 @@ module.exports = async function authMiddleware(req, res, next) {
     }
 
     if (!user) return res.status(401).json({ message: 'Account not found.' });
+    if (['agent', 'manager'].includes(user.role) && user.staffAccessLocked) {
+      return res.status(403).json({ message: 'This staff account is no longer authorized. Please contact support.' });
+    }
     
     if (user.role !== 'master' && user.projectId) {
       const project = await Project.findByPk(user.projectId);

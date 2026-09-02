@@ -671,6 +671,7 @@ export default function AgentManagement() {
                     secureTextEntry={!passwordVisible}
                     style={{ paddingRight: 48 }}
                   />
+                  {editingAgent ? <Text className="mt-1 text-xs" style={{ color: colors.danger }}>Changing this password disables the staff account. They will see “Please contact support” when signing in.</Text> : null}
                   <Pressable
                     onPress={() => setPasswordVisible((current) => !current)}
                     className="absolute bottom-3 right-0 h-12 w-12 items-center justify-center"

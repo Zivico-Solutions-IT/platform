@@ -2259,6 +2259,9 @@ export default function AdminScreen() {
   };
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [registrationCode, setRegistrationCode] = useState('');
+  const [registrationCodeDraft, setRegistrationCodeDraft] = useState('');
+  const [registrationCodeLoading, setRegistrationCodeLoading] = useState(false);
   const [referralEditModal, setReferralEditModal] = useState(null); // { reward, amount }
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -2540,7 +2543,7 @@ export default function AdminScreen() {
     return false;
   };
 
-  const allowedSectionIds = ['overview', 'marginAlerts', 'users', 'userManagement', 'verifications', 'deposits', 'referrals', 'withdrawals', 'userLevels', 'trades', 'addTrading', 'bonusPosts', 'symbols', 'agents'];
+  const allowedSectionIds = ['overview', 'marginAlerts', 'users', 'userManagement', 'verifications', 'deposits', 'referrals', 'withdrawals', 'userLevels', 'trades', 'addTrading', 'bonusPosts', 'registrationCode', 'symbols', 'agents'];
   const canViewSection = (sectionId) => {
     if (companyStatus === 'suspended' && adminUser?.role !== 'master') return sectionId === 'overview';
     return hasPermission(sectionId);
@@ -2557,6 +2560,61 @@ export default function AdminScreen() {
       setBonusPostsLoading(false);
     }
   }, []);
+
+  const loadRegistrationCode = useCallback(async () => {
+    setRegistrationCodeLoading(true);
+    try {
+      const { data } = await api.get('/admin/registration-code');
+      const code = data?.code || '';
+      setRegistrationCode(code);
+      setRegistrationCodeDraft(code);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to load the registration referral code.');
+    } finally { setRegistrationCodeLoading(false); }
+  }, []);
+
+  const saveRegistrationCode = async () => {
+    if (!registrationCodeDraft.trim()) return setError('Enter a referral code first.');
+    setBusyId('registration-code-save');
+    try {
+      const { data } = await api.put('/admin/registration-code', { code: registrationCodeDraft });
+      const code = data?.code || registrationCodeDraft.trim().toUpperCase();
+      setRegistrationCode(code);
+      setRegistrationCodeDraft(code);
+      setMessage('Registration referral code saved. New registrations now require it.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to save the registration referral code.');
+    } finally { setBusyId(null); }
+  };
+
+  const removeRegistrationCode = async () => {
+    setBusyId('registration-code-delete');
+    try {
+      await api.delete('/admin/registration-code');
+      setRegistrationCode('');
+      setRegistrationCodeDraft('');
+      setMessage('Referral code removed. Public registration is now open without a code.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to remove the registration referral code.');
+    } finally { setBusyId(null); }
+  };
+
+  const renderRegistrationCode = () => (
+    <View className="rounded-2xl border p-4 md:p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <Text className="text-xl font-semibold" style={{ color: colors.text }}>Referral Code</Text>
+      <Text className="mt-1 max-w-3xl text-sm" style={{ color: colors.muted }}>When active, new users must enter this code to register. Delete it to allow normal public registration without the field.</Text>
+      <View className="mt-6 max-w-xl rounded-xl border p-4" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
+        <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>Registration referral code</Text>
+        <TextInput value={registrationCodeDraft} onChangeText={setRegistrationCodeDraft} autoCapitalize="characters" placeholder="Example: VELTRIUM2026" placeholderTextColor={colors.muted} className="rounded-lg border px-4 py-3 text-base" style={{ color: colors.text, borderColor: colors.border, backgroundColor: colors.panel }} />
+        <Text className="mt-2 text-xs" style={{ color: colors.muted }}>4–40 characters: letters, numbers, hyphens and underscores.</Text>
+        <View className="mt-4 flex-row flex-wrap gap-3">
+          <Pressable onPress={saveRegistrationCode} disabled={registrationCodeLoading || busyId === 'registration-code-save'} className="rounded-lg px-4 py-3" style={{ backgroundColor: colors.primary, opacity: registrationCodeLoading ? 0.6 : 1 }}><Text className="text-sm font-semibold" style={{ color: '#111827' }}>{busyId === 'registration-code-save' ? 'Saving…' : 'Save code'}</Text></Pressable>
+          {registrationCode ? <Pressable onPress={removeRegistrationCode} disabled={busyId === 'registration-code-delete'} className="rounded-lg border px-4 py-3" style={{ borderColor: colors.danger, opacity: busyId === 'registration-code-delete' ? 0.6 : 1 }}><Text className="text-sm font-semibold" style={{ color: colors.danger }}>{busyId === 'registration-code-delete' ? 'Deleting…' : 'Delete code'}</Text></Pressable> : null}
+        </View>
+        <Text className="mt-5 text-xs font-semibold" style={{ color: registrationCode ? colors.success : colors.muted }}>{registrationCode ? `Active code: ${registrationCode}` : 'No active code — normal public registration is enabled.'}</Text>
+      </View>
+    </View>
+  );
 
   const selectBonusPostImage = async (file) => {
     if (!file) return;
@@ -2639,6 +2697,7 @@ export default function AdminScreen() {
 
   useEffect(() => {
     if (section === 'bonusPosts' && canViewSection('bonusPosts')) loadBonusPosts();
+    if (section === 'registrationCode' && canViewSection('registrationCode')) loadRegistrationCode();
   }, [section, adminUser?.id]);
 
   useEffect(() => {
@@ -6351,6 +6410,7 @@ export default function AdminScreen() {
                   : section === 'userLevels' ? 'User Levels'
                   : section === 'trades' ? 'Trade Monitor'
                   : section === 'bonusPosts' ? 'Bonus Posts'
+                  : section === 'registrationCode' ? 'Referral Code'
                   : section === 'symbols' ? 'Symbol Settings'
                   : section === 'agents' ? 'Staff Management'
                   : 'Add Trading'}
@@ -6368,6 +6428,7 @@ export default function AdminScreen() {
               {!mobile ? (
                 <Text className="mt-2" style={{ color: colors.muted }}>
                   {section === 'symbols' ? 'Configure trading symbols visible to users.' 
+                    : section === 'registrationCode' ? 'Require a master referral code for new registrations, or remove it to open registration.'
                     : section === 'referrals' ? 'Approve and manage client referral commission rewards.' 
                     : section === 'agents' ? 'Create and manage staff members (Agents & Managers) with specific permissions.'
                     : 'Manage client balances, trading access and financial operations.'}
@@ -6736,6 +6797,7 @@ export default function AdminScreen() {
         {section === 'trades' && canViewSection('trades') ? renderTrades() : null}
         {section === 'addTrading' && canViewSection('addTrading') ? renderAddTrading() : null}
         {section === 'bonusPosts' && canViewSection('bonusPosts') ? renderBonusPosts() : null}
+        {section === 'registrationCode' && canViewSection('registrationCode') ? renderRegistrationCode() : null}
         {section === 'symbols' && canViewSection('symbols') ? <SymbolSettings /> : null}
         {section === 'accessDenied' ? <View className="rounded-2xl border p-8" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><Text className="text-lg font-semibold" style={{ color: colors.text }}>No dashboard permissions assigned</Text><Text className="mt-2 text-sm" style={{ color: colors.muted }}>Ask your Master administrator to enable one or more company permissions and assign them to your administrator account.</Text></View> : null}
       </ScrollView>

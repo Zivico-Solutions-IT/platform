@@ -2,7 +2,7 @@ const sequelize = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification, BonusPost } = require('../models');
+const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification, BonusPost, RegistrationCode } = require('../models');
 const tradingView = require('../services/tradingViewService');
 const { ensureReferralCode } = require('../services/dashboardService');
 const { getIo } = require('../config/socketIo');
@@ -1964,6 +1964,7 @@ exports.createAgent = async (req, res, next) => {
         if (name) existingUser.name = name.trim();
         if (phone) existingUser.phone = phone;
         existingUser.password = await bcrypt.hash(finalPassword, 12);
+        existingUser.staffAccessLocked = false;
         await existingUser.save();
         await ensureStaffClientAccounts(existingUser);
         
@@ -1985,6 +1986,7 @@ exports.createAgent = async (req, res, next) => {
         accountType: 'Demo',
         leverage: DEFAULT_LEVERAGE,
         tradingStatus: 'active',
+        staffAccessLocked: false,
         projectId: req.projectId || null,
       }, { transaction });
       await ensureStaffClientAccounts(created, transaction);
@@ -2013,6 +2015,9 @@ exports.updateAgent = async (req, res, next) => {
         return res.status(400).json({ message: 'Password must be at least 8 characters.' });
       }
       agent.password = await bcrypt.hash(finalPassword, 12);
+      // A Master password reset is also a deliberate staff access revocation.
+      // It immediately denies any active token and future sign-in attempts.
+      if (req.user?.role === 'master') agent.staffAccessLocked = true;
     }
     
     if (role === 'manager' || role === 'agent') {
@@ -2287,5 +2292,39 @@ exports.deleteBonusPost = async (req, res, next) => {
     if (!post) return res.status(404).json({ message: 'Bonus post not found.' });
     await post.destroy();
     return res.json({ message: 'Bonus post removed.' });
+  } catch (error) { return next(error); }
+};
+
+const normalizeRegistrationCode = (value) => String(value || '').trim().toUpperCase().replace(/\s+/g, '');
+const veltriumProject = () => Project.findOne({ where: { identifier: 'veltriumfx' } });
+
+exports.registrationCode = async (req, res, next) => {
+  try {
+    const project = await veltriumProject();
+    if (!project) return res.status(404).json({ message: 'VeltriumFX company configuration was not found.' });
+    const registrationCode = await RegistrationCode.findOne({ where: { projectId: project.id } });
+    return res.json({ code: registrationCode?.code || '' });
+  } catch (error) { return next(error); }
+};
+
+exports.saveRegistrationCode = async (req, res, next) => {
+  try {
+    const code = normalizeRegistrationCode(req.body?.code);
+    if (!/^[A-Z0-9_-]{4,40}$/.test(code)) {
+      return res.status(400).json({ message: 'Use 4–40 letters, numbers, hyphens or underscores.' });
+    }
+    const project = await veltriumProject();
+    if (!project) return res.status(404).json({ message: 'VeltriumFX company configuration was not found.' });
+    await RegistrationCode.upsert({ projectId: project.id, code, updatedById: req.user.id });
+    return res.json({ code, message: 'Registration referral code saved.' });
+  } catch (error) { return next(error); }
+};
+
+exports.deleteRegistrationCode = async (req, res, next) => {
+  try {
+    const project = await veltriumProject();
+    if (!project) return res.status(404).json({ message: 'VeltriumFX company configuration was not found.' });
+    await RegistrationCode.destroy({ where: { projectId: project.id } });
+    return res.json({ message: 'Registration referral code removed. Public registration is now open.' });
   } catch (error) { return next(error); }
 };
