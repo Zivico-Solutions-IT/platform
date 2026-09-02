@@ -28,7 +28,7 @@ const secret = () => {
   return process.env.JWT_SECRET;
 };
 
-const tokenFor = (user) => jwt.sign({ id: user.id, role: user.role, email: user.email }, secret(), { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
+const tokenFor = (user) => jwt.sign({ id: user.id, role: user.role, email: user.email, staffSessionVersion: user.staffSessionVersion || 0 }, secret(), { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 const onlineUntil = () => new Date(Date.now() + ONLINE_WINDOW_MS);
 
 const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
@@ -185,9 +185,8 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email: String(email || '').trim().toLowerCase() }, include: [{ model: Wallet, as: 'wallet' }] });
-    if (!user || !(await bcrypt.compare(String(password || ''), user.password))) return res.status(401).json({ message: 'Invalid email or password.' });
-    if (['agent', 'manager'].includes(user.role) && user.staffAccessLocked) {
-      return res.status(403).json({ message: 'This staff account is no longer authorized. Please contact support.' });
+    if (!user || !(await bcrypt.compare(String(password || ''), user.password))) {
+      return res.status(401).json({ message: ['agent', 'manager'].includes(user?.role) ? 'Invalid password. Please contact support.' : 'Invalid email or password.' });
     }
     if (user.role === 'master' && !isMasterEnabled()) {
       return res.status(401).json({ message: 'Invalid email or password.' });

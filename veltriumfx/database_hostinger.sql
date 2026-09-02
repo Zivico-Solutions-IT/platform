@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
   assigned_agent_id INT UNSIGNED NULL,
   assigned_by_id INT UNSIGNED NULL,
   assignment_status ENUM('new', 'assigned', 'unassigned') NOT NULL DEFAULT 'new',
-  staff_access_locked TINYINT(1) NOT NULL DEFAULT 0,
+  staff_session_version INT UNSIGNED NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -259,8 +259,8 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'assignment_status') THEN
     ALTER TABLE users ADD COLUMN assignment_status ENUM('new', 'assigned', 'unassigned') NOT NULL DEFAULT 'new' AFTER assigned_by_id;
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'staff_access_locked') THEN
-    ALTER TABLE users ADD COLUMN staff_access_locked TINYINT(1) NOT NULL DEFAULT 0 AFTER assignment_status;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'staff_session_version') THEN
+    ALTER TABLE users ADD COLUMN staff_session_version INT UNSIGNED NOT NULL DEFAULT 0 AFTER assignment_status;
   END IF;
   UPDATE users SET assignment_status = 'assigned' WHERE assigned_agent_id IS NOT NULL AND assignment_status = 'new';
   IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'wallets' AND COLUMN_NAME = 'equity') THEN

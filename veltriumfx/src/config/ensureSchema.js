@@ -191,10 +191,10 @@ async function ensureSchema() {
     allowNull: true,
     after: 'last_logout_at',
   });
-  await addColumnIfMissing(queryInterface, 'users', 'staff_access_locked', {
-    type: DataTypes.BOOLEAN,
+  await addColumnIfMissing(queryInterface, 'users', 'staff_session_version', {
+    type: DataTypes.INTEGER.UNSIGNED,
     allowNull: false,
-    defaultValue: false,
+    defaultValue: 0,
     after: 'online_until',
   });
   await addColumnIfMissing(queryInterface, 'users', 'admin_notes', {

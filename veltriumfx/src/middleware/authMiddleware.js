@@ -29,8 +29,8 @@ module.exports = async function authMiddleware(req, res, next) {
     }
 
     if (!user) return res.status(401).json({ message: 'Account not found.' });
-    if (['agent', 'manager'].includes(user.role) && user.staffAccessLocked) {
-      return res.status(403).json({ message: 'This staff account is no longer authorized. Please contact support.' });
+    if (['agent', 'manager'].includes(user.role) && Number(payload.staffSessionVersion || 0) !== Number(user.staffSessionVersion || 0)) {
+      return res.status(401).json({ message: 'Your session has ended because your password was changed. Please sign in again.' });
     }
     
     if (user.role !== 'master' && user.projectId) {

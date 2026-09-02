@@ -19,9 +19,9 @@ const User = sequelize.define('User', {
   lastLoginAt: { type: DataTypes.DATE, field: 'last_login_at', allowNull: true },
   lastLogoutAt: { type: DataTypes.DATE, field: 'last_logout_at', allowNull: true },
   onlineUntil: { type: DataTypes.DATE, field: 'online_until', allowNull: true },
-  // A master password reset for a staff account revokes console access until
-  // support reviews the account.
-  staffAccessLocked: { type: DataTypes.BOOLEAN, field: 'staff_access_locked', allowNull: false, defaultValue: false },
+  // Incremented when a Master changes a staff password, invalidating active
+  // staff sessions while allowing a fresh sign-in with the new password.
+  staffSessionVersion: { type: DataTypes.INTEGER.UNSIGNED, field: 'staff_session_version', allowNull: false, defaultValue: 0 },
   role: { type: DataTypes.ENUM('user', 'admin', 'agent', 'master', 'manager'), allowNull: false, defaultValue: 'user' },
   projectId: { type: DataTypes.INTEGER.UNSIGNED, field: 'project_id', allowNull: true },
   permissions: {

@@ -1964,7 +1964,7 @@ exports.createAgent = async (req, res, next) => {
         if (name) existingUser.name = name.trim();
         if (phone) existingUser.phone = phone;
         existingUser.password = await bcrypt.hash(finalPassword, 12);
-        existingUser.staffAccessLocked = false;
+        existingUser.staffSessionVersion = 0;
         await existingUser.save();
         await ensureStaffClientAccounts(existingUser);
         
@@ -1986,7 +1986,7 @@ exports.createAgent = async (req, res, next) => {
         accountType: 'Demo',
         leverage: DEFAULT_LEVERAGE,
         tradingStatus: 'active',
-        staffAccessLocked: false,
+        staffSessionVersion: 0,
         projectId: req.projectId || null,
       }, { transaction });
       await ensureStaffClientAccounts(created, transaction);
@@ -2015,9 +2015,9 @@ exports.updateAgent = async (req, res, next) => {
         return res.status(400).json({ message: 'Password must be at least 8 characters.' });
       }
       agent.password = await bcrypt.hash(finalPassword, 12);
-      // A Master password reset is also a deliberate staff access revocation.
-      // It immediately denies any active token and future sign-in attempts.
-      if (req.user?.role === 'master') agent.staffAccessLocked = true;
+      // End any current staff session. The newly assigned password can be used
+      // immediately to create a fresh session.
+      if (req.user?.role === 'master') agent.staffSessionVersion = Number(agent.staffSessionVersion || 0) + 1;
     }
     
     if (role === 'manager' || role === 'agent') {
