@@ -1,6 +1,6 @@
 const { spawn } = require('child_process');
 
-const DEFAULT_DAYS = 180;
+const DEFAULT_DAYS = 365;
 const DEFAULT_TIMEFRAMES = '1m,3m,5m,15m,1H,4H,1D,1W,1M';
 
 const dayId = (date) => date.toISOString().slice(0, 10);
@@ -29,7 +29,9 @@ const runCatchup = (from, to, timeframes) => new Promise((resolve, reject) => {
 });
 
 const run = async () => {
-  const days = Math.max(1, Number(process.env.CANDLE_BACKFILL_DAYS || process.argv[2] || DEFAULT_DAYS));
+  // A command-line duration is intentional for named npm jobs (6m / 1y),
+  // while the environment variable remains useful for scheduled deployments.
+  const days = Math.max(1, Number(process.argv[2] || process.env.CANDLE_BACKFILL_DAYS || DEFAULT_DAYS));
   const timeframes = process.env.CANDLE_BACKFILL_TIMEFRAMES || process.argv[3] || DEFAULT_TIMEFRAMES;
   const requestedTo = process.env.CANDLE_BACKFILL_TO
     ? new Date(`${process.env.CANDLE_BACKFILL_TO}T00:00:00.000Z`)
@@ -53,10 +55,10 @@ const run = async () => {
     cursor = new Date(batchTo.getTime() + 86400000);
   }
 
-  console.log('Six-month candle backfill completed.');
+  console.log('Candle history backfill completed.');
 };
 
 run().catch((error) => {
-  console.error('Six-month candle backfill failed:', error.message);
+  console.error('Candle history backfill failed:', error.message);
   process.exitCode = 1;
 });
