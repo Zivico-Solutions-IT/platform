@@ -2310,6 +2310,9 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
   const [registrationCode, setRegistrationCode] = useState('');
   const [registrationCodeDraft, setRegistrationCodeDraft] = useState('');
   const [registrationCodeLoading, setRegistrationCodeLoading] = useState(false);
+  const [specialOperationsSubpage, setSpecialOperationsSubpage] = useState('changeEmail');
+  const [mailSettings, setMailSettings] = useState({ smtpUser: '', smtpPass: '', hasSmtpPassword: false });
+  const [mailSettingsLoading, setMailSettingsLoading] = useState(false);
   const [verificationUser, setVerificationUser] = useState(null);
   const [verificationDocumentTab, setVerificationDocumentTab] = useState('all');
   const [verificationImageZoom, setVerificationImageZoom] = useState(null);
@@ -2575,7 +2578,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     return false;
   };
 
-  const allowedSectionIds = ['overview', 'marginAlerts', 'users', 'userManagement', 'verifications', 'deposits', 'referrals', 'withdrawals', 'userLevels', 'trades', 'addTrading', 'bonusPosts', 'registrationCode', 'symbols', 'agents'];
+  const allowedSectionIds = ['overview', 'marginAlerts', 'users', 'userManagement', 'verifications', 'deposits', 'referrals', 'withdrawals', 'userLevels', 'trades', 'addTrading', 'bonusPosts', 'registrationCode', 'specialOperations', 'symbols', 'agents'];
   const canViewSection = (sectionId) => {
     if (companyStatus === 'suspended' && adminUser?.role !== 'master') return sectionId === 'overview';
     return hasPermission(sectionId);
@@ -2631,6 +2634,30 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       setMessage('Registration referral code removed. Public registrations are now unavailable.');
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to remove the registration referral code.');
+    } finally { setBusyId(null); }
+  };
+
+  const loadMailSettings = useCallback(async () => {
+    setMailSettingsLoading(true);
+    try {
+      const response = await api.get('/admin/mail-settings');
+      setMailSettings((current) => ({ ...current, ...(response.data || {}), smtpPass: '' }));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to load email sender settings.');
+    } finally { setMailSettingsLoading(false); }
+  }, []);
+
+  const saveMailSettings = async () => {
+    setBusyId('mail-settings-save');
+    try {
+      const response = await api.put('/admin/mail-settings', {
+        smtpUser: mailSettings.smtpUser,
+        smtpPass: mailSettings.smtpPass,
+      });
+      setMailSettings((current) => ({ ...current, ...(response.data || {}), smtpPass: '' }));
+      setMessage('Email sender settings saved. New verification emails will use these details.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Unable to save email sender settings.');
     } finally { setBusyId(null); }
   };
 
@@ -2727,9 +2754,23 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
     </View>
   );
 
+  const renderChangeEmail = () => (
+    <View className="rounded-2xl border p-4 md:p-6" style={{ backgroundColor: colors.panel, borderColor: colors.border }}>
+      <Text className="text-xl font-semibold" style={{ color: colors.text }}>Change Email Sender</Text>
+      <Text className="mt-1 max-w-3xl text-sm" style={{ color: colors.muted }}>Update the mailbox used to send verification and password-reset codes. The From address is generated automatically as NovaFXM &lt;SMTP User&gt;. SMTP host, port, security and app name remain in the server environment.</Text>
+      <View className="mt-6 max-w-xl rounded-xl border p-4" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
+        <CustomInput label="SMTP User" value={mailSettings.smtpUser} onChangeText={(smtpUser) => setMailSettings((current) => ({ ...current, smtpUser }))} placeholder="noreply@example.com" autoCapitalize="none" keyboardType="email-address" />
+        <CustomInput label={mailSettings.hasSmtpPassword ? 'SMTP Password (leave blank to keep current)' : 'SMTP Password'} value={mailSettings.smtpPass} onChangeText={(smtpPass) => setMailSettings((current) => ({ ...current, smtpPass }))} placeholder={mailSettings.hasSmtpPassword ? 'Saved securely — enter only to replace' : 'Enter mailbox password'} secureTextEntry autoComplete="new-password" />
+        <Text className="mt-1 text-xs" style={{ color: colors.muted }}>The saved SMTP password is never shown again. Leave it empty to keep the current password.</Text>
+        <Pressable onPress={saveMailSettings} disabled={mailSettingsLoading || busyId === 'mail-settings-save'} className="mt-5 self-start rounded-lg px-4 py-3" style={{ backgroundColor: colors.primary, opacity: mailSettingsLoading || busyId === 'mail-settings-save' ? 0.6 : 1 }}><Text className="text-sm font-semibold" style={{ color: '#111827' }}>{busyId === 'mail-settings-save' ? 'Saving…' : 'Save email sender'}</Text></Pressable>
+      </View>
+    </View>
+  );
+
   useEffect(() => {
     if (section === 'bonusPosts' && canViewSection('bonusPosts')) loadBonusPosts();
     if (section === 'registrationCode' && canViewSection('registrationCode')) loadRegistrationCode();
+    if (section === 'specialOperations' && canViewSection('specialOperations')) loadMailSettings();
   }, [section, adminUser?.id]);
 
   useEffect(() => {
@@ -2763,6 +2804,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
       } else if (hasPermission('withdrawalsList')) {
         setWithdrawalSubpage('withdrawals');
       }
+    } else if (newSection === 'specialOperations') {
+      setSpecialOperationsSubpage('changeEmail');
     }
   };
 
@@ -6381,6 +6424,8 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
           onDepositSubpageChange={setDepositSubpage}
           withdrawalSubpage={withdrawalSubpage}
           onWithdrawalSubpageChange={setWithdrawalSubpage}
+          specialOperationsSubpage={specialOperationsSubpage}
+          onSpecialOperationsSubpageChange={setSpecialOperationsSubpage}
           pendingCount={{ deposits: depositPendingCount, withdrawals: withdrawalPendingCount, referrals: referralPendingCount }}
           bankPendingCount={bankPendingCount}
           newUserCount={newUserCount}
@@ -6445,6 +6490,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
                   : section === 'trades' ? 'Trade Monitor'
                   : section === 'bonusPosts' ? 'Bonus Posts'
                   : section === 'registrationCode' ? 'Referral Code'
+                  : section === 'specialOperations' ? 'Special Operations'
                   : section === 'symbols' ? 'Symbol Settings'
                   : section === 'agents' ? 'Staff Management'
                   : 'Add Trading'}
@@ -6794,6 +6840,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
               onViewUser={markNewUserViewed}
               onRefresh={refreshAdminData}
               addUserTrigger={addUserTrigger}
+              canManageEmailVerification={adminUser?.role === 'master'}
             />
           ) : hasPermission('assignUsers') ? (
             <AssignUsers
@@ -6831,6 +6878,7 @@ export default function AdminScreen({ initialSection, hideSidebar = false }) {
         {section === 'addTrading' && canViewSection('addTrading') ? renderAddTrading() : null}
         {section === 'bonusPosts' && canViewSection('bonusPosts') ? renderBonusPosts() : null}
         {section === 'registrationCode' && canViewSection('registrationCode') ? renderRegistrationCode() : null}
+        {section === 'specialOperations' && canViewSection('specialOperations') && specialOperationsSubpage === 'changeEmail' ? renderChangeEmail() : null}
         {section === 'symbols' && canViewSection('symbols') ? <SymbolSettings /> : null}
         {section === 'accessDenied' ? <View className="rounded-2xl border p-8" style={{ backgroundColor: colors.panel, borderColor: colors.border }}><Text className="text-lg font-semibold" style={{ color: colors.text }}>No dashboard permissions assigned</Text><Text className="mt-2 text-sm" style={{ color: colors.muted }}>Ask your Master administrator to enable one or more company permissions and assign them to your administrator account.</Text></View> : null}
       </ScrollView>

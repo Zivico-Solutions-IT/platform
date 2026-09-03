@@ -26,6 +26,7 @@ const freshEmptyForm = () => ({ ...emptyForm });
 
 const accountTypes = ['Demo', 'Live'];
 const verificationStatuses = ['unverified', 'pending', 'approved', 'rejected'];
+const emailVerificationStatuses = ['unverified', 'verified'];
 const countries = [
   { name: 'Afghanistan', code: '+93' }, { name: 'Albania', code: '+355' }, { name: 'Algeria', code: '+213' },
   { name: 'Andorra', code: '+376' }, { name: 'Angola', code: '+244' }, { name: 'Antigua and Barbuda', code: '+1' },
@@ -275,11 +276,12 @@ function userToForm(user) {
     accountType: user?.accountType || 'Demo',
     leverage: String(user?.leverage || defaultLeverage),
     verificationStatus: user?.verificationStatus || 'unverified',
+    emailVerified: Boolean(user?.emailVerifiedAt),
     adminNotes: user?.adminNotes || '',
   };
 }
 
-function UserFormModal({ mode, user, saving, onClose, onSubmit }) {
+function UserFormModal({ mode, user, saving, canManageEmailVerification, onClose, onSubmit }) {
   const { darkMode, colors } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const mobile = width < 760;
@@ -300,7 +302,11 @@ function UserFormModal({ mode, user, saving, onClose, onSubmit }) {
     if (Object.keys(nextErrors).length) return;
     setLocalError('');
     try {
-      await onSubmit(form);
+      const values = { ...form };
+      // This field is intentionally not sent by staff users. The server also
+      // enforces the master-only rule, so the UI cannot be bypassed.
+      if (mode !== 'edit' || !canManageEmailVerification) delete values.emailVerified;
+      await onSubmit(values);
       if (mode === 'add') {
         setForm(freshEmptyForm());
         setErrors({});
@@ -356,6 +362,14 @@ function UserFormModal({ mode, user, saving, onClose, onSubmit }) {
                 <CustomInput label="Leverage" value={form.leverage} onChangeText={update('leverage')} placeholder="500" keyboardType="number-pad" error={errors.leverage} />
                 <PillGroup label="Account Type" options={accountTypes} value={form.accountType} onChange={update('accountType')} />
                 <PillGroup label="Verification" options={verificationStatuses} value={form.verificationStatus} onChange={update('verificationStatus')} />
+                {mode === 'edit' && canManageEmailVerification ? (
+                  <PillGroup
+                    label="Email Verification"
+                    options={emailVerificationStatuses}
+                    value={form.emailVerified ? 'verified' : 'unverified'}
+                    onChange={(value) => update('emailVerified')(value === 'verified')}
+                  />
+                ) : null}
               </View>
             </View>
             <CustomInput
@@ -527,7 +541,7 @@ const lastLogoutLabel = (user) => {
   return Number.isFinite(lastLogout) && lastLogout > 0 ? `Last Online: ${dateTime(lastLogout)}` : 'Last Online: Never';
 };
 
-export default function UserManagement({ users, loading, busyId, onCreate, onUpdate, onRemove, newUserCount = 0, onViewUser, onRefresh, addUserTrigger }) {
+export default function UserManagement({ users, loading, busyId, onCreate, onUpdate, onRemove, newUserCount = 0, onViewUser, onRefresh, addUserTrigger, canManageEmailVerification = false }) {
   const { width } = useWindowDimensions();
   const { darkMode, colors } = useAppTheme();
   const [query, setQuery] = useState('');
@@ -914,6 +928,7 @@ export default function UserManagement({ users, loading, busyId, onCreate, onUpd
           mode={formState.mode}
           user={formState.user}
           saving={loading || busyId === formState.user?.id}
+          canManageEmailVerification={canManageEmailVerification}
           onClose={closeForm}
           onSubmit={submitForm}
         />

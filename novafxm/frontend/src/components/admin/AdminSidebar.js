@@ -20,6 +20,7 @@ const navigation = [
   { id: 'addTrading', label: 'Add Trading', shortLabel: 'Add', icon: TrendingUp },
   { id: 'bonusPosts', label: 'Bonus Posts', shortLabel: 'Bonus', icon: Award },
   { id: 'registrationCode', label: 'Referral Code', shortLabel: 'Code', icon: KeyRound, masterOnly: true },
+  { id: 'specialOperations', label: 'Special Operations', shortLabel: 'Special', icon: Settings, masterOnly: true },
   { id: 'marginAlerts', label: 'Margin Alerts', shortLabel: 'Margin', icon: AlertTriangle },
   { id: 'agents', label: 'Staff & Permissions', shortLabel: 'Staff', icon: ShieldCheck, masterOnly: true },
   { id: 'symbols', label: 'Symbol Settings', shortLabel: 'Symbols', icon: Coins, masterOnly: true },
@@ -38,6 +39,9 @@ const subNavigation = {
     { id: 'withdrawals', label: 'Withdrawals', permission: 'withdrawalsList' },
     { id: 'details', label: 'Withdrawal Details', permission: 'withdrawalDetails' },
   ],
+  specialOperations: [
+    { id: 'changeEmail', label: 'Change Email' },
+  ],
 };
 
 export default function AdminSidebar({
@@ -49,6 +53,8 @@ export default function AdminSidebar({
   onDepositSubpageChange,
   withdrawalSubpage,
   onWithdrawalSubpageChange,
+  specialOperationsSubpage,
+  onSpecialOperationsSubpageChange,
   pendingCount,
   bankPendingCount,
   newUserCount,
@@ -184,12 +190,14 @@ export default function AdminSidebar({
     if (id === 'userManagement') return userManagementSubpage;
     if (id === 'deposits') return depositSubpage;
     if (id === 'withdrawals') return withdrawalSubpage;
+    if (id === 'specialOperations') return specialOperationsSubpage;
     return null;
   };
   const changeSubpageFor = (id) => {
     if (id === 'userManagement') return onUserManagementSubpageChange;
     if (id === 'deposits') return onDepositSubpageChange;
     if (id === 'withdrawals') return onWithdrawalSubpageChange;
+    if (id === 'specialOperations') return onSpecialOperationsSubpageChange;
     return null;
   };
   const renderAdminAvatar = (size = 80, iconSize = 34) => (

@@ -78,7 +78,16 @@ exports.register = async (req, res, next) => {
       if (existingUser.emailVerifiedAt || existingUser.role !== 'user') {
         return res.status(409).json({ message: 'Email already registered.' });
       }
-      await issueEmailVerificationCode(existingUser);
+      try {
+        await issueEmailVerificationCode(existingUser);
+      } catch (mailError) {
+        return res.json({
+          verificationRequired: true,
+          email: normalizedEmail,
+          deliveryFailed: true,
+          message: 'Your account is already created, but the verification email could not be sent. Please contact support or ask the master administrator to verify your email.',
+        });
+      }
       return res.json({ verificationRequired: true, email: normalizedEmail, message: 'A new verification code was sent to your email.' });
     }
     // NovaFXM public registrations are controlled by the one code configured
@@ -143,7 +152,16 @@ exports.register = async (req, res, next) => {
     try {
       await sendEmailVerificationCode({ to: normalizedEmail, code: verificationCode });
     } catch (mailError) {
-      return res.status(500).json({ message: mailError.message || 'Verification email could not be sent. Please try again.' });
+      // The account, wallet and trading account have already been committed.
+      // Keep the registration usable even when the mail provider is down: the
+      // master can verify the account from User Management, or the user can
+      // request another code later.
+      return res.status(201).json({
+        verificationRequired: true,
+        email: normalizedEmail,
+        deliveryFailed: true,
+        message: 'Your account was created, but the verification email could not be sent. Please contact support or ask the master administrator to verify your email.',
+      });
     }
 
     return res.status(201).json({

@@ -26,6 +26,16 @@ async function ensureSchema() {
     updated_at: { type: DataTypes.DATE, allowNull: false },
   }).catch(() => {});
 
+  await queryInterface.createTable('mail_settings', {
+    id: { type: DataTypes.INTEGER.UNSIGNED, primaryKey: true },
+    smtp_user: { type: DataTypes.STRING(190), allowNull: true },
+    smtp_pass: { type: DataTypes.TEXT, allowNull: true },
+    mail_from: { type: DataTypes.STRING(255), allowNull: true },
+    updated_by_id: { type: DataTypes.INTEGER.UNSIGNED, allowNull: true },
+    created_at: { type: DataTypes.DATE, allowNull: false },
+    updated_at: { type: DataTypes.DATE, allowNull: false },
+  }).catch(() => {});
+
   await addColumnIfMissing(queryInterface, 'projects', 'permissions', {
     type: DataTypes.JSON,
     allowNull: true,

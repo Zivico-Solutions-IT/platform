@@ -19,6 +19,8 @@ router.delete('/bonus-posts/:id', strictAdmin, controller.deleteBonusPost);
 router.get('/registration-code', masterOnly, controller.registrationCode);
 router.put('/registration-code', masterOnly, controller.saveRegistrationCode);
 router.delete('/registration-code', masterOnly, controller.deleteRegistrationCode);
+router.get('/mail-settings', masterOnly, controller.mailSettings);
+router.put('/mail-settings', masterOnly, controller.saveMailSettings);
 router.get('/agents', strictAdmin, controller.agents);
 router.get('/company-permissions', strictAdmin, controller.companyPermissions);
 router.post('/agents', strictAdmin, controller.createAgent);

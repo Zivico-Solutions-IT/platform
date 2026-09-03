@@ -1,32 +1,33 @@
 const nodemailer = require('nodemailer');
+const MailSettings = require('../models/MailSettings');
 
-const requiredConfig = ['SMTP_USER', 'SMTP_PASS'];
-
-const isMailConfigured = () => requiredConfig.every((key) => Boolean(process.env[key]));
-
-const createTransporter = () => {
-  if (!isMailConfigured()) {
+const createTransporter = async () => {
+  const settings = await MailSettings.findByPk(1);
+  const smtpUser = String(settings?.smtpUser || '').trim();
+  const smtpPass = String(settings?.smtpPass || '');
+  const mailFrom = String(settings?.mailFrom || '').trim();
+  if (!smtpUser || !smtpPass || !mailFrom) {
     throw new Error('Email service is not configured.');
   }
 
-  return nodemailer.createTransport({
+  const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: Number(process.env.SMTP_PORT || 465),
     secure: String(process.env.SMTP_SECURE || 'true').toLowerCase() !== 'false',
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: smtpUser,
+      pass: smtpPass,
     },
   });
+  return { transporter, mailFrom };
 };
 
 const sendPasswordResetCode = async ({ to, code }) => {
-  const from = process.env.MAIL_FROM || process.env.SMTP_USER;
   const appName = process.env.APP_NAME || 'NovaFXM';
-  const transporter = createTransporter();
+  const { transporter, mailFrom } = await createTransporter();
 
   await transporter.sendMail({
-    from,
+    from: mailFrom,
     to,
     subject: `${appName} password reset code`,
     text: `Your ${appName} password reset code is ${code}. This code expires in 15 minutes.`,
@@ -42,12 +43,11 @@ const sendPasswordResetCode = async ({ to, code }) => {
 };
 
 const sendEmailVerificationCode = async ({ to, code }) => {
-  const from = process.env.MAIL_FROM || process.env.SMTP_USER;
   const appName = process.env.APP_NAME || 'NovaFXM';
-  const transporter = createTransporter();
+  const { transporter, mailFrom } = await createTransporter();
 
   await transporter.sendMail({
-    from,
+    from: mailFrom,
     to,
     subject: `${appName} email verification code`,
     text: `Your ${appName} verification code is ${code}. This code expires in 15 minutes.`,

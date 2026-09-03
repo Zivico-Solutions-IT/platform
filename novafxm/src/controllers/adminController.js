@@ -2,7 +2,7 @@ const sequelize = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification, BonusPost, RegistrationCode } = require('../models');
+const { User, Wallet, Deposit, Withdrawal, Transaction, Trade, Candle, TradingAccount, BankAccount, DepositMethodAddress, SymbolVisibility, ReferralReward, Project, AdminNotification, BonusPost, RegistrationCode, MailSettings } = require('../models');
 const tradingView = require('../services/tradingViewService');
 const { ensureReferralCode } = require('../services/dashboardService');
 const { getIo } = require('../config/socketIo');
@@ -605,6 +605,7 @@ exports.updateUserDetails = async (req, res, next) => {
       accountType,
       leverage,
       verificationStatus,
+      emailVerified,
       adminNotes,
     } = req.body;
     const selectedLeverage = Number(leverage || user.leverage || DEFAULT_LEVERAGE);
@@ -618,6 +619,14 @@ exports.updateUserDetails = async (req, res, next) => {
       verificationStatus: ['unverified', 'pending', 'approved', 'rejected'].includes(verificationStatus) ? verificationStatus : user.verificationStatus,
       adminNotes: clean(adminNotes),
     };
+    if (Object.prototype.hasOwnProperty.call(req.body, 'emailVerified')) {
+      if (req.user.role !== 'master') throw apiError('Only the master administrator can change email verification.', 403);
+      updates.emailVerifiedAt = emailVerified === true ? new Date() : null;
+      // A master verification supersedes any outstanding code. Conversely,
+      // clearing it allows the user to request a fresh verification code.
+      updates.emailVerificationToken = null;
+      updates.emailVerificationExpires = null;
+    }
     const normalizedEmail = normalizeEmail(email);
     if (!updates.name || !normalizedEmail) return res.status(400).json({ message: 'Name and email are required.' });
     if (!isValidEmail(normalizedEmail)) return res.status(400).json({ message: 'Enter a valid email address.' });
@@ -2366,5 +2375,34 @@ exports.deleteRegistrationCode = async (req, res, next) => {
     if (!project) return res.status(404).json({ message: 'NovaFXM company configuration was not found.' });
     await RegistrationCode.destroy({ where: { projectId: project.id } });
     return res.json({ message: 'Registration referral code removed.' });
+  } catch (error) { return next(error); }
+};
+
+exports.mailSettings = async (req, res, next) => {
+  try {
+    const settings = await MailSettings.findByPk(1);
+    return res.json({
+      smtpUser: settings?.smtpUser || '',
+      hasSmtpPassword: Boolean(settings?.smtpPass),
+    });
+  } catch (error) { return next(error); }
+};
+
+exports.saveMailSettings = async (req, res, next) => {
+  try {
+    const smtpUser = normalizeEmail(req.body?.smtpUser);
+    const smtpPass = String(req.body?.smtpPass || '');
+    if (!smtpUser || !isValidEmail(smtpUser)) return res.status(400).json({ message: 'Enter a valid sender email address.' });
+    const mailFrom = `NovaFXM <${smtpUser}>`;
+    const current = await MailSettings.findByPk(1);
+    if (!smtpPass && !current?.smtpPass) return res.status(400).json({ message: 'Enter the SMTP password.' });
+    await MailSettings.upsert({
+      id: 1,
+      smtpUser,
+      mailFrom,
+      smtpPass: smtpPass || current.smtpPass,
+      updatedById: req.user.id,
+    });
+    return res.json({ smtpUser, mailFrom, hasSmtpPassword: true, message: 'Email sender settings saved.' });
   } catch (error) { return next(error); }
 };
