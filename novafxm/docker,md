@@ -1,0 +1,12 @@
+docker restart my-node-container
+docker exec -it my-node-container 
+docker inspect my-node-container
+docker logs my-node-container
+docker logs -f my-node-container
+docker run -d --name my-node-container -p 3001:3000 -v "${PWD}:/app" my-node-app
+docker rm -f my-node-container\
+docker build -t my-node-app .
+npm install --save-dev nodemon
+docker stop my-node-container
+docker rm my-node-container
+docker run -d --name my-node-container -p 3001:3000 my-node-app

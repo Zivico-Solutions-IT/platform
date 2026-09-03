@@ -37,6 +37,8 @@ export default function TopAccountBar() {
   const [accountMenuAnchor, setAccountMenuAnchor] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [dashboard, setDashboard] = useState(null);
+  const [savedAccountId, setSavedAccountId] = useState('');
+  const [accountSelectionRestored, setAccountSelectionRestored] = useState(false);
   const [adminNotificationData, setAdminNotificationData] = useState(emptyAdminNotificationData);
   const [readNotificationIds, setReadNotificationIds] = useState([]);
   const [hoveredAction, setHoveredAction] = useState(null);
@@ -75,6 +77,7 @@ export default function TopAccountBar() {
   const accountBadgeColor = selectedAccountIsLive ? colors.success : '#D8B536';
   const accountBadgeLabel = selectedAccountIsLive ? 'Live' : 'Demo';
   const routeAccountId = params.accountId ? String(params.accountId) : '';
+  const accountSelectionStorageKey = user?.id ? `selected_trading_account_${user.id}` : '';
 
   const summaryBalance = Number(summary.balance || 0);
   const summaryEquity = Number(summary.equity || 0);
@@ -243,16 +246,44 @@ export default function TopAccountBar() {
       .catch(() => {});
   }, [user?.id]);
 
+  // Keep the account a trader explicitly selected across browser/app reloads.
+  // Until this read completes, do not let the first (usually Demo) account
+  // overwrite that preference.
   useEffect(() => {
-    if (!tradingAccounts.length) return;
+    let active = true;
+    setSavedAccountId('');
+    setAccountSelectionRestored(false);
+    if (!accountSelectionStorageKey) {
+      setAccountSelectionRestored(true);
+      return undefined;
+    }
+    storage.get(accountSelectionStorageKey, '')
+      .then((accountId) => {
+        if (active && accountId !== null && accountId !== undefined) setSavedAccountId(String(accountId));
+      })
+      .catch(() => {})
+      .finally(() => { if (active) setAccountSelectionRestored(true); });
+    return () => { active = false; };
+  }, [accountSelectionStorageKey]);
+
+  useEffect(() => {
+    if (!accountSelectionRestored || !tradingAccounts.length) return;
     const routeAccount = routeAccountId ? tradingAccounts.find((account) => String(account.id) === routeAccountId) : null;
     if (routeAccount && String(selectedTradingAccount?.id) !== String(routeAccount.id)) { setSelectedTradingAccount(routeAccount); return; }
 
     const selectedExists = tradingAccounts.some((account) => String(account.id) === String(selectedTradingAccount?.id));
+    const savedAccount = savedAccountId ? tradingAccounts.find((account) => String(account.id) === savedAccountId) : null;
+    if (!selectedExists && savedAccount) { setSelectedTradingAccount(savedAccount); return; }
     if (!selectedExists) setSelectedTradingAccount(tradingAccounts[0]);
-  }, [routeAccountId, selectedTradingAccount?.id, setSelectedTradingAccount, tradingAccounts]);
+  }, [accountSelectionRestored, routeAccountId, savedAccountId, selectedTradingAccount?.id, setSelectedTradingAccount, tradingAccounts]);
 
-  const selectAccount = (account) => { setSelectedTradingAccount(account); setMenu(null); };
+  useEffect(() => {
+    const selectedId = selectedTradingAccount?.id;
+    if (!accountSelectionRestored || !accountSelectionStorageKey || !selectedId || String(selectedId) === 'loading') return;
+    storage.set(accountSelectionStorageKey, String(selectedId)).catch(() => {});
+  }, [accountSelectionRestored, accountSelectionStorageKey, selectedTradingAccount?.id]);
+
+  const selectAccount = (account) => { setSelectedTradingAccount(account); setSavedAccountId(String(account.id)); setMenu(null); };
   const updateAccounts = useCallback((nextAccounts = [], preferredAccount = null) => {
     setAccounts(nextAccounts);
     setSelectedTradingAccount((current) => {
