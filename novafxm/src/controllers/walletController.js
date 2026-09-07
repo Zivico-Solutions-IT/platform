@@ -118,7 +118,11 @@ exports.getWallet = async (req, res, next) => {
           Deposit.sum('bonus', { where: { userId: req.user.id, tradingAccountId: tradingAccount.id, status: 'approved' } }),
           Transaction.sum('bonus', { where: { userId: req.user.id, referenceType: 'trading_account', referenceId: tradingAccount.id, type: 'admin_add_balance', status: 'completed' } }),
         ]);
-        bonus = money(Number(depositBonus || 0) + Number(adminBonus || 0));
+        const accountBonus = money(Number(depositBonus || 0) + Number(adminBonus || 0));
+        // Legacy deposits can be credited to the primary live account while
+        // their deposit row has no tradingAccountId.  Fall back to its wallet
+        // bonus so the user sees the same Equity as the master panel.
+        bonus = accountBonus || (tradingAccount.isPrimary ? money(wallet.bonus) : 0);
       } else {
         bonus = 0;
       }

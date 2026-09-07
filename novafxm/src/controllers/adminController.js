@@ -365,10 +365,11 @@ exports.users = async (req, res, next) => {
       const liveTrades = (byUser.get(user.id) || []).filter((trade) => 
         trade.tradingAccountId && liveAccountIds.has(Number(trade.tradingAccountId))
       );
-      const liveBonus = liveAccounts.reduce(
-        (sum, account) => sum + Number(depositsByAccount.get(Number(account.id))?.totalBonus || 0),
-        0
-      );
+      // Some older deposits were assigned to the user's primary live account
+      // only at approval time, without persisting trading_account_id.  The
+      // user-level total keeps their equity correct for those records too.
+      const userDepositTotals = depositsByUser.get(user.id) || totals();
+      const liveBonus = userDepositTotals.totalBonus;
       const summary = values.wallet
         ? { ...buildSummary(liveBalance, liveTrades, prices, liveBonus), openTradesCount: liveTrades.length }
         : { balance: 0, equity: 0, margin: 0, freeFunds: 0, openProfit: 0, openTradesCount: 0 };
@@ -385,7 +386,6 @@ exports.users = async (req, res, next) => {
         : [0, 0];
       const userTradeStats = tradeStatsByUser.get(user.id) || { totalVolume: 0, totalClosedProfit: 0, totalTradesCount: 0 };
       const totalProfit = money(userTradeStats.totalClosedProfit + (summary.openProfit || 0));
-      const userDepositTotals = depositsByUser.get(user.id) || totals();
       const tradingAccounts = (values.tradingAccounts || []).map((account) => ({
         ...account,
         accountStats: depositsByAccount.get(Number(account.id)) || totals(),
