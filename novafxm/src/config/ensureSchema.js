@@ -706,6 +706,57 @@ async function ensureSchema() {
     type: DataTypes.DATE,
     allowNull: true,
   }).catch(() => {});
+
+  // Older versions credited promotional bonuses into cash balances.  Correct
+  // those stored values exactly once so existing users follow the same rule as
+  // all future deposits: balance = deposited cash + trading profit/loss.
+  await queryInterface.sequelize.query(`
+    CREATE TABLE IF NOT EXISTS application_migrations (
+      migration_key VARCHAR(120) NOT NULL PRIMARY KEY,
+      applied_at DATETIME NOT NULL
+    )
+  `);
+  const [bonusSeparationMigration] = await queryInterface.sequelize.query(
+    "SELECT migration_key FROM application_migrations WHERE migration_key = 'separate_bonus_from_cash_balance_v1' LIMIT 1"
+  );
+  if (!bonusSeparationMigration.length) {
+    await sequelize.transaction(async (transaction) => {
+      await sequelize.query(
+        `UPDATE wallets
+         SET balance = balance - bonus,
+             equity = equity - bonus,
+             free_funds = free_funds - bonus`,
+        { transaction }
+      );
+      await sequelize.query(
+        `UPDATE trading_accounts AS account
+         LEFT JOIN (
+           SELECT account_id, SUM(bonus) AS bonus
+           FROM (
+             SELECT trading_account_id AS account_id, SUM(bonus) AS bonus
+             FROM deposits
+             WHERE status = 'approved' AND trading_account_id IS NOT NULL
+             GROUP BY trading_account_id
+             UNION ALL
+             SELECT reference_id AS account_id, SUM(bonus) AS bonus
+             FROM transactions
+             WHERE type = 'admin_add_balance'
+               AND status = 'completed'
+               AND reference_type = 'trading_account'
+               AND reference_id IS NOT NULL
+             GROUP BY reference_id
+           ) AS account_bonus_entries
+           GROUP BY account_id
+         ) AS account_bonus ON account_bonus.account_id = account.id
+         SET account.balance = account.balance - COALESCE(account_bonus.bonus, 0)`,
+        { transaction }
+      );
+      await sequelize.query(
+        "INSERT INTO application_migrations (migration_key, applied_at) VALUES ('separate_bonus_from_cash_balance_v1', NOW())",
+        { transaction }
+      );
+    });
+  }
 }
 
 module.exports = ensureSchema;

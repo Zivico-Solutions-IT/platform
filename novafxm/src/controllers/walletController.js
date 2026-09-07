@@ -75,16 +75,17 @@ exports.claimBirthdayBonus = async (req, res, next) => {
       await Transaction.create({
         userId: user.id,
         type: 'admin_add_balance',
-        amount,
+        amount: 0,
+        bonus: amount,
         balanceBefore: currentBalance,
-        balanceAfter: currentBalance + amount,
+        balanceAfter: currentBalance,
         note: 'Birthday Bonus',
         status: 'completed',
         referenceType: 'birthday_bonus',
         description: currentYear
       }, { transaction });
 
-      await wallet.update({ balance: currentBalance + amount }, { transaction });
+      await wallet.update({ bonus: money(Number(wallet.bonus || 0) + amount) }, { transaction });
     });
 
     return res.json({ message: 'Birthday bonus claimed successfully.' });

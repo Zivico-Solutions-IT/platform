@@ -338,9 +338,11 @@ exports.users = async (req, res, next) => {
     depositTotals.forEach((item) => addTotals(depositsByUser, Number(item.userId), item.totalDeposits, item.totalBonus));
     depositAccountTotals.forEach((item) => addTotals(depositsByAccount, Number(item.tradingAccountId), item.totalDeposits, item.totalBonus));
     adminBalanceTotals.forEach((item) => {
-      const creditedTotal = Number(item.totalDeposits || 0) + Number(item.totalBonus || 0);
-      addTotals(depositsByUser, Number(item.userId), creditedTotal, item.totalBonus);
-      if (item.referenceId) addTotals(depositsByAccount, Number(item.referenceId), creditedTotal, item.totalBonus);
+      // A bonus is promotional credit, not a client deposit.  Keep it in the
+      // separate bonus total so the master deposit column always represents
+      // money actually added to the account.
+      addTotals(depositsByUser, Number(item.userId), item.totalDeposits, item.totalBonus);
+      if (item.referenceId) addTotals(depositsByAccount, Number(item.referenceId), item.totalDeposits, item.totalBonus);
     });
     const tradeStatsByUser = new Map(
       (tradeStats || []).map((item) => [
@@ -719,7 +721,6 @@ exports.userWallet = async (req, res, next) => {
       Transaction.sum('amount', { where: adminDepositWhere }),
       Transaction.sum('amount', { where: adminWithdrawalWhere }),
     ]);
-    const adminDepositBonus = await Transaction.sum('bonus', { where: adminDepositWhere });
     const balanceSource = account ? { ...wallet.toJSON(), balance: account.balance } : wallet;
     const summary = buildSummary(balanceSource, trades, new Map(prices.map((item) => [item.symbol, item])));
     if (!account || account.isPrimary) await updateSnapshot(wallet, summary);
@@ -730,7 +731,7 @@ exports.userWallet = async (req, res, next) => {
         ...wallet.toJSON(),
         ...summary,
         balance: summary.balance,
-        totalDeposits: money(Number(deposits || 0) + Number(adminDeposits || 0) + Number(adminDepositBonus || 0)),
+        totalDeposits: money(Number(deposits || 0) + Number(adminDeposits || 0)),
         totalWithdrawals: money((account ? 0 : Number(withdrawals || 0)) + Number(adminWithdrawals || 0)),
         totalTrades,
         leverage: account?.leverage || user.leverage,
@@ -856,7 +857,13 @@ exports.userVerification = async (req, res, next) => {
 exports.updateBalance = (type) => async (req, res, next) => {
   try {
     const amount = money(req.body.amount);
-    const bonus = type === 'admin_add_balance' ? money(req.body.bonus) : 0;
+    const isBirthdayBonus = req.body.referenceType === 'birthday_bonus';
+    const requestedBonus = money(req.body.bonus);
+    // The birthday award form sends its value as `amount`; store it only as a
+    // bonus, consistent with other promotional bonuses.
+    const bonus = type === 'admin_add_balance'
+      ? (isBirthdayBonus ? money(requestedBonus || amount) : requestedBonus)
+      : 0;
     const note = String(req.body.note || '').trim();
     const tradingAccountId = Number(req.body.tradingAccountId || 0);
     if (!(amount > 0)) return res.status(400).json({ message: 'Amount must be a positive value.' });
@@ -874,7 +881,6 @@ exports.updateBalance = (type) => async (req, res, next) => {
         : null;
       if (tradingAccountId && !requestedAccount) throw apiError('Trading account not found.', 404);
 
-      const isBirthdayBonus = req.body.referenceType === 'birthday_bonus';
       let targetAccount = null;
 
       if (requestedAccount) {
@@ -889,7 +895,9 @@ exports.updateBalance = (type) => async (req, res, next) => {
 
       const before = money(targetAccount ? targetAccount.balance : wallet.balance);
       if (type === 'admin_deduct_balance' && amount > before) throw apiError('Deduct amount cannot exceed available balance.');
-      const creditAmount = money(amount + (type === 'admin_add_balance' ? bonus : 0));
+      // Bonuses are tracked independently and must never increase the cash
+      // balance, equity, or free funds.
+      const creditAmount = type === 'admin_add_balance' && !isBirthdayBonus ? amount : 0;
       const after = money(before + (type === 'admin_add_balance' ? creditAmount : -amount));
 
       if (targetAccount) {
@@ -912,7 +920,7 @@ exports.updateBalance = (type) => async (req, res, next) => {
       const ledger = await Transaction.create({
         userId: user.id,
         type,
-        amount,
+        amount: isBirthdayBonus ? 0 : amount,
         bonus,
         status: 'completed',
         balanceBefore: before,
@@ -1656,7 +1664,9 @@ exports.reviewDeposit = (status) => async (req, res, next) => {
         }
         const { wallet } = await storedSummary(deposit.userId, transaction);
         before = money(wallet.balance);
-        const creditAmount = money(Number(deposit.amount) + bonus);
+        // Deposit amount is cash; the promotional bonus is informational only
+        // and is deliberately excluded from the tradable account balance.
+        const creditAmount = money(Number(deposit.amount));
         after = money(before + creditAmount);
         await wallet.update({ balance: after, bonus: money(Number(wallet.bonus || 0) + bonus) }, { transaction });
         if (liveAccount) await liveAccount.update({ balance: money(Number(liveAccount.balance) + creditAmount) }, { transaction });

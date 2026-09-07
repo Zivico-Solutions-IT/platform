@@ -262,7 +262,7 @@ async function dashboardForUser(userId, origin = '') {
       ...adminFundingDeposits.map((transaction) => ({
         id: `admin-${transaction.id}`,
         tradingAccountId: transaction.referenceId,
-        amount: money(Number(transaction.amount || 0) + Number(transaction.bonus || 0)),
+        amount: money(transaction.amount),
         bonus: money(transaction.bonus),
         currency: 'USD',
         status: 'completed',
