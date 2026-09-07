@@ -80,11 +80,14 @@ export default function TopAccountBar() {
   const accountSelectionStorageKey = user?.id ? `selected_trading_account_${user.id}` : '';
 
   const summaryBalance = Number(summary.balance || 0);
-  const summaryEquity = Number(summary.equity || 0);
   const summaryMargin = Number(summary.margin || 0);
   const summaryMarginLevel = Number(summary.marginLevel || 0);
   const summaryNetProfit = Number(summary.openProfit || 0);
   const summaryBonus = Number(summary.bonus || 0);
+  // Balance intentionally excludes promotional credit.  Derive the display
+  // value here so Equity and Free Funds always include the active bonus,
+  // including while an older cached API response is in use.
+  const summaryEquity = summaryBalance + summaryNetProfit + summaryBonus;
   const summaryFreeFunds = summaryEquity - summaryMargin;
   const mobileMetrics = [
     ['Balance', `${money(summaryBalance)} USD`],
@@ -591,7 +594,9 @@ export default function TopAccountBar() {
           onLayout={(event) => setAccountMenuAnchor(event.nativeEvent.layout)}
           className={`${compactDesktop ? 'h-[36px]' : 'h-[40px]'} flex-row items-center justify-between rounded-xl`}
           style={{
-            width: compactDesktop ? 136 : 145,
+            // Reserve enough space for the complete formatted balance (for
+            // example "$5,000.00") rather than truncating it with an ellipsis.
+            width: compactDesktop ? 176 : 184,
             paddingHorizontal: compactDesktop ? 10 : 12,
             backgroundColor: darkMode ? '#1E232A' : '#FFFFFF',
             borderWidth: 1,
@@ -610,7 +615,7 @@ export default function TopAccountBar() {
               {accountBadgeLabel}
             </Text>
           </View>
-          <Text className="mr-2 text-sm font-bold" numberOfLines={1} style={{ color: colors.text }}>${money(selectedAccountBalance)}</Text>
+          <Text className="mr-2 text-sm font-bold" numberOfLines={1} style={{ color: colors.text, flexShrink: 0 }}>${money(selectedAccountBalance)}</Text>
           <ChevronDown
             size={14}
             color={colors.muted}
