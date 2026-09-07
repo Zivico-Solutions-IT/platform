@@ -18,6 +18,7 @@ const sequelize = new Sequelize(
       acquire: Number(process.env.DB_ACQUIRE_TIMEOUT_MS || 30000),
       idle: Number(process.env.DB_IDLE_TIMEOUT_MS || 10000),
     },
+    
     dialectOptions: {
       connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT_MS || 15000),
     },
