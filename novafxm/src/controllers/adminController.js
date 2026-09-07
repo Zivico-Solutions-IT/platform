@@ -165,14 +165,17 @@ exports.impersonateUser = async (req, res, next) => {
   }
 };
 
-function buildSummary(walletOrBalance, trades, prices = new Map()) {
+function buildSummary(walletOrBalance, trades, prices = new Map(), bonusOverride) {
   const openProfit = money(trades.reduce((sum, trade) => {
     const quote = prices.get(trade.symbol);
     return sum + profitFor(trade, quote?.price || trade.openPrice);
   }, 0));
   const balance = money(typeof walletOrBalance === 'object' && walletOrBalance !== null ? walletOrBalance.balance : walletOrBalance);
+  const bonus = money(bonusOverride ?? (typeof walletOrBalance === 'object' && walletOrBalance !== null ? walletOrBalance.bonus : 0));
   const margin = money(trades.reduce((sum, trade) => sum + Number(trade.margin), 0));
-  const equity = money(balance + openProfit);
+  // Cash balance excludes promotions, while equity represents all funds that
+  // may support an open position, including the active bonus.
+  const equity = money(balance + openProfit + bonus);
   const freeFunds = money(equity - margin);
   const marginLevel = margin ? Number(((equity / margin) * 100).toFixed(2)) : 0;
   return { balance, equity, margin, freeFunds, marginLevel, openProfit };
@@ -362,8 +365,12 @@ exports.users = async (req, res, next) => {
       const liveTrades = (byUser.get(user.id) || []).filter((trade) => 
         trade.tradingAccountId && liveAccountIds.has(Number(trade.tradingAccountId))
       );
+      const liveBonus = liveAccounts.reduce(
+        (sum, account) => sum + Number(depositsByAccount.get(Number(account.id))?.totalBonus || 0),
+        0
+      );
       const summary = values.wallet
-        ? { ...buildSummary(liveBalance, liveTrades, prices), openTradesCount: liveTrades.length }
+        ? { ...buildSummary(liveBalance, liveTrades, prices, liveBonus), openTradesCount: liveTrades.length }
         : { balance: 0, equity: 0, margin: 0, freeFunds: 0, openProfit: 0, openTradesCount: 0 };
       const referralIds = (values.referrals || []).map((referral) => referral.id);
       const [approvedDeposits, pendingDeposits] = referralIds.length
@@ -702,10 +709,11 @@ exports.userWallet = async (req, res, next) => {
     if (account) totalTradeWhere.tradingAccountId = account.id;
     const depositWhere = { userId: user.id, status: 'approved' };
     if (account) depositWhere.tradingAccountId = account.id;
-    const [trades, prices, deposits, withdrawals, totalTrades] = await Promise.all([
+    const [trades, prices, deposits, depositBonus, withdrawals, totalTrades] = await Promise.all([
       Trade.findAll({ where: tradeWhere }),
       tradingView.getPrices(),
       Deposit.sum('amount', { where: depositWhere }),
+      Deposit.sum('bonus', { where: depositWhere }),
       Withdrawal.sum('amount', { where: { userId: user.id, status: 'approved' } }),
       Trade.count({ where: totalTradeWhere }),
     ]);
@@ -721,8 +729,10 @@ exports.userWallet = async (req, res, next) => {
       Transaction.sum('amount', { where: adminDepositWhere }),
       Transaction.sum('amount', { where: adminWithdrawalWhere }),
     ]);
+    const adminDepositBonus = await Transaction.sum('bonus', { where: adminDepositWhere });
     const balanceSource = account ? { ...wallet.toJSON(), balance: account.balance } : wallet;
-    const summary = buildSummary(balanceSource, trades, new Map(prices.map((item) => [item.symbol, item])));
+    const accountBonus = money(Number(depositBonus || 0) + Number(adminDepositBonus || 0));
+    const summary = buildSummary(balanceSource, trades, new Map(prices.map((item) => [item.symbol, item])), account ? accountBonus : undefined);
     if (!account || account.isPrimary) await updateSnapshot(wallet, summary);
     return res.json({
       user,

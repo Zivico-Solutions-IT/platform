@@ -111,9 +111,6 @@ exports.getWallet = async (req, res, next) => {
     }, 0));
     const margin = money(trades.reduce((sum, trade) => sum + Number(trade.margin), 0));
     const balance = money(tradingAccount ? tradingAccount.balance : wallet.balance);
-    const equity = money(balance + openProfit);
-    const freeFunds = money(equity - margin);
-    if (!tradingAccount || tradingAccount.isPrimary) await wallet.update({ equity, margin, freeFunds });
     let bonus = 0;
     if (tradingAccount) {
       if (tradingAccount.type === 'Live') {
@@ -128,6 +125,11 @@ exports.getWallet = async (req, res, next) => {
     } else {
       bonus = money(wallet.bonus);
     }
+    // Bonus is excluded from Balance but included in Equity (and therefore
+    // Free Funds), for both the user dashboard and account calculations.
+    const equity = money(balance + openProfit + bonus);
+    const freeFunds = money(equity - margin);
+    if (!tradingAccount || tradingAccount.isPrimary) await wallet.update({ equity, margin, freeFunds });
     return res.json({
       wallet: { ...wallet.toJSON(), equity, margin, freeFunds },
       tradingAccount: tradingAccount ? tradingAccount.toJSON() : null,
