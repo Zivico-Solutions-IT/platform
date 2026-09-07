@@ -69,11 +69,12 @@ export default function TopAccountBar() {
   const routeAccountId = params.accountId ? String(params.accountId) : '';
 
   const summaryBalance = Number(summary.balance || 0);
-  const summaryEquity = Number(summary.equity || 0);
   const summaryMargin = Number(summary.margin || 0);
   const summaryMarginLevel = Number(summary.marginLevel || 0);
   const summaryNetProfit = Number(summary.openProfit || 0);
   const summaryBonus = Number(summary.bonus || 0);
+  // Balance excludes promotional credit; Equity and Free Funds include it.
+  const summaryEquity = summaryBalance + summaryNetProfit + summaryBonus;
   const summaryFreeFunds = summaryEquity - summaryMargin;
   const metrics = [
     ['Balance', `${money(summaryBalance)} USD`],

@@ -307,10 +307,10 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
           const totalBalance = accounts
             .filter((account) => account.type === 'Live')
             .reduce((sum, account) => sum + Number(account.balance || 0), 0);
-          const walletOpenProfit = Number(user.wallet?.openProfit || 0);
-          const totalEquity = totalBalance + walletOpenProfit;
           const totalDeposit = liveAccountTotalFor(user, accounts, depositTotalFor);
           const totalBonus = liveAccountTotalFor(user, accounts, bonusTotalFor);
+          const walletOpenProfit = Number(user.wallet?.openProfit || 0);
+          const totalEquity = totalBalance + totalBonus + walletOpenProfit;
           const blocked = busyId === user.id;
           const summaryFrozen = allAccountsFrozen(accounts, user);
           const summaryStatus = summaryFrozen ? 'frozen' : user.tradingStatus === 'frozen' ? 'frozen' : 'active';
@@ -471,10 +471,10 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
             const totalBalance = accounts
               .filter((account) => account.type === 'Live')
               .reduce((sum, account) => sum + Number(account.balance || 0), 0);
-            const walletOpenProfit = Number(user.wallet?.openProfit || 0);
-            const totalEquity = totalBalance + walletOpenProfit;
             const totalDeposit = liveAccountTotalFor(user, accounts, depositTotalFor);
             const totalBonus = liveAccountTotalFor(user, accounts, bonusTotalFor);
+            const walletOpenProfit = Number(user.wallet?.openProfit || 0);
+            const totalEquity = totalBalance + totalBonus + walletOpenProfit;
             const summaryFrozen = allAccountsFrozen(accounts, user);
             const summaryStatus = summaryFrozen ? 'frozen' : user.tradingStatus === 'frozen' ? 'frozen' : 'active';
             const summaryAccount = {
@@ -513,9 +513,9 @@ export default function AdminUsersTable({ users, busyId, onBalance, onReset, onW
                   {visibleAccounts.map((account, accountIndex) => {
                     const blocked = busyId === user.id;
                     const accountBalance = account.isSummary ? account.balance : account.balance;
-                    const equity = account.isSummary ? account.equity : accountBalance;
                     const deposit = account.isSummary ? account.deposit : depositTotalFor(user, account);
                     const bonus = account.isSummary ? account.bonus : bonusTotalFor(user, account);
+                    const equity = account.isSummary ? account.equity : Number(accountBalance || 0) + Number(bonus || 0);
                     const status = account.status || user.tradingStatus;
                     const frozen = accountIsFrozen({ status });
                     const canToggleAccount = !account.isSummary && Number.isFinite(Number(account.id));

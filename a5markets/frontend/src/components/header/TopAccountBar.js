@@ -99,11 +99,12 @@ export default function TopAccountBar({ onNewOrder }) {
   const routeAccountId = params.accountId ? String(params.accountId) : '';
 
   const summaryBalance = Number(summary.balance || 0);
-  const summaryEquity = Number(summary.equity || 0);
   const summaryMargin = Number(summary.margin || 0);
   const summaryMarginLevel = Number(summary.marginLevel || 0);
   const summaryNetProfit = Number(summary.openProfit || 0);
   const summaryBonus = Number(summary.bonus || 0);
+  // Balance excludes promotional credit; Equity and Free Funds include it.
+  const summaryEquity = summaryBalance + summaryNetProfit + summaryBonus;
   const summaryFreeFunds = summaryEquity - summaryMargin;
   const metrics = [
     ['Balance', `${money(summaryBalance)} USD`],
@@ -529,7 +530,7 @@ export default function TopAccountBar({ onNewOrder }) {
           onPress={() => setMenu(menu === 'account' ? null : 'account')}
           className={`${compactDesktop ? 'h-[44px]' : 'h-[52px]'} flex-row items-center justify-center rounded-lg border`}
           style={{
-            width: compactDesktop ? 150 : 172,
+            width: compactDesktop ? 176 : 184,
             paddingHorizontal: compactDesktop ? 12 : 16,
             backgroundColor: darkMode ? colors.panel : '#ffffff',
             borderColor: menu === 'account' ? colors.primary : colors.border,
@@ -538,6 +539,7 @@ export default function TopAccountBar({ onNewOrder }) {
         >
           <View className="mr-2 h-3 w-3 rounded-full" style={{ backgroundColor: '#20c66b' }} />
           <Text className="font-bold uppercase" style={{ color: selectedAccount?.type === 'Live' ? '#20c66b' : colors.primary }}>{selectedAccount?.type || 'Demo'}</Text>
+          <Text className="ml-2 text-sm font-bold" numberOfLines={1} style={{ color: colors.text, flexShrink: 0 }}>${money(selectedAccountBalance)}</Text>
           <ChevronDown className="ml-2" size={14} color={desktopMuted} />
         </Pressable>
       ) : null}

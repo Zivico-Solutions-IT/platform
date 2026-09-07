@@ -693,8 +693,8 @@ export default function DashboardScreen() {
       {activeSection === 'overview' ? (
         <View className="mb-5 flex-row flex-wrap gap-3">
           <Stat label="Balance" value={`${Number(wallet.balance || 0).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
-          <Stat label="Equity" value={`${Number(wallet.equity || wallet.balance || 0).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
-          <Stat label="Free Funds" value={`${Number(wallet.freeFunds || 0).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
+          <Stat label="Equity" value={`${(Number(wallet.balance || 0) + Number(wallet.openProfit || 0) + Number(wallet.bonus || 0)).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
+          <Stat label="Free Funds" value={`${(Number(wallet.balance || 0) + Number(wallet.openProfit || 0) + Number(wallet.bonus || 0) - Number(wallet.margin || 0)).toFixed(2)} ${wallet.currency || 'USD'}`} colors={colors} mobile={mobile} />
         </View>
       ) : null}
 
