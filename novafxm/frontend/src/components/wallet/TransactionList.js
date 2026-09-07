@@ -10,7 +10,7 @@ export default function TransactionList({ transactions, title = 'Transaction His
 
   const filteredTransactions = transactions.filter((item) => {
     const type = String(item.type).toLowerCase();
-    return type.includes('deposit') || type.includes('withdraw');
+    return type.includes('deposit') || type.includes('withdraw') || type === 'trade_profit' || type === 'trade_loss';
   });
 
   if (compact && !filteredTransactions.length) {
@@ -18,7 +18,7 @@ export default function TransactionList({ transactions, title = 'Transaction His
       <View className="mb-[18px] items-center rounded-2xl border px-4 py-5" style={{ backgroundColor: darkMode ? colors.surface : '#FFFFFF', borderColor: darkMode ? colors.border : '#ECEAE3' }}>
         <Clock3 size={22} color={colors.muted} strokeWidth={1.8} />
         <Text className="mt-2 text-[13px] font-semibold" style={{ color: colors.text }}>{title}</Text>
-        <Text className="mt-0.5 text-[12px]" style={{ color: colors.muted }}>No deposits or withdrawals yet</Text>
+        <Text className="mt-0.5 text-[12px]" style={{ color: colors.muted }}>No account activity yet</Text>
       </View>
     );
   }
@@ -65,7 +65,7 @@ export default function TransactionList({ transactions, title = 'Transaction His
             );
           })}
         </View>
-      ) : <Text style={{ color: colors.muted }}>No deposits or withdrawals found.</Text>}
+      ) : <Text style={{ color: colors.muted }}>No account activity found.</Text>}
     </View>
   );
 }
