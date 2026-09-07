@@ -531,6 +531,7 @@ export default function RegisterScreen() {
   // The full desktop form fits within one viewport. Keep scrolling only for
   // narrow phones or genuinely short screens, where clipping would be worse.
   const allowPageScroll = width < 600 || height < 740;
+  const isCompactForm = width < 430;
 
   return (
     <ScrollView scrollEnabled={allowPageScroll} showsVerticalScrollIndicator={allowPageScroll} className="a5-auth-page flex-1" style={{ backgroundColor: '#f6fbfc' }} contentContainerStyle={{ minHeight: height }}>
@@ -560,20 +561,24 @@ export default function RegisterScreen() {
                 ))}
               </View>
 
-              <View className="mb-4 flex-row gap-3">
-                <TextInput placeholder="First Name" className="flex-1 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" value={firstName} onChangeText={handleFirstNameChange} />
-                <TextInput placeholder="Last Name" className="flex-1 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" value={lastName} onChangeText={handleLastNameChange} />
+              <View className="mb-4 gap-3" style={{ flexDirection: isCompactForm ? 'column' : 'row' }}>
+                <View style={isCompactForm ? { width: '100%' } : { flex: 1, minWidth: 0 }}>
+                  <TextInput placeholder="First Name" className="w-full rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" value={firstName} onChangeText={handleFirstNameChange} />
+                </View>
+                <View style={isCompactForm ? { width: '100%' } : { flex: 1, minWidth: 0 }}>
+                  <TextInput placeholder="Last Name" className="w-full rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" value={lastName} onChangeText={handleLastNameChange} />
+                </View>
               </View>
               <TextInput placeholder="Email Address" className="mb-4 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" autoCapitalize="none" keyboardType="email-address" value={form.email} onChangeText={update('email')} />
               <TextInput placeholder="Referral Code" className="mb-4 rounded-xl border px-4 py-3 text-xs" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea', color: '#101827', outlineStyle: 'none' }} placeholderTextColor="#7b8ca0" autoCapitalize="characters" autoCorrect={false} value={form.referralCode} onChangeText={update('referralCode')} />
               <View className="mb-4 z-10">
                 <View className="flex-row items-center rounded-xl border" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea' }}>
-                  <TouchableOpacity onPress={() => setDropdownOpen(!dropdownOpen)} className="flex-row items-center gap-1 border-r px-4 py-3" style={{ borderColor: '#d9e5ea' }}>
+                  <TouchableOpacity onPress={() => setDropdownOpen(!dropdownOpen)} className="flex-row items-center gap-1 border-r px-4 py-3" style={{ borderColor: '#d9e5ea', flexShrink: 0 }}>
                     <Text className="text-xs text-[#465668]">{selectedCountry ? countryFlag(selectedCountry.code) : '🌐'}</Text>
                     <Text className="text-xs text-[#465668]">{selectedCountry?.dialCode || 'Code'}</Text>
                     <ChevronDown size={13} color="#64748b" />
                   </TouchableOpacity>
-                  <TextInput keyboardType="phone-pad" maxLength={20} value={form.phone} onChangeText={handlePhoneChange} placeholder="Phone Number" placeholderTextColor="#7b8ca0" className="flex-1 px-4 py-3 text-xs" style={{ color: '#101827', outlineStyle: 'none' }} />
+                  <TextInput keyboardType="phone-pad" maxLength={20} value={form.phone} onChangeText={handlePhoneChange} placeholder="Phone Number" placeholderTextColor="#7b8ca0" className="flex-1 px-4 py-3 text-xs" style={{ color: '#101827', outlineStyle: 'none', minWidth: 0 }} />
                 </View>
                 {dropdownOpen && (
                   <View className="absolute top-full left-0 right-0 mt-1 border rounded-lg shadow-xl z-50 max-h-80" style={{ backgroundColor: '#ffffff', borderColor: '#d9e5ea' }}>

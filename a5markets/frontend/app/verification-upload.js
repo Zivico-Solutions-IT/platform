@@ -38,7 +38,6 @@ function UploadBox({ title, file, onSelect, onClear, colors }) {
           <input
             ref={inputRef}
             accept="image/jpeg,image/png,image/webp"
-            capture="environment"
             style={{ display: 'none' }}
             type="file"
             onChange={(event) => onSelect(event.target.files?.[0] || null)}
@@ -48,7 +47,8 @@ function UploadBox({ title, file, onSelect, onClear, colors }) {
           {ready ? <CheckCircle2 size={34} color={GOLD} /> : <UploadCloud size={34} color={GOLD} />}
         </View>
         <Text className="text-center text-lg font-medium" style={{ color: colors.text }}>{ready ? fileName(file) : 'Drop your file to upload or browse'}</Text>
-        <Text className="mt-2 text-center text-sm" style={{ color: colors.muted }}>Upload a clear photo. JPG or PNG works best.</Text>
+        <Text className="mt-2 text-center text-sm" style={{ color: colors.muted }}>Upload a clear photo. JPG, PNG, or WEBP works best.</Text>
+        <Text className="mt-1 text-center text-xs" style={{ color: colors.muted }}>Photos are optimized automatically. Maximum 12 MB total for both documents.</Text>
         {ready ? (
           <Pressable
             onPress={(event) => {
