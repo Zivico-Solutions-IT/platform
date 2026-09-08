@@ -68,7 +68,7 @@ const ensureStaffClientAccounts = async (user) => {
 
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, phone, password, accountType, referralCode, referralInviteCode } = req.body;
+    const { name, email, phone, country, password, accountType, referralCode, referralInviteCode } = req.body;
     if (!name || !email || !password || password.length < 8) return res.status(400).json({ message: 'Name, email and password of at least 8 characters are required.' });
     const selectedAccountType = accountType === 'Live' ? 'Live' : 'Demo';
     const startingBalance = selectedAccountType === 'Demo' ? 5000 : 0;
@@ -115,6 +115,10 @@ exports.register = async (req, res, next) => {
         name: name.trim(),
         email: normalizedEmail,
         phone,
+        // Preserve the country selected during registration. Previously this
+        // value was sent by the client but discarded, causing the profile UI
+        // to fall back to Sri Lanka when the user first signed in.
+        country: String(country || '').trim() || null,
         password: await bcrypt.hash(password, 12),
         accountType: selectedAccountType,
         leverage: DEFAULT_LEVERAGE,

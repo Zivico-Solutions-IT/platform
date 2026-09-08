@@ -78,6 +78,16 @@ const bankStatusText = (status) => {
 };
 const canEditWithdrawalDetail = (account) => ['approved', 'rejected'].includes(account?.status);
 
+// Older registrations may not have a stored country. Use the phone prefix
+// before falling back so a +91 account is shown as India instead of Sri Lanka.
+const profileCountry = (user) => {
+  if (user?.country) return user.country;
+  const phone = String(user?.phone || '').replace(/[\s()-]/g, '');
+  if (phone.startsWith('+91')) return 'India';
+  if (phone.startsWith('+94')) return 'Sri Lanka';
+  return 'Sri Lanka';
+};
+
 function PanelHeader({ title, subtitle, icon: Icon, onClose, colors, onIconPress, accountStyle = false }) {
   const IconContainer = onIconPress ? Pressable : View;
   return (
@@ -440,7 +450,7 @@ function SettingsPanel({ colors, darkMode, user, updateProfile, initialSection =
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
-    country: user?.country || 'Sri Lanka',
+    country: profileCountry(user),
     dateOfBirth: user?.dateOfBirth || '',
     profileImage: user?.profileImage || null,
   });
@@ -470,7 +480,7 @@ function SettingsPanel({ colors, darkMode, user, updateProfile, initialSection =
       name: user?.name || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      country: user?.country || 'Sri Lanka',
+      country: profileCountry(user),
       dateOfBirth: user?.dateOfBirth || '',
       profileImage: user?.profileImage || null,
     });

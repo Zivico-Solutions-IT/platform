@@ -224,6 +224,15 @@ const countries = [
 
 const countryByName = (name) => countries.find((country) => country.name === name) || countries[0];
 
+const countryFromPhone = (phone) => {
+  const compactPhone = String(phone || '').replace(/[\s()-]/g, '');
+  return [...countries]
+    .sort((first, second) => second.code.length - first.code.length)
+    .find((country) => compactPhone.startsWith(country.code));
+};
+
+const profileCountry = (user) => user?.country || countryFromPhone(user?.phone)?.name || 'Sri Lanka';
+
 const phoneWithoutDialCode = (phone) => String(phone || '').replace(/^\+\d{1,4}\s*/, '').trim();
 
 const withCountryCode = (phone, countryName) => {
@@ -591,7 +600,7 @@ export default function SettingsScreen() {
   }, [params.section]);
 
   useEffect(() => {
-    const country = user?.country || 'Sri Lanka';
+    const country = profileCountry(user);
     setProfileForm({
       name: user?.name || '',
       email: user?.email || '',
@@ -707,7 +716,7 @@ export default function SettingsScreen() {
   };
 
   const cancelProfileEdit = () => {
-    const country = user?.country || 'Sri Lanka';
+    const country = profileCountry(user);
     setProfileForm({
       name: user?.name || '',
       email: user?.email || '',
