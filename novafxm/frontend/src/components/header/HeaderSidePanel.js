@@ -79,13 +79,13 @@ const bankStatusText = (status) => {
 const canEditWithdrawalDetail = (account) => ['approved', 'rejected'].includes(account?.status);
 
 // Older registrations may not have a stored country. Use the phone prefix
-// before falling back so a +91 account is shown as India instead of Sri Lanka.
+// before using India as the default for an account with no country data.
 const profileCountry = (user) => {
   if (user?.country) return user.country;
   const phone = String(user?.phone || '').replace(/[\s()-]/g, '');
   if (phone.startsWith('+91')) return 'India';
   if (phone.startsWith('+94')) return 'Sri Lanka';
-  return 'Sri Lanka';
+  return 'India';
 };
 
 function PanelHeader({ title, subtitle, icon: Icon, onClose, colors, onIconPress, accountStyle = false }) {
@@ -901,8 +901,8 @@ function SettingsPanel({ colors, darkMode, user, updateProfile, initialSection =
                   <Field label="Email Address" value={profile.email} editable={false} placeholder="email@example.com" icon={Mail} colors={colors} compactMobile />
                 </View>
                 <View className={isMobileLayout ? "gap-2" : "gap-4 lg:flex-row"}>
-                  <Field label="Country" value={profile.country} onChangeText={(country) => setProfile((current) => ({ ...current, country }))} placeholder="Sri Lanka" icon={Globe2} colors={colors} compactMobile />
-                  <Field label="Phone Number" value={profile.phone} onChangeText={(phone) => setProfile((current) => ({ ...current, phone }))} placeholder="+94 77 123 4567" icon={Phone} colors={colors} compactMobile />
+                  <Field label="Country" value={profile.country} onChangeText={(country) => setProfile((current) => ({ ...current, country }))} placeholder="India" icon={Globe2} colors={colors} compactMobile />
+                  <Field label="Phone Number" value={profile.phone} onChangeText={(phone) => setProfile((current) => ({ ...current, phone }))} placeholder="+91 98765 43210" icon={Phone} colors={colors} compactMobile />
                 </View>
                 <DateOfBirthField value={profile.dateOfBirth} onChange={(dateOfBirth) => setProfile((current) => ({ ...current, dateOfBirth }))} colors={colors} darkMode={darkMode} compactMobile />
                 {isMobileLayout ? (

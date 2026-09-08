@@ -231,7 +231,7 @@ const countryFromPhone = (phone) => {
     .find((country) => compactPhone.startsWith(country.code));
 };
 
-const profileCountry = (user) => user?.country || countryFromPhone(user?.phone)?.name || 'Sri Lanka';
+const profileCountry = (user) => user?.country || countryFromPhone(user?.phone)?.name || 'India';
 
 const phoneWithoutDialCode = (phone) => String(phone || '').replace(/^\+\d{1,4}\s*/, '').trim();
 
@@ -571,7 +571,7 @@ export default function SettingsScreen() {
     name: '',
     email: '',
     phone: '',
-    country: 'Sri Lanka',
+    country: 'India',
     dateOfBirth: '',
     profileImage: null,
   });

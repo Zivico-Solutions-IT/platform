@@ -117,7 +117,7 @@ exports.register = async (req, res, next) => {
         phone,
         // Preserve the country selected during registration. Previously this
         // value was sent by the client but discarded, causing the profile UI
-        // to fall back to Sri Lanka when the user first signed in.
+        // to use its default country when the user first signed in.
         country: String(country || '').trim() || null,
         password: await bcrypt.hash(password, 12),
         accountType: selectedAccountType,
