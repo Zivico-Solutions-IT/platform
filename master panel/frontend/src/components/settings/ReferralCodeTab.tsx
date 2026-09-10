@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { usePortal } from "../../context/PortalContext";
+import { api } from "../../services/api";
 import {
   Key,
   PlusCircle,
@@ -10,6 +11,11 @@ import {
   X,
   ExternalLink,
   ShieldCheck,
+  Save,
+  Loader2,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 
 export interface ReferralCodeItem {
@@ -67,13 +73,21 @@ const DEFAULT_CODES: ReferralCodeItem[] = [
 ];
 
 export const ReferralCodeTab: React.FC = () => {
-  const { companyConfig, addToast } = usePortal();
+  const { companyConfig, currentCompany, addToast } = usePortal();
+  const companyId = companyConfig?.id || currentCompany || "novafxm";
   const brandPrimary = companyConfig?.primaryColor || "#D97706";
 
-  // Persistent codes list in localStorage
+  // Live Registration Code from MySQL DB
+  const [registrationCode, setRegistrationCode] = useState<string>("");
+  const [registrationCodeDraft, setRegistrationCodeDraft] = useState<string>("");
+  const [isLoadingCode, setIsLoadingCode] = useState<boolean>(true);
+  const [isSavingCode, setIsSavingCode] = useState<boolean>(false);
+  const [isDeletingCode, setIsDeletingCode] = useState<boolean>(false);
+
+  // Persistent codes list in localStorage for tracking sub-campaigns
   const [codes, setCodes] = useState<ReferralCodeItem[]>(() => {
     try {
-      const saved = localStorage.getItem("nova_referral_codes_list_v2");
+      const saved = localStorage.getItem(`nova_referral_codes_${companyId}`);
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -81,20 +95,107 @@ export const ReferralCodeTab: React.FC = () => {
     return DEFAULT_CODES;
   });
 
+  const loadRegistrationCode = async () => {
+    setIsLoadingCode(true);
+    try {
+      const code = await api.getRegistrationCode(companyId);
+      setRegistrationCode(code || "");
+      setRegistrationCodeDraft(code || "");
+    } catch (err) {
+      console.warn("Failed to load registration code:", err);
+    } finally {
+      setIsLoadingCode(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRegistrationCode();
+  }, [companyId]);
+
   useEffect(() => {
     try {
-      localStorage.setItem("nova_referral_codes_list_v2", JSON.stringify(codes));
+      localStorage.setItem(`nova_referral_codes_${companyId}`, JSON.stringify(codes));
     } catch (e) {
       console.error(e);
     }
-  }, [codes]);
+  }, [codes, companyId]);
+
+  const handleSaveRegistrationCode = async () => {
+    const clean = registrationCodeDraft.trim().toUpperCase();
+    if (!clean) {
+      addToast("error", "Invalid Code", "Please enter a referral code first.");
+      return;
+    }
+    if (!/^[A-Z0-9_-]{4,40}$/.test(clean)) {
+      addToast("error", "Invalid Format", "Use 4–40 characters: letters, numbers, hyphens and underscores.");
+      return;
+    }
+    setIsSavingCode(true);
+    try {
+      const updated = await api.saveRegistrationCode(companyId, clean);
+      const finalCode = updated || clean;
+      setRegistrationCode(finalCode);
+      setRegistrationCodeDraft(finalCode);
+
+      // Keep tracking codes table in sync
+      setCodes((prev) => {
+        const existing = prev.find((c) => c.code === finalCode);
+        if (existing) {
+          return prev.map((c) => ({ ...c, isDefault: c.code === finalCode, isActive: c.code === finalCode ? true : c.isActive }));
+        }
+        return [
+          {
+            id: `ref-code-${Date.now()}`,
+            code: finalCode,
+            campaign: "Default Global Public Registration",
+            ratePercent: 5.0,
+            totalSignups: 0,
+            isDefault: true,
+            isActive: true,
+            createdAt: new Date().toISOString().slice(0, 10),
+          },
+          ...prev.map((c) => ({ ...c, isDefault: false })),
+        ];
+      });
+
+      addToast("success", "Code Saved", "Registration referral code saved. New registrations now require it.");
+    } catch (err: any) {
+      addToast("error", "Save Failed", err?.message || "Failed to save registration referral code.");
+    } finally {
+      setIsSavingCode(false);
+    }
+  };
+
+  const handleDeleteRegistrationCode = async () => {
+    if (
+      !window.confirm(
+        `Delete registration referral code "${registrationCode}"?\n\nDeleting it disables public user registration and displays a support message to clients.`
+      )
+    ) {
+      return;
+    }
+    setIsDeletingCode(true);
+    try {
+      await api.deleteRegistrationCode(companyId);
+      setRegistrationCode("");
+      setRegistrationCodeDraft("");
+
+      setCodes((prev) => prev.map((c) => ({ ...c, isDefault: false })));
+
+      addToast("info", "Code Removed", "Referral code removed. Public registration is disabled without a code.");
+    } catch (err: any) {
+      addToast("error", "Delete Failed", err?.message || "Failed to remove registration referral code.");
+    } finally {
+      setIsDeletingCode(false);
+    }
+  };
 
   const [activeFilter, setActiveFilter] = useState<"ALL" | "ACTIVE" | "DISABLED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Modal State
+  // Modal State for creating campaign code
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formCode, setFormCode] = useState("");
   const [formCampaign, setFormCampaign] = useState("");
@@ -105,7 +206,6 @@ export const ReferralCodeTab: React.FC = () => {
   const totalCount = codes.length;
   const activeCount = codes.filter((c) => c.isActive).length;
   const disabledCount = totalCount - activeCount;
-  const defaultCode = codes.find((c) => c.isDefault) || codes[0];
 
   // Filtered List
   const filteredCodes = useMemo(() => {
@@ -127,11 +227,11 @@ export const ReferralCodeTab: React.FC = () => {
   const getUrl = (code: string) =>
     `https://portal.${companyConfig.id || "novafxm"}.com/register?ref=${code}`;
 
-  const handleCopyLink = (codeItem: ReferralCodeItem, e?: React.MouseEvent) => {
+  const handleCopyLink = (codeStr: string, id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    navigator.clipboard.writeText(getUrl(codeItem.code));
-    setCopiedId(codeItem.id);
-    addToast("info", "Link Copied", `Registration link for code "${codeItem.code}" copied!`);
+    navigator.clipboard.writeText(getUrl(codeStr));
+    setCopiedId(id);
+    addToast("info", "Link Copied", `Registration link for code "${codeStr}" copied!`);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -143,26 +243,37 @@ export const ReferralCodeTab: React.FC = () => {
     addToast("info", "Status Updated", "Referral code status toggled.");
   };
 
-  const handleSetDefault = (id: string, e?: React.MouseEvent) => {
+  const handleSetDefault = async (codeItem: ReferralCodeItem, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setCodes((prev) =>
-      prev.map((c) => ({
-        ...c,
-        isDefault: c.id === id,
-      }))
-    );
-    const item = codes.find((c) => c.id === id);
-    addToast("success", "Default Code Set", `"${item?.code}" set as primary registration code.`);
+    setRegistrationCodeDraft(codeItem.code);
+    setIsSavingCode(true);
+    try {
+      const updated = await api.saveRegistrationCode(companyId, codeItem.code);
+      const finalCode = updated || codeItem.code;
+      setRegistrationCode(finalCode);
+      setCodes((prev) =>
+        prev.map((c) => ({
+          ...c,
+          isDefault: c.code === finalCode,
+          isActive: c.code === finalCode ? true : c.isActive,
+        }))
+      );
+      addToast("success", "Default Code Updated", `"${finalCode}" set as global registration referral code.`);
+    } catch (err: any) {
+      addToast("error", "Failed", err?.message || "Failed to set default code.");
+    } finally {
+      setIsSavingCode(false);
+    }
   };
 
   const handleDelete = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const item = codes.find((c) => c.id === id);
-    if (item?.isDefault) {
-      addToast("error", "Cannot Delete", "Cannot delete the default registration code.");
+    if (item?.code === registrationCode) {
+      handleDeleteRegistrationCode();
       return;
     }
-    if (window.confirm(`Delete referral code "${item?.code}"?`)) {
+    if (window.confirm(`Delete referral tracking code "${item?.code}"?`)) {
       setCodes((prev) => prev.filter((c) => c.id !== id));
       addToast("info", "Code Deleted", `Referral code "${item?.code}" deleted.`);
     }
@@ -190,13 +301,126 @@ export const ReferralCodeTab: React.FC = () => {
     };
 
     setCodes((prev) => [newEntry, ...prev]);
-    addToast("success", "Code Created", `New registration code "${clean}" created.`);
+    addToast("success", "Code Created", `New campaign code "${clean}" created.`);
     setIsModalOpen(false);
   };
 
   return (
-    <div className="space-y-2 animate-fadeIn font-sans select-none flex-1 min-h-0 flex flex-col">
-      {/* Top Compact Excel Toolbar matching PaymentsPage */}
+    <div className="space-y-3 animate-fadeIn font-sans select-none flex-1 min-h-0 flex flex-col">
+      {/* Primary Card: Registration Referral Code Management (Matching Old Master Console Screenshot) */}
+      <div className="bg-white border border-slate-300 rounded-xl p-4 sm:p-5 shadow-2xs shrink-0">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Key className="w-5 h-5" style={{ color: brandPrimary }} />
+              <h1 className="text-base font-black tracking-tight text-slate-900 font-sans">
+                Referral Code
+              </h1>
+              {registrationCode ? (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Active
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 text-rose-600" />
+                  Disabled
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-slate-600 max-w-3xl leading-relaxed">
+              This is the single code required for every new public {companyConfig?.name || companyId} registration. Deleting it disables public registration and displays a support message to clients.
+            </p>
+          </div>
+
+          <button
+            onClick={loadRegistrationCode}
+            disabled={isLoadingCode}
+            className="p-1.5 rounded-md border border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 transition-all cursor-pointer"
+            title="Refresh code from database"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingCode ? "animate-spin text-amber-600" : ""}`} />
+          </button>
+        </div>
+
+        {/* Input Card Container matching screenshot media_1789033331334.png */}
+        <div className="mt-4 p-4 rounded-lg bg-[#f8fafc] border border-slate-200 max-w-2xl">
+          <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5 font-mono">
+            Registration referral code
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={registrationCodeDraft}
+              onChange={(e) => setRegistrationCodeDraft(e.target.value.toUpperCase())}
+              placeholder="e.g. NOVA2026"
+              disabled={isLoadingCode || isSavingCode}
+              className="w-full max-w-md bg-white border border-slate-300 rounded-md px-3.5 py-2 text-sm font-mono font-bold text-slate-900 uppercase placeholder-slate-400 focus:outline-none focus:border-amber-500 shadow-2xs transition-all"
+            />
+          </div>
+          <p className="mt-1.5 text-[11px] text-slate-500 font-mono">
+            4–40 characters: letters, numbers, hyphens and underscores.
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleSaveRegistrationCode}
+              disabled={isSavingCode || isLoadingCode}
+              className="px-4 py-2 rounded-md text-xs font-bold text-slate-900 shadow-2xs transition-all flex items-center gap-1.5 hover:brightness-105 active:scale-95 cursor-pointer disabled:opacity-50"
+              style={{ backgroundColor: brandPrimary }}
+            >
+              {isSavingCode ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              <span>{isSavingCode ? "Saving..." : "Save code"}</span>
+            </button>
+
+            {registrationCode && (
+              <button
+                type="button"
+                onClick={handleDeleteRegistrationCode}
+                disabled={isDeletingCode || isLoadingCode}
+                className="px-4 py-2 rounded-md text-xs font-bold text-rose-600 bg-white hover:bg-rose-50 border border-rose-300 shadow-2xs transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingCode ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                )}
+                <span>{isDeletingCode ? "Deleting..." : "Delete code"}</span>
+              </button>
+            )}
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between text-xs font-mono">
+            {registrationCode ? (
+              <div className="flex items-center justify-between w-full flex-wrap gap-2">
+                <span className="text-emerald-700 font-bold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Active code: {registrationCode}
+                </span>
+                <button
+                  onClick={() => handleCopyLink(registrationCode, "reg-code-active")}
+                  className="text-[11px] text-amber-800 hover:text-amber-900 font-sans font-semibold underline flex items-center gap-1"
+                >
+                  <Copy className="w-3 h-3" />
+                  Copy Registration Link
+                </button>
+              </div>
+            ) : (
+              <span className="text-rose-700 font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                No active code — public registration is disabled.
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Secondary Section: Campaign Tracking Links Table (Excel Grid View) */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 shrink-0 bg-white border border-slate-300 p-2 rounded-lg shadow-2xs">
         {/* Left: Title + Filter Pills */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -205,9 +429,9 @@ export const ReferralCodeTab: React.FC = () => {
               className="w-2.5 h-2.5 rounded-sm"
               style={{ backgroundColor: brandPrimary }}
             />
-            <h1 className="text-xs font-black tracking-wider uppercase text-slate-900 font-mono">
-              REFERRAL CODES
-            </h1>
+            <h2 className="text-xs font-black tracking-wider uppercase text-slate-900 font-mono">
+              REFERRAL TRACKING CODES
+            </h2>
             <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-300">
               {filteredCodes.length} records
             </span>
@@ -255,9 +479,9 @@ export const ReferralCodeTab: React.FC = () => {
         {/* Center: Inline Excel Formula / Stats Bar */}
         <div className="hidden xl:flex items-center gap-2.5 text-[11px] font-mono bg-slate-50 border border-slate-200 px-3 py-1 rounded-md">
           <div className="flex items-center gap-1">
-            <span className="text-slate-500 font-sans text-[10.5px]">Default Code:</span>
+            <span className="text-slate-500 font-sans text-[10.5px]">Default Registration Code:</span>
             <strong className="text-amber-800 font-bold font-mono">
-              {defaultCode?.code || "NOVA2026"}
+              {registrationCode || "NONE"}
             </strong>
           </div>
           <span className="text-slate-300 select-none">|</span>
@@ -292,7 +516,7 @@ export const ReferralCodeTab: React.FC = () => {
             <span>+ Create Code</span>
           </button>
 
-          <div className="relative w-48 sm:w-56">
+          <div className="relative w-44 sm:w-52">
             <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -356,12 +580,13 @@ export const ReferralCodeTab: React.FC = () => {
                 filteredCodes.map((item, index) => {
                   const isSelected = selectedId === item.id;
                   const isCopied = copiedId === item.id;
+                  const isMasterRegistrationCode = item.code === registrationCode;
 
                   return (
                     <tr
                       key={item.id}
                       onClick={() => setSelectedId(item.id)}
-                      onDoubleClick={() => handleCopyLink(item)}
+                      onDoubleClick={() => handleCopyLink(item.code, item.id)}
                       className={`cursor-pointer transition-colors duration-75 border-b border-slate-200 h-7.5 ${
                         isSelected
                           ? "bg-amber-100/90 font-bold border-l-4"
@@ -381,7 +606,7 @@ export const ReferralCodeTab: React.FC = () => {
                           <span className="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded text-[11px] border border-amber-300 font-mono tracking-wide">
                             {item.code}
                           </span>
-                          {item.isDefault && (
+                          {isMasterRegistrationCode && (
                             <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
                               DEFAULT
                             </span>
@@ -404,7 +629,7 @@ export const ReferralCodeTab: React.FC = () => {
                         <div className="flex items-center justify-between gap-1">
                           <span className="truncate">{getUrl(item.code)}</span>
                           <button
-                            onClick={(e) => handleCopyLink(item, e)}
+                            onClick={(e) => handleCopyLink(item.code, item.id, e)}
                             className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-800 transition-colors shrink-0"
                             title="Copy registration link"
                           >
@@ -440,24 +665,22 @@ export const ReferralCodeTab: React.FC = () => {
                       {/* Actions */}
                       <td className="py-1 px-2 text-center">
                         <div className="flex items-center justify-center gap-1">
-                          {!item.isDefault && item.isActive && (
+                          {!isMasterRegistrationCode && item.isActive && (
                             <button
-                              onClick={(e) => handleSetDefault(item.id, e)}
+                              onClick={(e) => handleSetDefault(item, e)}
                               className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition-all"
                               title="Set as global default registration code"
                             >
                               Make Default
                             </button>
                           )}
-                          {!item.isDefault && (
-                            <button
-                              onClick={(e) => handleDelete(item.id, e)}
-                              className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 transition-all"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-2.5 h-2.5 inline" />
-                            </button>
-                          )}
+                          <button
+                            onClick={(e) => handleDelete(item.id, e)}
+                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 transition-all"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-2.5 h-2.5 inline" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -495,7 +718,7 @@ export const ReferralCodeTab: React.FC = () => {
             </span>
             <span>•</span>
             <span className="text-emerald-700 font-bold">
-              Default Code: {defaultCode?.code}
+              Active Code: {registrationCode || "NONE"}
             </span>
           </div>
         </div>

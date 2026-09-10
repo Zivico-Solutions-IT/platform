@@ -824,4 +824,72 @@ export const api = {
       throw err;
     }
   },
+
+  async getSymbols(companyId: CompanyId): Promise<{ symbol: string; group: string; description: string; visible: boolean }[]> {
+    try {
+      const res = await request<{ symbols?: { symbol: string; group: string; description: string; visible: boolean }[] }>(
+        companyId,
+        "/admin/symbols"
+      );
+      if (res && Array.isArray(res.symbols)) {
+        return res.symbols;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch symbols from backend:", err);
+    }
+    return [];
+  },
+
+  async updateSymbols(
+    companyId: CompanyId,
+    visibilities: { symbol: string; visible: boolean }[]
+  ): Promise<boolean> {
+    try {
+      await request(companyId, "/admin/symbols", {
+        method: "PUT",
+        body: JSON.stringify({ visibilities }),
+      });
+      return true;
+    } catch (err) {
+      console.error("Failed to update symbols:", err);
+      throw err;
+    }
+  },
+
+  async getRegistrationCode(companyId: CompanyId): Promise<string> {
+    try {
+      const res = await request<{ code?: string }>(companyId, "/admin/registration-code");
+      return res?.code || "";
+    } catch (err) {
+      console.warn("Failed to fetch registration code:", err);
+      return "";
+    }
+  },
+
+  async saveRegistrationCode(companyId: CompanyId, code: string): Promise<string> {
+    try {
+      const res = await request<{ code?: string; message?: string }>(companyId, "/admin/registration-code", {
+        method: "PUT",
+        body: JSON.stringify({ code }),
+      });
+      return res?.code || code;
+    } catch (err) {
+      console.error("Failed to save registration code:", err);
+      throw err;
+    }
+  },
+
+  async deleteRegistrationCode(companyId: CompanyId): Promise<boolean> {
+    try {
+      await request(companyId, "/admin/registration-code", {
+        method: "DELETE",
+      });
+      return true;
+    } catch (err) {
+      console.error("Failed to delete registration code:", err);
+      throw err;
+    }
+  },
 };
+
+

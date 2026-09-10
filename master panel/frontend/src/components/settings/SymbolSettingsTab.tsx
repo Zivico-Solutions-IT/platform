@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { usePortal } from "../../context/PortalContext";
+import { api } from "../../services/api";
 import {
   Search,
   RotateCcw,
@@ -9,6 +10,8 @@ import {
   Eye,
   EyeOff,
   SlidersHorizontal,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 export type SymbolCategoryType = "ALL" | "CRYPTO" | "FOREX" | "INDICES" | "METALS" | "ENERGIES";
@@ -20,6 +23,25 @@ export interface SymbolVisibilityItem {
   description: string;
   contractSpec: string;
   enabled: boolean;
+}
+
+function normalizeCategory(group: string): "CRYPTO" | "FOREX" | "INDICES" | "METALS" | "ENERGIES" {
+  const g = (group || "").toUpperCase();
+  if (g.includes("CRYPTO")) return "CRYPTO";
+  if (g.includes("FOREX")) return "FOREX";
+  if (g.includes("INDICES") || g.includes("INDEX")) return "INDICES";
+  if (g.includes("METALS") || g.includes("METAL")) return "METALS";
+  if (g.includes("ENERGIES") || g.includes("ENERGY") || g.includes("OIL")) return "ENERGIES";
+  return "FOREX";
+}
+
+function generateContractSpec(symbol: string, category: string): string {
+  if (category === "CRYPTO") return "1 Token • Floating";
+  if (category === "FOREX") return "100,000 Lot • 5 Digits";
+  if (category === "INDICES") return "10 Index • 2 Digits";
+  if (category === "METALS") return "100 Ounces • 2 Digits";
+  if (category === "ENERGIES") return "1,000 Barrels • 2 Digits";
+  return "Standard Contract";
 }
 
 const DEFAULT_SYMBOLS_LIST: SymbolVisibilityItem[] = [
@@ -64,17 +86,21 @@ const DEFAULT_SYMBOLS_LIST: SymbolVisibilityItem[] = [
 ];
 
 export const SymbolSettingsTab: React.FC = () => {
-  const { companyConfig, addToast } = usePortal();
+  const { companyConfig, currentCompany, addToast } = usePortal();
+  const companyId = companyConfig?.id || currentCompany || "novafxm";
   const brandPrimary = companyConfig?.primaryColor || "#D97706";
 
   const [selectedCategory, setSelectedCategory] = useState<SymbolCategoryType>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
   // Persistent symbols list
   const [symbols, setSymbols] = useState<SymbolVisibilityItem[]>(() => {
     try {
-      const saved = localStorage.getItem("nova_symbol_visibility_settings_v2");
+      const saved = localStorage.getItem(`nova_symbol_visibility_${companyId}`);
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -82,13 +108,42 @@ export const SymbolSettingsTab: React.FC = () => {
     return DEFAULT_SYMBOLS_LIST;
   });
 
+  const loadSymbolsFromApi = async () => {
+    setLoading(true);
+    try {
+      const data = await api.getSymbols(companyId);
+      if (data && Array.isArray(data) && data.length > 0) {
+        const mapped: SymbolVisibilityItem[] = data.map((item, idx) => {
+          const category = normalizeCategory(item.group);
+          return {
+            id: `sym-${idx + 1}-${item.symbol.replace(/\//g, "-")}`,
+            symbol: item.symbol,
+            category,
+            description: item.description || item.symbol,
+            contractSpec: generateContractSpec(item.symbol, category),
+            enabled: item.visible !== false,
+          };
+        });
+        setSymbols(mapped);
+      }
+    } catch (err) {
+      console.warn("Failed to load symbols from API, using cached/default dataset:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSymbolsFromApi();
+  }, [companyId]);
+
   useEffect(() => {
     try {
-      localStorage.setItem("nova_symbol_visibility_settings_v2", JSON.stringify(symbols));
+      localStorage.setItem(`nova_symbol_visibility_${companyId}`, JSON.stringify(symbols));
     } catch (e) {
       console.error(e);
     }
-  }, [symbols]);
+  }, [symbols, companyId]);
 
   // Counts
   const totalCount = symbols.length;
@@ -147,13 +202,26 @@ export const SymbolSettingsTab: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
-    addToast(
-      "success",
-      "Settings Saved",
-      `Saved! ${enabledCount} symbols visible to clients, ${hiddenCount} hidden.`
-    );
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const visibilities = symbols.map((s) => ({
+        symbol: s.symbol,
+        visible: s.enabled,
+      }));
+      await api.updateSymbols(companyId, visibilities);
+      addToast(
+        "success",
+        "Settings Saved",
+        `Saved! ${enabledCount} symbols visible to clients, ${hiddenCount} hidden in ${companyConfig?.name || companyId}.`
+      );
+    } catch (err: any) {
+      addToast("error", "Save Failed", err?.message || "Failed to persist symbol settings to backend.");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
 
   return (
     <div className="space-y-2 animate-fadeIn font-sans select-none flex-1 min-h-0 flex flex-col">
@@ -285,6 +353,15 @@ export const SymbolSettingsTab: React.FC = () => {
           </button>
 
           <button
+            onClick={loadSymbolsFromApi}
+            disabled={loading}
+            className="p-1 rounded text-[10.5px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs transition-all cursor-pointer"
+            title="Refresh symbols from database"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin text-amber-600" : ""}`} />
+          </button>
+
+          <button
             onClick={handleReset}
             className="p-1 rounded text-[10.5px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 shadow-2xs transition-all cursor-pointer"
             title="Reset to default"
@@ -294,12 +371,17 @@ export const SymbolSettingsTab: React.FC = () => {
 
           <button
             onClick={handleSave}
-            className="px-2.5 py-1 rounded text-[10.5px] font-bold text-white shadow-2xs transition-all flex items-center gap-1 hover:brightness-105 active:scale-95 cursor-pointer"
+            disabled={isSaving}
+            className="px-2.5 py-1 rounded text-[10.5px] font-bold text-white shadow-2xs transition-all flex items-center gap-1 hover:brightness-105 active:scale-95 cursor-pointer disabled:opacity-50"
             style={{ backgroundColor: brandPrimary }}
-            title="Save configuration"
+            title="Save configuration to database"
           >
-            <Save className="w-3 h-3" />
-            <span>Save</span>
+            {isSaving ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Save className="w-3 h-3" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save"}</span>
           </button>
 
           <div className="relative w-40 sm:w-48">
@@ -361,7 +443,16 @@ export const SymbolSettingsTab: React.FC = () => {
 
             {/* Dense Excel Rows */}
             <tbody className="font-mono text-[11px] leading-tight select-none">
-              {filteredSymbols.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-500 font-sans text-xs">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                      <span>Loading symbol settings from database...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredSymbols.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400 font-sans text-xs">
                     No symbols found matching your filter.
