@@ -50,10 +50,43 @@ export interface CompanyDataResponse {
   symbols: SymbolData[];
 }
 
+export function getCompanyApiUrl(companyId: CompanyId): string {
+  // 1. Environment Variable Overrides
+  if (companyId === "novafxm" && import.meta.env.VITE_NOVAFXM_API_URL) {
+    return import.meta.env.VITE_NOVAFXM_API_URL;
+  }
+  if (companyId === "a5markets" && import.meta.env.VITE_A5MARKETS_API_URL) {
+    return import.meta.env.VITE_A5MARKETS_API_URL;
+  }
+  if (companyId === "veltriumfx" && import.meta.env.VITE_VELTRIUMFX_API_URL) {
+    return import.meta.env.VITE_VELTRIUMFX_API_URL;
+  }
+
+  // 2. Local Host / Dev Mode -> Use Vite Proxy
+  if (typeof window !== "undefined") {
+    const isLocalhost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.startsWith("192.168.");
+
+    if (isLocalhost) {
+      return `/api/${companyId}`;
+    }
+
+    // 3. Deployed Production Host (crm777.novafxm.com) -> Connect to production servers
+    const proto = window.location.protocol === "https:" ? "https:" : "http:";
+    if (companyId === "novafxm") return `${proto}//server.novafxm.com/api`;
+    if (companyId === "a5markets") return `${proto}//server.a5markets.com/api`;
+    if (companyId === "veltriumfx") return `${proto}//server.veltriumfx.com/api`;
+  }
+
+  return `/api/${companyId}`;
+}
+
 export const COMPANY_API_URLS: Record<CompanyId, string> = {
-  novafxm: "/api/novafxm",
-  a5markets: "/api/a5markets",
-  veltriumfx: "/api/veltriumfx",
+  novafxm: getCompanyApiUrl("novafxm"),
+  a5markets: getCompanyApiUrl("a5markets"),
+  veltriumfx: getCompanyApiUrl("veltriumfx"),
 };
 
 function getValidToken(): string | null {
@@ -72,7 +105,7 @@ async function ensureMasterToken(companyId: CompanyId): Promise<string | null> {
   if (existingToken) return existingToken;
 
   try {
-    const baseUrl = COMPANY_API_URLS[companyId] || COMPANY_API_URLS.novafxm;
+    const baseUrl = getCompanyApiUrl(companyId);
     const res = await fetch(`${baseUrl}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -94,7 +127,8 @@ async function ensureMasterToken(companyId: CompanyId): Promise<string | null> {
 }
 
 async function request<T>(companyId: CompanyId, url: string, options?: RequestInit): Promise<T> {
-  const baseUrl = COMPANY_API_URLS[companyId] || COMPANY_API_URLS.novafxm;
+  const primaryBaseUrl = getCompanyApiUrl(companyId);
+  const fallbackBaseUrl = `/api/${companyId}`;
   let token = getValidToken();
 
   if (!token && !url.includes("/auth/")) {
@@ -107,28 +141,53 @@ async function request<T>(companyId: CompanyId, url: string, options?: RequestIn
     ...(options?.headers as Record<string, string> || {}),
   };
 
-  let response = await fetch(`${baseUrl}${url}`, {
-    ...options,
-    headers,
-  });
+  let response: Response | null = null;
+  try {
+    response = await fetch(`${primaryBaseUrl}${url}`, {
+      ...options,
+      headers,
+    });
+  } catch (primaryErr) {
+    if (primaryBaseUrl !== fallbackBaseUrl) {
+      try {
+        response = await fetch(`${fallbackBaseUrl}${url}`, {
+          ...options,
+          headers,
+        });
+      } catch {
+        throw primaryErr;
+      }
+    } else {
+      throw primaryErr;
+    }
+  }
 
   // If 401 Unauthorized, token might be expired or invalid. Force refresh master token and retry!
-  if (response.status === 401 && !url.includes("/auth/")) {
+  if (response && response.status === 401 && !url.includes("/auth/")) {
     localStorage.removeItem("token");
     localStorage.removeItem("master_token");
     const newToken = await ensureMasterToken(companyId);
     if (newToken) {
       headers["Authorization"] = `Bearer ${newToken}`;
-      response = await fetch(`${baseUrl}${url}`, {
-        ...options,
-        headers,
-      });
+      try {
+        response = await fetch(`${primaryBaseUrl}${url}`, {
+          ...options,
+          headers,
+        });
+      } catch {
+        if (primaryBaseUrl !== fallbackBaseUrl) {
+          response = await fetch(`${fallbackBaseUrl}${url}`, {
+            ...options,
+            headers,
+          });
+        }
+      }
     }
   }
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.message || errorBody.error || `API Request failed with status ${response.status}`);
+  if (!response || !response.ok) {
+    const errorBody = response ? await response.json().catch(() => ({})) : {};
+    throw new Error(errorBody.message || errorBody.error || `API Request failed with status ${response?.status || "offline"}`);
   }
 
   return response.json();

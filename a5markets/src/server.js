@@ -59,7 +59,9 @@ const corsOrigin = (origin, callback) => {
   const isAllowed = allowAnyOrigin ||
                     allowedOrigins.includes(cleanOrigin) ||
                     /\.a5markets\.com$/i.test(cleanOrigin) ||
-                    /a5markets\.com$/i.test(cleanOrigin);
+                    /a5markets\.com$/i.test(cleanOrigin) ||
+                    /\.novafxm\.com$/i.test(cleanOrigin) ||
+                    /novafxm\.com$/i.test(cleanOrigin);
   callback(null, isAllowed);
 };
 const corsOptions = { origin: corsOrigin, credentials: true };
