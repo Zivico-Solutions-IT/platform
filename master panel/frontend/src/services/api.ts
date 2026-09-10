@@ -52,12 +52,22 @@ export const COMPANY_API_URLS: Record<CompanyId, string> = {
 
 async function request<T>(companyId: CompanyId, url: string, options?: RequestInit): Promise<T> {
   const baseUrl = COMPANY_API_URLS[companyId] || COMPANY_API_URLS.novafxm;
+  const token =
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token") ||
+    localStorage.getItem("novafxm_token") ||
+    localStorage.getItem("a5markets_token") ||
+    localStorage.getItem("veltriumfx_token");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options?.headers as Record<string, string> || {}),
+  };
+
   const response = await fetch(`${baseUrl}${url}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers || {}),
-    },
     ...options,
+    headers,
   });
 
   if (!response.ok) {
@@ -66,6 +76,99 @@ async function request<T>(companyId: CompanyId, url: string, options?: RequestIn
   }
 
   return response.json();
+}
+
+function mapDbUserToClient(u: any): Client {
+  const primaryAccount = u.tradingAccounts?.find((a: any) => a.isPrimary) || u.tradingAccounts?.[0];
+  const loginNum = Number(primaryAccount?.accountNumber || (u.id ? 1000000 + Number(u.id) : 1000001));
+  const walletBal = Number(u.wallet?.balance ?? primaryAccount?.balance ?? 0);
+  const walletEq = Number(u.wallet?.equity ?? primaryAccount?.equity ?? walletBal);
+  const creditVal = Number(u.wallet?.credit ?? 0);
+
+  return {
+    login: loginNum,
+    id: String(u.id || loginNum),
+    name: u.name || "Client User",
+    email: u.email || "",
+    phone: u.phone || "+94 77 123 4567",
+    whatsapp: u.phone || "+94 77 123 4567",
+    balance: walletBal,
+    equity: walletEq,
+    credit: creditVal,
+    leverage: `1:${u.leverage || 500}`,
+    accountType: u.accountType === "Demo" ? "Demo" : "Live",
+    status: u.tradingStatus === "frozen" ? "Inactive" : "Active",
+    verification:
+      u.verificationStatus === "verified"
+        ? "Verified"
+        : u.verificationStatus === "pending"
+        ? "Pending"
+        : "Unverified",
+    group: u.tradingLevel || "Standard",
+    country: u.country || "LK",
+    registeredDate: u.createdAt ? new Date(u.createdAt).toISOString().split("T")[0] : "2026-09-02",
+    lastLogin: u.lastLoginAt ? new Date(u.lastLoginAt).toISOString().split("T")[0] : "2026-09-02",
+    assignedAgent: u.assignedAgent?.name || null,
+  };
+}
+
+function mapDbTrade(t: any): Trade {
+  return {
+    ticket: Number(t.ticket || t.id),
+    login: Number(t.tradingAccount?.accountNumber || t.login || 1000001),
+    clientName: t.user?.name || t.clientName || "Client",
+    symbol: t.symbol || "EURUSD",
+    type: t.side === "BUY" || t.type === "BUY" ? "BUY" : "SELL",
+    lots: Number(t.lots || 0.1),
+    openPrice: Number(t.openPrice || 0),
+    closePrice: Number(t.closePrice || t.currentPrice || t.openPrice || 0),
+    sl: t.sl ? Number(t.sl) : null,
+    tp: t.tp ? Number(t.tp) : null,
+    profit: Number(t.profit || 0),
+    openTime: t.openTime || (t.createdAt ? new Date(t.createdAt).toISOString() : new Date().toISOString()),
+    closeTime: t.closeTime || (t.closedAt ? new Date(t.closedAt).toISOString() : undefined),
+    comment: t.comment || "",
+  };
+}
+
+function mapDbDeposit(d: any): Deposit {
+  return {
+    id: String(d.id),
+    login: Number(d.tradingAccount?.accountNumber || (d.userId ? 1000000 + Number(d.userId) : 1000001)),
+    clientName: d.user?.name || "Client",
+    amount: Number(d.amount || 0),
+    method: d.paymentMethod || d.method || "USDT (TRC20)",
+    txId: d.transactionId || d.txHash || `TX${d.id}`,
+    status: d.status === "approved" ? "Approved" : d.status === "rejected" ? "Rejected" : "Pending",
+    date: d.createdAt ? new Date(d.createdAt).toISOString().split("T")[0] : "2026-09-02",
+    bonus: Number(d.bonus || 0),
+  };
+}
+
+function mapDbWithdrawal(w: any): Withdrawal {
+  return {
+    id: String(w.id),
+    login: Number(w.tradingAccount?.accountNumber || (w.userId ? 1000000 + Number(w.userId) : 1000001)),
+    clientName: w.user?.name || "Client",
+    amount: Number(w.amount || 0),
+    method: w.method || w.paymentMethod || "Crypto USDT",
+    status: w.status === "approved" ? "Approved" : w.status === "rejected" ? "Rejected" : "Pending",
+    date: w.createdAt ? new Date(w.createdAt).toISOString().split("T")[0] : "2026-09-02",
+  };
+}
+
+function mapDbKyc(u: any): KycVerification {
+  return {
+    id: String(u.id),
+    login: Number(u.tradingAccounts?.[0]?.accountNumber || (u.id ? 1000000 + Number(u.id) : 1000001)),
+    clientName: u.name || "Client User",
+    email: u.email || "",
+    submittedDate: u.updatedAt ? new Date(u.updatedAt).toISOString().split("T")[0] : "2026-09-02",
+    documentType: "National ID",
+    status: u.verificationStatus === "verified" ? "Verified" : u.verificationStatus === "rejected" ? "Rejected" : "Pending",
+    idProofUrl: u.idProofImage || undefined,
+    addressProofUrl: u.addressProofImage || undefined,
+  };
 }
 
 export const api = {
@@ -123,18 +226,58 @@ export const api = {
     try {
       // Attempt fetching from /admin/users, /admin/trades, etc.
       const usersRes = await request<{ users?: any[] }>(companyId, "/admin/users").catch(() => null);
-      if (usersRes && Array.isArray(usersRes.users)) {
+
+      if (usersRes && Array.isArray(usersRes.users) && usersRes.users.length > 0) {
         const fallback = getCompanyFallbackData(companyId);
-        return {
-          ...fallback,
-          database: companyId === "novafxm" ? "nova_db" : `${companyId}_db`,
-        };
+
+        const realClients: Client[] = usersRes.users
+          .filter((u: any) => u.role === "user" || !u.role || u.role === "client")
+          .map(mapDbUserToClient);
+
+        if (realClients.length > 0) {
+          const tradesRes = await request<{ trades?: any[] }>(companyId, "/admin/trades").catch(() => null);
+          const depositsRes = await request<{ deposits?: any[] }>(companyId, "/admin/deposits").catch(() => null);
+          const withdrawalsRes = await request<{ withdrawals?: any[] }>(companyId, "/admin/withdrawals").catch(() => null);
+
+          const openTrades = Array.isArray(tradesRes?.trades)
+            ? tradesRes!.trades.filter((t: any) => t.status === "open").map(mapDbTrade)
+            : fallback.openTrades;
+
+          const closedTrades = Array.isArray(tradesRes?.trades)
+            ? tradesRes!.trades.filter((t: any) => t.status === "closed").map(mapDbTrade)
+            : fallback.closedTrades;
+
+          const deposits = Array.isArray(depositsRes?.deposits)
+            ? depositsRes!.deposits.map(mapDbDeposit)
+            : fallback.deposits;
+
+          const withdrawals = Array.isArray(withdrawalsRes?.withdrawals)
+            ? withdrawalsRes!.withdrawals.map(mapDbWithdrawal)
+            : fallback.withdrawals;
+
+          const kycVerifications = usersRes.users
+            .filter((u: any) => u.verificationStatus === "pending" || u.verificationStatus === "verified")
+            .map(mapDbKyc);
+
+          return {
+            companyId,
+            database: companyId === "novafxm" ? "nova_db" : `${companyId}_db`,
+            clients: realClients,
+            openTrades: openTrades.length > 0 ? openTrades : fallback.openTrades,
+            closedTrades: closedTrades.length > 0 ? closedTrades : fallback.closedTrades,
+            deposits: deposits.length > 0 ? deposits : fallback.deposits,
+            withdrawals: withdrawals.length > 0 ? withdrawals : fallback.withdrawals,
+            kycVerifications: kycVerifications.length > 0 ? kycVerifications : fallback.kycVerifications,
+            settings: fallback.settings,
+            symbols: fallback.symbols,
+          };
+        }
       }
-    } catch {
-      // Fall through to fallback
+    } catch (err) {
+      console.warn("Failed to fetch admin users data:", err);
     }
 
-    // Default to isolated, dedicated company dataset
+    // Default to isolated, dedicated company dataset if backend endpoints fail
     return getCompanyFallbackData(companyId);
   },
 

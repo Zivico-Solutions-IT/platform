@@ -43,7 +43,7 @@ const corsOrigin = (origin, callback) => {
   const cleanOrigin = origin.replace(/\/$/, '');
   const isAllowed = allowAnyOrigin ||
                     allowedOrigins.includes(cleanOrigin) ||
-                    /^http:\/\/(localhost|127\.0\.0\.1):(8081|8082)$/i.test(cleanOrigin) ||
+                    /^http:\/\/(localhost|127\.0\.0\.1):(8081|8082|5173|5174|3000)$/i.test(cleanOrigin) ||
                     /\.veltriumfx\.com$/i.test(cleanOrigin) ||
                     /veltriumfx\.com$/i.test(cleanOrigin) ||
                     /\.novafxm\.com$/i.test(cleanOrigin) ||
