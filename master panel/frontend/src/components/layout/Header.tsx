@@ -1,0 +1,312 @@
+import React, { useState, useRef, useEffect } from "react";
+import { usePortal } from "../../context/PortalContext";
+import {
+  Search,
+  Bell,
+  Shield,
+  BarChart3,
+  ChevronDown,
+  Check,
+  Database,
+  RefreshCw,
+} from "lucide-react";
+import { monthlyBrokerStats } from "../../data/mockData";
+
+export const Header: React.FC = () => {
+  const {
+    currentCompany,
+    setCompany,
+    companyConfig,
+    companies,
+    globalSearch,
+    setGlobalSearch,
+    deposits,
+    withdrawals,
+    setActiveTab,
+    selectedPeriod,
+    setSelectedPeriod,
+    showMonthlyTable,
+    setShowMonthlyTable,
+    dbStatus,
+    isDbLoading,
+    refreshDbData,
+  } = usePortal();
+
+  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCompanyDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsCompanyDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const pendingCount =
+    deposits.filter((d) => d.status === "PENDING").length +
+    withdrawals.filter((w) => w.status === "PENDING").length;
+
+  return (
+    <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between gap-4 select-none shrink-0 sticky top-0 z-20 shadow-xs font-sans">
+      {/* Global Search Bar */}
+      <div className="flex-1 max-w-xs md:max-w-sm relative">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          value={globalSearch}
+          onChange={(e) => setGlobalSearch(e.target.value)}
+          placeholder="Search client login, name, ticket #, or symbol..."
+          className="w-full bg-slate-100/80 hover:bg-slate-100 border border-slate-200 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all font-sans"
+        />
+        {globalSearch && (
+          <button
+            onClick={() => setGlobalSearch("")}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Multi-Company Dropdown Switcher */}
+      <div className="relative" ref={dropdownRef}>
+        <button
+          type="button"
+          onClick={() => setIsCompanyDropdownOpen((prev) => !prev)}
+          className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs cursor-pointer ${
+            isCompanyDropdownOpen
+              ? "bg-slate-50 border-slate-300 ring-2 ring-emerald-500/10"
+              : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/80"
+          }`}
+          title="Select Broker Company Entity"
+        >
+          {/* Company Monogram Badge */}
+          <span
+            className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black uppercase text-white shadow-xs bg-gradient-to-tr ${companyConfig.avatarGradient}`}
+          >
+            {companyConfig.initials}
+          </span>
+
+          <div className="text-left flex flex-col justify-center">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-extrabold text-slate-800 tracking-tight leading-none">
+                {companyConfig.name}
+              </span>
+              <span className={`w-1.5 h-1.5 rounded-full ${companyConfig.statusDotColor} animate-pulse`} />
+            </div>
+            <span className="text-[9px] font-mono text-slate-400 leading-tight">
+              {companyConfig.serverName.replace(" Financial", "").replace(" Global", "").replace(" Live", "")}
+            </span>
+          </div>
+
+          <ChevronDown
+            className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ml-0.5 ${
+              isCompanyDropdownOpen ? "rotate-180 text-slate-700" : ""
+            }`}
+          />
+        </button>
+
+        {/* Dropdown Menu Popup */}
+        {isCompanyDropdownOpen && (
+          <div className="absolute left-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2 z-50 animate-fadeIn font-sans">
+            {/* Header */}
+            <div className="px-3.5 py-1.5 flex items-center justify-between border-b border-slate-100 mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Managed Broker Entities
+              </span>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                {companies.length} Brands
+              </span>
+            </div>
+
+            {/* Company Options */}
+            <div className="space-y-0.5 px-1.5">
+              {companies.map((comp) => {
+                const isSelected = currentCompany === comp.id;
+                return (
+                  <button
+                    key={comp.id}
+                    type="button"
+                    onClick={() => {
+                      setCompany(comp.id);
+                      setIsCompanyDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? comp.id === "novafxm"
+                          ? "bg-amber-50/90 border border-amber-300 text-amber-950"
+                          : comp.id === "a5markets"
+                          ? "bg-teal-50/90 border border-teal-300 text-teal-950"
+                          : "bg-emerald-50/90 border border-emerald-300 text-emerald-950"
+                        : "hover:bg-slate-50 text-slate-700 border border-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black uppercase text-white shadow-2xs shrink-0 bg-gradient-to-tr ${comp.avatarGradient}`}
+                      >
+                        {comp.initials}
+                      </span>
+                      <div className="truncate">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold tracking-tight text-slate-900 truncate">
+                            {comp.name}
+                          </span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${comp.statusDotColor} shrink-0 animate-pulse`} />
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono truncate">
+                          {comp.fullName}
+                        </div>
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <div className="shrink-0 ml-2">
+                        <Check
+                          className={`w-4 h-4 ${
+                            comp.id === "novafxm"
+                              ? "text-amber-600"
+                              : comp.id === "a5markets"
+                              ? "text-teal-600"
+                              : "text-emerald-700"
+                          }`}
+                        />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Footer Notice */}
+            <div className="mt-1.5 pt-1.5 px-3.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-sans">
+              <span>All client data & trades isolated</span>
+              <span className="font-mono font-medium text-slate-600 uppercase">LIVE GATEWAY</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Admin Controls, Month Filter & Notifications */}
+      <div className="flex items-center gap-3">
+        {/* Month Dropdown & Monthly Breakdown Button */}
+        <div className="flex items-center gap-2">
+          {/* Month Dropdown */}
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+            aria-label="Select reporting month"
+            className="text-xs font-bold bg-white border border-slate-200 text-slate-700 py-1.5 px-3 rounded-xl hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer shadow-2xs"
+          >
+            <option value="LIVE">⚡ Real-Time (Live Server)</option>
+            {monthlyBrokerStats.map((stat) => (
+              <option key={stat.monthKey} value={stat.monthKey}>
+                {stat.label} {stat.monthKey === "2026-09" ? "(Current)" : `[${stat.status}]`}
+              </option>
+            ))}
+          </select>
+
+          {/* Toggle Monthly Breakdown Table */}
+          <button
+            onClick={() => {
+              setShowMonthlyTable((prev) => !prev);
+              setActiveTab("dashboard");
+            }}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs ${
+              showMonthlyTable
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/20"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+            }`}
+            title="Toggle Monthly Breakdown Table"
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Monthly Breakdown</span>
+          </button>
+        </div>
+
+        {/* MySQL Workbench Database Connection Status */}
+        <button
+          type="button"
+          onClick={() => refreshDbData()}
+          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs transition-all shadow-2xs cursor-pointer ${
+            dbStatus.connected
+              ? "bg-emerald-50/90 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+              : "bg-amber-50/90 border-amber-300 text-amber-800 hover:bg-amber-100"
+          }`}
+          title={
+            dbStatus.connected
+              ? `Connected to MySQL: ${dbStatus.database || "mt5_portal"} @ ${dbStatus.host || "localhost"}:${dbStatus.port || 3306}. Click to refresh.`
+              : `MySQL Not Connected: ${dbStatus.error || "Execute database/schema.sql in MySQL Workbench"}. Click to retry.`
+          }
+        >
+          <Database className="w-3.5 h-3.5 shrink-0" />
+          <div className="flex items-center gap-1.5">
+            <span className="hidden md:inline font-bold text-[11px]">
+              {dbStatus.connected ? "MySQL: Live" : "MySQL: Setup"}
+            </span>
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                dbStatus.connected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+              }`}
+            />
+          </div>
+          {isDbLoading && <RefreshCw className="w-3 h-3 animate-spin text-slate-500 ml-0.5" />}
+        </button>
+
+        {/* Notification Bell */}
+        <div className="relative">
+          <button
+            onClick={() => setActiveTab("payments-deposits")}
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors relative"
+            title="Pending approvals"
+          >
+            <Bell className="w-4 h-4" />
+            {pendingCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-mono text-[9px] font-bold flex items-center justify-center ring-2 ring-white">
+                {pendingCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Admin Profile with Dynamic Company Brand */}
+        <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-xs bg-gradient-to-tr ${companyConfig.avatarGradient}`}
+          >
+            {companyConfig.initials}
+          </div>
+          <div className="hidden lg:block text-left">
+            <div className="text-xs font-bold text-slate-800 flex items-center gap-1">
+              <span>Admin Console</span>
+              <Shield
+                className={`w-3 h-3 inline ${
+                  currentCompany === "novafxm"
+                    ? "text-amber-600"
+                    : currentCompany === "a5markets"
+                    ? "text-teal-600"
+                    : "text-emerald-700"
+                }`}
+              />
+            </div>
+            <div className="text-[10px] text-slate-500 font-medium tracking-tight">
+              {companyConfig.brand}
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};

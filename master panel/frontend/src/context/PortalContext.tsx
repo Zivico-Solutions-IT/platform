@@ -1,0 +1,1002 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  ActiveNavTab,
+  Client,
+  SymbolData,
+  Trade,
+  Deposit,
+  Withdrawal,
+  KycVerification,
+  BrokerSettings,
+  CompanyId,
+  CompanyConfig,
+} from "../types";
+import { COMPANIES } from "../data/companyData";
+import { api, DbStatusResponse } from "../services/api";
+
+interface PlaceOrderParams {
+  login: number;
+  symbol: string;
+  type: "BUY" | "SELL";
+  lots: number;
+  sl?: number | null;
+  tp?: number | null;
+  comment?: string;
+}
+
+interface ToastMessage {
+  id: string;
+  type: "success" | "error" | "info";
+  title: string;
+  message: string;
+}
+
+export interface DbConnectionInfo {
+  connected: boolean;
+  host?: string;
+  port?: number;
+  database?: string;
+  user?: string;
+  databases?: {
+    novafxm?: { connected: boolean; dbName: string; error?: string };
+    a5markets?: { connected: boolean; dbName: string; error?: string };
+    veltriumfx?: { connected: boolean; dbName: string; error?: string };
+  };
+  error?: string | null;
+  code?: string;
+}
+
+interface PortalContextType {
+  // Database Connection
+  dbStatus: DbConnectionInfo;
+  isDbLoading: boolean;
+  refreshDbData: () => Promise<void>;
+
+  // Multi-Company Management
+  currentCompany: CompanyId;
+  setCompany: (id: CompanyId) => void;
+  companyConfig: CompanyConfig;
+  companies: CompanyConfig[];
+
+  activeTab: ActiveNavTab;
+  setActiveTab: (tab: ActiveNavTab) => void;
+  symbols: SymbolData[];
+  clients: Client[];
+  openTrades: Trade[];
+  closedTrades: Trade[];
+  deposits: Deposit[];
+  withdrawals: Withdrawal[];
+  kycVerifications: KycVerification[];
+  settings: BrokerSettings;
+  globalSearch: string;
+  setGlobalSearch: (s: string) => void;
+  selectedClient: Client | null;
+  setSelectedClient: (c: Client | null) => void;
+  toasts: ToastMessage[];
+  addToast: (type: "success" | "error" | "info", title: string, message: string) => void;
+  removeToast: (id: string) => void;
+  
+  // Reporting Period & Monthly view
+  selectedPeriod: string;
+  setSelectedPeriod: (period: string) => void;
+  showMonthlyTable: boolean;
+  setShowMonthlyTable: React.Dispatch<React.SetStateAction<boolean>>;
+  
+  // Actions
+  approveDeposit: (id: string, customAmount?: number, notes?: string, bonusAmount?: number) => void;
+  rejectDeposit: (id: string, notes?: string) => void;
+  approveWithdrawal: (id: string) => void;
+  rejectWithdrawal: (id: string, reason?: string) => void;
+  approveKyc: (id: string) => void;
+  rejectKyc: (id: string, reason: string) => void;
+  placeOrder: (order: PlaceOrderParams) => boolean;
+  closeTrade: (ticket: number) => void;
+  closeAllTrades: (onlyProfitable?: boolean) => void;
+  adjustClientBalance: (login: number, amount: number, isCredit?: boolean) => void;
+  toggleClientStatus: (login: number) => void;
+  updateClient: (login: number, updatedFields: Partial<Client>) => Promise<void> | void;
+  toggleSymbolEnabled: (symbolId: string) => void;
+  updateSettings: (newSettings: Partial<BrokerSettings>) => void;
+  resetAllData: () => void;
+  resetPendingDeposits: () => void;
+}
+
+const PortalContext = createContext<PortalContextType | undefined>(undefined);
+
+const defaultSettings: BrokerSettings = {
+  serverName: "NOVAFXM Live Server 01",
+  brokerBrand: "NOVAFXM PRIME",
+  serverStatus: "LIVE",
+  pingMs: 18,
+  marginCall: 100,
+  stopOut: 50,
+  defaultLeverage: "1:500",
+  soundAlerts: true,
+  autoApproveVerifiedDeposits: false,
+  adminUser: {
+    name: "Muzammil (Head Administrator)",
+    role: "Super Administrator",
+    email: "admin@novafxm.com",
+  },
+};
+
+const defaultSymbols: SymbolData[] = [
+  { id: "sym-1", symbol: "EURUSD", category: "Forex", bid: 1.08452, ask: 1.08464, spread: 1.2, digits: 5, contractSize: 100000, minLot: 0.01, maxLot: 100, swapLong: -5.2, swapShort: 1.4, enabled: true, dailyChange: 0.18 },
+  { id: "sym-2", symbol: "GBPUSD", category: "Forex", bid: 1.26781, ask: 1.26798, spread: 1.7, digits: 5, contractSize: 100000, minLot: 0.01, maxLot: 100, swapLong: -4.8, swapShort: 0.9, enabled: true, dailyChange: -0.24 },
+  { id: "sym-3", symbol: "USDJPY", category: "Forex", bid: 154.215, ask: 154.228, spread: 1.3, digits: 3, contractSize: 100000, minLot: 0.01, maxLot: 100, swapLong: 8.5, swapShort: -12.4, enabled: true, dailyChange: 0.45 },
+  { id: "sym-4", symbol: "XAUUSD", category: "Metals", bid: 2384.45, ask: 2384.75, spread: 3.0, digits: 2, contractSize: 100, minLot: 0.01, maxLot: 50, swapLong: -14.5, swapShort: 6.2, enabled: true, dailyChange: 1.15 },
+  { id: "sym-5", symbol: "BTCUSD", category: "Crypto", bid: 64820.00, ask: 64845.00, spread: 25.0, digits: 2, contractSize: 1, minLot: 0.01, maxLot: 10, swapLong: -20, swapShort: -15, enabled: true, dailyChange: 3.20 },
+  { id: "sym-6", symbol: "US30", category: "Indices", bid: 38940.50, ask: 38944.50, spread: 4.0, digits: 2, contractSize: 10, minLot: 0.1, maxLot: 50, swapLong: -8, swapShort: 3.5, enabled: true, dailyChange: -0.62 },
+  { id: "sym-7", symbol: "USDCAD", category: "Forex", bid: 1.36420, ask: 1.36435, spread: 1.5, digits: 5, contractSize: 100000, minLot: 0.01, maxLot: 100, swapLong: -3.2, swapShort: 0.8, enabled: true, dailyChange: 0.12 },
+  { id: "sym-8", symbol: "WTIUSD", category: "Metals", bid: 82.45, ask: 82.49, spread: 4.0, digits: 2, contractSize: 1000, minLot: 0.01, maxLot: 50, swapLong: -12.0, swapShort: 4.5, enabled: true, dailyChange: -0.85 },
+  { id: "sym-9", symbol: "XAGUSD", category: "Metals", bid: 28.350, ask: 28.375, spread: 2.5, digits: 3, contractSize: 5000, minLot: 0.01, maxLot: 50, swapLong: -8.5, swapShort: 3.2, enabled: true, dailyChange: 0.65 },
+];
+
+export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Current active company
+  const [currentCompany, setCurrentCompany] = useState<CompanyId>(() => {
+    const saved = localStorage.getItem("MT5_PORTAL_ACTIVE_COMPANY") as CompanyId;
+    return saved && (saved === "novafxm" || saved === "a5markets" || saved === "veltriumfx")
+      ? saved
+      : "novafxm";
+  });
+
+  const [dbStatus, setDbStatus] = useState<DbConnectionInfo>({
+    connected: false,
+    host: "localhost",
+    port: 3306,
+    database: `mt5_${currentCompany}`,
+    error: null,
+  });
+  const [isDbLoading, setIsDbLoading] = useState<boolean>(true);
+
+  const [activeTab, setActiveTab] = useState<ActiveNavTab>("dashboard");
+  const [globalSearch, setGlobalSearch] = useState<string>("");
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("LIVE");
+  const [showMonthlyTable, setShowMonthlyTable] = useState<boolean>(false);
+
+  // Entities
+  const [symbols, setSymbols] = useState<SymbolData[]>(defaultSymbols);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [openTrades, setOpenTrades] = useState<Trade[]>([]);
+  const [closedTrades, setClosedTrades] = useState<Trade[]>([]);
+  const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [kycVerifications, setKycVerifications] = useState<KycVerification[]>([]);
+  const [settings, setSettings] = useState<BrokerSettings>(defaultSettings);
+
+  const addToast = useCallback((type: "success" | "error" | "info", title: string, message: string) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, type, title, message }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4500);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  // Fetch data directly from MySQL backend or isolated brand dataset
+  const loadCompanyData = useCallback(
+    async (compId: CompanyId, notify = false) => {
+      setIsDbLoading(true);
+      try {
+        const status = await api.getDbStatus(compId);
+        const activeDb = status.databases ? status.databases[compId] : undefined;
+        const isConnected = activeDb ? activeDb.connected : status.connected;
+        setDbStatus({
+          ...status,
+          database: activeDb ? activeDb.dbName : `${compId}_db`,
+          connected: isConnected,
+        });
+
+        const data = await api.getCompanyData(compId);
+        setClients(data.clients);
+        setOpenTrades(data.openTrades);
+        setClosedTrades(data.closedTrades);
+        setDeposits(data.deposits);
+        setWithdrawals(data.withdrawals);
+        setKycVerifications(data.kycVerifications);
+        if (data.settings) setSettings(data.settings);
+        if (data.symbols && data.symbols.length > 0) setSymbols(data.symbols);
+
+        if (notify) {
+          if (isConnected) {
+            addToast(
+              "success",
+              "Database Connected",
+              `Connected to MySQL DB '${data.database || `${compId}_db`}' for ${COMPANIES[compId].name}.`
+            );
+          } else {
+            addToast(
+              "info",
+              `Loaded ${COMPANIES[compId].name}`,
+              `Active Broker Entity: ${COMPANIES[compId].fullName}`
+            );
+          }
+        }
+      } catch (err: any) {
+        console.warn("Could not reach backend API:", err);
+        setDbStatus({
+          connected: false,
+          host: "187.127.213.250",
+          port: 3306,
+          database: `${compId}_db`,
+          error: err?.message || "Backend API server offline.",
+        });
+      } finally {
+        setIsDbLoading(false);
+      }
+    },
+    [addToast]
+  );
+
+  // Initial load
+  useEffect(() => {
+    loadCompanyData(currentCompany, true);
+  }, [currentCompany, loadCompanyData]);
+
+  // Periodic health check (every 10s)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const status = await api.getDbStatus(currentCompany);
+        const activeDb = status.databases ? status.databases[currentCompany] : undefined;
+        setDbStatus((prev) => {
+          const isNowConnected = activeDb ? activeDb.connected : status.connected;
+          if (prev.connected !== isNowConnected && isNowConnected) {
+            loadCompanyData(currentCompany);
+            addToast("success", "Database Reconnected", `Reconnected to ${COMPANIES[currentCompany].name} DB.`);
+          }
+          return {
+            ...status,
+            database: activeDb ? activeDb.dbName : `${currentCompany}_db`,
+            connected: isNowConnected,
+          };
+        });
+      } catch {
+        setDbStatus((prev) => ({ ...prev, connected: false }));
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [currentCompany, loadCompanyData, addToast]);
+
+  // Financial metrics recalculation helper
+  const recalculateClientFinancials = useCallback(
+    (currentClients: Client[], currentOpenTrades: Trade[]): Client[] => {
+      return currentClients.map((client) => {
+        const clientTrades = currentOpenTrades.filter((t) => t.login === client.login);
+        const floatingProfit = clientTrades.reduce((acc, t) => acc + t.profit, 0);
+        const equity = Number((client.balance + client.credit + floatingProfit).toFixed(2));
+        
+        let margin = 0;
+        clientTrades.forEach((t) => {
+          const levNum = parseInt(client.leverage.replace("1:", "")) || 500;
+          const symbolObj = symbols.find((s) => s.symbol === t.symbol);
+          const contractSize = symbolObj ? symbolObj.contractSize : 100000;
+          margin += (t.lots * contractSize * t.currentPrice) / levNum;
+        });
+        margin = Number(margin.toFixed(2));
+
+        const freeMargin = Number((equity - margin).toFixed(2));
+        const marginLevel = margin > 0 ? Number(((equity / margin) * 100).toFixed(2)) : 0;
+
+        return {
+          ...client,
+          equity,
+          margin,
+          freeMargin,
+          marginLevel,
+        };
+      });
+    },
+    [symbols]
+  );
+
+  // Live Simulated Price Tickers Engine
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSymbols((prevSymbols) => {
+        if (!prevSymbols || prevSymbols.length === 0) return prevSymbols;
+
+        const countToUpdate = Math.floor(Math.random() * 3) + 1;
+        const indicesToUpdate = new Set<number>();
+        while (indicesToUpdate.size < countToUpdate) {
+          indicesToUpdate.add(Math.floor(Math.random() * prevSymbols.length));
+        }
+
+        const nextSymbols = prevSymbols.map((s, idx) => {
+          if (!indicesToUpdate.has(idx)) return s;
+
+          const isUp = Math.random() > 0.48;
+          let step = 1 / Math.pow(10, s.digits);
+          if (s.category === "Crypto") step = Math.random() * 8 + 2;
+          else if (s.category === "Indices") step = Math.random() * 3 + 1;
+          else if (s.category === "Metals") step = Math.random() * 0.4 + 0.1;
+          else step = step * (Math.floor(Math.random() * 3) + 1);
+
+          const delta = isUp ? step : -step;
+          const newBid = Number((s.bid + delta).toFixed(s.digits));
+          const spreadOffset = (s.spread * (1 / Math.pow(10, s.digits === 3 || s.digits === 5 ? 4 : 1)));
+          const newAsk = Number((newBid + spreadOffset).toFixed(s.digits));
+
+          return {
+            ...s,
+            bid: newBid,
+            ask: newAsk,
+            changeDirection: isUp ? ("up" as const) : ("down" as const),
+          };
+        });
+
+        setOpenTrades((prevTrades) => {
+          return prevTrades.map((trade) => {
+            const sym = nextSymbols.find((s) => s.symbol === trade.symbol);
+            if (!sym) return trade;
+
+            const currentMarketPrice = trade.type === "BUY" ? sym.bid : sym.ask;
+            const diff =
+              trade.type === "BUY"
+                ? currentMarketPrice - trade.openPrice
+                : trade.openPrice - currentMarketPrice;
+
+            const pipChange = Number((diff * Math.pow(10, sym.digits - 1)).toFixed(1));
+            const rawProfit = diff * sym.contractSize * trade.lots + trade.swap + trade.commission;
+            const profit = Number(rawProfit.toFixed(2));
+
+            return {
+              ...trade,
+              currentPrice: currentMarketPrice,
+              profit,
+              pipChange,
+            };
+          });
+        });
+
+        return nextSymbols;
+      });
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update client metrics when open trades change
+  useEffect(() => {
+    setClients((prevClients) => recalculateClientFinancials(prevClients, openTrades));
+  }, [openTrades, recalculateClientFinancials]);
+
+  // Actions connecting to MySQL API
+  const approveDeposit = useCallback(
+    async (depositId: string, customAmount?: number, notes?: string, bonusAmount?: number) => {
+      const deposit = deposits.find((d) => d.id === depositId);
+      if (!deposit || deposit.status !== "PENDING") return;
+
+      const finalAmount =
+        customAmount !== undefined && !isNaN(customAmount) && customAmount > 0
+          ? Number(customAmount.toFixed(2))
+          : deposit.amount;
+
+      const finalBonus =
+        bonusAmount !== undefined && !isNaN(bonusAmount) && bonusAmount > 0
+          ? Number(bonusAmount.toFixed(2))
+          : 0;
+
+      const originalAmt = deposit.originalAmount || deposit.amount;
+      const isEdited = Math.abs(finalAmount - deposit.amount) > 0.009;
+      const adjReason = isEdited
+        ? `Adjusted from $${deposit.amount} to $${finalAmount} by Manager`
+        : undefined;
+
+      const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+      setDeposits((prev) =>
+        prev.map((d) => {
+          if (d.id === depositId) {
+            return {
+              ...d,
+              amount: finalAmount,
+              originalAmount: originalAmt,
+              bonusAmount: finalBonus,
+              status: "APPROVED",
+              processedAt: now,
+              notes: notes || d.notes || "Approved by Manager",
+              adjustmentReason: adjReason,
+            };
+          }
+          return d;
+        })
+      );
+
+      setClients((prev) =>
+        prev.map((c) => {
+          if (c.login === deposit.login) {
+            const newBal = Number((c.balance + finalAmount).toFixed(2));
+            const newCredit = Number((c.credit + finalBonus).toFixed(2));
+            const newEquity = Number((c.equity + finalAmount + finalBonus).toFixed(2));
+            const newFree = Number((c.freeMargin + finalAmount + finalBonus).toFixed(2));
+            return {
+              ...c,
+              balance: newBal,
+              credit: newCredit,
+              equity: newEquity,
+              freeMargin: newFree,
+            };
+          }
+          return c;
+        })
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.approveDeposit(depositId, {
+            companyId: currentCompany,
+            customAmount: finalAmount,
+            notes: notes || "Approved by Manager",
+            bonusAmount: finalBonus,
+          });
+        } catch (err: any) {
+          console.error("API deposit approve failed:", err);
+          addToast("error", "Database Sync Error", err.message || "Failed to update MySQL.");
+        }
+      }
+
+      addToast(
+        "success",
+        "Deposit Approved",
+        `$${finalAmount.toLocaleString()}${finalBonus > 0 ? ` + $${finalBonus} Bonus` : ""} credited to #${deposit.login}`
+      );
+    },
+    [deposits, currentCompany, dbStatus.connected, addToast]
+  );
+
+  const rejectDeposit = useCallback(
+    async (depositId: string, notes?: string) => {
+      const deposit = deposits.find((d) => d.id === depositId);
+      if (!deposit || deposit.status !== "PENDING") return;
+
+      const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+      setDeposits((prev) =>
+        prev.map((d) =>
+          d.id === depositId
+            ? { ...d, status: "REJECTED", processedAt: now, notes: notes || "Rejected by Manager" }
+            : d
+        )
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.rejectDeposit(depositId, { companyId: currentCompany, notes });
+        } catch (err: any) {
+          console.error("API reject deposit failed:", err);
+        }
+      }
+
+      addToast("info", "Deposit Rejected", `Deposit #${depositId} marked as rejected.`);
+    },
+    [deposits, currentCompany, dbStatus.connected, addToast]
+  );
+
+  const approveWithdrawal = useCallback(
+    async (withdrawalId: string) => {
+      const wth = withdrawals.find((w) => w.id === withdrawalId);
+      if (!wth || wth.status !== "PENDING") return;
+
+      const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+      setWithdrawals((prev) =>
+        prev.map((w) => (w.id === withdrawalId ? { ...w, status: "APPROVED", processedAt: now } : w))
+      );
+
+      setClients((prev) =>
+        prev.map((c) => {
+          if (c.login === wth.login) {
+            const newBal = Math.max(0, Number((c.balance - wth.amount).toFixed(2)));
+            return {
+              ...c,
+              balance: newBal,
+              equity: Math.max(0, Number((c.equity - wth.amount).toFixed(2))),
+              freeMargin: Math.max(0, Number((c.freeMargin - wth.amount).toFixed(2))),
+            };
+          }
+          return c;
+        })
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.approveWithdrawal(withdrawalId, { companyId: currentCompany });
+        } catch (err: any) {
+          console.error("API approve withdrawal failed:", err);
+        }
+      }
+
+      addToast("success", "Withdrawal Approved", `$${wth.amount.toLocaleString()} processed for #${wth.login}`);
+    },
+    [withdrawals, currentCompany, dbStatus.connected, addToast]
+  );
+
+  const rejectWithdrawal = useCallback(
+    async (withdrawalId: string, reason?: string) => {
+      const wth = withdrawals.find((w) => w.id === withdrawalId);
+      if (!wth || wth.status !== "PENDING") return;
+
+      const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+      setWithdrawals((prev) =>
+        prev.map((w) =>
+          w.id === withdrawalId
+            ? { ...w, status: "REJECTED", processedAt: now, reason: reason || "Rejected by Manager" }
+            : w
+        )
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.rejectWithdrawal(withdrawalId, { companyId: currentCompany, reason });
+        } catch (err: any) {
+          console.error("API reject withdrawal failed:", err);
+        }
+      }
+
+      addToast("info", "Withdrawal Rejected", `Request #${withdrawalId} rejected.`);
+    },
+    [withdrawals, currentCompany, dbStatus.connected, addToast]
+  );
+
+  const approveKyc = useCallback(
+    async (kycId: string) => {
+      const kyc = kycVerifications.find((k) => k.id === kycId);
+      if (!kyc) return;
+
+      setKycVerifications((prev) =>
+        prev.map((k) => (k.id === kycId ? { ...k, status: "APPROVED" } : k))
+      );
+
+      setClients((prev) =>
+        prev.map((c) => (c.login === kyc.login ? { ...c, kycStatus: "Verified" } : c))
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.approveKyc(kycId, { companyId: currentCompany });
+        } catch (err: any) {
+          console.error("API approve KYC failed:", err);
+        }
+      }
+
+      addToast("success", "KYC Approved", `Account #${kyc.login} is now fully verified.`);
+    },
+    [kycVerifications, currentCompany, dbStatus.connected, addToast]
+  );
+
+  const rejectKyc = useCallback(
+    async (kycId: string, reason: string) => {
+      const kyc = kycVerifications.find((k) => k.id === kycId);
+      if (!kyc) return;
+
+      setKycVerifications((prev) =>
+        prev.map((k) => (k.id === kycId ? { ...k, status: "REJECTED", rejectionReason: reason } : k))
+      );
+
+      setClients((prev) =>
+        prev.map((c) => (c.login === kyc.login ? { ...c, kycStatus: "Unverified" } : c))
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.rejectKyc(kycId, { companyId: currentCompany, reason });
+        } catch (err: any) {
+          console.error("API reject KYC failed:", err);
+        }
+      }
+
+      addToast("info", "KYC Rejected", `Verification for #${kyc.login} rejected: ${reason}`);
+    },
+    [kycVerifications, currentCompany, dbStatus.connected, addToast]
+  );
+
+  const placeOrder = useCallback(
+    (order: PlaceOrderParams): boolean => {
+      const client = clients.find((c) => c.login === order.login);
+      const symbolObj = symbols.find((s) => s.symbol === order.symbol);
+
+      if (!client) {
+        addToast("error", "Order Failed", "Client account not found.");
+        return false;
+      }
+      if (!symbolObj) {
+        addToast("error", "Order Failed", "Symbol not found.");
+        return false;
+      }
+      if (!symbolObj.enabled) {
+        addToast("error", "Symbol Disabled", `${symbolObj.symbol} trading is currently suspended.`);
+        return false;
+      }
+
+      const openPrice = order.type === "BUY" ? symbolObj.ask : symbolObj.bid;
+      const commission = -Number((order.lots * 3.5).toFixed(2));
+      const ticket = Math.floor(Math.random() * 900000) + 8800000;
+      const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+      const newTrade: Trade = {
+        ticket,
+        login: client.login,
+        clientName: client.name,
+        symbol: symbolObj.symbol,
+        type: order.type,
+        lots: order.lots,
+        openPrice,
+        currentPrice: openPrice,
+        sl: order.sl || null,
+        tp: order.tp || null,
+        swap: 0,
+        commission,
+        profit: commission,
+        openTime: now,
+        status: "OPEN",
+        comment: order.comment || "Manager Terminal Exec",
+      };
+
+      setOpenTrades((prev) => [newTrade, ...prev]);
+
+      if (dbStatus.connected) {
+        api.placeTrade({
+          companyId: currentCompany,
+          login: client.login,
+          symbol: symbolObj.symbol,
+          type: order.type,
+          lots: order.lots,
+          openPrice,
+          sl: order.sl || null,
+          tp: order.tp || null,
+          comment: order.comment || "Manager Terminal Exec",
+        }).catch((err) => console.error("Place trade API failed:", err));
+      }
+
+      addToast(
+        "success",
+        "Order Executed",
+        `#${ticket} ${order.type} ${order.lots} ${symbolObj.symbol} @ ${openPrice}`
+      );
+      return true;
+    },
+    [clients, symbols, currentCompany, dbStatus.connected, addToast]
+  );
+
+  const closeTrade = useCallback(
+    async (ticket: number) => {
+      const trade = openTrades.find((t) => t.ticket === ticket);
+      if (!trade) return;
+
+      const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+      const closedTrade: Trade = {
+        ...trade,
+        closePrice: trade.currentPrice,
+        closeTime: now,
+        status: "CLOSED",
+        comment: `${trade.comment || ""} [Closed by Manager]`,
+      };
+
+      setOpenTrades((prev) => prev.filter((t) => t.ticket !== ticket));
+      setClosedTrades((prev) => [closedTrade, ...prev]);
+
+      setClients((prev) =>
+        prev.map((c) => {
+          if (c.login === trade.login) {
+            const newBal = Number((c.balance + trade.profit).toFixed(2));
+            return { ...c, balance: newBal };
+          }
+          return c;
+        })
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.closeTrade(ticket, {
+            companyId: currentCompany,
+            closePrice: trade.currentPrice,
+            profit: trade.profit,
+          });
+        } catch (err: any) {
+          console.error("API close trade failed:", err);
+        }
+      }
+
+      addToast(
+        trade.profit >= 0 ? "success" : "info",
+        "Trade Closed",
+        `Ticket #${ticket} closed at ${trade.currentPrice} with P&L: $${trade.profit > 0 ? "+" : ""}${trade.profit}`
+      );
+    },
+    [openTrades, currentCompany, dbStatus.connected, addToast]
+  );
+
+  const closeAllTrades = useCallback(
+    async (onlyProfitable = false) => {
+      const tradesToClose = onlyProfitable
+        ? openTrades.filter((t) => t.profit > 0)
+        : [...openTrades];
+
+      if (tradesToClose.length === 0) {
+        addToast("info", "No Trades", "No eligible open positions found.");
+        return;
+      }
+
+      tradesToClose.forEach((t) => closeTrade(t.ticket));
+
+      if (dbStatus.connected) {
+        try {
+          await api.closeAllTrades(currentCompany, onlyProfitable);
+        } catch (err: any) {
+          console.error("API close all trades failed:", err);
+        }
+      }
+
+      addToast("success", "Bulk Action Completed", `Closed ${tradesToClose.length} position(s).`);
+    },
+    [openTrades, closeTrade, currentCompany, dbStatus.connected, addToast]
+  );
+
+  const adjustClientBalance = useCallback(
+    async (login: number, amount: number, isCredit = false) => {
+      setClients((prev) =>
+        prev.map((c) => {
+          if (c.login === login) {
+            if (isCredit) {
+              const newCredit = Math.max(0, Number((c.credit + amount).toFixed(2)));
+              const diff = Number((newCredit - c.credit).toFixed(2));
+              return {
+                ...c,
+                credit: newCredit,
+                equity: Number((c.equity + diff).toFixed(2)),
+                freeMargin: Number((c.freeMargin + diff).toFixed(2)),
+              };
+            } else {
+              const newBal = Math.max(0, Number((c.balance + amount).toFixed(2)));
+              const diff = Number((newBal - c.balance).toFixed(2));
+              return {
+                ...c,
+                balance: newBal,
+                equity: Number((c.equity + diff).toFixed(2)),
+                freeMargin: Number((c.freeMargin + diff).toFixed(2)),
+              };
+            }
+          }
+          return c;
+        })
+      );
+
+      if (isCredit && amount > 0) {
+        const clientObj = clients.find((c) => c.login === login);
+        const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+        const bonusRecord: Deposit = {
+          id: `bon-${Date.now()}`,
+          login,
+          clientName: clientObj?.name || `Trader #${login}`,
+          amount: 0,
+          bonusAmount: amount,
+          currency: "USD",
+          method: "Credit Card",
+          txHash: `BONUS-CREDIT-#${login}`,
+          status: "APPROVED",
+          createdAt: now,
+          processedAt: now,
+          notes: "Manager Credit Bonus",
+        };
+        setDeposits((prev) => [bonusRecord, ...prev]);
+      }
+
+      if (dbStatus.connected) {
+        try {
+          await api.adjustClientBalance(login, {
+            companyId: currentCompany,
+            amount,
+            isCredit,
+          });
+        } catch (err: any) {
+          console.error("API adjust balance failed:", err);
+        }
+      }
+
+      addToast(
+        "success",
+        isCredit ? "Bonus / Credit Updated" : "Balance Adjusted",
+        `Account #${login} adjusted by ${amount >= 0 ? "+" : ""}$${amount} (${isCredit ? "Credit Bonus" : "Balance"})`
+      );
+    },
+    [currentCompany, dbStatus.connected, addToast]
+  );
+
+  const toggleClientStatus = useCallback(
+    async (login: number) => {
+      setClients((prev) =>
+        prev.map((c) => {
+          if (c.login === login) {
+            const nextStatus = c.status === "Active" ? "Suspended" : "Active";
+            return { ...c, status: nextStatus };
+          }
+          return c;
+        })
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.toggleClientStatus(login, { companyId: currentCompany });
+        } catch (err: any) {
+          console.error("API toggle client status failed:", err);
+        }
+      }
+
+      addToast("info", "Status Updated", `Client #${login} status toggled.`);
+    },
+    [currentCompany, dbStatus.connected, addToast]
+  );
+
+  const updateClient = useCallback(
+    async (login: number, updatedFields: Partial<Client>) => {
+      setClients((prev) =>
+        prev.map((c) => (c.login === login ? { ...c, ...updatedFields } : c))
+      );
+      setSelectedClient((prev) =>
+        prev && prev.login === login ? { ...prev, ...updatedFields } : prev
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.updateClient(login, {
+            companyId: currentCompany,
+            ...updatedFields,
+          });
+        } catch (err: any) {
+          console.error("API update client failed:", err);
+        }
+      }
+
+      addToast(
+        "success",
+        "Account Updated",
+        `Account #${login} information saved successfully.`
+      );
+    },
+    [currentCompany, dbStatus.connected, addToast]
+  );
+
+  const toggleSymbolEnabled = useCallback(
+    async (symbolId: string) => {
+      setSymbols((prev) =>
+        prev.map((s) => (s.id === symbolId ? { ...s, enabled: !s.enabled } : s))
+      );
+
+      if (dbStatus.connected) {
+        try {
+          await api.toggleSymbolEnabled(symbolId, { companyId: currentCompany });
+        } catch (err: any) {
+          console.error("API toggle symbol failed:", err);
+        }
+      }
+
+      addToast("info", "Symbol Updated", "Symbol trading permission modified.");
+    },
+    [currentCompany, dbStatus.connected, addToast]
+  );
+
+  const updateSettings = useCallback(
+    async (newSettings: Partial<BrokerSettings>) => {
+      setSettings((prev) => ({ ...prev, ...newSettings }));
+
+      if (dbStatus.connected) {
+        try {
+          await api.updateSettings(currentCompany, newSettings);
+        } catch (err: any) {
+          console.error("API update settings failed:", err);
+        }
+      }
+
+      addToast("success", "Settings Saved", "Broker configurations updated successfully.");
+    },
+    [currentCompany, dbStatus.connected, addToast]
+  );
+
+  const setCompany = useCallback(
+    (newCompanyId: CompanyId) => {
+      if (newCompanyId === currentCompany) return;
+
+      setCurrentCompany(newCompanyId);
+      setSelectedClient(null);
+      localStorage.setItem("MT5_PORTAL_ACTIVE_COMPANY", newCompanyId);
+
+      loadCompanyData(newCompanyId);
+
+      const targetComp = COMPANIES[newCompanyId];
+      addToast(
+        "info",
+        `Switched to ${targetComp.name}`,
+        `Connected to ${targetComp.fullName} (${targetComp.serverName})`
+      );
+    },
+    [currentCompany, loadCompanyData, addToast]
+  );
+
+  const refreshDbData = useCallback(async () => {
+    await loadCompanyData(currentCompany, true);
+  }, [currentCompany, loadCompanyData]);
+
+  const resetAllData = useCallback(() => {
+    loadCompanyData(currentCompany, true);
+    addToast("info", "Data Refreshed", `Reloaded ${COMPANIES[currentCompany].name} records.`);
+  }, [currentCompany, loadCompanyData, addToast]);
+
+  const resetPendingDeposits = useCallback(() => {
+    loadCompanyData(currentCompany, true);
+    addToast(
+      "info",
+      "Deposits Refreshed",
+      `Fetched latest deposits for ${COMPANIES[currentCompany].name}.`
+    );
+  }, [currentCompany, loadCompanyData, addToast]);
+
+  return (
+    <PortalContext.Provider
+      value={{
+        dbStatus,
+        isDbLoading,
+        refreshDbData,
+        currentCompany,
+        setCompany,
+        companyConfig: COMPANIES[currentCompany],
+        companies: Object.values(COMPANIES),
+        activeTab,
+        setActiveTab,
+        symbols,
+        clients,
+        openTrades,
+        closedTrades,
+        deposits,
+        withdrawals,
+        kycVerifications,
+        settings,
+        globalSearch,
+        setGlobalSearch,
+        selectedClient,
+        setSelectedClient,
+        toasts,
+        addToast,
+        removeToast,
+        selectedPeriod,
+        setSelectedPeriod,
+        showMonthlyTable,
+        setShowMonthlyTable,
+        approveDeposit,
+        rejectDeposit,
+        approveWithdrawal,
+        rejectWithdrawal,
+        approveKyc,
+        rejectKyc,
+        placeOrder,
+        closeTrade,
+        closeAllTrades,
+        adjustClientBalance,
+        toggleClientStatus,
+        updateClient,
+        toggleSymbolEnabled,
+        updateSettings,
+        resetAllData,
+        resetPendingDeposits,
+      }}
+    >
+      {children}
+    </PortalContext.Provider>
+  );
+};
+
+export const usePortal = () => {
+  const context = useContext(PortalContext);
+  if (!context) {
+    throw new Error("usePortal must be used within a PortalProvider");
+  }
+  return context;
+};

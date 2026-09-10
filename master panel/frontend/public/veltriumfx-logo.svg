@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 52" fill="none">
+  <defs>
+    <linearGradient id="vfxgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#C026D3" />
+    </linearGradient>
+    <linearGradient id="vfxaccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#6D28D9" />
+    </linearGradient>
+  </defs>
+  <!-- Icon Emblem -->
+  <rect x="2" y="4" width="44" height="44" rx="12" fill="url(#vfxaccent)" />
+  <!-- Stylized V Crest -->
+  <path d="M12 15L24 37L36 15H30.5L24 28.5L17.5 15H12Z" fill="white" />
+  <path d="M18 15L24 27L30 15H26L24 19.5L22 15H18Z" fill="#E879F9" />
+  <circle cx="24" cy="33" r="2.5" fill="#FDE047" />
+  <!-- Brand Text -->
+  <text x="56" y="27" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="20" fill="#0F172A" letter-spacing="0.5">VELTRIUM<tspan fill="#7C3AED">FX</tspan></text>
+  <text x="56" y="41" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="9" fill="#9333EA" letter-spacing="2.5">CAPITAL MARKETS</text>
+</svg>
