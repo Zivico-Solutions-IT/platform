@@ -9,8 +9,18 @@ import {
   Check,
   Database,
   RefreshCw,
+  X,
+  CheckCheck,
+  CreditCard,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  ShieldAlert,
+  UserPlus,
+  FileText,
 } from "lucide-react";
 import { monthlyBrokerStats } from "../../data/mockData";
+import { AdminNotificationItem, ActiveNavTab } from "../../types";
+import { api } from "../../services/api";
 
 export const Header: React.FC = () => {
   const {
@@ -22,6 +32,7 @@ export const Header: React.FC = () => {
     setGlobalSearch,
     deposits,
     withdrawals,
+    kycVerifications,
     setActiveTab,
     selectedPeriod,
     setSelectedPeriod,
@@ -33,17 +44,41 @@ export const Header: React.FC = () => {
   } = usePortal();
 
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState<boolean>(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState<boolean>(false);
+  const [dbNotifications, setDbNotifications] = useState<AdminNotificationItem[]>([]);
+  const [clearedNotifications, setClearedNotifications] = useState<boolean>(false);
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch db notifications whenever company changes or database refreshes
+  useEffect(() => {
+    let isMounted = true;
+    api.getNotifications(currentCompany).then((list) => {
+      if (isMounted) {
+        setDbNotifications(list);
+        setClearedNotifications(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [currentCompany, dbStatus.connected]);
+
+  // Click outside to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsCompanyDropdownOpen(false);
       }
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
+        setIsNotificationDropdownOpen(false);
+      }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsCompanyDropdownOpen(false);
+        setIsNotificationDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -54,9 +89,54 @@ export const Header: React.FC = () => {
     };
   }, []);
 
-  const pendingCount =
-    deposits.filter((d) => d.status === "PENDING").length +
-    withdrawals.filter((w) => w.status === "PENDING").length;
+  // Compute live pending notifications from state (Deposits, Withdrawals, KYC)
+  const pendingDepositNotifs: AdminNotificationItem[] = deposits
+    .filter((d) => d.status === "PENDING")
+    .map((d) => ({
+      id: `dep-${d.id}`,
+      type: "new_deposit",
+      title: "Deposit Approval Pending",
+      message: `${d.clientName} requested deposit of $${d.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} via ${d.method}.`,
+      createdAt: d.createdAt || "Recently",
+      isRead: false,
+      targetTab: "payments-deposits" as ActiveNavTab,
+    }));
+
+  const pendingWithdrawalNotifs: AdminNotificationItem[] = withdrawals
+    .filter((w) => w.status === "PENDING")
+    .map((w) => ({
+      id: `wd-${w.id}`,
+      type: "new_withdrawal",
+      title: "Withdrawal Detail Request",
+      message: `${w.clientName} requested withdrawal of $${w.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} via ${w.method}.`,
+      createdAt: w.createdAt || "Recently",
+      isRead: false,
+      targetTab: "payments-withdrawals" as ActiveNavTab,
+    }));
+
+  const pendingKycNotifs: AdminNotificationItem[] = kycVerifications
+    .filter((k) => k.status === "PENDING")
+    .map((k) => ({
+      id: `kyc-${k.id}`,
+      type: "kyc_submitted",
+      title: "Account Details Pending",
+      message: `${k.clientName} (${k.country}) submitted ${k.docType} for identity verification.`,
+      createdAt: k.submittedAt || "Recently",
+      isRead: false,
+      targetTab: "verification" as ActiveNavTab,
+    }));
+
+  // Combine DB notifications with pending items
+  const allNotifications: AdminNotificationItem[] = clearedNotifications
+    ? []
+    : [...pendingDepositNotifs, ...pendingWithdrawalNotifs, ...pendingKycNotifs, ...dbNotifications.filter((n) => !n.isRead)];
+
+  const totalUnreadCount = allNotifications.length;
+
+  const handleMarkAllRead = () => {
+    setClearedNotifications(true);
+    api.markAllNotificationsRead(currentCompany);
+  };
 
   return (
     <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between gap-4 select-none shrink-0 sticky top-0 z-20 shadow-xs font-sans">
@@ -265,20 +345,113 @@ export const Header: React.FC = () => {
           {isDbLoading && <RefreshCw className="w-3 h-3 animate-spin text-slate-500 ml-0.5" />}
         </button>
 
-        {/* Notification Bell */}
-        <div className="relative">
+        {/* Notification Bell with Admin Notifications Dropdown */}
+        <div className="relative" ref={notifDropdownRef}>
           <button
-            onClick={() => setActiveTab("payments-deposits")}
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors relative"
-            title="Pending approvals"
+            onClick={() => setIsNotificationDropdownOpen((prev) => !prev)}
+            className={`p-2 rounded-xl border transition-all relative cursor-pointer ${
+              isNotificationDropdownOpen
+                ? "bg-slate-200 border-slate-300 text-slate-900 shadow-inner"
+                : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-600 hover:text-slate-900"
+            }`}
+            title="Admin Notifications & Requests waiting for action"
           >
             <Bell className="w-4 h-4" />
-            {pendingCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-mono text-[9px] font-bold flex items-center justify-center ring-2 ring-white">
-                {pendingCount}
+            {totalUnreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-mono text-[9.5px] font-extrabold flex items-center justify-center ring-2 ring-white animate-pulse">
+                {totalUnreadCount}
               </span>
             )}
           </button>
+
+          {/* Admin Notifications Dropdown Modal */}
+          {isNotificationDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-84 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-300 overflow-hidden z-50 animate-fadeIn font-sans">
+              {/* Dropdown Header */}
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 tracking-wide font-sans">
+                    Admin Notifications
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Requests waiting for action ({companyConfig.name})
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {totalUnreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-[10.5px] font-extrabold transition-colors cursor-pointer"
+                    >
+                      Read all
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsNotificationDropdownOpen(false)}
+                    className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Notifications List */}
+              <div className="max-h-96 overflow-y-auto divide-y divide-slate-100 font-sans">
+                {allNotifications.length > 0 ? (
+                  allNotifications.map((notif) => {
+                    const getIcon = () => {
+                      if (notif.type === "new_deposit") return <ArrowDownCircle className="w-4 h-4 text-emerald-600" />;
+                      if (notif.type === "new_withdrawal") return <ArrowUpCircle className="w-4 h-4 text-rose-600" />;
+                      if (notif.type === "bank_account_pending") return <CreditCard className="w-4 h-4 text-amber-600" />;
+                      if (notif.type === "kyc_submitted") return <ShieldAlert className="w-4 h-4 text-sky-600" />;
+                      if (notif.type === "new_user") return <UserPlus className="w-4 h-4 text-indigo-600" />;
+                      return <FileText className="w-4 h-4 text-amber-600" />;
+                    };
+
+                    return (
+                      <div
+                        key={notif.id}
+                        onClick={() => {
+                          if (notif.targetTab) setActiveTab(notif.targetTab);
+                          setIsNotificationDropdownOpen(false);
+                        }}
+                        className="p-3.5 hover:bg-amber-50/50 transition-colors cursor-pointer flex items-start gap-3 select-none"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                          {getIcon()}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="text-xs font-bold text-slate-900 truncate">
+                              {notif.title}
+                            </h4>
+                            <span className="text-[9.5px] font-mono text-slate-400 shrink-0 font-semibold uppercase">
+                              {notif.createdAt}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-0.5 line-clamp-2 leading-relaxed">
+                            {notif.message}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-8 text-center select-none font-sans">
+                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto mb-2 shadow-2xs">
+                      <CheckCheck className="w-5 h-5" />
+                    </div>
+                    <p className="text-xs font-bold text-slate-800">All notifications cleared!</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      No pending approval requests for {companyConfig.name}.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Admin Profile with Dynamic Company Brand */}
@@ -310,3 +483,4 @@ export const Header: React.FC = () => {
     </header>
   );
 };
+

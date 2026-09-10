@@ -77,7 +77,7 @@ export const MarketSymbolsPage: React.FC = () => {
     setChartKey((prev) => prev + 1);
   };
 
-  const brandPrimary = companyConfig?.primaryColor || "#D97706";
+  const brandPrimary = "#D97706";
   const isUp = selectedSymbol?.changeDirection === "up" || (selectedSymbol?.dailyChange || 0) >= 0;
 
   return (

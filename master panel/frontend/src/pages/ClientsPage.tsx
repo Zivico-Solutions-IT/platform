@@ -27,7 +27,7 @@ export const ClientsPage: React.FC<{
 }> = ({ filterMode = "all", onSelectClient, onOpenBalanceModal }) => {
   const { clients, companyConfig, openTrades } = usePortal();
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [accountTypeFilter, setAccountTypeFilter] = useState<"Live" | "Demo" | "All">("Live");
+  const [accountTypeFilter, setAccountTypeFilter] = useState<"Live" | "Demo" | "All">("All");
   const [selectedRowLogin, setSelectedRowLogin] = useState<number | null>(null);
 
   // Client Comments State with LocalStorage persistence
@@ -347,7 +347,7 @@ export const ClientsPage: React.FC<{
 
                 return (
                   <tr
-                    key={client.login}
+                    key={client.id || `${client.accountType}-${client.login}`}
                     onClick={() => setSelectedRowLogin(client.login)}
                     onDoubleClick={() => onSelectClient(client)}
                     className={`cursor-pointer transition-colors duration-75 border-b border-slate-200 h-7.5 ${

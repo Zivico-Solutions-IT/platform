@@ -13,6 +13,7 @@ import {
   DepositMethodType,
   StaffMember,
   ReferralReward,
+  AdminNotificationItem,
 } from "../types";
 import { COMPANIES, getCompanyFallbackData } from "../data/companyData";
 
@@ -133,16 +134,36 @@ async function request<T>(companyId: CompanyId, url: string, options?: RequestIn
   return response.json();
 }
 
-function mapDbUserToClient(u: any): Client {
-  const primaryAccount = u.tradingAccounts?.find((a: any) => a.isPrimary) || u.tradingAccounts?.[0];
-  const loginNum = Number(primaryAccount?.accountNumber || (u.id ? 1000000 + Number(u.id) : 1000001));
-  const walletBal = Number(u.wallet?.balance ?? primaryAccount?.balance ?? 0);
-  const walletEq = Number(u.wallet?.equity ?? primaryAccount?.equity ?? walletBal);
-  const creditVal = Number(u.wallet?.credit ?? 0);
+function mapDbUserToClient(u: any, acc?: any): Client {
+  const accountObj = acc || u.tradingAccounts?.find((a: any) => a.isPrimary) || u.tradingAccounts?.[0];
+
+  const rawType = String(accountObj?.type || u.accountType || "").trim().toLowerCase();
+  const isDemo = rawType === "demo";
+
+  let loginNum: number;
+  if (accountObj?.accountNumber || accountObj?.account_number || accountObj?.login) {
+    loginNum = Number(accountObj.accountNumber || accountObj.account_number || accountObj.login);
+  } else if (accountObj?.id) {
+    loginNum = isDemo ? 2000000 + Number(accountObj.id) : 1000000 + Number(accountObj.id);
+  } else if (u.id) {
+    loginNum = isDemo ? 2000000 + Number(u.id) : 1000000 + Number(u.id);
+  } else {
+    loginNum = isDemo ? 2000001 : 1000001;
+  }
+
+  const walletBal = Number(accountObj?.balance ?? (isDemo ? 5000 : u.wallet?.balance ?? 0));
+  const walletEq = Number(accountObj?.equity ?? u.wallet?.equity ?? walletBal);
+  const creditVal = Number(accountObj?.credit ?? u.wallet?.credit ?? 0);
+
+  const clientId = String(
+    accountObj?.id
+      ? `${isDemo ? "demo" : "live"}-${accountObj.id}`
+      : `${isDemo ? "demo" : "live"}-${u.id || loginNum}`
+  );
 
   return {
     login: loginNum,
-    id: String(u.id || loginNum),
+    id: clientId,
     name: u.name || "Client User",
     email: u.email || "",
     phone: u.phone || "+94 77 123 4567",
@@ -153,9 +174,9 @@ function mapDbUserToClient(u: any): Client {
     margin: 0,
     freeMargin: walletBal,
     marginLevel: 0,
-    leverage: `1:${u.leverage || 500}`,
-    accountType: u.accountType === "Demo" ? "Demo" : "Live",
-    status: u.tradingStatus === "frozen" ? "Inactive" : "Active",
+    leverage: `1:${accountObj?.leverage || u.leverage || 500}`,
+    accountType: isDemo ? "Demo" : "Live",
+    status: u.tradingStatus === "frozen" || accountObj?.status === "disabled" ? "Inactive" : "Active",
     kycStatus:
       u.verificationStatus === "verified"
         ? "Verified"
@@ -323,9 +344,18 @@ export const api = {
       if (usersRes && Array.isArray(usersRes.users) && usersRes.users.length > 0) {
         const fallback = getCompanyFallbackData(companyId);
 
-        const realClients: Client[] = usersRes.users
+        const realClients: Client[] = [];
+        usersRes.users
           .filter((u: any) => u.role === "user" || !u.role || u.role === "client")
-          .map(mapDbUserToClient);
+          .forEach((u: any) => {
+            if (Array.isArray(u.tradingAccounts) && u.tradingAccounts.length > 0) {
+              u.tradingAccounts.forEach((acc: any) => {
+                realClients.push(mapDbUserToClient(u, acc));
+              });
+            } else {
+              realClients.push(mapDbUserToClient(u));
+            }
+          });
 
         if (realClients.length > 0) {
           const tradesRes = await request<{ trades?: any[] }>(companyId, "/admin/trades").catch(() => null);
@@ -438,6 +468,49 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(params),
       });
+    } catch {
+      return { success: true };
+    }
+  },
+
+  async getNotifications(companyId: CompanyId): Promise<AdminNotificationItem[]> {
+    try {
+      const res = await request<{ notifications?: any[] }>(companyId, "/admin/notifications").catch(() => null);
+      if (res && Array.isArray(res.notifications) && res.notifications.length > 0) {
+        return res.notifications.map((n: any) => ({
+          id: String(n.id),
+          type: n.type || "user_notification",
+          title: n.title || "Admin Action Required",
+          message: n.message || "",
+          createdAt: n.createdAt
+            ? new Date(n.createdAt).toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "Recently",
+          isRead: Boolean(n.isRead),
+          targetTab:
+            n.type === "new_deposit"
+              ? "payments-deposits"
+              : n.type === "new_withdrawal" || n.type === "bank_account_pending"
+              ? "payments-withdrawals"
+              : n.type === "kyc_submitted"
+              ? "verification"
+              : "clients-all",
+        }));
+      }
+    } catch (err) {
+      console.warn("Notifications fetch failed:", err);
+    }
+    return [];
+  },
+
+  async markAllNotificationsRead(companyId: CompanyId) {
+    try {
+      return await request(companyId, "/admin/notifications/mark-all-read", { method: "PUT" });
     } catch {
       return { success: true };
     }

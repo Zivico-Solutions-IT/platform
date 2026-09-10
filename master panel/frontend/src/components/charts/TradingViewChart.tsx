@@ -199,10 +199,10 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       const slashSym = symbol.includes("/") ? symbol : `${symbol.slice(0, 3)}/${symbol.slice(3)}`;
 
       const urls = [
-        `/api/${currentCompany}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
-        `/api/${currentCompany}/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
         `/api/novafxm/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
         `/api/novafxm/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
+        `/api/${currentCompany}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
+        `/api/${currentCompany}/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
         `/api/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
         `http://localhost:5000/api/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
       ];
@@ -699,7 +699,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
 
         {/* Source Badge */}
         <div className="text-[10.5px] font-mono text-slate-500">
-          Source: <strong className="text-slate-800 font-bold">{companyConfig?.name || "NovaFXM"} Broker Engine</strong> ({timeframe})
+          Source: <strong className="text-slate-800 font-bold">NovaFXM Broker Engine</strong> ({timeframe})
         </div>
       </div>
 

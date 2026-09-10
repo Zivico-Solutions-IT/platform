@@ -254,4 +254,12 @@ export interface CompanyConfig {
   statusDotColor: string;
 }
 
-
+export interface AdminNotificationItem {
+  id: string;
+  type: "new_user" | "new_deposit" | "new_withdrawal" | "kyc_submitted" | "bank_account_pending" | "user_notification";
+  title: string;
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+  targetTab?: ActiveNavTab;
+}

@@ -6214,3 +6214,25 @@ Error: Error: TradingView has no chart data for this symbol
     at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:309:9
     at D:\platform\novafxm\node_modules\ws\lib\permessage-deflate.js:392:7
 --------------------------------------------------
+
+Date: 2026-09-10T10:44:39.118Z
+Method: PUT
+URL: /api/admin/users/1000003
+Body: {
+  "companyId": "novafxm",
+  "name": "Dinith Rusirux",
+  "email": "dinithrusiru@gmail.com",
+  "phone": "+94 773508024",
+  "whatsapp": "+94 773508024",
+  "country": "Sri Lanka",
+  "accountType": "Live",
+  "group": "Standard",
+  "leverage": "1:500",
+  "kycStatus": "Unverified",
+  "status": "Active"
+}
+Error: Error: User account not found.
+    at apiError (D:\platform\novafxm\src\controllers\adminController.js:97:24)
+    at exports.updateUserDetails (D:\platform\novafxm\src\controllers\adminController.js:605:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+--------------------------------------------------
