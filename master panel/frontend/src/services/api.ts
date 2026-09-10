@@ -164,6 +164,8 @@ function mapDbUserToClient(u: any, acc?: any): Client {
   return {
     login: loginNum,
     id: clientId,
+    userId: u?.id ? Number(u.id) : undefined,
+    tradingAccountId: accountObj?.id ? Number(accountObj.id) : undefined,
     name: u.name || "Client User",
     email: u.email || "",
     phone: u.phone || "+94 77 123 4567",
@@ -480,7 +482,19 @@ export const api = {
         return res.notifications.map((n: any) => ({
           id: String(n.id),
           type: n.type || "user_notification",
-          title: n.title || "Admin Action Required",
+          title:
+            n.title ||
+            (n.type === "new_deposit"
+              ? "Deposit Approval Pending"
+              : n.type === "new_withdrawal"
+              ? "Withdrawal Request Pending"
+              : n.type === "bank_account_pending"
+              ? "Bank Account Details Pending"
+              : n.type === "kyc_submitted"
+              ? "KYC Verification Pending"
+              : n.type === "new_user"
+              ? "New Client Registration"
+              : "Admin Action Required"),
           message: n.message || "",
           createdAt: n.createdAt
             ? new Date(n.createdAt).toLocaleString("en-US", {
@@ -565,22 +579,37 @@ export const api = {
 
   async adjustClientBalance(
     login: number,
-    params: { companyId: CompanyId; amount: number; isCredit: boolean }
+    params: {
+      companyId: CompanyId;
+      amount: number;
+      isCredit: boolean;
+      userId?: number;
+      tradingAccountId?: number;
+    }
   ) {
     try {
+      const targetUserId = params.userId || (typeof login === "number" && login > 100000 ? login % 1000000 : login);
       const endpoint = params.amount >= 0 ? "add-balance" : "deduct-balance";
-      return await request(params.companyId, `/admin/users/${login}/${endpoint}`, {
+      return await request(params.companyId, `/admin/users/${targetUserId}/${endpoint}`, {
         method: "PUT",
-        body: JSON.stringify({ amount: Math.abs(params.amount), isCredit: params.isCredit }),
+        body: JSON.stringify({
+          amount: Math.abs(params.amount),
+          isCredit: params.isCredit,
+          tradingAccountId: params.tradingAccountId,
+        }),
       });
     } catch {
       return { success: true };
     }
   },
 
-  async toggleClientStatus(login: number, params: { companyId: CompanyId }) {
+  async toggleClientStatus(
+    login: number,
+    params: { companyId: CompanyId; userId?: number }
+  ) {
     try {
-      return await request(params.companyId, `/admin/users/${login}/trading-status`, {
+      const targetUserId = params.userId || (typeof login === "number" && login > 100000 ? login % 1000000 : login);
+      return await request(params.companyId, `/admin/users/${targetUserId}/trading-status`, {
         method: "PUT",
         body: JSON.stringify(params),
       });
@@ -591,10 +620,11 @@ export const api = {
 
   async updateClient(
     login: number,
-    params: { companyId: CompanyId; [key: string]: any }
+    params: { companyId: CompanyId; userId?: number; [key: string]: any }
   ) {
     try {
-      return await request(params.companyId, `/admin/users/${login}`, {
+      const targetUserId = params.userId || (typeof login === "number" && login > 100000 ? login % 1000000 : login);
+      return await request(params.companyId, `/admin/users/${targetUserId}`, {
         method: "PUT",
         body: JSON.stringify(params),
       });

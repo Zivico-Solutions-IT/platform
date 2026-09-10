@@ -52,6 +52,12 @@ interface PortalContextType {
   isDbLoading: boolean;
   refreshDbData: () => Promise<void>;
 
+  // Authentication State & Actions
+  isAuthenticated: boolean;
+  currentUser: { email: string; name: string; role: string } | null;
+  login: (email: string, pass: string) => { success: boolean; error?: string };
+  logout: () => void;
+
   // Multi-Company Management
   currentCompany: CompanyId;
   setCompany: (id: CompanyId) => void;
@@ -125,6 +131,43 @@ const defaultSettings: BrokerSettings = {
 const defaultSymbols: SymbolData[] = ALL_MASTER_SYMBOLS;
 
 export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Authentication State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem("MASTER_PANEL_AUTH") === "true";
+  });
+
+  const [currentUser, setCurrentUser] = useState<{ email: string; name: string; role: string } | null>(() => {
+    const saved = localStorage.getItem("MASTER_PANEL_USER");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return localStorage.getItem("MASTER_PANEL_AUTH") === "true"
+      ? { email: "master@novafxm.com", name: "Master Administrator", role: "Super Admin" }
+      : null;
+  });
+
+  const login = useCallback((email: string, pass: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail === "master@novafxm.com" && pass === "master123") {
+      const user = { email: "master@novafxm.com", name: "Master Administrator", role: "Super Admin" };
+      setIsAuthenticated(true);
+      setCurrentUser(user);
+      localStorage.setItem("MASTER_PANEL_AUTH", "true");
+      localStorage.setItem("MASTER_PANEL_USER", JSON.stringify(user));
+      return { success: true };
+    }
+    return { success: false, error: "Invalid admin email or password." };
+  }, []);
+
+  const logout = useCallback(() => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    localStorage.removeItem("MASTER_PANEL_AUTH");
+    localStorage.removeItem("MASTER_PANEL_USER");
+  }, []);
+
   // Current active company
   const [currentCompany, setCurrentCompany] = useState<CompanyId>(() => {
     const saved = localStorage.getItem("MT5_PORTAL_ACTIVE_COMPANY") as CompanyId;
@@ -879,10 +922,13 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (dbStatus.connected) {
         try {
+          const clientObj = clients.find((c) => c.login === login);
           await api.adjustClientBalance(login, {
             companyId: currentCompany,
             amount,
             isCredit,
+            userId: clientObj?.userId,
+            tradingAccountId: clientObj?.tradingAccountId,
           });
         } catch (err: any) {
           console.error("API adjust balance failed:", err);
@@ -895,7 +941,7 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         `Account #${login} adjusted by ${amount >= 0 ? "+" : ""}$${amount} (${isCredit ? "Credit Bonus" : "Balance"})`
       );
     },
-    [currentCompany, dbStatus.connected, addToast]
+    [clients, currentCompany, dbStatus.connected, addToast]
   );
 
   const toggleClientStatus = useCallback(
@@ -912,7 +958,11 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (dbStatus.connected) {
         try {
-          await api.toggleClientStatus(login, { companyId: currentCompany });
+          const clientObj = clients.find((c) => c.login === login);
+          await api.toggleClientStatus(login, {
+            companyId: currentCompany,
+            userId: clientObj?.userId,
+          });
         } catch (err: any) {
           console.error("API toggle client status failed:", err);
         }
@@ -920,7 +970,7 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       addToast("info", "Status Updated", `Client #${login} status toggled.`);
     },
-    [currentCompany, dbStatus.connected, addToast]
+    [clients, currentCompany, dbStatus.connected, addToast]
   );
 
   const updateClient = useCallback(
@@ -934,8 +984,10 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (dbStatus.connected) {
         try {
+          const clientObj = clients.find((c) => c.login === login);
           await api.updateClient(login, {
             companyId: currentCompany,
+            userId: clientObj?.userId,
             ...updatedFields,
           });
         } catch (err: any) {
@@ -1032,6 +1084,10 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         dbStatus,
         isDbLoading,
         refreshDbData,
+        isAuthenticated,
+        currentUser,
+        login,
+        logout,
         currentCompany,
         setCompany,
         companyConfig: COMPANIES[currentCompany],

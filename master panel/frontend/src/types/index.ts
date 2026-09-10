@@ -6,6 +6,8 @@ export type AccountType = "Live" | "Demo";
 export interface Client {
   id: string;
   login: number;
+  userId?: number;
+  tradingAccountId?: number;
   name: string;
   email: string;
   phone: string;
@@ -134,8 +136,9 @@ export interface KycVerification {
   idFrontUrl: string;
   idBackUrl?: string;
   addressProofUrl: string;
-  status: PaymentStatus;
+  status: PaymentStatus | "UNVERIFIED";
   submittedAt: string;
+  updatedAt?: string;
   rejectionReason?: string;
 }
 

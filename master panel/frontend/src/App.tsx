@@ -11,6 +11,7 @@ import { TradingOpenPage } from "./pages/TradingOpenPage";
 import { TradingHistoryPage } from "./pages/TradingHistoryPage";
 import { TradingPage } from "./pages/TradingPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { LoginPage } from "./pages/LoginPage";
 import { BalanceModal } from "./components/modals/BalanceModal";
 import { ClientDetailsDrawer } from "./components/modals/ClientDetailsDrawer";
 import { KycInspectionModal } from "./components/modals/KycInspectionModal";
@@ -19,6 +20,7 @@ import { CheckCircle, AlertCircle, Info, X } from "lucide-react";
 
 const PortalContent: React.FC = () => {
   const {
+    isAuthenticated,
     activeTab,
     selectedClient,
     setSelectedClient,
@@ -43,6 +45,10 @@ const PortalContent: React.FC = () => {
   const handleInspectKyc = (kyc: KycVerification) => {
     setSelectedKycForInspection(kyc);
   };
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#f8fafc] text-slate-800 font-sans antialiased">
