@@ -12,9 +12,9 @@ const internalMarketAuth = (req, res, next) => {
 };
 
 router.get('/internal/candles/*', internalMarketAuth, controller.candles);
-router.use(auth);
 router.get('/symbols', controller.symbols);
 router.get('/prices', controller.prices);
 router.get('/candles/*', controller.candles);
+router.use(auth);
 
 module.exports = router;

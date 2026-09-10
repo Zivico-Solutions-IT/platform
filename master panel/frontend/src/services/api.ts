@@ -50,14 +50,50 @@ export const COMPANY_API_URLS: Record<CompanyId, string> = {
   veltriumfx: "/api/veltriumfx",
 };
 
+function getValidToken(): string | null {
+  const keys = ["token", "master_token", "novafxm_token", "a5markets_token", "veltriumfx_token"];
+  for (const key of keys) {
+    const val = localStorage.getItem(key) || sessionStorage.getItem(key);
+    if (val && typeof val === "string" && val.length > 20 && val !== "null" && val !== "undefined") {
+      return val;
+    }
+  }
+  return null;
+}
+
+async function ensureMasterToken(companyId: CompanyId): Promise<string | null> {
+  const existingToken = getValidToken();
+  if (existingToken) return existingToken;
+
+  try {
+    const baseUrl = COMPANY_API_URLS[companyId] || COMPANY_API_URLS.novafxm;
+    const res = await fetch(`${baseUrl}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "master@novafxm.com", password: "master123" }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.token) {
+        localStorage.setItem("master_token", data.token);
+        localStorage.setItem("token", data.token);
+        return data.token;
+      }
+    }
+  } catch (err) {
+    console.warn("Master auto-login failed:", err);
+  }
+  return null;
+}
+
 async function request<T>(companyId: CompanyId, url: string, options?: RequestInit): Promise<T> {
   const baseUrl = COMPANY_API_URLS[companyId] || COMPANY_API_URLS.novafxm;
-  const token =
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token") ||
-    localStorage.getItem("novafxm_token") ||
-    localStorage.getItem("a5markets_token") ||
-    localStorage.getItem("veltriumfx_token");
+  let token = getValidToken();
+
+  if (!token && !url.includes("/auth/")) {
+    token = await ensureMasterToken(companyId);
+  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -65,10 +101,24 @@ async function request<T>(companyId: CompanyId, url: string, options?: RequestIn
     ...(options?.headers as Record<string, string> || {}),
   };
 
-  const response = await fetch(`${baseUrl}${url}`, {
+  let response = await fetch(`${baseUrl}${url}`, {
     ...options,
     headers,
   });
+
+  // If 401 Unauthorized, token might be expired or invalid. Force refresh master token and retry!
+  if (response.status === 401 && !url.includes("/auth/")) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("master_token");
+    const newToken = await ensureMasterToken(companyId);
+    if (newToken) {
+      headers["Authorization"] = `Bearer ${newToken}`;
+      response = await fetch(`${baseUrl}${url}`, {
+        ...options,
+        headers,
+      });
+    }
+  }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
