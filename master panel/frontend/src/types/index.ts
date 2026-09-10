@@ -24,9 +24,12 @@ export interface Client {
   kycStatus: KycStatus;
   registeredAt: string;
   lastLogin: string;
+  verification?: any;
+  registeredDate?: string;
+  assignedAgent?: string | null;
 }
 
-export type SymbolCategory = "Forex" | "Metals" | "Crypto" | "Indices";
+export type SymbolCategory = "Forex" | "Metals" | "Crypto" | "Crypto CFD" | "Indices" | "Energies" | "Popular";
 
 export interface SymbolData {
   id: string;
@@ -44,6 +47,7 @@ export interface SymbolData {
   enabled: boolean;
   dailyChange: number;
   changeDirection?: "up" | "down" | "neutral";
+  popular?: boolean;
 }
 
 export type TradeType = "BUY" | "SELL";

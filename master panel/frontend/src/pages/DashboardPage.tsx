@@ -43,6 +43,7 @@ export const DashboardPage: React.FC<{
   const {
     clients,
     openTrades,
+    closedTrades,
     deposits,
     withdrawals,
     kycVerifications,
@@ -61,11 +62,106 @@ export const DashboardPage: React.FC<{
   const totalEquity = clients.reduce((acc, c) => acc + c.equity, 0);
   const totalFloatingProfit = openTrades.reduce((acc, t) => acc + t.profit, 0);
   const totalOpenLots = openTrades.reduce((acc, t) => acc + t.lots, 0);
-  const pendingDeposits = deposits.filter((d) => d.status === "PENDING");
-  const pendingWithdrawals = withdrawals.filter((w) => w.status === "PENDING");
-  const pendingKyc = kycVerifications.filter((k) => k.status === "PENDING");
+  const pendingDeposits = deposits.filter((d) => d.status === "PENDING" || (d.status as any) === "Pending");
+  const pendingWithdrawals = withdrawals.filter((w) => w.status === "PENDING" || (w.status as any) === "Pending");
+  const pendingKyc = kycVerifications.filter((k) => k.status === "PENDING" || (k.status as any) === "Pending");
+
+  const approvedDeposits = useMemo(() => {
+    return deposits.filter((d) => d.status === "APPROVED" || (d.status as any) === "Approved");
+  }, [deposits]);
+
+  const approvedWithdrawals = useMemo(() => {
+    return withdrawals.filter((w) => w.status === "APPROVED" || (w.status as any) === "Approved");
+  }, [withdrawals]);
+
+  const realDepositsTotal = useMemo(() => {
+    return approvedDeposits.reduce((acc, d) => acc + d.amount, 0);
+  }, [approvedDeposits]);
+
+  const realWithdrawalsTotal = useMemo(() => {
+    return approvedWithdrawals.reduce((acc, w) => acc + w.amount, 0);
+  }, [approvedWithdrawals]);
+
+  const realNetCashflow = realDepositsTotal - realWithdrawalsTotal;
+
+  const realRealizedPl = useMemo(() => {
+    return closedTrades.reduce((acc, t) => acc + t.profit, 0);
+  }, [closedTrades]);
+
+  const realTotalLots = useMemo(() => {
+    return closedTrades.reduce((acc, t) => acc + t.lots, 0);
+  }, [closedTrades]);
+
+  const realWinRate = useMemo(() => {
+    if (closedTrades.length === 0) return 0;
+    const wins = closedTrades.filter((t) => t.profit > 0).length;
+    return Number(((wins / closedTrades.length) * 100).toFixed(1));
+  }, [closedTrades]);
 
   const isLiveMode = selectedPeriod === "LIVE";
+
+  const liveChartData = useMemo(() => {
+    const regMap: Record<string, number> = {};
+    const depMap: Record<string, number> = {};
+    const wthMap: Record<string, number> = {};
+    const profitMap: Record<string, number> = {};
+    const lossMap: Record<string, number> = {};
+
+    clients.forEach((c) => {
+      const reg = c.registeredAt || (c as any).registeredDate;
+      if (!reg) return;
+      const dateStr = reg.split("T")[0];
+      const dayNum = parseInt(dateStr.split("-")[2], 10);
+      if (!isNaN(dayNum)) {
+        const key = `Sep ${dayNum}`;
+        regMap[key] = (regMap[key] || 0) + 1;
+      }
+    });
+
+    approvedDeposits.forEach((d) => {
+      const dateStr = d.createdAt ? d.createdAt.split("T")[0] : (d as any).date || "2026-09-09";
+      const dayNum = parseInt(dateStr.split("-")[2], 10);
+      if (!isNaN(dayNum)) {
+        const key = `Sep ${dayNum}`;
+        depMap[key] = (depMap[key] || 0) + d.amount;
+      }
+    });
+
+    approvedWithdrawals.forEach((w) => {
+      const dateStr = w.createdAt ? w.createdAt.split("T")[0] : (w as any).date || "2026-09-09";
+      const dayNum = parseInt(dateStr.split("-")[2], 10);
+      if (!isNaN(dayNum)) {
+        const key = `Sep ${dayNum}`;
+        wthMap[key] = (wthMap[key] || 0) + w.amount;
+      }
+    });
+
+    closedTrades.forEach((t) => {
+      const dateStr = t.closeTime ? t.closeTime.split("T")[0] : t.openTime ? t.openTime.split("T")[0] : "";
+      const dayNum = parseInt(dateStr.split("-")[2], 10);
+      if (!isNaN(dayNum)) {
+        const key = `Sep ${dayNum}`;
+        if (t.profit > 0) {
+          profitMap[key] = (profitMap[key] || 0) + t.profit;
+        } else {
+          lossMap[key] = (lossMap[key] || 0) + Math.abs(t.profit);
+        }
+      }
+    });
+
+    const regData = [];
+    const cashflowData = [];
+    const profitLossData = [];
+
+    for (let i = 1; i <= 30; i++) {
+      const label = `Sep ${i}`;
+      regData.push({ date: label, registrations: regMap[label] || 0 });
+      cashflowData.push({ date: label, deposits: depMap[label] || 0, withdrawals: wthMap[label] || 0 });
+      profitLossData.push({ date: label, profit: profitMap[label] || 0, loss: lossMap[label] || 0 });
+    }
+
+    return { regData, cashflowData, profitLossData };
+  }, [clients, approvedDeposits, approvedWithdrawals, closedTrades]);
 
   // Active month data
   const activeMonthData = useMemo<MonthlyBrokerStat>(() => {
@@ -78,16 +174,43 @@ export const DashboardPage: React.FC<{
         floatingPl: totalFloatingProfit,
         pendingActions: pendingDeposits.length + pendingWithdrawals.length + pendingKyc.length,
         activeAccounts: clients.filter((c) => c.status === "Active").length,
+        depositsTotal: realDepositsTotal,
+        withdrawalsTotal: realWithdrawalsTotal,
+        netCashflow: realNetCashflow,
+        depositsCount: approvedDeposits.length,
+        withdrawalsCount: approvedWithdrawals.length,
+        realizedPl: realRealizedPl,
+        totalLots: realTotalLots,
+        winRate: realWinRate,
+        newRegistrations: clients.length,
       };
     }
     const found = monthlyBrokerStats.find((m) => m.monthKey === selectedPeriod);
     return found || defaultStat;
-  }, [selectedPeriod, isLiveMode, totalEquity, totalBalance, totalFloatingProfit, pendingDeposits.length, pendingWithdrawals.length, pendingKyc.length, clients]);
+  }, [
+    selectedPeriod,
+    isLiveMode,
+    totalEquity,
+    totalBalance,
+    totalFloatingProfit,
+    pendingDeposits.length,
+    pendingWithdrawals.length,
+    pendingKyc.length,
+    clients,
+    realDepositsTotal,
+    realWithdrawalsTotal,
+    realNetCashflow,
+    approvedDeposits.length,
+    approvedWithdrawals.length,
+    realRealizedPl,
+    realTotalLots,
+    realWinRate,
+  ]);
 
   // Daily arrays for the 3 charts below
-  const chartRegistrationData = activeMonthData.dailyRegistrations || dailyRegistrationData;
-  const chartCashflowData = activeMonthData.dailyCashflow || dailyCashflowData;
-  const chartProfitLossData = activeMonthData.dailyProfitLoss || dailyProfitLossData;
+  const chartRegistrationData = isLiveMode ? liveChartData.regData : (activeMonthData.dailyRegistrations || dailyRegistrationData);
+  const chartCashflowData = isLiveMode ? liveChartData.cashflowData : (activeMonthData.dailyCashflow || dailyCashflowData);
+  const chartProfitLossData = isLiveMode ? liveChartData.profitLossData : (activeMonthData.dailyProfitLoss || dailyProfitLossData);
 
   // Generate clean ticks for chart X-axes
   const chartTicks = useMemo(() => {

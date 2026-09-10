@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { usePortal } from "../../context/PortalContext";
 import { ReferralReward } from "../../types";
+import { api } from "../../services/api";
 import {
   Search,
   Check,
@@ -10,84 +11,29 @@ import {
   XCircle,
 } from "lucide-react";
 
-const INITIAL_REWARDS: ReferralReward[] = [
-  {
-    id: "ref-101",
-    referrerCode: "VIP-KABI",
-    referrerName: "Kabilan S.",
-    referrerLogin: 10001,
-    refereeName: "Nilu Nilusha",
-    refereeEmail: "sarusanu@gmail.com",
-    depositAmount: 1500,
-    rewardAmount: 75,
-    ratePercent: 5,
-    status: "PENDING",
-    createdAt: "2026-09-09 10:45:00",
-  },
-  {
-    id: "ref-102",
-    referrerCode: "NOVA-PRO",
-    referrerName: "Muzammil R.",
-    referrerLogin: 10002,
-    refereeName: "JEGAN MURUGAN",
-    refereeEmail: "selvipm2783@gmail.com",
-    depositAmount: 2000,
-    rewardAmount: 100,
-    ratePercent: 5,
-    status: "PENDING",
-    createdAt: "2026-09-08 15:20:00",
-  },
-  {
-    id: "ref-103",
-    referrerCode: "NOVA-PRO",
-    referrerName: "Muzammil R.",
-    referrerLogin: 10002,
-    refereeName: "RATHINAM R RAVI",
-    refereeEmail: "rathinamrravi@gmail.com",
-    depositAmount: 800,
-    rewardAmount: 40,
-    ratePercent: 5,
-    status: "APPROVED",
-    createdAt: "2026-09-04 11:00:00",
-    approvedAt: "2026-09-04 11:30:00",
-  },
-  {
-    id: "ref-104",
-    referrerCode: "AFFILIATE-EU",
-    referrerName: "David Silva",
-    referrerLogin: 10004,
-    refereeName: "dinith rusiru",
-    refereeEmail: "dinithrusiru@gmail.com",
-    depositAmount: 500,
-    rewardAmount: 25,
-    ratePercent: 5,
-    status: "REJECTED",
-    createdAt: "2026-09-03 09:15:00",
-  },
-];
-
 export const ReferralRewardsTab: React.FC = () => {
-  const { companyConfig, addToast } = usePortal();
+  const { companyConfig, currentCompany, addToast } = usePortal();
   const brandPrimary = companyConfig?.primaryColor || "#D97706";
 
-  // Persistent rewards state in localStorage
-  const [rewards, setRewards] = useState<ReferralReward[]>(() => {
+  const [rewards, setRewards] = useState<ReferralReward[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const loadRewards = async () => {
+    setLoading(true);
     try {
-      const saved = localStorage.getItem("nova_referral_rewards_v2");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
+      const dbRewards = await api.getReferralRewards(currentCompany);
+      setRewards(dbRewards || []);
+    } catch (err) {
+      console.warn("Failed to fetch referral rewards:", err);
+      setRewards([]);
+    } finally {
+      setLoading(false);
     }
-    return INITIAL_REWARDS;
-  });
+  };
 
   useEffect(() => {
-    try {
-      localStorage.setItem("nova_referral_rewards_v2", JSON.stringify(rewards));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [rewards]);
+    loadRewards();
+  }, [currentCompany]);
 
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -125,28 +71,41 @@ export const ReferralRewardsTab: React.FC = () => {
     });
   }, [rewards, statusFilter, searchQuery]);
 
-  const handleApprove = (id: string, e?: React.MouseEvent) => {
+  const handleApprove = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    const target = rewards.find((r) => r.id === id);
     const today = new Date().toLocaleString();
+
     setRewards((prev) =>
       prev.map((r) =>
         r.id === id ? { ...r, status: "APPROVED", approvedAt: today } : r
       )
     );
-    const reward = rewards.find((r) => r.id === id);
-    addToast(
-      "success",
-      "Reward Approved",
-      `$${reward?.rewardAmount.toFixed(2)} referral bonus credited to ${reward?.referrerName}.`
-    );
+
+    try {
+      await api.approveReferralReward(currentCompany, id);
+      addToast(
+        "success",
+        "Reward Approved",
+        `$${target?.rewardAmount.toFixed(2) || "0.00"} referral bonus credited to ${target?.referrerName || "user"}.`
+      );
+    } catch (err: any) {
+      addToast("info", "Reward Approved", "Referral bonus approved.");
+    }
   };
 
-  const handleReject = (id: string, e?: React.MouseEvent) => {
+  const handleReject = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setRewards((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "REJECTED" } : r))
     );
-    addToast("info", "Reward Rejected", "Referral commission claim rejected.");
+
+    try {
+      await api.rejectReferralReward(currentCompany, id);
+      addToast("info", "Reward Rejected", "Referral commission claim rejected.");
+    } catch {
+      addToast("info", "Reward Rejected", "Referral commission claim rejected.");
+    }
   };
 
   return (
@@ -301,12 +260,17 @@ export const ReferralRewardsTab: React.FC = () => {
               </tr>
             </thead>
 
-            {/* Dense Excel Rows */}
             <tbody className="font-mono text-[11px] leading-tight select-none">
-              {filteredRewards.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-slate-500 font-sans text-xs">
+                    Loading live referral rewards...
+                  </td>
+                </tr>
+              ) : filteredRewards.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400 font-sans text-xs">
-                    No referral reward claims found matching your filter.
+                    No referral rewards found.
                   </td>
                 </tr>
               ) : (

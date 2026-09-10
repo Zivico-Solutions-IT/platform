@@ -305,7 +305,7 @@ export const TradingOpenPage: React.FC<TradingOpenPageProps> = ({ embedded = fal
 
                     {/* Volume (Lots) */}
                     <td className="py-1 px-2 border-r border-slate-200 text-right truncate font-bold text-slate-900">
-                      {t.lots.toFixed(2)}
+                      {(t.lots || 0).toFixed(2)}
                     </td>
 
                     {/* Open Time */}
@@ -315,29 +315,29 @@ export const TradingOpenPage: React.FC<TradingOpenPageProps> = ({ embedded = fal
 
                     {/* Open Price */}
                     <td className="py-1 px-2 border-r border-slate-200 text-right truncate text-slate-800">
-                      {t.openPrice.toFixed(5)}
+                      {(t.openPrice || 0).toFixed(5)}
                     </td>
 
                     {/* Live Price */}
                     <td className="py-1 px-2 border-r border-slate-200 text-right truncate text-slate-800 font-bold">
-                      {t.currentPrice.toFixed(5)}
+                      {(t.currentPrice || t.openPrice || 0).toFixed(5)}
                     </td>
 
                     {/* SL / TP */}
                     <td className="py-1 px-2 border-r border-slate-200 text-center truncate text-[10px] text-slate-500">
-                      {t.sl ? t.sl.toFixed(4) : "-"}{" "}
+                      {t.sl ? Number(t.sl).toFixed(4) : "-"}{" "}
                       <span className="text-slate-300">/</span>{" "}
-                      {t.tp ? t.tp.toFixed(4) : "-"}
+                      {t.tp ? Number(t.tp).toFixed(4) : "-"}
                     </td>
 
                     {/* Swap */}
                     <td className="py-1 px-2 border-r border-slate-200 text-right truncate text-[10.5px] text-slate-500">
-                      {t.swap.toFixed(2)}
+                      {(t.swap || 0).toFixed(2)}
                     </td>
 
                     {/* Commission */}
                     <td className="py-1 px-2 border-r border-slate-200 text-right truncate text-[10.5px] text-slate-500">
-                      {t.commission.toFixed(2)}
+                      {(t.commission || 0).toFixed(2)}
                     </td>
 
                     {/* Floating P&L */}

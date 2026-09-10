@@ -312,7 +312,7 @@ export const TradingHistoryPage: React.FC<TradingHistoryPageProps> = ({ embedded
 
                     {/* Volume (Lots) */}
                     <td className="py-1 px-2 border-r border-slate-200 text-right truncate font-bold text-slate-900">
-                      {t.lots.toFixed(2)}
+                      {(t.lots || 0).toFixed(2)}
                     </td>
 
                     {/* Open Time */}
@@ -327,12 +327,12 @@ export const TradingHistoryPage: React.FC<TradingHistoryPageProps> = ({ embedded
 
                     {/* Open Price */}
                     <td className="py-1 px-2 border-r border-slate-200 text-right truncate text-slate-800">
-                      {t.openPrice.toFixed(5)}
+                      {(t.openPrice || 0).toFixed(5)}
                     </td>
 
                     {/* Close Price */}
                     <td className="py-1 px-2 border-r border-slate-200 text-right truncate text-slate-800 font-bold">
-                      {t.closePrice ? t.closePrice.toFixed(5) : "-"}
+                      {t.closePrice ? Number(t.closePrice).toFixed(5) : "-"}
                     </td>
 
                     {/* Realized P&L */}

@@ -499,20 +499,20 @@ export const ClientDetailsDrawer: React.FC<{
                               </span>
                             </td>
                             <td className="py-1 px-2 border-r border-slate-200 text-right font-bold truncate">
-                              {t.lots.toFixed(2)}
+                              {(t.lots || 0).toFixed(2)}
                             </td>
                             <td className="py-1 px-2 border-r border-slate-200 text-right text-slate-600 truncate">
-                              {t.openPrice.toFixed(5)}
+                              {(t.openPrice || 0).toFixed(5)}
                             </td>
                             <td className="py-1 px-2 border-r border-slate-200 text-right font-bold text-slate-800 truncate">
-                              {t.currentPrice.toFixed(5)}
+                              {(t.currentPrice || t.openPrice || 0).toFixed(5)}
                             </td>
                             <td
                               className={`py-1 px-2 border-r border-slate-200 text-right font-bold truncate ${
-                                t.profit >= 0 ? "text-emerald-700" : "text-rose-700"
+                                (t.profit || 0) >= 0 ? "text-emerald-700" : "text-rose-700"
                               }`}
                             >
-                              {t.profit >= 0 ? "+" : ""}${t.profit.toFixed(2)}
+                              {(t.profit || 0) >= 0 ? "+" : ""}${(t.profit || 0).toFixed(2)}
                             </td>
                             <td className="py-1 px-2 text-center truncate">
                               <button

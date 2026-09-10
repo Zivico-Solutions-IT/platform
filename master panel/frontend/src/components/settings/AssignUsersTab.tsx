@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { usePortal } from "../../context/PortalContext";
-import { AgentOption, UserAgentAssignment } from "../../types";
+import { StaffMember, UserAgentAssignment } from "../../types";
+import { api } from "../../services/api";
 import {
   UserCheck,
   UserX,
@@ -9,89 +10,46 @@ import {
   Users,
 } from "lucide-react";
 
-const DEFAULT_AGENTS: AgentOption[] = [
-  { id: "agt-1", name: "Alex Morgan", role: "Senior Account Manager", email: "alex.m@novafxm.com" },
-  { id: "agt-2", name: "Sarah Jenkins", role: "VIP Desk Specialist", email: "sarah.j@novafxm.com" },
-  { id: "agt-3", name: "Michael Chang", role: "APAC Desk Lead", email: "michael.c@novafxm.com" },
-  { id: "agt-4", name: "David Silva", role: "Institutional Operations", email: "david.s@novafxm.com" },
-  { id: "agt-5", name: "Elena Rostova", role: "Client Relations Manager", email: "elena.r@novafxm.com" },
-  { id: "mgr-1", name: "Master Admin Root", role: "Executive Manager", email: "admin@novafxm.com" },
-];
-
 export const AssignUsersTab: React.FC = () => {
-  const { clients, companyConfig, addToast, setSelectedClient } = usePortal();
+  const { clients, companyConfig, currentCompany, addToast, refreshDbData } = usePortal();
   const brandPrimary = companyConfig?.primaryColor || "#D97706";
 
-  // Persistent assignments state in localStorage
-  const [assignments, setAssignments] = useState<Record<number, UserAgentAssignment>>(() => {
-    try {
-      const saved = localStorage.getItem("nova_user_agent_assignments_v2");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    // Default initial mock assignments for live accounts
-    return {
-      1000001: {
-        login: 1000001,
-        agentId: "agt-1",
-        agentName: "Alex Morgan",
-        assignedBy: "Admin Root",
-        assignedAt: "9/9/2026",
-      },
-      1000004: {
-        login: 1000004,
-        agentId: "agt-2",
-        agentName: "Sarah Jenkins",
-        assignedBy: "Admin Root",
-        assignedAt: "9/7/2026",
-      },
-    };
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("nova_user_agent_assignments_v2", JSON.stringify(assignments));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [assignments]);
-
-  // Selected agent from top dropdown
+  const [agents, setAgents] = useState<StaffMember[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
-
-  // Checkbox selection of client logins
   const [selectedLogins, setSelectedLogins] = useState<number[]>([]);
-
-  // Search and scope filters
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [scopeFilter, setScopeFilter] = useState<"ALL" | "UNASSIGNED" | "ASSIGNED">("ALL");
 
-  // Helper to determine if an account is strictly a Live account
-  const isLiveClient = (c: { accountType?: string; login: number; group?: string }) => {
-    if (c.accountType) {
-      return c.accountType.toLowerCase() === "live";
+  // Fetch live agents/managers from DB
+  const loadAgents = async () => {
+    try {
+      const dbAgents = await api.getAgents(currentCompany);
+      setAgents(dbAgents);
+    } catch (err) {
+      console.warn("Failed to load agents:", err);
     }
-    if (c.group && c.group.toLowerCase().includes("demo")) return false;
-    return c.login >= 1000000;
   };
 
-  // All live clients
-  const liveClients = useMemo(() => {
-    return clients.filter(isLiveClient);
+  useEffect(() => {
+    loadAgents();
+  }, [currentCompany]);
+
+  // All clients in system (matching old master console)
+  const allClients = useMemo(() => {
+    return clients;
   }, [clients]);
 
-  // Live clients stats
-  const totalLive = liveClients.length;
+  // Stats
+  const totalCount = allClients.length;
   const assignedCount = useMemo(() => {
-    return liveClients.filter((c) => !!assignments[c.login]).length;
-  }, [liveClients, assignments]);
-  const unassignedCount = totalLive - assignedCount;
+    return allClients.filter((c) => !!c.assignedAgent).length;
+  }, [allClients]);
+  const unassignedCount = totalCount - assignedCount;
 
-  // Filtered client list: STRICTLY LIVE ACCOUNTS ONLY (NO DEMO)
+  // Filtered client list
   const filteredClients = useMemo(() => {
-    return liveClients.filter((c) => {
-      const isAssigned = !!assignments[c.login];
+    return allClients.filter((c) => {
+      const isAssigned = !!c.assignedAgent;
       if (scopeFilter === "UNASSIGNED" && isAssigned) return false;
       if (scopeFilter === "ASSIGNED" && !isAssigned) return false;
 
@@ -100,38 +58,37 @@ export const AssignUsersTab: React.FC = () => {
         const matchesName = c.name.toLowerCase().includes(q);
         const matchesEmail = c.email.toLowerCase().includes(q);
         const matchesLogin = c.login.toString().includes(q);
-        const currentAgent = assignments[c.login]?.agentName.toLowerCase() || "";
+        const matchesId = c.id?.toString().includes(q);
+        const currentAgent = typeof c.assignedAgent === 'string' ? c.assignedAgent.toLowerCase() : "";
         const matchesAgent = currentAgent.includes(q);
-        return matchesName || matchesEmail || matchesLogin || matchesAgent;
+        return matchesName || matchesEmail || matchesLogin || matchesId || matchesAgent;
       }
       return true;
     });
-  }, [liveClients, assignments, scopeFilter, searchQuery]);
+  }, [allClients, scopeFilter, searchQuery]);
 
   // Handle master select all checkbox
   const isAllSelected =
     filteredClients.length > 0 &&
-    filteredClients.every((c) => selectedLogins.includes(c.login));
+    filteredClients.every((c) => selectedLogins.includes(Number(c.id || c.login)));
 
   const handleToggleSelectAll = () => {
     if (isAllSelected) {
-      setSelectedLogins((prev) =>
-        prev.filter((id) => !filteredClients.some((c) => c.login === id))
-      );
+      setSelectedLogins([]);
     } else {
-      const idsToAdd = filteredClients.map((c) => c.login);
-      setSelectedLogins((prev) => Array.from(new Set([...prev, ...idsToAdd])));
+      const idsToAdd = filteredClients.map((c) => Number(c.id || c.login));
+      setSelectedLogins(Array.from(new Set(idsToAdd)));
     }
   };
 
-  const handleToggleRow = (login: number) => {
+  const handleToggleRow = (userKey: number) => {
     setSelectedLogins((prev) =>
-      prev.includes(login) ? prev.filter((id) => id !== login) : [...prev, login]
+      prev.includes(userKey) ? prev.filter((id) => id !== userKey) : [...prev, userKey]
     );
   };
 
   // Assign action
-  const handleAssign = () => {
+  const handleAssign = async () => {
     if (!selectedAgentId) {
       addToast("error", "Selection Missing", "Please select an Agent or Manager from the dropdown first.");
       return;
@@ -141,55 +98,48 @@ export const AssignUsersTab: React.FC = () => {
       return;
     }
 
-    const agent = DEFAULT_AGENTS.find((a) => a.id === selectedAgentId);
-    if (!agent) return;
+    const agent = agents.find((a) => a.id === selectedAgentId);
+    const agentName = agent ? agent.name : `Agent #${selectedAgentId}`;
 
-    const todayStr = new Date().toLocaleDateString("en-US");
-    const updated = { ...assignments };
-
-    selectedLogins.forEach((login) => {
-      updated[login] = {
-        login,
-        agentId: agent.id,
-        agentName: agent.name,
-        assignedBy: "Master Admin Root",
-        assignedAt: todayStr,
-      };
-    });
-
-    setAssignments(updated);
-    addToast(
-      "success",
-      "Users Assigned",
-      `Successfully assigned ${selectedLogins.length} live user(s) to ${agent.name} (${agent.role}).`
-    );
-    setSelectedLogins([]);
+    try {
+      await api.assignUsersToAgent(currentCompany, {
+        userIds: selectedLogins,
+        agentId: Number(selectedAgentId),
+      });
+      await refreshDbData();
+      addToast(
+        "success",
+        "Users Assigned",
+        `Successfully assigned ${selectedLogins.length} user(s) to ${agentName}.`
+      );
+      setSelectedLogins([]);
+    } catch (err: any) {
+      addToast("error", "Assignment Failed", err.message || "Failed to assign users to agent.");
+    }
   };
 
   // Unassign action
-  const handleUnassign = () => {
+  const handleUnassign = async () => {
     if (selectedLogins.length === 0) {
       addToast("error", "No Users Selected", "Please select users to unassign.");
       return;
     }
 
-    const updated = { ...assignments };
-    let unassigned = 0;
-
-    selectedLogins.forEach((login) => {
-      if (updated[login]) {
-        delete updated[login];
-        unassigned++;
-      }
-    });
-
-    setAssignments(updated);
-    addToast(
-      "info",
-      "Users Unassigned",
-      `Unassigned ${unassigned} user(s) from their respective agents.`
-    );
-    setSelectedLogins([]);
+    try {
+      await api.assignUsersToAgent(currentCompany, {
+        userIds: selectedLogins,
+        agentId: null,
+      });
+      await refreshDbData();
+      addToast(
+        "info",
+        "Users Unassigned",
+        `Unassigned ${selectedLogins.length} user(s) from their respective agents.`
+      );
+      setSelectedLogins([]);
+    } catch (err: any) {
+      addToast("error", "Unassign Failed", err.message || "Failed to unassign users.");
+    }
   };
 
   return (
@@ -225,7 +175,7 @@ export const AssignUsersTab: React.FC = () => {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                All Live ({totalLive})
+                All Users ({totalCount})
               </button>
 
               <button
@@ -255,8 +205,8 @@ export const AssignUsersTab: React.FC = () => {
           {/* Right: Inline Excel Formula / Stats Bar */}
           <div className="hidden xl:flex items-center gap-2.5 text-[11px] font-mono bg-slate-50 border border-slate-200 px-3 py-1 rounded-md">
             <div className="flex items-center gap-1">
-              <span className="text-slate-500 font-sans text-[10.5px]">Total Live:</span>
-              <strong className="text-slate-800 font-bold">{totalLive}</strong>
+              <span className="text-slate-500 font-sans text-[10.5px]">Total Users:</span>
+              <strong className="text-slate-800 font-bold">{totalCount}</strong>
             </div>
             <span className="text-slate-300 select-none">|</span>
             <div className="flex items-center gap-1">
@@ -281,7 +231,7 @@ export const AssignUsersTab: React.FC = () => {
               className="bg-slate-50 hover:bg-white border border-slate-300 focus:border-amber-500 focus:bg-white rounded-md px-2.5 py-1 text-xs font-semibold text-slate-800 outline-none transition-all shadow-2xs cursor-pointer max-w-xs"
             >
               <option value="">Select Agent or Manager...</option>
-              {DEFAULT_AGENTS.map((agent) => (
+              {agents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
                   {agent.name} — {agent.role}
                 </option>
@@ -293,7 +243,7 @@ export const AssignUsersTab: React.FC = () => {
               onClick={handleAssign}
               className="px-2.5 py-1 rounded text-[10.5px] font-bold text-white shadow-2xs transition-all flex items-center gap-1 hover:brightness-105 active:scale-95 cursor-pointer"
               style={{ backgroundColor: brandPrimary }}
-              title="Assign selected live users to the chosen agent"
+              title="Assign selected users to the chosen agent"
             >
               <UserCheck className="w-3 h-3" />
               <span>Assign</span>
@@ -378,18 +328,24 @@ export const AssignUsersTab: React.FC = () => {
               {filteredClients.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400 font-sans text-xs">
-                    No live accounts found matching your search and filter criteria.
+                    No accounts found matching your search and filter criteria.
                   </td>
                 </tr>
               ) : (
                 filteredClients.map((client, index) => {
-                  const assignment = assignments[client.login];
-                  const isChecked = selectedLogins.includes(client.login);
+                  const userKey = Number(client.id || client.login);
+                  const isChecked = selectedLogins.includes(userKey);
+                  const agentDisplayName = client.assignedAgent
+                    ? (typeof client.assignedAgent === 'string' ? client.assignedAgent : (client.assignedAgent as any).name)
+                    : null;
+                  const assignerDisplayName = (client as any).assignedBy
+                    ? (typeof (client as any).assignedBy === 'string' ? (client as any).assignedBy : (client as any).assignedBy.name)
+                    : null;
 
                   return (
                     <tr
-                      key={client.login}
-                      onClick={() => handleToggleRow(client.login)}
+                      key={userKey}
+                      onClick={() => handleToggleRow(userKey)}
                       className={`cursor-pointer transition-colors duration-75 border-b border-slate-200 h-7.5 ${
                         isChecked
                           ? "bg-amber-100/90 font-bold border-l-4"
@@ -411,14 +367,14 @@ export const AssignUsersTab: React.FC = () => {
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => handleToggleRow(client.login)}
+                          onChange={() => handleToggleRow(userKey)}
                           className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 cursor-pointer"
                         />
                       </td>
 
                       {/* ID */}
                       <td className="py-1 px-2.5 border-r border-slate-200 truncate font-bold text-slate-900">
-                        #{client.login}
+                        #{client.id || client.login}
                       </td>
 
                       {/* User Name & Email */}
@@ -433,11 +389,11 @@ export const AssignUsersTab: React.FC = () => {
 
                       {/* Current Agent */}
                       <td className="py-1 px-2.5 border-r border-slate-200 truncate font-sans">
-                        {assignment ? (
+                        {agentDisplayName ? (
                           <div className="flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                             <span className="font-bold text-slate-900 truncate">
-                              {assignment.agentName}
+                              {agentDisplayName}
                             </span>
                           </div>
                         ) : (
@@ -447,12 +403,12 @@ export const AssignUsersTab: React.FC = () => {
 
                       {/* Assigned By */}
                       <td className="py-1 px-2.5 border-r border-slate-200 truncate font-sans text-slate-600">
-                        {assignment ? assignment.assignedBy : "-"}
+                        {assignerDisplayName || "-"}
                       </td>
 
                       {/* Joined Date */}
                       <td className="py-1 px-2.5 truncate font-mono text-slate-600">
-                        {client.registeredAt || "2026-07-30"}
+                        {client.registeredAt || client.registeredDate || "2026-09-02"}
                       </td>
                     </tr>
                   );
@@ -462,7 +418,7 @@ export const AssignUsersTab: React.FC = () => {
           </table>
         </div>
 
-        {/* Excel Bottom Status Strip matching PaymentsPage */}
+        {/* Excel Bottom Status Strip */}
         <div className="px-3 py-1 bg-[#f1f5f9] border-t border-slate-300 flex flex-wrap items-center justify-between text-[10.5px] text-slate-600 font-mono shrink-0 select-none">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 text-emerald-700 font-bold">
@@ -471,7 +427,7 @@ export const AssignUsersTab: React.FC = () => {
             </span>
             <span>•</span>
             <span>
-              Showing {filteredClients.length} of {totalLive} live accounts
+              Showing {filteredClients.length} of {totalCount} accounts
             </span>
             {selectedLogins.length > 0 && (
               <>
@@ -489,7 +445,7 @@ export const AssignUsersTab: React.FC = () => {
             </span>
             <span>•</span>
             <span className="text-emerald-700 font-bold">
-              Live Accounts Only
+              Live Database Sync
             </span>
           </div>
         </div>
@@ -497,3 +453,5 @@ export const AssignUsersTab: React.FC = () => {
     </div>
   );
 };
+
+export default AssignUsersTab;

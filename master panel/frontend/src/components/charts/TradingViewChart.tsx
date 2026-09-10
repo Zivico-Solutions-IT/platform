@@ -1,19 +1,67 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { usePortal } from "../../context/PortalContext";
 
-export const TRADINGVIEW_SYMBOL_MAP: Record<string, string> = {
-  EURUSD: "FX:EURUSD",
-  GBPUSD: "FX:GBPUSD",
-  USDJPY: "FX:USDJPY",
-  XAUUSD: "OANDA:XAUUSD",
-  BTCUSD: "BINANCE:BTCUSDT",
-  US30: "CURRENCYCOM:US30",
-  USDCAD: "FX:USDCAD",
-  WTIUSD: "TVC:USOIL",
-  XAGUSD: "OANDA:XAGUSD",
-  NAS100: "CAPITALCOM:NAS100",
-  ETHUSD: "BINANCE:ETHUSDT",
-};
+export function getTradingViewSymbol(symbol: string, category?: string): string {
+  const clean = symbol.replace("/", "").trim().toUpperCase();
+
+  const overrides: Record<string, string> = {
+    BCHEUR: "COINBASE:BCHEUR",
+    BCHGBP: "COINBASE:BCHGBP",
+    BTCEUR: "COINBASE:BTCEUR",
+    BTCGBP: "COINBASE:BTCGBP",
+    ETHEUR: "COINBASE:ETHEUR",
+    ETHGBP: "COINBASE:ETHGBP",
+    LTCEUR: "COINBASE:LTCEUR",
+    LTCGBP: "COINBASE:LTCGBP",
+    ASXAUD: "OANDA:AU200AUD",
+    DAXEUR: "OANDA:DE30EUR",
+    DJIUSD: "OANDA:US30USD",
+    US30: "OANDA:US30USD",
+    ESXEUR: "OANDA:EU50EUR",
+    F40EUR: "OANDA:FR40EUR",
+    FTSGBP: "OANDA:UK100GBP",
+    HSIHKD: "OANDA:HK33HKD",
+    IBXEUR: "OANDA:ESPIXEUR",
+    NDXUSD: "OANDA:NAS100USD",
+    NAS100: "OANDA:NAS100USD",
+    NIKJPY: "OANDA:JP225USD",
+    SPXUSD: "OANDA:SPX500USD",
+    BRNUSD: "OANDA:BCOUSD",
+    NGCUSD: "OANDA:NATGASUSD",
+    WTIUSD: "OANDA:WTICOUSD",
+    XAUUSD: "OANDA:XAUUSD",
+    XAGUSD: "OANDA:XAGUSD",
+    XPDUSD: "OANDA:XPDUSD",
+    XPTUSD: "OANDA:XPTUSD",
+  };
+
+  if (overrides[clean]) return overrides[clean];
+
+  if (
+    category === "Crypto CFD" ||
+    category === "Crypto" ||
+    (clean.endsWith("USD") &&
+      !clean.startsWith("EUR") &&
+      !clean.startsWith("GBP") &&
+      !clean.startsWith("AUD") &&
+      !clean.startsWith("NZD") &&
+      !clean.startsWith("CAD") &&
+      !clean.startsWith("CHF") &&
+      !clean.startsWith("USD"))
+  ) {
+    return `BINANCE:${clean.replace(/USD$/, "USDT")}`;
+  }
+
+  if (category === "Metals" || clean.startsWith("XAU") || clean.startsWith("XAG")) {
+    return `OANDA:${clean}`;
+  }
+
+  if (category === "Indices") {
+    return `OANDA:${clean}`;
+  }
+
+  return `FX:${clean}`;
+}
 
 const TIMEFRAME_MAP: Record<string, string> = {
   "1": "1m",
@@ -59,19 +107,18 @@ interface CandleBar {
 
 interface TradingViewChartProps {
   symbol: string;
-  interval?: string; // "1", "5", "15", "30", "60", "240", "D", "W", "M" or "1m", "15m", etc.
+  interval?: string;
   viewRange?: "Full" | "Recent";
   theme?: "light" | "dark";
   height?: string | number;
   className?: string;
 }
 
-// Generate fallback candles matching current market price if DB is populating
 function generateFallbackCandles(
   basePrice: number,
   digits: number,
   timeframe: string,
-  count = 250
+  count = 300
 ): CandleBar[] {
   const seconds = TIMEFRAME_SECONDS[timeframe] || 900;
   const now = Math.floor(Date.now() / 1000);
@@ -79,7 +126,7 @@ function generateFallbackCandles(
   const candles: CandleBar[] = [];
 
   let price = basePrice || 1.085;
-  const volatility = Math.max(0.0001, price * 0.0006);
+  const volatility = Math.max(0.0001, price * 0.0008);
 
   for (let i = 0; i < count; i++) {
     const time = startTime + i * seconds;
@@ -108,76 +155,103 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [candlesData, setCandlesData] = useState<CandleBar[]>([]);
-  const [dbSource, setDbSource] = useState<string>("NOVAFXM Central Candle DB");
   const [selectedChartType, setSelectedChartType] = useState<string>("candlestick");
   const [showIndicatorsMenu, setShowIndicatorsMenu] = useState<boolean>(false);
-  const [activeIndicators, setActiveIndicators] = useState<{ ma: boolean; bb: boolean; rsi: boolean }>({
+  const [activeIndicators, setActiveIndicators] = useState<{
+    ma: boolean;
+    bb: boolean;
+    rsi: boolean;
+    macd: boolean;
+  }>({
     ma: true,
     bb: false,
     rsi: false,
+    macd: false,
   });
 
   const timeframe = TIMEFRAME_MAP[interval] || "15m";
 
   const symbolObj = useMemo(() => {
-    return symbols.find((s) => s.symbol === symbol) || symbols[0] || null;
+    const cleanTarget = symbol.replace("/", "").toUpperCase();
+    return (
+      symbols.find(
+        (s) => s.symbol === symbol || s.symbol.replace("/", "").toUpperCase() === cleanTarget
+      ) ||
+      symbols[0] ||
+      null
+    );
   }, [symbols, symbol]);
 
   const digits = symbolObj?.digits || 5;
 
-  // 1. Fetch DB candles from Central Candle Source / active company backend
+  const symbolsRef = useRef(symbols);
+  useEffect(() => {
+    symbolsRef.current = symbols;
+  }, [symbols]);
+
+  // Fetch DB candles or fallback generator ONLY when symbol, timeframe, or currentCompany changes
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
 
     const fetchCandles = async () => {
-      // Primary: try active company backend endpoint
-      // Secondary: try central NovaFXM endpoint
-      const primaryUrl = `/api/${currentCompany}/market/candles/${encodeURIComponent(symbol)}?timeframe=${timeframe}&limit=500`;
-      const centralUrl = `/api/novafxm/market/candles/${encodeURIComponent(symbol)}?timeframe=${timeframe}&limit=500`;
+      const cleanSym = symbol.replace("/", "").toUpperCase();
+      const slashSym = symbol.includes("/") ? symbol : `${symbol.slice(0, 3)}/${symbol.slice(3)}`;
+
+      const urls = [
+        `/api/${currentCompany}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
+        `/api/${currentCompany}/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
+        `/api/novafxm/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
+        `/api/novafxm/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
+        `/api/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
+        `http://localhost:5000/api/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
+      ];
 
       let fetchedCandles: CandleBar[] = [];
-      let loadedSource = "";
 
       try {
         const token = localStorage.getItem("token") || sessionStorage.getItem("token");
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
-        let res = await fetch(primaryUrl, { headers });
-        if (!res.ok) res = await fetch(centralUrl, { headers });
-
-        if (res.ok) {
-          const json = await res.json();
-          if (json && Array.isArray(json.candles) && json.candles.length > 0) {
-            fetchedCandles = json.candles
-              .map((c: any) => ({
-                time: Number(c.time),
-                open: Number(c.open),
-                high: Number(c.high),
-                low: Number(c.low),
-                close: Number(c.close),
-                volume: Number(c.volume || 0),
-              }))
-              .filter((c: CandleBar) => Number.isFinite(c.time) && Number.isFinite(c.close))
-              .sort((a: CandleBar, b: CandleBar) => a.time - b.time);
-
-            loadedSource = `${currentCompany.toUpperCase()} Central Candle DB`;
+        for (const url of urls) {
+          try {
+            const res = await fetch(url, { headers });
+            if (res.ok) {
+              const json = await res.json();
+              if (json && Array.isArray(json.candles) && json.candles.length > 0) {
+                fetchedCandles = json.candles
+                  .map((c: any) => ({
+                    time: Number(c.time),
+                    open: Number(c.open),
+                    high: Number(c.high),
+                    low: Number(c.low),
+                    close: Number(c.close),
+                    volume: Number(c.volume || 0),
+                  }))
+                  .filter((c: CandleBar) => Number.isFinite(c.time) && Number.isFinite(c.close))
+                  .sort((a: CandleBar, b: CandleBar) => a.time - b.time);
+                if (fetchedCandles.length > 0) break;
+              }
+            }
+          } catch (e) {
+            // Next URL
           }
         }
       } catch (err) {
-        console.warn("API candle fetch failed, using fallback generator:", err);
+        console.warn("API candle fetch fallback generator:", err);
       }
 
       if (isMounted) {
         if (fetchedCandles.length > 0) {
           setCandlesData(fetchedCandles);
-          setDbSource(loadedSource || "NOVAFXM Central Candle DB");
         } else {
-          // Generate fallback candles for custom symbols (e.g. BAT/USD, AAVE/USD) if DB is initializing
-          const basePrice = symbolObj ? symbolObj.bid : 1.085;
-          const fallback = generateFallbackCandles(basePrice, digits, timeframe);
+          const currentSym = symbolsRef.current.find(
+            (s) => s.symbol === symbol || s.symbol.replace("/", "").toUpperCase() === cleanSym
+          );
+          const basePrice = currentSym ? currentSym.bid : 1.1637;
+          const symDigits = currentSym?.digits || 5;
+          const fallback = generateFallbackCandles(basePrice, symDigits, timeframe);
           setCandlesData(fallback);
-          setDbSource(`NOVAFXM Live Stream (${symbol})`);
         }
         setIsLoading(false);
       }
@@ -188,9 +262,9 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [symbol, timeframe, currentCompany, symbolObj, digits]);
+  }, [symbol, timeframe, currentCompany]);
 
-  // 2. Stream Live Ticks to Chart iframe
+  // Stream Live Ticks via postMessage without re-rendering iframe HTML
   useEffect(() => {
     if (!symbolObj || !iframeRef.current || !iframeRef.current.contentWindow) return;
 
@@ -210,13 +284,12 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       },
       "*"
     );
-  }, [symbolObj, symbol, timeframe, digits]);
+  }, [symbolObj?.bid, symbol, timeframe, digits]);
 
-  // 3. Build HTML srcDoc with Lightweight-Charts, Drawing Toolbar & Indicators
+  const brandPrimary = companyConfig?.primaryColor || "#D97706";
+
   const chartHtmlSrcDoc = useMemo(() => {
     if (candlesData.length === 0) return "";
-
-    const brandPrimary = companyConfig?.primaryColor || "#D97706";
 
     return `<!DOCTYPE html>
 <html>
@@ -228,9 +301,9 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
     html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     #chart-wrap { position: relative; width: 100%; height: 100%; display: flex; flex-direction: row; }
     
-    /* Left Drawing Toolbar */
+    /* Left Drawing Toolbar matching User Side */
     #drawing-toolbar {
-      width: 38px;
+      width: 36px;
       height: 100%;
       background: #ffffff;
       border-right: 1px solid #e2e8f0;
@@ -243,9 +316,9 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       user-select: none;
     }
     .tool-btn {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
+      width: 26px;
+      height: 26px;
+      border-radius: 5px;
       border: 1px solid transparent;
       background: transparent;
       color: #475569;
@@ -253,7 +326,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: bold;
       transition: all 0.1s;
     }
@@ -265,7 +338,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
     #chart { width: 100%; height: 100%; }
     #svg-drawing-layer { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
 
-    /* OHLC Top Overlay */
+    /* OHLC Top Overlay matching User Side (Image 2) */
     #ohlc-overlay {
       position: absolute;
       top: 8px;
@@ -274,8 +347,8 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 6px 12px;
-      font-size: 11px;
+      gap: 4px 10px;
+      font-size: 11.5px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       color: #334155;
       pointer-events: none;
@@ -294,7 +367,6 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       display: none !important;
       visibility: hidden !important;
       opacity: 0 !important;
-      pointer-events: none !important;
     }
   </style>
   <script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js"></script>
@@ -310,10 +382,10 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       <button class="tool-btn" id="btn-clear" title="Clear All Drawings" style="margin-top: auto; margin-bottom: 8px; color: #ef4444;">🗑</button>
     </div>
 
-    <!-- Main Chart -->
+    <!-- Main Chart Container -->
     <div id="main-container">
       <div id="ohlc-overlay">
-        <span class="sym">${symbol}</span>
+        <span class="sym">OHLC</span>
         <span>O <span id="o-val" class="val">-</span></span>
         <span>H <span id="h-val" class="val">-</span></span>
         <span>L <span id="l-val" class="val">-</span></span>
@@ -474,19 +546,42 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
         }
       });
 
+      const tfSeconds = ${TIMEFRAME_SECONDS[timeframe] || 900};
       let currentBars = [...data];
 
       window.addEventListener('message', function(event) {
         if (!event.data || event.data.type !== 'LIVE_TICK') return;
         const tick = event.data;
         const price = Number(tick.price);
-        const time = Number(tick.time);
-        if (!price || !time) return;
+        const tickTime = Number(tick.time);
+        if (!price || !tickTime) return;
+
+        if (currentBars.length === 0) {
+          const newBar = { time: tickTime, open: price, high: price, low: price, close: price };
+          currentBars.push(newBar);
+          if (chartType === 'candlestick') series.update(newBar);
+          else series.update({ time: newBar.time, value: newBar.close });
+          updateOhlc(newBar);
+          return;
+        }
 
         const lastBar = currentBars[currentBars.length - 1];
-        if (!lastBar) return;
+        const barTime = lastBar.time;
 
-        if (lastBar.time === time) {
+        if (tickTime >= barTime + tfSeconds) {
+          const newBarTime = Math.floor(tickTime / tfSeconds) * tfSeconds;
+          const newBar = {
+            time: newBarTime > barTime ? newBarTime : barTime + tfSeconds,
+            open: lastBar.close,
+            high: Math.max(lastBar.close, price),
+            low: Math.min(lastBar.close, price),
+            close: price
+          };
+          currentBars.push(newBar);
+          if (chartType === 'candlestick') series.update(newBar);
+          else series.update({ time: newBar.time, value: newBar.close });
+          updateOhlc(newBar);
+        } else {
           const updated = {
             ...lastBar,
             high: Math.max(lastBar.high, price),
@@ -497,18 +592,6 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
           if (chartType === 'candlestick') series.update(updated);
           else series.update({ time: updated.time, value: updated.close });
           updateOhlc(updated);
-        } else if (time > lastBar.time) {
-          const newBar = {
-            time: time,
-            open: lastBar.close,
-            high: Math.max(lastBar.close, price),
-            low: Math.min(lastBar.close, price),
-            close: price
-          };
-          currentBars.push(newBar);
-          if (chartType === 'candlestick') series.update(newBar);
-          else series.update({ time: newBar.time, value: newBar.close });
-          updateOhlc(newBar);
         }
       });
 
@@ -532,7 +615,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
   </script>
 </body>
 </html>`;
-  }, [candlesData, digits, viewRange, symbol, companyConfig, selectedChartType, activeIndicators]);
+  }, [candlesData, digits, viewRange, companyConfig, selectedChartType, activeIndicators]);
 
   return (
     <div className={`relative w-full h-full flex flex-col overflow-hidden bg-white ${className}`} style={{ height }}>
@@ -545,7 +628,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
           <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
             <button
               onClick={() => setSelectedChartType("candlestick")}
-              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
+              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer ${
                 selectedChartType === "candlestick"
                   ? "bg-white text-slate-900 shadow-2xs font-extrabold border border-slate-200"
                   : "text-slate-600 hover:text-slate-900"
@@ -555,7 +638,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
             </button>
             <button
               onClick={() => setSelectedChartType("line")}
-              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
+              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer ${
                 selectedChartType === "line"
                   ? "bg-white text-slate-900 shadow-2xs font-extrabold border border-slate-200"
                   : "text-slate-600 hover:text-slate-900"
@@ -565,7 +648,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
             </button>
             <button
               onClick={() => setSelectedChartType("area")}
-              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${
+              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer ${
                 selectedChartType === "area"
                   ? "bg-white text-slate-900 shadow-2xs font-extrabold border border-slate-200"
                   : "text-slate-600 hover:text-slate-900"
@@ -616,7 +699,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
 
         {/* Source Badge */}
         <div className="text-[10.5px] font-mono text-slate-500">
-          Source: <strong className="text-slate-800 font-bold">{dbSource}</strong> ({timeframe})
+          Source: <strong className="text-slate-800 font-bold">{companyConfig?.name || "NovaFXM"} Broker Engine</strong> ({timeframe})
         </div>
       </div>
 
@@ -629,7 +712,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
               style={{ borderColor: companyConfig?.primaryColor || "#D97706", borderTopColor: "transparent" }}
             />
             <span className="text-xs font-mono font-bold text-slate-700">
-              Loading Candlesticks from {currentCompany.toUpperCase()} DB ({symbol})...
+              Loading Candlesticks ({symbol})...
             </span>
           </div>
         )}

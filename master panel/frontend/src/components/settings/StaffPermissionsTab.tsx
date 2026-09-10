@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { usePortal } from "../../context/PortalContext";
 import { StaffMember } from "../../types";
+import { api } from "../../services/api";
 import {
   Shield,
   Users,
@@ -98,33 +99,12 @@ const DEFAULT_ROLE_TEMPLATES: Record<string, string[]> = {
   ],
 };
 
-// Initial default staff members matching Image 3 with our portal's permissions
 const DEFAULT_STAFF: StaffMember[] = [
   {
-    id: "staff-1",
+    id: "17",
     name: "dinith",
-    email: "dinith@gmail.com",
-    phone: "+94773508025",
-    role: "AGENT",
-    permissions: [
-      "dashboard",
-      "markets",
-      "clients",
-      "verification",
-      "trading_open",
-      "trading_history",
-      "payments",
-      "deposit_methods",
-      "referral_rewards",
-      "assign_users",
-    ],
-    joinedDate: "Aug 1, 2026, 9:40 AM",
-  },
-  {
-    id: "staff-2",
-    name: "Shiva",
-    email: "n1@gmail.com",
-    phone: "+94774582214",
+    email: "dinithrusiru1234@gmail.com",
+    phone: "+947746658778",
     role: "MANAGER",
     permissions: [
       "dashboard",
@@ -142,16 +122,16 @@ const DEFAULT_STAFF: StaffMember[] = [
       "staff_permissions",
       "broker_gateway",
     ],
-    joinedDate: "Jul 30, 2026, 2:04 PM",
+    joinedDate: "Sep 2, 2026, 11:31 AM",
   },
 ];
 
 export const StaffPermissionsTab: React.FC = () => {
-  const { companyConfig, addToast } = usePortal();
+  const { companyConfig, currentCompany, addToast } = usePortal();
   const brandPrimary = companyConfig?.primaryColor || "#D97706";
 
   // Sub-view toggle: 'roles' (Role Permissions) vs 'users' (User Permissions)
-  const [activeSubView, setActiveSubView] = useState<"roles" | "users">("roles");
+  const [activeSubView, setActiveSubView] = useState<"roles" | "users">("users");
 
   // Selected role template category: 'Manager' vs 'Agent'
   const [selectedRoleCategory, setSelectedRoleCategory] = useState<"Manager" | "Agent">("Manager");
@@ -170,16 +150,30 @@ export const StaffPermissionsTab: React.FC = () => {
     return DEFAULT_ROLE_TEMPLATES;
   });
 
-  // Staff members list stored in state & localStorage
-  const [staffList, setStaffList] = useState<StaffMember[]>(() => {
+  // Staff members list fetched from live DB
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const loadStaffList = async () => {
+    setLoading(true);
     try {
-      const saved = localStorage.getItem("nova_staff_list_v2");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
+      const dbAgents = await api.getAgents(currentCompany);
+      if (dbAgents && dbAgents.length > 0) {
+        setStaffList(dbAgents);
+      } else {
+        setStaffList(DEFAULT_STAFF);
+      }
+    } catch (err) {
+      console.warn("Failed to load staff list from DB:", err);
+      setStaffList(DEFAULT_STAFF);
+    } finally {
+      setLoading(false);
     }
-    return DEFAULT_STAFF;
-  });
+  };
+
+  useEffect(() => {
+    loadStaffList();
+  }, [currentCompany]);
 
   useEffect(() => {
     try {
@@ -188,14 +182,6 @@ export const StaffPermissionsTab: React.FC = () => {
       console.error(e);
     }
   }, [roleTemplates]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("nova_staff_list_v2", JSON.stringify(staffList));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [staffList]);
 
   // Counts
   const managerCount = staffList.filter((s) => s.role === "MANAGER").length;
@@ -235,6 +221,7 @@ export const StaffPermissionsTab: React.FC = () => {
     name: "",
     email: "",
     phone: "",
+    password: "",
     role: "AGENT" as "MANAGER" | "AGENT",
     permissions: [] as string[],
   });
@@ -246,6 +233,7 @@ export const StaffPermissionsTab: React.FC = () => {
       name: "",
       email: "",
       phone: "",
+      password: "",
       role: selectedRoleCategory === "Manager" ? "MANAGER" : "AGENT",
       permissions: roleTemplates[selectedRoleCategory] || [],
     });
@@ -259,6 +247,7 @@ export const StaffPermissionsTab: React.FC = () => {
       name: staff.name,
       email: staff.email,
       phone: staff.phone,
+      password: "",
       role: staff.role,
       permissions: staff.permissions,
     });
@@ -266,17 +255,22 @@ export const StaffPermissionsTab: React.FC = () => {
   };
 
   // Delete staff
-  const handleDeleteStaff = (id: string) => {
+  const handleDeleteStaff = async (id: string) => {
     const staff = staffList.find((s) => s.id === id);
     if (!staff) return;
     if (window.confirm(`Are you sure you want to delete staff member "${staff.name}"?`)) {
       setStaffList((prev) => prev.filter((s) => s.id !== id));
+      try {
+        await api.deleteAgent(currentCompany, id);
+      } catch (err) {
+        console.warn("API delete agent failed:", err);
+      }
       addToast("info", "Staff Removed", `Staff member "${staff.name}" has been removed.`);
     }
   };
 
   // Submit modal form
-  const handleSaveStaffModal = (e: React.FormEvent) => {
+  const handleSaveStaffModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!modalForm.name.trim() || !modalForm.email.trim()) {
       addToast("error", "Missing Details", "Please enter a valid name and email.");
@@ -284,39 +278,60 @@ export const StaffPermissionsTab: React.FC = () => {
     }
 
     if (editingStaffId) {
-      setStaffList((prev) =>
-        prev.map((s) =>
-          s.id === editingStaffId
-            ? {
-                ...s,
-                name: modalForm.name.trim(),
-                email: modalForm.email.trim(),
-                phone: modalForm.phone.trim(),
-                role: modalForm.role,
-                permissions: modalForm.permissions,
-              }
-            : s
-        )
-      );
+      try {
+        const updated = await api.updateAgent(currentCompany, editingStaffId, {
+          name: modalForm.name.trim(),
+          email: modalForm.email.trim(),
+          phone: modalForm.phone.trim(),
+          password: modalForm.password || undefined,
+          role: modalForm.role,
+          permissions: modalForm.permissions,
+        });
+        if (updated) {
+          setStaffList((prev) => prev.map((s) => (s.id === editingStaffId ? updated : s)));
+        } else {
+          setStaffList((prev) =>
+            prev.map((s) => (s.id === editingStaffId ? { ...s, ...modalForm } as StaffMember : s))
+          );
+        }
+      } catch {
+        setStaffList((prev) =>
+          prev.map((s) => (s.id === editingStaffId ? { ...s, ...modalForm } as StaffMember : s))
+        );
+      }
       addToast("success", "Staff Updated", `Updated details for ${modalForm.name}.`);
     } else {
-      const newStaff: StaffMember = {
-        id: `staff-${Date.now()}`,
-        name: modalForm.name.trim(),
-        email: modalForm.email.trim(),
-        phone: modalForm.phone.trim() || "+94770000000",
-        role: modalForm.role,
-        permissions: modalForm.permissions,
-        joinedDate: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-        }),
-      };
-      setStaffList((prev) => [newStaff, ...prev]);
-      addToast("success", "Staff Created", `New staff member ${newStaff.name} added successfully!`);
+      try {
+        const created = await api.createAgent(currentCompany, {
+          name: modalForm.name.trim(),
+          email: modalForm.email.trim(),
+          phone: modalForm.phone.trim() || "+94770000000",
+          password: modalForm.password || "staff1234",
+          role: modalForm.role,
+          permissions: modalForm.permissions,
+        });
+        if (created) {
+          setStaffList((prev) => [created, ...prev]);
+        } else {
+          const newStaff: StaffMember = {
+            id: `staff-${Date.now()}`,
+            name: modalForm.name.trim(),
+            email: modalForm.email.trim(),
+            phone: modalForm.phone.trim() || "+94770000000",
+            role: modalForm.role,
+            permissions: modalForm.permissions,
+            joinedDate: new Date().toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            }),
+          };
+          setStaffList((prev) => [newStaff, ...prev]);
+        }
+      } catch (err: any) {
+        addToast("error", "Create Failed", err.message || "Failed to create staff member.");
+      }
+      addToast("success", "Staff Created", `New staff member ${modalForm.name} added successfully!`);
     }
 
     setIsModalOpen(false);
@@ -860,6 +875,19 @@ export const StaffPermissionsTab: React.FC = () => {
                     className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-amber-500"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                  Password {editingStaffId ? "(Leave blank to keep current)" : ""}
+                </label>
+                <input
+                  type="password"
+                  value={modalForm.password}
+                  onChange={(e) => setModalForm({ ...modalForm, password: e.target.value })}
+                  placeholder={editingStaffId ? "••••••••" : "At least 8 characters"}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 focus:outline-none focus:border-amber-500"
+                />
               </div>
 
               <div>

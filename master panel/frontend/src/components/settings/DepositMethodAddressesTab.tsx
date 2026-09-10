@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { usePortal } from "../../context/PortalContext";
 import { DepositMethodAddress, DepositMethodType } from "../../types";
+import { api } from "../../services/api";
 import {
   PlusCircle,
   Search,
@@ -11,6 +12,8 @@ import {
   QrCode,
   X,
   CreditCard,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 const METHODS: DepositMethodType[] = ["TRC20", "BEP20", "ERC20", "Bank Transfer"];
@@ -19,71 +22,60 @@ const DEFAULT_ADDRESSES: DepositMethodAddress[] = [
   {
     id: "dep-addr-1",
     method: "TRC20",
-    label: "Kabi",
-    address: "TJhvbYFU9xykCXEbUbKdXKVQvcyziDLWP",
-    qrData: "tron:TJhvbYFU9xykCXEbUbKdXKVQvcyziDLWP",
+    label: "TRC20 Main Wallet",
+    address: "TYD2b2D8vX4g5M6n7P8q9R0s1T2u3V4w5X",
+    qrData: "TYD2b2D8vX4g5M6n7P8q9R0s1T2u3V4w5X",
     isActive: true,
-    createdAt: "2026-09-01",
-  },
-  {
-    id: "dep-addr-2",
-    method: "BEP20",
-    label: "Main BSC Treasury",
-    address: "0x71C8A97bB36c841A835A1dDb62E52240b9F8D690",
-    qrData: "ethereum:0x71C8A97bB36c841A835A1dDb62E52240b9F8D690",
-    isActive: true,
-    createdAt: "2026-09-02",
-  },
-  {
-    id: "dep-addr-3",
-    method: "Bank Transfer",
-    label: "Commercial Bank USD Wire",
-    address: "IBAN: US94CBNA00001234567890 | SWIFT: CIBNUS33 | Bank: Commercial Bank of NY",
-    qrData: "",
-    isActive: true,
-    createdAt: "2026-08-28",
-  },
-  {
-    id: "dep-addr-4",
-    method: "ERC20",
-    label: "ETH / USDT Hot Wallet",
-    address: "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
-    qrData: "ethereum:0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
-    isActive: true,
-    createdAt: "2026-09-03",
+    createdAt: "2026-08-17",
   },
 ];
 
 export const DepositMethodAddressesTab: React.FC = () => {
-  const { companyConfig, addToast } = usePortal();
+  const { companyConfig, currentCompany, addToast } = usePortal();
   const brandPrimary = companyConfig?.primaryColor || "#D97706";
+  const formRef = useRef<HTMLDivElement>(null);
 
-  // Persistent addresses state
-  const [addresses, setAddresses] = useState<DepositMethodAddress[]>(() => {
+  const [addresses, setAddresses] = useState<DepositMethodAddress[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Fetch real deposit addresses from DB
+  const loadAddresses = async () => {
+    setLoading(true);
     try {
-      const saved = localStorage.getItem("nova_deposit_addresses_v2");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
+      const dbAddresses = await api.getDepositMethodAddresses(currentCompany);
+      if (dbAddresses && dbAddresses.length > 0) {
+        setAddresses(dbAddresses);
+      } else {
+        // Fallback to saved local or default
+        try {
+          const saved = localStorage.getItem(`nova_deposit_addresses_${currentCompany}`);
+          if (saved) {
+            setAddresses(JSON.parse(saved));
+          } else {
+            setAddresses(DEFAULT_ADDRESSES);
+          }
+        } catch {
+          setAddresses(DEFAULT_ADDRESSES);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load deposit addresses:", err);
+      setAddresses(DEFAULT_ADDRESSES);
+    } finally {
+      setLoading(false);
     }
-    return DEFAULT_ADDRESSES;
-  });
+  };
 
   useEffect(() => {
-    try {
-      localStorage.setItem("nova_deposit_addresses_v2", JSON.stringify(addresses));
-    } catch (e) {
-      console.error(e);
-    }
-  }, [addresses]);
+    loadAddresses();
+  }, [currentCompany]);
 
   const [activeFilter, setActiveFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<DepositMethodAddress | null>(null);
   const [formMethod, setFormMethod] = useState<DepositMethodType>("TRC20");
   const [formLabel, setFormLabel] = useState("");
@@ -91,10 +83,8 @@ export const DepositMethodAddressesTab: React.FC = () => {
   const [formQr, setFormQr] = useState("");
   const [formIsActive, setFormIsActive] = useState(true);
 
-  // QR Modal Preview
   const [previewQrItem, setPreviewQrItem] = useState<DepositMethodAddress | null>(null);
 
-  // Counts
   const totalCount = addresses.length;
   const trcCount = addresses.filter((a) => a.method === "TRC20").length;
   const bepCount = addresses.filter((a) => a.method === "BEP20").length;
@@ -103,7 +93,6 @@ export const DepositMethodAddressesTab: React.FC = () => {
   const activeCount = addresses.filter((a) => a.isActive).length;
   const inactiveCount = totalCount - activeCount;
 
-  // Filtered List
   const filteredAddresses = useMemo(() => {
     return addresses.filter((item) => {
       if (activeFilter !== "ALL" && item.method !== activeFilter) return false;
@@ -127,33 +116,48 @@ export const DepositMethodAddressesTab: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleToggleActive = (id: string, e?: React.MouseEvent) => {
+  const handleToggleActive = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    const target = addresses.find((a) => a.id === id);
+    if (!target) return;
+    const nextStatus = !target.isActive;
+
+    // Optimistic UI update
     setAddresses((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, isActive: !a.isActive } : a))
+      prev.map((a) => (a.id === id ? { ...a, isActive: nextStatus } : a))
     );
-    addToast("info", "Status Updated", "Deposit method status toggled.");
+
+    try {
+      await api.updateDepositMethodAddress(currentCompany, id, {
+        method: target.method,
+        label: target.label,
+        address: target.address,
+        qrData: target.qrData,
+        isActive: nextStatus,
+      });
+      addToast("info", "Status Updated", `Status updated to ${nextStatus ? "ACTIVE" : "INACTIVE"}.`);
+    } catch {
+      addToast("info", "Status Updated", "Deposit method status toggled locally.");
+    }
   };
 
-  const handleDelete = (id: string, e?: React.MouseEvent) => {
+  const handleDelete = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (window.confirm("Are you sure you want to delete this deposit method?")) {
       setAddresses((prev) => prev.filter((a) => a.id !== id));
+      if (editingAddress?.id === id) {
+        handleResetForm();
+      }
+      try {
+        await api.deleteDepositMethodAddress(currentCompany, id);
+      } catch (err) {
+        console.warn("Delete API failed, removed locally:", err);
+      }
       addToast("info", "Address Deleted", "Deposit method address removed.");
     }
   };
 
-  const handleOpenAddModal = () => {
-    setEditingAddress(null);
-    setFormMethod("TRC20");
-    setFormLabel("");
-    setFormAddress("");
-    setFormQr("");
-    setFormIsActive(true);
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEditModal = (item: DepositMethodAddress, e?: React.MouseEvent) => {
+  const handleEdit = (item: DepositMethodAddress, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setEditingAddress(item);
     setFormMethod(item.method);
@@ -161,54 +165,93 @@ export const DepositMethodAddressesTab: React.FC = () => {
     setFormAddress(item.address);
     setFormQr(item.qrData || "");
     setFormIsActive(item.isActive);
-    setIsModalOpen(true);
+    setShowForm(true);
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
-  const handleSaveModal = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleResetForm = () => {
+    setEditingAddress(null);
+    setFormMethod("TRC20");
+    setFormLabel("");
+    setFormAddress("");
+    setFormQr("");
+    setFormIsActive(true);
+    setShowForm(false);
+  };
+
+  const handleSaveForm = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!formLabel.trim() || !formAddress.trim()) {
       addToast("error", "Fields Required", "Please enter both a label and address/details.");
       return;
     }
 
+    const payload: Partial<DepositMethodAddress> = {
+      method: formMethod,
+      label: formLabel.trim(),
+      address: formAddress.trim(),
+      qrData: formQr.trim(),
+      isActive: formIsActive,
+    };
+
     if (editingAddress) {
-      setAddresses((prev) =>
-        prev.map((a) =>
-          a.id === editingAddress.id
-            ? {
-                ...a,
-                method: formMethod,
-                label: formLabel.trim(),
-                address: formAddress.trim(),
-                qrData: formQr.trim(),
-                isActive: formIsActive,
-              }
-            : a
-        )
-      );
+      // Update existing address
+      try {
+        const updated = await api.updateDepositMethodAddress(currentCompany, editingAddress.id, payload);
+        if (updated) {
+          setAddresses((prev) => prev.map((a) => (a.id === editingAddress.id ? updated : a)));
+        } else {
+          setAddresses((prev) =>
+            prev.map((a) => (a.id === editingAddress.id ? { ...a, ...payload } as DepositMethodAddress : a))
+          );
+        }
+      } catch {
+        setAddresses((prev) =>
+          prev.map((a) => (a.id === editingAddress.id ? { ...a, ...payload } as DepositMethodAddress : a))
+        );
+      }
       addToast("success", "Address Updated", `${formLabel} updated successfully.`);
     } else {
-      const newEntry: DepositMethodAddress = {
-        id: `dep-addr-${Date.now()}`,
-        method: formMethod,
-        label: formLabel.trim(),
-        address: formAddress.trim(),
-        qrData: formQr.trim(),
-        isActive: formIsActive,
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-      setAddresses((prev) => [newEntry, ...prev]);
+      // Create new address
+      try {
+        const created = await api.createDepositMethodAddress(currentCompany, payload);
+        if (created) {
+          setAddresses((prev) => [created, ...prev]);
+        } else {
+          const newEntry: DepositMethodAddress = {
+            id: `dep-addr-${Date.now()}`,
+            method: formMethod,
+            label: formLabel.trim(),
+            address: formAddress.trim(),
+            qrData: formQr.trim(),
+            isActive: formIsActive,
+            createdAt: new Date().toISOString().slice(0, 10),
+          };
+          setAddresses((prev) => [newEntry, ...prev]);
+        }
+      } catch {
+        const newEntry: DepositMethodAddress = {
+          id: `dep-addr-${Date.now()}`,
+          method: formMethod,
+          label: formLabel.trim(),
+          address: formAddress.trim(),
+          qrData: formQr.trim(),
+          isActive: formIsActive,
+          createdAt: new Date().toISOString().slice(0, 10),
+        };
+        setAddresses((prev) => [newEntry, ...prev]);
+      }
       addToast("success", "Address Added", `New ${formMethod} address added.`);
     }
 
-    setIsModalOpen(false);
+    handleResetForm();
   };
 
   return (
-    <div className="space-y-2 animate-fadeIn font-sans select-none flex-1 min-h-0 flex flex-col">
-      {/* Top Compact Excel Toolbar matching PaymentsPage */}
+    <div className="space-y-2 animate-fadeIn font-sans select-none flex-1 min-h-0 flex flex-col pb-6">
       <div className="flex flex-wrap items-center justify-between gap-2.5 shrink-0 bg-white border border-slate-300 p-2 rounded-lg shadow-2xs">
-        {/* Left: Title + Filter Pills */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 mr-1">
             <span
@@ -225,13 +268,12 @@ export const DepositMethodAddressesTab: React.FC = () => {
 
           <span className="text-slate-300 font-mono select-none hidden sm:inline">|</span>
 
-          {/* Method Filter Pills */}
           <div className="inline-flex p-0.5 bg-slate-100 rounded-md border border-slate-300 text-[11px] overflow-x-auto">
             <button
               onClick={() => setActiveFilter("ALL")}
-              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap ${
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeFilter === "ALL"
-                  ? "bg-slate-800 text-white shadow-2xs"
+                  ? "bg-slate-900 text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -240,7 +282,7 @@ export const DepositMethodAddressesTab: React.FC = () => {
 
             <button
               onClick={() => setActiveFilter("TRC20")}
-              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap ${
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeFilter === "TRC20"
                   ? "bg-emerald-700 text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -251,7 +293,7 @@ export const DepositMethodAddressesTab: React.FC = () => {
 
             <button
               onClick={() => setActiveFilter("BEP20")}
-              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap ${
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeFilter === "BEP20"
                   ? "bg-amber-600 text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -262,7 +304,7 @@ export const DepositMethodAddressesTab: React.FC = () => {
 
             <button
               onClick={() => setActiveFilter("ERC20")}
-              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap ${
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeFilter === "ERC20"
                   ? "bg-sky-700 text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -273,7 +315,7 @@ export const DepositMethodAddressesTab: React.FC = () => {
 
             <button
               onClick={() => setActiveFilter("Bank Transfer")}
-              className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap ${
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeFilter === "Bank Transfer"
                   ? "bg-indigo-700 text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -284,8 +326,7 @@ export const DepositMethodAddressesTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Inline Excel Formula / Stats Bar */}
-        <div className="hidden xl:flex items-center gap-2.5 text-[11px] font-mono bg-slate-50 border border-slate-200 px-3 py-1 rounded-md">
+        <div className="hidden lg:flex items-center gap-2.5 text-[11px] font-mono bg-slate-50 border border-slate-200 px-3 py-1 rounded-md">
           <div className="flex items-center gap-1">
             <span className="text-slate-500 font-sans text-[10.5px]">Active:</span>
             <strong className="text-emerald-700 font-bold">{activeCount}</strong>
@@ -301,45 +342,165 @@ export const DepositMethodAddressesTab: React.FC = () => {
             <strong className="text-slate-800 font-bold">4 Chains</strong>
           </div>
         </div>
+      </div>
 
-        {/* Right: Add Address Button + Search */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleOpenAddModal}
-            className="px-2.5 py-1 rounded text-[10.5px] font-bold text-white shadow-2xs transition-all flex items-center gap-1 hover:brightness-105 active:scale-95 cursor-pointer"
-            style={{ backgroundColor: brandPrimary }}
-            title="Create new deposit address or bank wire account"
-          >
-            <PlusCircle className="w-3 h-3" />
-            <span>+ Add Address</span>
-          </button>
+      <div className="flex flex-wrap items-center justify-between gap-2.5 shrink-0 bg-white border border-slate-300 p-2 rounded-lg shadow-2xs">
+        <button
+          onClick={() => {
+            if (showForm && !editingAddress) {
+              setShowForm(false);
+            } else {
+              setEditingAddress(null);
+              setFormMethod("TRC20");
+              setFormLabel("");
+              setFormAddress("");
+              setFormQr("");
+              setFormIsActive(true);
+              setShowForm(true);
+            }
+          }}
+          className="px-3 py-1 rounded-md text-xs font-bold text-white shadow-2xs transition-all flex items-center gap-1 hover:brightness-105 active:scale-95 cursor-pointer"
+          style={{ backgroundColor: brandPrimary }}
+          title="Create new deposit address or bank wire account"
+        >
+          <PlusCircle className="w-3.5 h-3.5" />
+          <span>{showForm && !editingAddress ? "Close Form" : "+ Add Address"}</span>
+        </button>
 
-          <div className="relative w-48 sm:w-56">
-            <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search method, label, address..."
-              className="w-full bg-[#f8fafc] border border-slate-300 rounded-md pl-7 pr-6 py-1 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white shadow-2xs font-mono transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+        <div className="relative w-64 sm:w-80">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search method, label, address..."
+            className="w-full bg-[#f8fafc] border border-slate-300 rounded-md pl-8 pr-6 py-1 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white shadow-2xs font-mono transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Main Excel-Style Dense Table Grid Container */}
-      <div className="bg-white border border-slate-300 rounded-lg shadow-2xs overflow-hidden flex-1 flex flex-col min-h-0">
+      {showForm && (
+        <div
+          ref={formRef}
+          className="bg-white border border-amber-300/80 rounded-xl p-4 shadow-sm space-y-3.5 animate-fadeIn"
+        >
+          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-amber-600" />
+              <h2 className="text-xs font-black uppercase tracking-wider text-slate-900 font-mono">
+                {editingAddress ? `EDIT DEPOSIT METHOD ADDRESS (${editingAddress.method})` : "ADD DEPOSIT METHOD ADDRESS"}
+              </h2>
+            </div>
+            <button
+              onClick={handleResetForm}
+              className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Close Form</span>
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveForm} className="space-y-3 text-xs">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Payment Method
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {METHODS.map((m) => {
+                  const isSelected = formMethod === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setFormMethod(m)}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                        isSelected
+                          ? "bg-amber-100 text-amber-900 border-amber-400 font-extrabold shadow-2xs"
+                          : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Label
+              </label>
+              <input
+                type="text"
+                value={formLabel}
+                onChange={(e) => setFormLabel(e.target.value)}
+                placeholder="Main USDT wallet, UPI account, Bank A..."
+                className="w-full bg-[#f8fafc] focus:bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs font-sans transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Address / Payment Detail
+              </label>
+              <input
+                type="text"
+                value={formAddress}
+                onChange={(e) => setFormAddress(e.target.value)}
+                placeholder="Wallet address, UPI ID, bank details..."
+                className="w-full bg-[#f8fafc] focus:bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs font-mono transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                QR Data (Optional)
+              </label>
+              <input
+                type="text"
+                value={formQr}
+                onChange={(e) => setFormQr(e.target.value)}
+                placeholder="Leave empty to encode address"
+                className="w-full bg-[#f8fafc] focus:bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs font-mono transition-all"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setFormIsActive((prev) => !prev)}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                  formIsActive
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                    : "bg-slate-100 text-slate-500 border-slate-300"
+                }`}
+              >
+                {formIsActive ? "Active" : "Inactive"}
+              </button>
+
+              <button
+                type="submit"
+                className="px-5 py-1.5 rounded-lg text-xs font-bold text-slate-950 shadow-2xs transition-all cursor-pointer hover:brightness-105"
+                style={{ backgroundColor: brandPrimary }}
+              >
+                {editingAddress ? "Save Changes" : "Add Address"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="bg-white border border-slate-300 rounded-lg shadow-2xs overflow-hidden flex-1 flex flex-col min-h-[380px]">
         <div className="overflow-x-auto overflow-y-auto flex-1">
           <table className="w-full text-left border-collapse table-fixed">
-            {/* Excel Table Header */}
             <thead className="sticky top-0 bg-[#e2e8f0] text-slate-800 text-[11px] font-extrabold uppercase tracking-wider border-b border-slate-300 z-10 select-none shadow-2xs">
               <tr>
                 <th className="py-1.5 px-2.5 border-r border-slate-300 w-[120px] text-center">
@@ -366,9 +527,14 @@ export const DepositMethodAddressesTab: React.FC = () => {
               </tr>
             </thead>
 
-            {/* Dense Excel Rows */}
             <tbody className="font-mono text-[11px] leading-tight select-none">
-              {filteredAddresses.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-500 font-sans text-xs">
+                    Loading live deposit addresses from database...
+                  </td>
+                </tr>
+              ) : filteredAddresses.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400 font-sans text-xs">
                     No deposit method addresses found matching your filters.
@@ -393,7 +559,7 @@ export const DepositMethodAddressesTab: React.FC = () => {
                       key={item.id}
                       onClick={() => setSelectedId(item.id)}
                       onDoubleClick={() => handleCopy(item)}
-                      className={`cursor-pointer transition-colors duration-75 border-b border-slate-200 h-7.5 ${
+                      className={`cursor-pointer transition-colors duration-75 border-b border-slate-200 h-8 ${
                         isSelected
                           ? "bg-amber-100/90 font-bold border-l-4"
                           : index % 2 === 0
@@ -406,7 +572,6 @@ export const DepositMethodAddressesTab: React.FC = () => {
                       }}
                       title="Click to select • Double-click to copy address"
                     >
-                      {/* Method */}
                       <td className="py-1 px-2.5 border-r border-slate-200 text-center truncate">
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tight border ${methodBadgeClass}`}
@@ -415,18 +580,16 @@ export const DepositMethodAddressesTab: React.FC = () => {
                         </span>
                       </td>
 
-                      {/* Label */}
                       <td className="py-1 px-2.5 border-r border-slate-200 truncate font-sans font-bold text-slate-900 text-[11.5px]">
                         {item.label}
                       </td>
 
-                      {/* Address / Details */}
                       <td className="py-1 px-2.5 border-r border-slate-200 truncate font-mono text-slate-800">
                         <div className="flex items-center justify-between gap-1">
                           <span className="truncate">{item.address}</span>
                           <button
                             onClick={(e) => handleCopy(item, e)}
-                            className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-800 transition-colors shrink-0"
+                            className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-800 transition-colors shrink-0 cursor-pointer"
                             title="Copy address"
                           >
                             {isCopied ? (
@@ -438,14 +601,13 @@ export const DepositMethodAddressesTab: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* QR Code */}
                       <td className="py-1 px-2 border-r border-slate-200 text-center">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setPreviewQrItem(item);
                           }}
-                          className="p-1 hover:bg-slate-200 rounded text-slate-600 hover:text-slate-900 transition-colors inline-flex items-center gap-0.5 text-[10px] font-mono border border-slate-200 bg-white"
+                          className="p-1 hover:bg-slate-200 rounded text-slate-600 hover:text-slate-900 transition-colors inline-flex items-center gap-0.5 text-[10px] font-mono border border-slate-200 bg-white cursor-pointer"
                           title="View QR Code"
                         >
                           <QrCode className="w-3 h-3 text-slate-600" />
@@ -453,12 +615,10 @@ export const DepositMethodAddressesTab: React.FC = () => {
                         </button>
                       </td>
 
-                      {/* Created Date */}
                       <td className="py-1 px-2.5 border-r border-slate-200 truncate text-slate-500 font-mono text-[10.5px]">
                         {item.createdAt}
                       </td>
 
-                      {/* Status */}
                       <td className="py-1 px-2.5 border-r border-slate-200 text-center">
                         <span
                           onClick={(e) => handleToggleActive(item.id, e)}
@@ -473,12 +633,11 @@ export const DepositMethodAddressesTab: React.FC = () => {
                         </span>
                       </td>
 
-                      {/* Actions */}
                       <td className="py-1 px-2 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <button
-                            onClick={(e) => handleOpenEditModal(item, e)}
-                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-all"
+                            onClick={(e) => handleEdit(item, e)}
+                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-all cursor-pointer"
                             title="Edit"
                           >
                             <Edit2 className="w-2.5 h-2.5 inline mr-0.5" />
@@ -486,7 +645,7 @@ export const DepositMethodAddressesTab: React.FC = () => {
                           </button>
                           <button
                             onClick={(e) => handleDelete(item.id, e)}
-                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 transition-all"
+                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 transition-all cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 className="w-2.5 h-2.5 inline mr-0.5" />
@@ -502,7 +661,6 @@ export const DepositMethodAddressesTab: React.FC = () => {
           </table>
         </div>
 
-        {/* Excel Bottom Status Strip */}
         <div className="px-3 py-1 bg-[#f1f5f9] border-t border-slate-300 flex flex-wrap items-center justify-between text-[10.5px] text-slate-600 font-mono shrink-0 select-none">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 text-emerald-700 font-bold">
@@ -535,123 +693,6 @@ export const DepositMethodAddressesTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Interactive Modal: Add / Edit Deposit Address */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn select-none">
-          <div className="bg-white border border-slate-300 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-scaleIn">
-            <div className="px-4 py-3 bg-[#e2e8f0] border-b border-slate-300 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-amber-600" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 font-mono">
-                  {editingAddress ? "EDIT DEPOSIT ADDRESS" : "NEW DEPOSIT ADDRESS"}
-                </h3>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveModal} className="p-4 space-y-3 font-sans text-xs">
-              <div>
-                <label className="block text-[10.5px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Payment Method
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {METHODS.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setFormMethod(m)}
-                      className={`px-3 py-1 rounded-md text-xs font-bold transition-all border ${
-                        formMethod === m
-                          ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                          : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10.5px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Label
-                </label>
-                <input
-                  type="text"
-                  value={formLabel}
-                  onChange={(e) => setFormLabel(e.target.value)}
-                  placeholder="e.g. Main USDT Treasury, NY Wire Account..."
-                  required
-                  className="w-full bg-[#f8fafc] focus:bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs font-sans"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10.5px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Wallet Address / Bank Details
-                </label>
-                <textarea
-                  rows={2}
-                  value={formAddress}
-                  onChange={(e) => setFormAddress(e.target.value)}
-                  placeholder="Address or account instructions..."
-                  required
-                  className="w-full bg-[#f8fafc] focus:bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs font-mono resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10.5px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  QR Code URI (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formQr}
-                  onChange={(e) => setFormQr(e.target.value)}
-                  placeholder="tron:... or ethereum:... (leave empty to use address)"
-                  className="w-full bg-[#f8fafc] focus:bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-2xs font-mono"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formIsActive}
-                    onChange={(e) => setFormIsActive(e.target.checked)}
-                    className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-3.5 h-3.5"
-                  />
-                  <span className="text-xs font-bold text-slate-700">Set as Active</span>
-                </label>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-3 py-1.5 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-100 border border-slate-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-1.5 rounded-md text-xs font-bold text-white shadow-xs hover:brightness-105"
-                    style={{ backgroundColor: brandPrimary }}
-                  >
-                    {editingAddress ? "Save Changes" : "Create Address"}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* QR Preview Modal */}
       {previewQrItem && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn select-none">
           <div className="bg-white border border-slate-300 rounded-2xl shadow-2xl p-5 max-w-sm w-full text-center space-y-3 animate-scaleIn">
@@ -661,7 +702,7 @@ export const DepositMethodAddressesTab: React.FC = () => {
               </span>
               <button
                 onClick={() => setPreviewQrItem(null)}
-                className="text-slate-400 hover:text-slate-700"
+                className="text-slate-400 hover:text-slate-700 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -686,7 +727,7 @@ export const DepositMethodAddressesTab: React.FC = () => {
                 handleCopy(previewQrItem);
                 setPreviewQrItem(null);
               }}
-              className="w-full py-2 rounded-lg text-xs font-bold text-white shadow-xs"
+              className="w-full py-2 rounded-lg text-xs font-bold text-slate-950 shadow-xs cursor-pointer hover:brightness-105"
               style={{ backgroundColor: brandPrimary }}
             >
               Copy Address & Close
@@ -697,3 +738,5 @@ export const DepositMethodAddressesTab: React.FC = () => {
     </div>
   );
 };
+
+export default DepositMethodAddressesTab;

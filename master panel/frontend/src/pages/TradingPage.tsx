@@ -8,7 +8,14 @@ import { Clock, TrendingUp } from "lucide-react";
 export type TradingSubTab = "open-trades" | "history";
 
 export const TradingPage: React.FC = () => {
-  const { activeTab, setActiveTab, companyConfig, openTrades, closedTrades } = usePortal();
+  const {
+    activeTab,
+    setActiveTab,
+    companyConfig,
+    openTrades,
+    closedTrades,
+  } = usePortal();
+
   const brandPrimary = companyConfig?.primaryColor || "#D97706";
 
   const getSubTabFromActive = (tab: ActiveNavTab): TradingSubTab => {
@@ -20,25 +27,21 @@ export const TradingPage: React.FC = () => {
     getSubTabFromActive(activeTab)
   );
 
-  // Sync if activeTab changes externally (e.g. from Sidebar)
   useEffect(() => {
-    if (activeTab === "trading-open" || activeTab === "trading-history" || activeTab === "trading") {
+    if (activeTab.startsWith("trading")) {
       setCurrentSubTab(getSubTabFromActive(activeTab));
     }
   }, [activeTab]);
 
   const handleSwitchTab = (tab: TradingSubTab) => {
     setCurrentSubTab(tab);
-    if (tab === "open-trades") {
-      setActiveTab("trading-open");
-    } else {
-      setActiveTab("trading-history");
-    }
+    if (tab === "open-trades") setActiveTab("trading-open");
+    else if (tab === "history") setActiveTab("trading-history");
   };
 
   return (
-    <div className="p-3 sm:p-3.5 space-y-2.5 font-sans select-none bg-[#f8fafc] flex flex-col h-[calc(100vh-65px)]">
-      {/* Top Excel Segmented Navigation Ribbon Bar (Image 1 Style) */}
+    <div className="p-3 sm:p-3.5 space-y-2.5 font-sans select-none bg-[#f8fafc] flex flex-col min-h-[calc(100vh-65px)]">
+      {/* Top Navigation Ribbon Bar */}
       <div className="bg-white border border-slate-300 p-2 rounded-xl shadow-2xs flex items-center justify-between gap-2.5 flex-wrap shrink-0">
         <div className="flex items-center gap-1.5 overflow-x-auto select-none">
           {/* 1. Open Trades Tab */}
@@ -86,22 +89,28 @@ export const TradingPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Brand System Tag matching Image 1 */}
+        {/* Brand System Tag */}
         <div className="flex items-center gap-2 pr-1 text-xs font-mono font-bold text-slate-500">
           <span
             className="w-2.5 h-2.5 rounded-full"
             style={{ backgroundColor: brandPrimary }}
           />
-          <span className="hidden sm:inline uppercase">{companyConfig.name} LIVE TRADING TERMINAL</span>
+          <span className="hidden sm:inline uppercase">
+            {companyConfig?.name || "NOVAFXM"} TRADING MANAGEMENT
+          </span>
         </div>
       </div>
 
       {/* Main Sub-Tab Workspace */}
       <div className="flex-1 min-h-0 flex flex-col">
+        {/* SUB-TAB 1: OPEN TRADES */}
         {currentSubTab === "open-trades" && <TradingOpenPage embedded={true} />}
+
+        {/* SUB-TAB 2: TRADING HISTORY */}
         {currentSubTab === "history" && <TradingHistoryPage embedded={true} />}
       </div>
     </div>
   );
 };
+
 export default TradingPage;

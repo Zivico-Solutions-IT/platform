@@ -103,6 +103,8 @@ interface PortalContextType {
 
 const PortalContext = createContext<PortalContextType | undefined>(undefined);
 
+import { ALL_MASTER_SYMBOLS } from "../data/allSymbolsData";
+
 const defaultSettings: BrokerSettings = {
   serverName: "NOVAFXM Live Server 01",
   brokerBrand: "NOVAFXM PRIME",
@@ -120,17 +122,7 @@ const defaultSettings: BrokerSettings = {
   },
 };
 
-const defaultSymbols: SymbolData[] = [
-  { id: "sym-1", symbol: "EURUSD", category: "Forex", bid: 1.08452, ask: 1.08464, spread: 1.2, digits: 5, contractSize: 100000, minLot: 0.01, maxLot: 100, swapLong: -5.2, swapShort: 1.4, enabled: true, dailyChange: 0.18 },
-  { id: "sym-2", symbol: "GBPUSD", category: "Forex", bid: 1.26781, ask: 1.26798, spread: 1.7, digits: 5, contractSize: 100000, minLot: 0.01, maxLot: 100, swapLong: -4.8, swapShort: 0.9, enabled: true, dailyChange: -0.24 },
-  { id: "sym-3", symbol: "USDJPY", category: "Forex", bid: 154.215, ask: 154.228, spread: 1.3, digits: 3, contractSize: 100000, minLot: 0.01, maxLot: 100, swapLong: 8.5, swapShort: -12.4, enabled: true, dailyChange: 0.45 },
-  { id: "sym-4", symbol: "XAUUSD", category: "Metals", bid: 2384.45, ask: 2384.75, spread: 3.0, digits: 2, contractSize: 100, minLot: 0.01, maxLot: 50, swapLong: -14.5, swapShort: 6.2, enabled: true, dailyChange: 1.15 },
-  { id: "sym-5", symbol: "BTCUSD", category: "Crypto", bid: 64820.00, ask: 64845.00, spread: 25.0, digits: 2, contractSize: 1, minLot: 0.01, maxLot: 10, swapLong: -20, swapShort: -15, enabled: true, dailyChange: 3.20 },
-  { id: "sym-6", symbol: "US30", category: "Indices", bid: 38940.50, ask: 38944.50, spread: 4.0, digits: 2, contractSize: 10, minLot: 0.1, maxLot: 50, swapLong: -8, swapShort: 3.5, enabled: true, dailyChange: -0.62 },
-  { id: "sym-7", symbol: "USDCAD", category: "Forex", bid: 1.36420, ask: 1.36435, spread: 1.5, digits: 5, contractSize: 100000, minLot: 0.01, maxLot: 100, swapLong: -3.2, swapShort: 0.8, enabled: true, dailyChange: 0.12 },
-  { id: "sym-8", symbol: "WTIUSD", category: "Metals", bid: 82.45, ask: 82.49, spread: 4.0, digits: 2, contractSize: 1000, minLot: 0.01, maxLot: 50, swapLong: -12.0, swapShort: 4.5, enabled: true, dailyChange: -0.85 },
-  { id: "sym-9", symbol: "XAGUSD", category: "Metals", bid: 28.350, ask: 28.375, spread: 2.5, digits: 3, contractSize: 5000, minLot: 0.01, maxLot: 50, swapLong: -8.5, swapShort: 3.2, enabled: true, dailyChange: 0.65 },
-];
+const defaultSymbols: SymbolData[] = ALL_MASTER_SYMBOLS;
 
 export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Current active company
@@ -201,7 +193,17 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setWithdrawals(data.withdrawals);
         setKycVerifications(data.kycVerifications);
         if (data.settings) setSettings(data.settings);
-        if (data.symbols && data.symbols.length > 0) setSymbols(data.symbols);
+        const loadedSymbols = data.symbols && data.symbols.length > 0 ? data.symbols : [];
+        const mergedSymbolsMap = new Map<string, SymbolData>();
+        ALL_MASTER_SYMBOLS.forEach((s) => {
+          mergedSymbolsMap.set(s.symbol.replace("/", "").toUpperCase(), s);
+        });
+        loadedSymbols.forEach((s) => {
+          const key = s.symbol.replace("/", "").toUpperCase();
+          const existing = mergedSymbolsMap.get(key);
+          mergedSymbolsMap.set(key, existing ? { ...existing, ...s } : s);
+        });
+        setSymbols(Array.from(mergedSymbolsMap.values()));
 
         if (notify) {
           if (isConnected) {
@@ -297,13 +299,92 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [symbols]
   );
 
-  // Live Simulated Price Tickers Engine
+  // Live Real-Time Market Price Feed & Candle Engine (Connected to NovaFXM Backend)
   useEffect(() => {
-    const interval = setInterval(() => {
+    let isMounted = true;
+
+    const fetchLivePrices = async () => {
+      try {
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+        let res = await fetch(`/api/${currentCompany}/market/prices`, { headers });
+        if (!res.ok) res = await fetch(`/api/novafxm/market/prices`, { headers });
+        if (!res.ok) res = await fetch(`/api/market/prices`, { headers });
+
+        if (res.ok) {
+          const json = await res.json();
+          const apiSymbols = json.symbols || json.data || [];
+          if (Array.isArray(apiSymbols) && apiSymbols.length > 0 && isMounted) {
+            setSymbols((prevSymbols) => {
+              const symbolMap = new Map(
+                prevSymbols.map((s) => [s.symbol.replace("/", "").toUpperCase(), s])
+              );
+
+              apiSymbols.forEach((item: any) => {
+                const rawSym = String(item.symbol || "").trim();
+                const key = rawSym.replace("/", "").toUpperCase();
+                const existing = symbolMap.get(key);
+                const price = Number(item.price ?? item.bid);
+
+                if (Number.isFinite(price) && price > 0) {
+                  const bid = Number(item.bid ?? price);
+                  const ask = Number(item.ask ?? (bid + (item.spread || 0.0002)));
+                  const digits = Number(item.decimals ?? item.digits ?? existing?.digits ?? 5);
+                  const spread = Number((item.spreadPoints ?? item.spread ?? existing?.spread ?? 1.2).toFixed(1));
+                  const dailyChange = Number((item.change ?? item.dailyChange ?? existing?.dailyChange ?? 0).toFixed(2));
+                  const isUp = existing ? (bid >= existing.bid) : (dailyChange >= 0);
+
+                  if (existing) {
+                    symbolMap.set(key, {
+                      ...existing,
+                      bid,
+                      ask,
+                      spread,
+                      digits,
+                      dailyChange,
+                      changeDirection: isUp ? "up" : "down",
+                    });
+                  } else {
+                    symbolMap.set(key, {
+                      id: `sym-${key.toLowerCase()}`,
+                      symbol: rawSym.includes("/") ? rawSym : `${rawSym.slice(0, 3)}/${rawSym.slice(3)}`,
+                      category: item.group || item.category || "Forex",
+                      bid,
+                      ask,
+                      spread,
+                      digits,
+                      contractSize: 100000,
+                      minLot: 0.01,
+                      maxLot: 100,
+                      swapLong: -2.0,
+                      swapShort: 0.5,
+                      enabled: true,
+                      dailyChange,
+                      changeDirection: isUp ? "up" : "down",
+                    });
+                  }
+                }
+              });
+
+              return Array.from(symbolMap.values());
+            });
+          }
+        }
+      } catch (e) {
+        // Fallback simulation below
+      }
+    };
+
+    fetchLivePrices();
+    const pollInterval = setInterval(fetchLivePrices, 2500);
+
+    // Micro-tick simulator between API polling
+    const tickInterval = setInterval(() => {
       setSymbols((prevSymbols) => {
         if (!prevSymbols || prevSymbols.length === 0) return prevSymbols;
 
-        const countToUpdate = Math.floor(Math.random() * 3) + 1;
+        const countToUpdate = Math.floor(Math.random() * 2) + 1;
         const indicesToUpdate = new Set<number>();
         while (indicesToUpdate.size < countToUpdate) {
           indicesToUpdate.add(Math.floor(Math.random() * prevSymbols.length));
@@ -314,10 +395,10 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
           const isUp = Math.random() > 0.48;
           let step = 1 / Math.pow(10, s.digits);
-          if (s.category === "Crypto") step = Math.random() * 8 + 2;
+          if (s.category === "Crypto" || s.category === "Crypto CFD") step = Math.random() * 8 + 2;
           else if (s.category === "Indices") step = Math.random() * 3 + 1;
           else if (s.category === "Metals") step = Math.random() * 0.4 + 0.1;
-          else step = step * (Math.floor(Math.random() * 3) + 1);
+          else step = step * (Math.floor(Math.random() * 2) + 1);
 
           const delta = isUp ? step : -step;
           const newBid = Number((s.bid + delta).toFixed(s.digits));
@@ -334,7 +415,9 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         setOpenTrades((prevTrades) => {
           return prevTrades.map((trade) => {
-            const sym = nextSymbols.find((s) => s.symbol === trade.symbol);
+            const sym = nextSymbols.find(
+              (s) => s.symbol === trade.symbol || s.symbol.replace("/", "") === trade.symbol.replace("/", "")
+            );
             if (!sym) return trade;
 
             const currentMarketPrice = trade.type === "BUY" ? sym.bid : sym.ask;
@@ -360,8 +443,12 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
     }, 1500);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+      clearInterval(tickInterval);
+    };
+  }, [currentCompany]);
 
   // Update client metrics when open trades change
   useEffect(() => {

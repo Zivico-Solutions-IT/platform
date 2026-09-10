@@ -267,8 +267,8 @@ export const Sidebar: React.FC = () => {
             <div className="ml-3 pl-3 border-l border-slate-200 mt-1 space-y-0.5">
               <button
                 onClick={() => setActiveTab("trading-open")}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
-                  isTabActive("trading-open") || activeTab === "trading"
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                  isTabActive("trading-open") || isTabActive("trading")
                     ? activeSubNavClass
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
@@ -280,7 +280,7 @@ export const Sidebar: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab("trading-history")}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                   isTabActive("trading-history")
                     ? activeSubNavClass
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
