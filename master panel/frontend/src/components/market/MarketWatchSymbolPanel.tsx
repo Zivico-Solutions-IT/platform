@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { usePortal } from "../../context/PortalContext";
 
-type WatchCategory = "All" | "Forex" | "Metals" | "Crypto" | "Indices";
+type WatchCategory = "All" | "Popular" | "Forex" | "Metals" | "Crypto" | "Indices";
 
 interface MarketWatchSymbolPanelProps {
   selectedSymbolCode: string;
@@ -9,18 +9,29 @@ interface MarketWatchSymbolPanelProps {
   className?: string;
 }
 
-const categories: WatchCategory[] = ["All", "Forex", "Metals", "Crypto", "Indices"];
+const categories: WatchCategory[] = ["All", "Popular", "Forex", "Metals", "Crypto", "Indices"];
+const popularSymbols = new Set([
+  "EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "XAGUSD", "BTCUSD", "ETHUSD", "US30", "US500", "USTEC", "WTIUSD",
+]);
 
 export const MarketWatchSymbolPanel: React.FC<MarketWatchSymbolPanelProps> = ({ selectedSymbolCode, onSelectSymbol, className = "" }) => {
-  const { symbols, companyConfig } = usePortal();
+  const { symbols, companyConfig, globalSearch } = usePortal();
   const [selectedCategory, setSelectedCategory] = useState<WatchCategory>("All");
   const brandPrimary = companyConfig?.primaryColor || "#D97706";
 
   const visibleSymbols = useMemo(() => symbols.filter((symbol) => {
+    const cleanSymbol = symbol.symbol.replace("/", "").toUpperCase();
+    const query = globalSearch.trim().toLowerCase();
+    const matchesSearch = !query ||
+      symbol.symbol.toLowerCase().includes(query) ||
+      cleanSymbol.toLowerCase().includes(query) ||
+      (symbol.category || "").toLowerCase().includes(query);
+    if (!matchesSearch) return false;
     if (selectedCategory === "All") return true;
+    if (selectedCategory === "Popular") return popularSymbols.has(cleanSymbol) || Boolean((symbol as any).popular);
     const category = (symbol.category || "").toLowerCase();
     return selectedCategory === "Crypto" ? category.includes("crypto") : category.includes(selectedCategory.toLowerCase());
-  }), [selectedCategory, symbols]);
+  }), [selectedCategory, symbols, globalSearch]);
 
   const selectedSymbol = symbols.find((symbol) =>
     symbol.symbol === selectedSymbolCode || symbol.symbol.replace("/", "") === selectedSymbolCode.replace("/", "")
@@ -34,7 +45,7 @@ export const MarketWatchSymbolPanel: React.FC<MarketWatchSymbolPanelProps> = ({ 
           <h2 className="font-mono text-xs font-black tracking-wider text-slate-900">MARKET WATCH</h2>
           <span className="px-1.5 py-0.5 rounded border border-slate-300 bg-slate-100 font-mono text-[10px] font-bold text-slate-700">{visibleSymbols.length} pairs</span>
         </div>
-        <nav className="inline-flex mt-2 rounded-md border border-slate-300 bg-slate-100 p-0.5">
+        <nav className="inline-flex max-w-full overflow-x-auto mt-2 rounded-md border border-slate-300 bg-slate-100 p-0.5">
           {categories.map((category) => (
             <button key={category} type="button" onClick={() => setSelectedCategory(category)} className={`px-2 py-1 rounded text-[11px] font-bold transition-colors cursor-pointer ${selectedCategory === category ? "bg-white text-slate-900 shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}>
               {category}

@@ -30,6 +30,7 @@ export const ClientDetailsDrawer: React.FC<{
 }> = ({ isOpen, onClose, initialTab = "info" }) => {
   const {
     selectedClient,
+    clients,
     openTrades,
     closedTrades,
     closeTrade,
@@ -190,6 +191,15 @@ export const ClientDetailsDrawer: React.FC<{
   const [amount, setAmount] = useState<string>("1000");
   const [comment, setComment] = useState<string>(""); // empty default per user instructions
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [targetAccountLogin, setTargetAccountLogin] = useState<number | null>(selectedClient?.login ?? null);
+  const [targetAccountSearch, setTargetAccountSearch] = useState<string>("");
+
+  useEffect(() => {
+    if (selectedClient) {
+      setTargetAccountLogin(selectedClient.login);
+      setTargetAccountSearch("");
+    }
+  }, [selectedClient?.login]);
 
   if (!isOpen || !selectedClient) return null;
 
@@ -197,6 +207,10 @@ export const ClientDetailsDrawer: React.FC<{
 
   const clientTrades = openTrades.filter((t) => t.login === selectedClient.login);
   const clientClosed = closedTrades.filter((t) => t.login === selectedClient.login);
+  const liveAccounts = clients
+    .filter((client) => client.accountType === "Live" || (client.login >= 1000000 && client.login < 2000000))
+    .sort((a, b) => new Date(b.registeredAt || 0).getTime() - new Date(a.registeredAt || 0).getTime());
+  const targetClient = liveAccounts.find((client) => client.login === targetAccountLogin) || selectedClient;
 
   const isClientOnline =
     selectedClient.status === "Active" &&
@@ -224,14 +238,14 @@ export const ClientDetailsDrawer: React.FC<{
 
     if (opType === "DEPOSIT") {
       // deposit: add to client balance
-      adjustClientBalance(selectedClient.login, valAmount, false);
+      adjustClientBalance(targetClient.login, valAmount, false);
     } else if (opType === "WITHDRAW") {
       // withdraw: deduct from client balance
-      adjustClientBalance(selectedClient.login, -valAmount, false);
+      adjustClientBalance(targetClient.login, -valAmount, false);
     } else if (opType === "BONUS") {
       // bonus: add or remove client bonus/credit
       const deltaBonus = bonusAction === "REMOVE" ? -valAmount : valAmount;
-      adjustClientBalance(selectedClient.login, deltaBonus, true);
+      adjustClientBalance(targetClient.login, deltaBonus, true);
     }
 
     setSaveSuccess(true);
@@ -903,10 +917,32 @@ export const ClientDetailsDrawer: React.FC<{
                       Target Account
                     </label>
                     <span className="text-xs font-mono font-bold text-slate-500">
-                      Current Bal: <strong className="text-slate-900">${selectedClient.balance.toLocaleString()}</strong>
+                      Current Bal: <strong className="text-slate-900">${targetClient.balance.toLocaleString()}</strong>
                     </span>
                   </div>
-                  <div className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-slate-900 shadow-2xs">
+                  <input
+                    list="live-target-accounts"
+                    value={targetAccountSearch || `#${targetClient.login} — ${targetClient.name} (Bal: $${targetClient.balance.toLocaleString()} | Credit: $${targetClient.credit.toLocaleString()})`}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setTargetAccountSearch(value);
+                      const account = liveAccounts.find((client) => value.startsWith(`#${client.login} `));
+                      if (account) {
+                        setTargetAccountLogin(account.login);
+                        setTargetAccountSearch("");
+                      }
+                    }}
+                    onFocus={() => setTargetAccountSearch("")}
+                    placeholder="Search live account by login, name, or email..."
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-slate-900 shadow-2xs focus:outline-none focus:border-amber-500"
+                  />
+                  <datalist id="live-target-accounts">
+                    {liveAccounts.map((client) => (
+                      <option key={client.login} value={`#${client.login} — ${client.name} (Bal: $${client.balance.toLocaleString()} | Credit: $${client.credit.toLocaleString()})`} />
+                    ))}
+                  </datalist>
+                  <p className="mt-1 text-[10px] font-mono text-slate-400">Searchable live accounts • newest registrations first</p>
+                  <div className="hidden w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-slate-900 shadow-2xs">
                     #{selectedClient.login} — {selectedClient.name} (Bal: ${selectedClient.balance.toLocaleString()} | Credit: ${selectedClient.credit.toLocaleString()})
                   </div>
                 </div>
