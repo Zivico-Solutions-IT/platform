@@ -15,6 +15,7 @@ import {
   Activity,
   Clock,
   PlusCircle,
+  ImagePlus,
 } from "lucide-react";
 
 type MenuCategory = "payments" | "trading" | "settings";
@@ -368,6 +369,17 @@ export const Sidebar: React.FC = () => {
                 }`}
               >
                 <span>Referral Code</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("settings-bonus-posts")}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                  isTabActive("settings-bonus-posts")
+                    ? activeSubNavClass
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <span>Bonus Posts</span>
+                <ImagePlus className="w-3 h-3 text-slate-400" />
               </button>
               <button
                 onClick={() => setActiveTab("settings-staff-permissions")}

@@ -23,6 +23,10 @@ interface PlaceOrderParams {
   sl?: number | null;
   tp?: number | null;
   comment?: string;
+  openPrice?: number;
+  openTime?: string;
+  closePrice?: number;
+  closeTime?: string;
 }
 
 interface ToastMessage {
@@ -698,10 +702,15 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return false;
       }
 
-      const openPrice = order.type === "BUY" ? symbolObj.ask : symbolObj.bid;
+      const openPrice = Number(order.openPrice) || (order.type === "BUY" ? symbolObj.ask : symbolObj.bid);
       const commission = -Number((order.lots * 3.5).toFixed(2));
       const ticket = Math.floor(Math.random() * 900000) + 8800000;
       const now = new Date().toISOString().replace("T", " ").substring(0, 19);
+      const isClosedHistoricalTrade = Boolean(order.closeTime);
+      const closePrice = isClosedHistoricalTrade ? Number(order.closePrice) : undefined;
+      const tradeProfit = isClosedHistoricalTrade && closePrice !== undefined
+        ? Number((((closePrice - openPrice) * (order.type === "BUY" ? 1 : -1) * order.lots * symbolObj.contractSize) + commission).toFixed(2))
+        : commission;
 
       const newTrade: Trade = {
         ticket,
@@ -711,36 +720,50 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         type: order.type,
         lots: order.lots,
         openPrice,
-        currentPrice: openPrice,
+        currentPrice: closePrice ?? openPrice,
         sl: order.sl || null,
         tp: order.tp || null,
         swap: 0,
         commission,
-        profit: commission,
-        openTime: now,
-        status: "OPEN",
+        profit: tradeProfit,
+        openTime: order.openTime || now,
+        closePrice,
+        closeTime: order.closeTime,
+        status: isClosedHistoricalTrade ? "CLOSED" : "OPEN",
         comment: order.comment || "Manager Terminal Exec",
       };
 
-      setOpenTrades((prev) => [newTrade, ...prev]);
+      if (isClosedHistoricalTrade) {
+        setClosedTrades((prev) => [newTrade, ...prev]);
+        setClients((prev) => prev.map((item) => item.login === client.login
+          ? { ...item, balance: Number((item.balance + tradeProfit).toFixed(2)) }
+          : item));
+      } else {
+        setOpenTrades((prev) => [newTrade, ...prev]);
+      }
 
       if (dbStatus.connected) {
         api.placeTrade({
           companyId: currentCompany,
-          login: client.login,
+          userId: client.userId,
+          tradingAccountId: client.tradingAccountId,
           symbol: symbolObj.symbol,
-          type: order.type,
+          side: order.type,
           lots: order.lots,
           openPrice,
-          sl: order.sl || null,
-          tp: order.tp || null,
+          closePrice,
+          status: isClosedHistoricalTrade ? "closed" : "open",
+          createdAt: order.openTime,
+          closedAt: order.closeTime,
+          stopLoss: order.sl || null,
+          takeProfit: order.tp || null,
           comment: order.comment || "Manager Terminal Exec",
         }).catch((err) => console.error("Place trade API failed:", err));
       }
 
       addToast(
         "success",
-        "Order Executed",
+        isClosedHistoricalTrade ? "Historical Trade Added" : "Order Executed",
         `#${ticket} ${order.type} ${order.lots} ${symbolObj.symbol} @ ${openPrice}`
       );
       return true;

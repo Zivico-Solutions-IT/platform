@@ -13,6 +13,7 @@ import {
   DepositMethodType,
   StaffMember,
   ReferralReward,
+  BonusPost,
   AdminNotificationItem,
 } from "../types";
 import { COMPANIES, getCompanyFallbackData } from "../data/companyData";
@@ -622,14 +623,18 @@ export const api = {
 
   async placeTrade(params: {
     companyId: CompanyId;
-    login: number;
+    userId?: number;
+    tradingAccountId?: number;
     symbol: string;
-    type: "BUY" | "SELL";
+    side: "BUY" | "SELL";
     lots: number;
     openPrice: number;
-    currentPrice?: number;
-    sl?: number | null;
-    tp?: number | null;
+    closePrice?: number;
+    status: "open" | "closed";
+    createdAt?: string;
+    closedAt?: string;
+    stopLoss?: number | null;
+    takeProfit?: number | null;
     comment?: string;
   }) {
     try {
@@ -743,6 +748,23 @@ export const api = {
     } catch {
       return { success: true };
     }
+  },
+
+  async getBonusPosts(companyId: CompanyId): Promise<BonusPost[]> {
+    const result = await request<{ posts?: BonusPost[] }>(companyId, "/admin/bonus-posts");
+    return Array.isArray(result?.posts) ? result.posts.map((post) => ({ ...post, id: String(post.id) })) : [];
+  },
+
+  async createBonusPost(companyId: CompanyId, data: { title: string; image: string }): Promise<BonusPost> {
+    const result = await request<{ post: BonusPost }>(companyId, "/admin/bonus-posts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return { ...result.post, id: String(result.post.id) };
+  },
+
+  async deleteBonusPost(companyId: CompanyId, id: string) {
+    return await request(companyId, `/admin/bonus-posts/${id}`, { method: "DELETE" });
   },
 
   async getDepositMethodAddresses(companyId: CompanyId): Promise<DepositMethodAddress[]> {

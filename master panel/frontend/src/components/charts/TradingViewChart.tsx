@@ -165,7 +165,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
     rsi: boolean;
     macd: boolean;
   }>({
-    ma: true,
+    ma: false,
     bb: false,
     rsi: false,
     macd: false,
@@ -697,7 +697,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
 
         {/* Source Badge */}
         <div className="text-[10.5px] font-mono text-slate-500">
-          Source: <strong className="text-slate-800 font-bold">NovaFXM Broker Engine</strong> ({timeframe})
+           <strong className="text-slate-800 font-bold"></strong> ({timeframe})
         </div>
       </div>
 

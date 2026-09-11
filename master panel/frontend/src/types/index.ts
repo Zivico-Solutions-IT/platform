@@ -179,6 +179,7 @@ export type ActiveNavTab =
   | "settings-deposit-methods"
   | "settings-referral-rewards"
   | "settings-referral-code"
+  | "settings-bonus-posts"
   | "settings-staff-permissions"
   | "settings-symbol-settings"
   | "settings-broker-gateway";
@@ -266,4 +267,12 @@ export interface AdminNotificationItem {
   createdAt: string;
   isRead: boolean;
   targetTab?: ActiveNavTab;
+}
+
+export interface BonusPost {
+  id: string;
+  title: string;
+  image: string;
+  isActive?: boolean;
+  createdAt?: string;
 }

@@ -8,6 +8,7 @@ import { ReferralCodeTab } from "../components/settings/ReferralCodeTab";
 import { StaffPermissionsTab } from "../components/settings/StaffPermissionsTab";
 import { SymbolSettingsTab } from "../components/settings/SymbolSettingsTab";
 import { BrokerGatewayTab } from "../components/settings/BrokerGatewayTab";
+import { BonusPostsTab } from "../components/settings/BonusPostsTab";
 import {
   Users,
   CreditCard,
@@ -16,6 +17,7 @@ import {
   Shield,
   SlidersHorizontal,
   Server,
+  ImagePlus,
 } from "lucide-react";
 
 export type SettingsSubTab =
@@ -23,6 +25,7 @@ export type SettingsSubTab =
   | "deposit-methods"
   | "referral-rewards"
   | "referral-code"
+  | "bonus-posts"
   | "staff-permissions"
   | "symbol-settings"
   | "broker-gateway";
@@ -46,6 +49,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
         return "referral-rewards";
       case "settings-referral-code":
         return "referral-code";
+      case "settings-bonus-posts":
+        return "bonus-posts";
       case "settings-staff-permissions":
         return "staff-permissions";
       case "settings-symbol-settings":
@@ -83,6 +88,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
         break;
       case "referral-code":
         setActiveTab("settings-referral-code");
+        break;
+      case "bonus-posts":
+        setActiveTab("settings-bonus-posts");
         break;
       case "staff-permissions":
         setActiveTab("settings-staff-permissions");
@@ -153,6 +161,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
             <span>Referral Code</span>
           </button>
 
+          <button
+            onClick={() => handleSwitchTab("bonus-posts")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+              currentSubTab === "bonus-posts"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <ImagePlus className="w-3.5 h-3.5 text-amber-500" />
+            <span>Bonus Posts</span>
+          </button>
+
           {/* 5. Staff & Permissions (Images 1, 2, 3) */}
           <button
             onClick={() => handleSwitchTab("staff-permissions")}
@@ -209,6 +229,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
         {currentSubTab === "deposit-methods" && <DepositMethodAddressesTab />}
         {currentSubTab === "referral-rewards" && <ReferralRewardsTab />}
         {currentSubTab === "referral-code" && <ReferralCodeTab />}
+        {currentSubTab === "bonus-posts" && <BonusPostsTab />}
         {currentSubTab === "staff-permissions" && <StaffPermissionsTab />}
         {currentSubTab === "symbol-settings" && <SymbolSettingsTab />}
         {currentSubTab === "broker-gateway" && <BrokerGatewayTab />}

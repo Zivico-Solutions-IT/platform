@@ -55,6 +55,7 @@ export const DashboardPage: React.FC<{
     setSelectedPeriod,
     showMonthlyTable,
     setShowMonthlyTable,
+    companyConfig,
   } = usePortal();
 
   // Metrics calculations (real-time from context)
@@ -234,7 +235,7 @@ export const DashboardPage: React.FC<{
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-black tracking-wide text-slate-900">
-              NOVAFXM TRADING SERVER CONSOLE
+              {companyConfig.name.toUpperCase()} TRADING SERVER CONSOLE
             </h1>
             <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-700 border border-emerald-300">
               GATEWAY LIVE
