@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { usePortal } from "../context/PortalContext";
-import { Shield, Lock, Mail, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle, Building2, Server } from "lucide-react";
+import { Shield, Lock, Mail, Eye, EyeOff, ArrowRight, AlertCircle, Building2, Server } from "lucide-react";
 
 export const LoginPage: React.FC = () => {
   const { login } = usePortal();
   
-  const [email, setEmail] = useState("master@novafxm.com");
-  const [password, setPassword] = useState("master123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +87,8 @@ export const LoginPage: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="master@novafxm.com"
+                  placeholder="Enter your admin email"
+                  autoComplete="email"
                   className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 transition-all font-mono"
                 />
               </div>
@@ -139,25 +140,6 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Demo Credentials Info Card */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80">
-            <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-xs">
-              <div className="flex items-center gap-2 font-bold text-slate-300 mb-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Default Master Credentials:</span>
-              </div>
-              <div className="space-y-1 font-mono text-[11px] text-slate-400">
-                <div className="flex justify-between">
-                  <span>Email:</span>
-                  <span className="text-emerald-400 font-semibold select-all">master@novafxm.com</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Password:</span>
-                  <span className="text-amber-400 font-semibold select-all">master123</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Footer Brand Badges */}

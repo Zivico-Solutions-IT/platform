@@ -344,7 +344,11 @@ function mapDbKyc(u: any): KycVerification {
     docNumber: u.docNumber || "N/A",
     idFrontUrl: u.idProofImage || "",
     addressProofUrl: u.addressProofImage || "",
-    status: u.verificationStatus === "verified" ? "APPROVED" : u.verificationStatus === "rejected" ? "REJECTED" : "PENDING",
+    status: u.verificationStatus === "verified"
+      ? "APPROVED"
+      : u.verificationStatus === "pending"
+      ? "PENDING"
+      : "UNVERIFIED",
     submittedAt: u.updatedAt ? new Date(u.updatedAt).toISOString().split("T")[0] : "2026-08-26",
   };
 }
@@ -443,7 +447,12 @@ export const api = {
             : [];
 
           const kycVerifications = usersRes.users
-            .filter((u: any) => u.verificationStatus === "pending" || u.verificationStatus === "verified" || u.verificationStatus === "unverified")
+            .filter((u: any) =>
+              u.verificationStatus === "pending" ||
+              u.verificationStatus === "verified" ||
+              u.verificationStatus === "unverified" ||
+              u.verificationStatus === "rejected"
+            )
             .map(mapDbKyc);
 
           return {
@@ -535,6 +544,14 @@ export const api = {
     } catch {
       return { success: true };
     }
+  },
+
+  async getKycDocuments(companyId: CompanyId, userId: string): Promise<{ idFrontUrl: string; addressProofUrl: string }> {
+    const res = await request<{ user?: any }>(companyId, `/admin/users/${userId}/verification`);
+    return {
+      idFrontUrl: res?.user?.idProofImage || "",
+      addressProofUrl: res?.user?.addressProofImage || "",
+    };
   },
 
   async getNotifications(companyId: CompanyId): Promise<AdminNotificationItem[]> {
@@ -1056,4 +1073,3 @@ export const api = {
     }
   },
 };
-

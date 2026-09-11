@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { usePortal } from "../../context/PortalContext";
 import { KycVerification } from "../../types";
+import { api } from "../../services/api";
 import { X, Check, FileText, Upload, Download, AlertCircle } from "lucide-react";
 
 export const KycInspectionModal: React.FC<{
@@ -8,7 +9,7 @@ export const KycInspectionModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
 }> = ({ kyc, isOpen, onClose }) => {
-  const { approveKyc, rejectKyc, addToast } = usePortal();
+  const { approveKyc, rejectKyc, addToast, currentCompany } = usePortal();
   
   const [idFrontUrl, setIdFrontUrl] = useState<string>("");
   const [addressProofUrl, setAddressProofUrl] = useState<string>("");
@@ -19,16 +20,30 @@ export const KycInspectionModal: React.FC<{
   const [rejectReason, setRejectReason] = useState<string>("Documents invalid or expired");
   const [showRejectBox, setShowRejectBox] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState<boolean>(false);
 
   useEffect(() => {
-    if (kyc) {
+    if (kyc && isOpen) {
       setIdFrontUrl(kyc.idFrontUrl || "");
       setAddressProofUrl(kyc.addressProofUrl || "");
       setIdFile(null);
       setAddressFile(null);
       setShowRejectBox(false);
+
+      // KYC images are intentionally omitted from the list response. Fetch
+      // them only when an administrator opens this inspection dialog.
+      if (!kyc.idFrontUrl || !kyc.addressProofUrl) {
+        setIsLoadingDocuments(true);
+        api.getKycDocuments(currentCompany, kyc.id)
+          .then((documents) => {
+            setIdFrontUrl(documents.idFrontUrl);
+            setAddressProofUrl(documents.addressProofUrl);
+          })
+          .catch((error) => console.warn("Unable to load KYC documents:", error))
+          .finally(() => setIsLoadingDocuments(false));
+      }
     }
-  }, [kyc]);
+  }, [kyc, isOpen, currentCompany]);
 
   if (!isOpen || !kyc) return null;
 
@@ -123,7 +138,9 @@ export const KycInspectionModal: React.FC<{
                 ID PROOF
               </label>
               <div className="h-44 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center overflow-hidden relative group">
-                {idFrontUrl ? (
+                {isLoadingDocuments ? (
+                  <span className="text-slate-400 text-sm font-medium">Loading document...</span>
+                ) : idFrontUrl ? (
                   <>
                     <img
                       src={idFrontUrl}
@@ -153,7 +170,9 @@ export const KycInspectionModal: React.FC<{
                 ADDRESS PROOF
               </label>
               <div className="h-44 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center overflow-hidden relative group">
-                {addressProofUrl ? (
+                {isLoadingDocuments ? (
+                  <span className="text-slate-400 text-sm font-medium">Loading document...</span>
+                ) : addressProofUrl ? (
                   <>
                     <img
                       src={addressProofUrl}

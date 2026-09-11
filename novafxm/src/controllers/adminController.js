@@ -1960,7 +1960,9 @@ exports.addCustomTrade = async (req, res, next) => {
 
 exports.getSymbols = async (req, res, next) => {
   try {
-    const project = req.projectId ? await Project.findByPk(req.projectId) : null;
+    // Resolve the same default tenant used by updateSymbols(), so saved
+    // visibility settings are returned after a page refresh.
+    const project = await companyProjectFor(req);
     const visibilityMap = project?.symbolVisibility && typeof project.symbolVisibility === 'object'
       ? project.symbolVisibility
       : {};
@@ -1982,8 +1984,10 @@ exports.updateSymbols = async (req, res, next) => {
     if (!Array.isArray(visibilities)) {
       return res.status(400).json({ message: 'Visibilities array is required.' });
     }
-    if (!req.projectId) return res.status(400).json({ message: 'A company must be selected before updating symbols.' });
-    const project = await Project.findByPk(req.projectId);
+    // Master requests without an explicit tenant are the NovaFXM console.
+    // Match getSymbols() and resolve that default project instead of rejecting
+    // an otherwise valid visibility update.
+    const project = await companyProjectFor(req);
     if (!project) return res.status(404).json({ message: 'Company not found.' });
     const validSymbols = new Set(tradingView.instruments.map((instrument) => instrument.symbol));
     const symbolVisibility = {};
