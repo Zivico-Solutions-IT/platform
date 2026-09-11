@@ -77,10 +77,10 @@ export const VerificationPage: React.FC<{
     }`;
 
   return (
-    <div className="p-4 sm:p-5 animate-fadeIn font-sans select-none flex flex-col gap-3">
-      <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+    <div className="p-3 sm:p-3.5 animate-fadeIn font-sans select-none bg-[#f8fafc] flex flex-col gap-2 h-[calc(100vh-65px)]">
+      <div className="bg-white border border-slate-300 rounded-lg shadow-2xs overflow-hidden flex-1 flex flex-col min-h-0">
         {/* Header toolbar */}
-        <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-slate-100 bg-[#f9fafb]">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-slate-300 bg-white shrink-0">
           <div className="flex items-center gap-2 shrink-0">
             <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" />
             <span className="text-[11px] font-black tracking-wider uppercase text-slate-800 font-mono">
@@ -119,40 +119,40 @@ export const VerificationPage: React.FC<{
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-[11.5px] font-mono">
-            <thead className="bg-[#f1f5f9] text-slate-500 text-[10px] font-extrabold uppercase tracking-wider border-b border-slate-200">
+        <div className="overflow-x-auto overflow-y-auto flex-1">
+          <table className="w-full text-left border-collapse table-fixed text-[11px] font-mono">
+            <thead className="sticky top-0 z-10 bg-[#e2e8f0] text-slate-800 text-[10px] font-extrabold uppercase tracking-wider border-b border-slate-300 shadow-2xs">
               <tr>
-                <th className="py-2.5 px-4">ID</th>
-                <th className="py-2.5 px-4">NAME</th>
-                <th className="py-2.5 px-4">DOCUMENT TYPE</th>
-                <th className="py-2.5 px-4">DOCUMENT NUMBER</th>
-                <th className="py-2.5 px-4">COUNTRY</th>
-                <th className="py-2.5 px-4">SUBMITTED AT</th>
-                <th className="py-2.5 px-4">PREVIEW</th>
-                <th className="py-2.5 px-4">STATUS</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 w-[115px]">ID</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 w-[210px]">NAME</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 w-[160px]">DOCUMENT TYPE</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 w-[160px]">DOCUMENT NUMBER</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 w-[100px]">COUNTRY</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 w-[145px]">SUBMITTED AT</th>
+                <th className="py-1.5 px-2.5 border-r border-slate-300 w-[145px]">PREVIEW</th>
+                <th className="py-1.5 px-2.5 w-[120px]">STATUS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredList.map((k) => {
+            <tbody className="text-[11px] leading-tight select-none">
+              {filteredList.map((k, index) => {
                 const isApproved = k.status === "APPROVED";
                 const isUnverified = k.status === "UNVERIFIED" || k.status === "REJECTED";
                 const isPending = k.status === "PENDING";
                 const numId = Number(k.id) || Number(k.login) || 0;
                 const displayId = `#${1000000 + numId}`;
                 return (
-                  <tr key={k.id} className="hover:bg-amber-50/50 transition-colors duration-100 cursor-pointer" onClick={() => onInspectKyc(k)}>
-                    <td className="py-2 px-4"><span className="text-amber-600 font-bold">{displayId}</span></td>
-                    <td className="py-2 px-4"><span className="font-bold text-slate-800 font-sans">{k.clientName}</span></td>
-                    <td className="py-2 px-4 text-slate-500">{k.docType || "National ID"}</td>
-                    <td className="py-2 px-4 text-slate-400">{k.docNumber || "N/A"}</td>
-                    <td className="py-2 px-4">
+                  <tr key={k.id} className={`h-7.5 cursor-pointer transition-colors duration-75 border-b border-slate-200 ${index % 2 === 0 ? "bg-white hover:bg-slate-100/80" : "bg-[#f8fafc] hover:bg-slate-100"}`} onClick={() => onInspectKyc(k)}>
+                    <td className="py-1 px-2.5 border-r border-slate-200"><span className="text-amber-600 font-bold">{displayId}</span></td>
+                    <td className="py-1 px-2.5 border-r border-slate-200"><span className="font-bold text-slate-800 font-sans text-[11.5px]">{k.clientName}</span></td>
+                    <td className="py-1 px-2.5 border-r border-slate-200 text-slate-500">{k.docType || "National ID"}</td>
+                    <td className="py-1 px-2.5 border-r border-slate-200 text-slate-400">{k.docNumber || "N/A"}</td>
+                    <td className="py-1 px-2.5 border-r border-slate-200">
                       <span className={k.country === "Sri Lanka" ? "text-amber-600 font-bold" : "text-slate-500"}>
                         {k.country || "LK"}
                       </span>
                     </td>
-                    <td className="py-2 px-4 text-slate-400">{formatDate(k.submittedAt || k.updatedAt || "")}</td>
-                    <td className="py-2 px-4">
+                    <td className="py-1 px-2.5 border-r border-slate-200 text-slate-400">{formatDate(k.submittedAt || k.updatedAt || "")}</td>
+                    <td className="py-1 px-2.5 border-r border-slate-200">
                       <button
                         onClick={(e) => { e.stopPropagation(); onInspectKyc(k); }}
                         className="inline-flex items-center gap-1 text-slate-500 hover:text-amber-600 transition-colors text-[11px] font-bold font-sans"
@@ -175,7 +175,7 @@ export const VerificationPage: React.FC<{
                         </span>
                       )}
                     </td>
-                    <td className="py-2 px-4">
+                    <td className="py-1 px-2.5">
                       <span className={`text-[10.5px] font-black uppercase tracking-wide ${
                         isApproved ? "text-emerald-600" : isUnverified ? "text-slate-500" : "text-amber-600"
                       }`}>
