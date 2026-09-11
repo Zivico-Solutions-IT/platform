@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { io } from "socket.io-client";
 import {
   ActiveNavTab,
   Client,
@@ -12,7 +13,7 @@ import {
   CompanyConfig,
 } from "../types";
 import { COMPANIES } from "../data/companyData";
-import { api, DbStatusResponse } from "../services/api";
+import { api, DbStatusResponse, getCompanyApiUrl } from "../services/api";
 
 interface PlaceOrderParams {
   login: number;
@@ -346,19 +347,23 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     let isMounted = true;
 
-    const fetchLivePrices = async () => {
+    const fetchLivePrices = async (streamedPrices?: any[]) => {
       try {
-        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-
-        let res = await fetch(`/api/${currentCompany}/market/prices`, { headers });
-        if (!res.ok) res = await fetch(`/api/novafxm/market/prices`, { headers });
-        if (!res.ok) res = await fetch(`/api/market/prices`, { headers });
-
-        if (res.ok) {
+        let apiSymbols = streamedPrices;
+        if (!apiSymbols) {
+          const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+          const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+          const baseUrl = getCompanyApiUrl(currentCompany);
+          let res = await fetch(`${baseUrl}/market/prices`, { headers });
+          if (!res.ok && currentCompany !== "novafxm") {
+            res = await fetch(`${getCompanyApiUrl("novafxm")}/market/prices`, { headers });
+          }
+          if (!res.ok) return;
           const json = await res.json();
-          const apiSymbols = json.symbols || json.data || [];
-          if (Array.isArray(apiSymbols) && apiSymbols.length > 0 && isMounted) {
+          apiSymbols = json.symbols || json.data || [];
+        }
+
+        if (Array.isArray(apiSymbols) && apiSymbols.length > 0 && isMounted) {
             setSymbols((prevSymbols) => {
               const symbolMap = new Map(
                 prevSymbols.map((s) => [s.symbol.replace("/", "").toUpperCase(), s])
@@ -412,7 +417,6 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
               return Array.from(symbolMap.values());
             });
-          }
         }
       } catch (e) {
         // Fallback simulation below
@@ -421,75 +425,18 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     fetchLivePrices();
     const pollInterval = setInterval(fetchLivePrices, 2500);
-
-    // Micro-tick simulator between API polling
-    const tickInterval = setInterval(() => {
-      setSymbols((prevSymbols) => {
-        if (!prevSymbols || prevSymbols.length === 0) return prevSymbols;
-
-        const countToUpdate = Math.floor(Math.random() * 2) + 1;
-        const indicesToUpdate = new Set<number>();
-        while (indicesToUpdate.size < countToUpdate) {
-          indicesToUpdate.add(Math.floor(Math.random() * prevSymbols.length));
-        }
-
-        const nextSymbols = prevSymbols.map((s, idx) => {
-          if (!indicesToUpdate.has(idx)) return s;
-
-          const isUp = Math.random() > 0.48;
-          let step = 1 / Math.pow(10, s.digits);
-          if (s.category === "Crypto" || s.category === "Crypto CFD") step = Math.random() * 8 + 2;
-          else if (s.category === "Indices") step = Math.random() * 3 + 1;
-          else if (s.category === "Metals") step = Math.random() * 0.4 + 0.1;
-          else step = step * (Math.floor(Math.random() * 2) + 1);
-
-          const delta = isUp ? step : -step;
-          const newBid = Number((s.bid + delta).toFixed(s.digits));
-          const spreadOffset = (s.spread * (1 / Math.pow(10, s.digits === 3 || s.digits === 5 ? 4 : 1)));
-          const newAsk = Number((newBid + spreadOffset).toFixed(s.digits));
-
-          return {
-            ...s,
-            bid: newBid,
-            ask: newAsk,
-            changeDirection: isUp ? ("up" as const) : ("down" as const),
-          };
-        });
-
-        setOpenTrades((prevTrades) => {
-          return prevTrades.map((trade) => {
-            const sym = nextSymbols.find(
-              (s) => s.symbol === trade.symbol || s.symbol.replace("/", "") === trade.symbol.replace("/", "")
-            );
-            if (!sym) return trade;
-
-            const currentMarketPrice = trade.type === "BUY" ? sym.bid : sym.ask;
-            const diff =
-              trade.type === "BUY"
-                ? currentMarketPrice - trade.openPrice
-                : trade.openPrice - currentMarketPrice;
-
-            const pipChange = Number((diff * Math.pow(10, sym.digits - 1)).toFixed(1));
-            const rawProfit = diff * sym.contractSize * trade.lots + trade.swap + trade.commission;
-            const profit = Number(rawProfit.toFixed(2));
-
-            return {
-              ...trade,
-              currentPrice: currentMarketPrice,
-              profit,
-              pipChange,
-            };
-          });
-        });
-
-        return nextSymbols;
-      });
-    }, 1500);
+    const apiBase = getCompanyApiUrl(currentCompany);
+    const socketBase = /^https?:\/\//i.test(apiBase)
+      ? apiBase.replace(/\/api\/?$/, "")
+      : window.location.origin;
+    const socket = io(socketBase, { transports: ["websocket"], timeout: 5000, reconnection: true });
+    socket.on("market:prices", fetchLivePrices);
+    socket.on("market:prices:delta", fetchLivePrices);
 
     return () => {
       isMounted = false;
       clearInterval(pollInterval);
-      clearInterval(tickInterval);
+      socket.disconnect();
     };
   }, [currentCompany]);
 

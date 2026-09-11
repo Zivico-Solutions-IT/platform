@@ -51,16 +51,12 @@ export interface CompanyDataResponse {
 }
 
 export function getCompanyApiUrl(companyId: CompanyId): string {
-  // 1. Environment Variable Overrides
-  if (companyId === "novafxm" && import.meta.env.VITE_NOVAFXM_API_URL) {
-    return import.meta.env.VITE_NOVAFXM_API_URL;
-  }
-  if (companyId === "a5markets" && import.meta.env.VITE_A5MARKETS_API_URL) {
-    return import.meta.env.VITE_A5MARKETS_API_URL;
-  }
-  if (companyId === "veltriumfx" && import.meta.env.VITE_VELTRIUMFX_API_URL) {
-    return import.meta.env.VITE_VELTRIUMFX_API_URL;
-  }
+  const configuredUrl =
+    companyId === "novafxm"
+      ? import.meta.env.VITE_NOVAFXM_API_URL
+      : companyId === "a5markets"
+      ? import.meta.env.VITE_A5MARKETS_API_URL
+      : import.meta.env.VITE_VELTRIUMFX_API_URL;
 
   // 2. Local Host / Dev Mode -> Use Vite Proxy
   if (typeof window !== "undefined") {
@@ -68,6 +64,11 @@ export function getCompanyApiUrl(companyId: CompanyId): string {
       window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1" ||
       window.location.hostname.startsWith("192.168.");
+
+    // Relative URLs are the local Vite proxy. Do not use that proxy in a deployed build.
+    if (configuredUrl && (isLocalhost || /^https?:\/\//i.test(configuredUrl))) {
+      return configuredUrl;
+    }
 
     if (isLocalhost) {
       return `/api/${companyId}`;
@@ -79,6 +80,8 @@ export function getCompanyApiUrl(companyId: CompanyId): string {
     if (companyId === "a5markets") return `${proto}//server.a5markets.com/api`;
     if (companyId === "veltriumfx") return `${proto}//server.veltriumfx.com/api`;
   }
+
+  if (configuredUrl) return configuredUrl;
 
   return `/api/${companyId}`;
 }
@@ -1053,5 +1056,4 @@ export const api = {
     }
   },
 };
-
 

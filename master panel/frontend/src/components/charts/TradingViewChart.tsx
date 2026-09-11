@@ -155,6 +155,7 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [candlesData, setCandlesData] = useState<CandleBar[]>([]);
   const [selectedChartType, setSelectedChartType] = useState<string>("candlestick");
   const [showIndicatorsMenu, setShowIndicatorsMenu] = useState<boolean>(false);
@@ -185,15 +186,11 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
 
   const digits = symbolObj?.digits || 5;
 
-  const symbolsRef = useRef(symbols);
-  useEffect(() => {
-    symbolsRef.current = symbols;
-  }, [symbols]);
-
-  // Fetch DB candles or fallback generator ONLY when symbol, timeframe, or currentCompany changes
+  // Fetch broker candle history when symbol, timeframe, or company changes.
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
+    setLoadError(null);
 
     const fetchCandles = async () => {
       const cleanSym = symbol.replace("/", "").toUpperCase();
@@ -203,11 +200,12 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       const novafxmBase = getCompanyApiUrl("novafxm");
       const currentBase = getCompanyApiUrl(currentCompany);
 
+      const bases = Array.from(new Set([currentBase, novafxmBase]));
       const urls = [
-        `${novafxmBase}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
-        `${novafxmBase}/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
-        `${currentBase}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
-        `${currentBase}/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
+        ...bases.flatMap((base) => [
+          `${base}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
+          `${base}/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
+        ]),
         `/api/novafxm/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
         `/api/${currentCompany}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
       ];
@@ -243,20 +241,15 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
           }
         }
       } catch (err) {
-        console.warn("API candle fetch fallback generator:", err);
+        console.warn("Unable to load candle history:", err);
       }
 
       if (isMounted) {
         if (fetchedCandles.length > 0) {
           setCandlesData(fetchedCandles);
         } else {
-          const currentSym = symbolsRef.current.find(
-            (s) => s.symbol === symbol || s.symbol.replace("/", "").toUpperCase() === cleanSym
-          );
-          const basePrice = currentSym ? currentSym.bid : 1.1637;
-          const symDigits = currentSym?.digits || 5;
-          const fallback = generateFallbackCandles(basePrice, symDigits, timeframe);
-          setCandlesData(fallback);
+          setCandlesData([]);
+          setLoadError("Live candle history is unavailable. Check the market-data connection.");
         }
         setIsLoading(false);
       }
@@ -722,7 +715,11 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
           </div>
         )}
 
-        {chartHtmlSrcDoc ? (
+        {loadError ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-rose-50/70 text-xs font-medium text-rose-700">
+            {loadError}
+          </div>
+        ) : chartHtmlSrcDoc ? (
           <iframe
             ref={iframeRef}
             srcDoc={chartHtmlSrcDoc}
