@@ -6236,3 +6236,106 @@ Error: Error: User account not found.
     at exports.updateUserDetails (D:\platform\novafxm\src\controllers\adminController.js:605:22)
     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
 --------------------------------------------------
+
+Date: 2026-09-11T08:48:59.256Z
+Method: PUT
+URL: /api/admin/users/assign-agent
+Body: {
+  "userIds": [
+    1000025
+  ],
+  "agentId": 17
+}
+Error: Error: One or more selected users were not found.
+    at apiError (D:\platform\novafxm\src\controllers\adminController.js:97:24)
+    at D:\platform\novafxm\src\controllers\adminController.js:576:54
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.assignAgent (D:\platform\novafxm\src\controllers\adminController.js:561:5)
+--------------------------------------------------
+
+Date: 2026-09-11T08:49:06.779Z
+Method: PUT
+URL: /api/admin/users/assign-agent
+Body: {
+  "userIds": [
+    1000025
+  ],
+  "agentId": 17
+}
+Error: Error: One or more selected users were not found.
+    at apiError (D:\platform\novafxm\src\controllers\adminController.js:97:24)
+    at D:\platform\novafxm\src\controllers\adminController.js:576:54
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.assignAgent (D:\platform\novafxm\src\controllers\adminController.js:561:5)
+--------------------------------------------------
+
+Date: 2026-09-11T08:53:27.531Z
+Method: PUT
+URL: /api/admin/users/assign-agent
+Body: {
+  "userIds": [
+    1000023
+  ],
+  "agentId": 17
+}
+Error: Error: One or more selected users were not found.
+    at apiError (D:\platform\novafxm\src\controllers\adminController.js:97:24)
+    at D:\platform\novafxm\src\controllers\adminController.js:576:54
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.assignAgent (D:\platform\novafxm\src\controllers\adminController.js:561:5)
+--------------------------------------------------
+
+Date: 2026-09-11T08:55:43.266Z
+Method: PUT
+URL: /api/admin/users/assign-agent
+Body: {
+  "userIds": [
+    1000023
+  ],
+  "agentId": 17
+}
+Error: Error: One or more selected users were not found.
+    at apiError (D:\platform\novafxm\src\controllers\adminController.js:97:24)
+    at D:\platform\novafxm\src\controllers\adminController.js:576:54
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.assignAgent (D:\platform\novafxm\src\controllers\adminController.js:561:5)
+--------------------------------------------------
+
+Date: 2026-09-11T08:58:06.049Z
+Method: PUT
+URL: /api/admin/users/assign-agent
+Body: {
+  "userIds": [
+    1000023,
+    11
+  ],
+  "agentId": 17
+}
+Error: Error: One or more selected users were not found.
+    at apiError (D:\platform\novafxm\src\controllers\adminController.js:97:24)
+    at D:\platform\novafxm\src\controllers\adminController.js:576:54
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.assignAgent (D:\platform\novafxm\src\controllers\adminController.js:561:5)
+--------------------------------------------------
+
+Date: 2026-09-11T08:58:26.083Z
+Method: PUT
+URL: /api/admin/users/assign-agent
+Body: {
+  "userIds": [
+    11
+  ],
+  "agentId": 17
+}
+Error: Error: Kalani chamodya already assigned. Unassign first before assigning to another agent.
+    at apiError (D:\platform\novafxm\src\controllers\adminController.js:97:24)
+    at D:\platform\novafxm\src\controllers\adminController.js:582:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async D:\platform\novafxm\node_modules\sequelize\lib\sequelize.js:507:18
+    at async exports.assignAgent (D:\platform\novafxm\src\controllers\adminController.js:561:5)
+--------------------------------------------------

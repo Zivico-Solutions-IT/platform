@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+﻿import React, { useState, useMemo, useEffect } from "react";
 import { usePortal } from "../../context/PortalContext";
 import { StaffMember, UserAgentAssignment } from "../../types";
 import { api } from "../../services/api";
@@ -34,10 +34,10 @@ export const AssignUsersTab: React.FC = () => {
     loadAgents();
   }, [currentCompany]);
 
-  // Only Live accounts (login 1000000-1999999) — exclude Demo accounts
+  // Only Live accounts (login 1000000-1999999) â€” exclude Demo accounts
   const allClients = useMemo(() => {
     return clients.filter((c) => {
-      // Live accounts: login in 1000000–1999999 range, or accountType === "Live"
+      // Live accounts: login in 1000000â€“1999999 range, or accountType === "Live"
       const isLive =
         (c.login >= 1000000 && c.login < 2000000) ||
         c.accountType === "Live";
@@ -74,15 +74,18 @@ export const AssignUsersTab: React.FC = () => {
   }, [allClients, scopeFilter, searchQuery]);
 
   // Handle master select all checkbox
+  const getUserId = (client: (typeof clients)[number]) => client.userId ?? client.login;
+
   const isAllSelected =
     filteredClients.length > 0 &&
-    filteredClients.every((c) => selectedLogins.includes(Number(c.id || c.login)));
+    filteredClients.every((c) => selectedLogins.includes(getUserId(c)));
 
   const handleToggleSelectAll = () => {
     if (isAllSelected) {
       setSelectedLogins([]);
     } else {
-      const idsToAdd = filteredClients.map((c) => Number(c.id || c.login));
+      // The assignment API accepts database User IDs, not MT5 login numbers.
+      const idsToAdd = filteredClients.map(getUserId);
       setSelectedLogins(Array.from(new Set(idsToAdd)));
     }
   };
@@ -239,7 +242,7 @@ export const AssignUsersTab: React.FC = () => {
               <option value="">Select Agent or Manager...</option>
               {agents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
-                  {agent.name} — {agent.role}
+                  {agent.name} â€” {agent.role}
                 </option>
               ))}
             </select>
@@ -288,7 +291,7 @@ export const AssignUsersTab: React.FC = () => {
                   onClick={() => setSearchQuery("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
                 >
-                  ✕
+                  âœ•
                 </button>
               )}
             </div>
@@ -339,7 +342,8 @@ export const AssignUsersTab: React.FC = () => {
                 </tr>
               ) : (
                 filteredClients.map((client, index) => {
-                  const userKey = Number(client.id || client.login);
+                  // Keep the MT5 login for display, but submit the database user ID.
+                  const userKey = getUserId(client);
                   const isChecked = selectedLogins.includes(userKey);
                   const agentDisplayName = client.assignedAgent
                     ? (typeof client.assignedAgent === 'string' ? client.assignedAgent : (client.assignedAgent as any).name)
@@ -431,13 +435,13 @@ export const AssignUsersTab: React.FC = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               Excel Grid View
             </span>
-            <span>•</span>
+            <span>â€¢</span>
             <span>
               Showing {filteredClients.length} of {totalCount} accounts
             </span>
             {selectedLogins.length > 0 && (
               <>
-                <span>•</span>
+                <span>â€¢</span>
                 <span className="text-amber-800 font-bold">
                   Selected: {selectedLogins.length} accounts
                 </span>
@@ -449,7 +453,7 @@ export const AssignUsersTab: React.FC = () => {
             <span className="text-slate-400 font-sans">
               Click any row to toggle selection
             </span>
-            <span>•</span>
+            <span>â€¢</span>
             <span className="text-emerald-700 font-bold">
               Live Database Sync
             </span>
