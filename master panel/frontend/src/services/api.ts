@@ -554,6 +554,17 @@ export const api = {
     };
   },
 
+  async uploadKycDocuments(
+    companyId: CompanyId,
+    userId: string,
+    documents: { idProofImage: string; addressProofImage: string }
+  ) {
+    return await request(companyId, `/admin/users/${userId}/verification/documents`, {
+      method: "PUT",
+      body: JSON.stringify(documents),
+    });
+  },
+
   async getNotifications(companyId: CompanyId): Promise<AdminNotificationItem[]> {
     try {
       const res = await request<{ notifications?: any[] }>(companyId, "/admin/notifications").catch(() => null);

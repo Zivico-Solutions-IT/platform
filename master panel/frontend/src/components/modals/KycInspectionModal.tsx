@@ -75,18 +75,27 @@ export const KycInspectionModal: React.FC<{
     }
   };
 
-  const handleUploadDocuments = (e: React.FormEvent) => {
+  const handleUploadDocuments = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!idFile && !addressFile && !idFrontUrl && !addressProofUrl) {
-      addToast("info", "No Files Selected", "Please select at least one document file to upload.");
+    if (!idFrontUrl || !addressProofUrl) {
+      addToast("info", "Both Documents Required", "Please select both ID proof and address proof files.");
       return;
     }
 
     setIsUploading(true);
-    setTimeout(() => {
+    try {
+      await api.uploadKycDocuments(currentCompany, kyc.id, {
+        idProofImage: idFrontUrl,
+        addressProofImage: addressProofUrl,
+      });
+      setIdFile(null);
+      setAddressFile(null);
+      addToast("success", "Documents Uploaded", `Verification documents saved for ${kyc.clientName}.`);
+    } catch (error: any) {
+      addToast("error", "Upload Failed", error?.message || "Could not save verification documents.");
+    } finally {
       setIsUploading(false);
-      addToast("success", "Documents Uploaded", `Verification documents updated for ${kyc.clientName}.`);
-    }, 400);
+    }
   };
 
   const handleApprove = () => {

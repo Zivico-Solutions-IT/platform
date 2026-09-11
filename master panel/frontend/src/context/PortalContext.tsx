@@ -629,6 +629,18 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const kyc = kycVerifications.find((k) => k.id === kycId);
       if (!kyc) return;
 
+      // Persist before updating local state; otherwise a failed API request
+      // looks approved until the next refresh.
+      if (dbStatus.connected) {
+        try {
+          await api.approveKyc(kycId, { companyId: currentCompany });
+        } catch (err: any) {
+          console.error("API approve KYC failed:", err);
+          addToast("error", "KYC Approval Failed", err?.message || "Could not approve this verification.");
+          return;
+        }
+      }
+
       setKycVerifications((prev) =>
         prev.map((k) => (k.id === kycId ? { ...k, status: "APPROVED" } : k))
       );
@@ -636,14 +648,6 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setClients((prev) =>
         prev.map((c) => (c.login === kyc.login ? { ...c, kycStatus: "Verified" } : c))
       );
-
-      if (dbStatus.connected) {
-        try {
-          await api.approveKyc(kycId, { companyId: currentCompany });
-        } catch (err: any) {
-          console.error("API approve KYC failed:", err);
-        }
-      }
 
       addToast("success", "KYC Approved", `Account #${kyc.login} is now fully verified.`);
     },

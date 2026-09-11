@@ -1,13 +1,13 @@
 ﻿import React, { useState, useMemo } from "react";
 import { usePortal } from "../context/PortalContext";
 import { KycVerification } from "../types";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, Check, X } from "lucide-react";
 
 export const VerificationPage: React.FC<{
   onInspectKyc: (kyc: KycVerification) => void;
 }> = ({ onInspectKyc }) => {
-  const { kycVerifications, clients } = usePortal();
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
+  const { kycVerifications, clients, approveKyc, rejectKyc } = usePortal();
+  const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "VERIFIED" | "UNVERIFIED">("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const allVerifications: KycVerification[] = useMemo(() => {
@@ -30,7 +30,7 @@ export const VerificationPage: React.FC<{
           docNumber: "N/A",
           idFrontUrl: "",
           addressProofUrl: "",
-          status: isVer ? "APPROVED" : "PENDING",
+          status: isVer ? "APPROVED" : "UNVERIFIED",
           submittedAt: c.registeredAt || "2026-09-10",
           updatedAt: c.lastLogin || c.registeredAt || "2026-09-10",
         });
@@ -42,13 +42,15 @@ export const VerificationPage: React.FC<{
   const counts = useMemo(() => ({
     all: allVerifications.length,
     pending: allVerifications.filter((k) => k.status === "PENDING").length,
-    approved: allVerifications.filter((k) => k.status === "APPROVED").length,
-    rejected: allVerifications.filter((k) => k.status === "REJECTED").length,
+    verified: allVerifications.filter((k) => k.status === "APPROVED").length,
+    unverified: allVerifications.filter((k) => k.status === "UNVERIFIED" || k.status === "REJECTED").length,
   }), [allVerifications]);
 
   const filteredList = useMemo(() => {
     return allVerifications.filter((k) => {
-      if (statusFilter !== "ALL" && k.status !== statusFilter) return false;
+      if (statusFilter === "PENDING" && k.status !== "PENDING") return false;
+      if (statusFilter === "VERIFIED" && k.status !== "APPROVED") return false;
+      if (statusFilter === "UNVERIFIED" && k.status !== "UNVERIFIED" && k.status !== "REJECTED") return false;
       const q = searchQuery.toLowerCase().trim();
       if (!q) return true;
       return (
@@ -92,14 +94,14 @@ export const VerificationPage: React.FC<{
           <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded border border-slate-200">
             <button onClick={() => setStatusFilter("ALL")} className={tabCls(statusFilter === "ALL", "bg-slate-800")}>All ({counts.all})</button>
             <button onClick={() => setStatusFilter("PENDING")} className={tabCls(statusFilter === "PENDING", "bg-amber-600")}>Pending ({counts.pending})</button>
-            <button onClick={() => setStatusFilter("APPROVED")} className={tabCls(statusFilter === "APPROVED", "bg-emerald-700")}>APPROVED</button>
-            <button onClick={() => setStatusFilter("REJECTED")} className={tabCls(statusFilter === "REJECTED", "bg-rose-600")}>REJECTED</button>
+            <button onClick={() => setStatusFilter("UNVERIFIED")} className={tabCls(statusFilter === "UNVERIFIED", "bg-slate-700")}>Unverified ({counts.unverified})</button>
+            <button onClick={() => setStatusFilter("VERIFIED")} className={tabCls(statusFilter === "VERIFIED", "bg-emerald-700")}>Verified ({counts.verified})</button>
           </div>
           <span className="text-slate-200 hidden sm:inline">|</span>
           <div className="flex items-center gap-3 text-[10.5px] font-mono text-slate-500 shrink-0">
             <span>Pending Audit: <strong className="text-amber-600">{counts.pending} files</strong></span>
-            <span>Approved: <strong className="text-emerald-600">{counts.approved}</strong></span>
-            <span>Rejected: <strong className="text-rose-600">{counts.rejected}</strong></span>
+            <span>Verified: <strong className="text-emerald-600">{counts.verified}</strong></span>
+            <span>Unverified: <strong className="text-rose-600">{counts.unverified}</strong></span>
           </div>
           <div className="relative ml-auto">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -134,7 +136,8 @@ export const VerificationPage: React.FC<{
             <tbody className="divide-y divide-slate-100">
               {filteredList.map((k) => {
                 const isApproved = k.status === "APPROVED";
-                const isRejected = k.status === "REJECTED";
+                const isUnverified = k.status === "UNVERIFIED" || k.status === "REJECTED";
+                const isPending = k.status === "PENDING";
                 const numId = Number(k.id) || Number(k.login) || 0;
                 const displayId = `#${1000000 + numId}`;
                 return (
@@ -157,12 +160,26 @@ export const VerificationPage: React.FC<{
                         <Eye className="w-3.5 h-3.5" />
                         <span>Inspect</span>
                       </button>
+                      {isPending && (
+                        <span className="ml-2 inline-flex gap-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); approveKyc(k.id); }}
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-300 text-emerald-700 text-[10px] font-bold"
+                            title="Approve verification"
+                          ><Check className="w-3 h-3" />Approve</button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); rejectKyc(k.id, "Rejected by administrator"); }}
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-rose-50 border border-rose-300 text-rose-700 text-[10px] font-bold"
+                            title="Reject verification"
+                          ><X className="w-3 h-3" />Reject</button>
+                        </span>
+                      )}
                     </td>
                     <td className="py-2 px-4">
                       <span className={`text-[10.5px] font-black uppercase tracking-wide ${
-                        isApproved ? "text-emerald-600" : isRejected ? "text-rose-600" : "text-amber-600"
+                        isApproved ? "text-emerald-600" : isUnverified ? "text-slate-500" : "text-amber-600"
                       }`}>
-                        {isApproved ? "APPROVED" : isRejected ? "REJECTED" : "PENDING"}
+                        {isApproved ? "VERIFIED" : isUnverified ? "UNVERIFIED" : "PENDING"}
                       </span>
                     </td>
                   </tr>
