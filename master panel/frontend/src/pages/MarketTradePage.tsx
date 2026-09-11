@@ -19,9 +19,16 @@ export const MarketTradePage: React.FC = () => {
   const [closeTime, setCloseTime] = useState("");
   const [comment, setComment] = useState("Manager Trading Terminal");
 
+  const liveAccounts = useMemo(
+    () => clients.filter((item) => String(item.accountType).toLowerCase() === "live"),
+    [clients],
+  );
+
   useEffect(() => {
-    if (!selectedLogin && clients[0]) setSelectedLogin(clients[0].login);
-  }, [clients, selectedLogin]);
+    if (liveAccounts.length && !liveAccounts.some((item) => item.login === selectedLogin)) {
+      setSelectedLogin(liveAccounts[0].login);
+    }
+  }, [liveAccounts, selectedLogin]);
 
   useEffect(() => {
     if (!selectedSymbol && symbols[0]) setSelectedSymbol(symbols[0].symbol);
@@ -36,10 +43,31 @@ export const MarketTradePage: React.FC = () => {
     [symbols, category],
   );
   const symbol = symbols.find((item) => item.symbol === selectedSymbol) || availableSymbols[0] || symbols[0];
-  const account = clients.find((item) => item.login === selectedLogin) || clients[0];
+  const account = liveAccounts.find((item) => item.login === selectedLogin) || liveAccounts[0];
   const accountTrades = openTrades.filter((trade) => trade.login === account?.login);
   const leverage = Number(account?.leverage?.replace("1:", "")) || 500;
   const margin = symbol ? (lots * symbol.contractSize * symbol.bid) / leverage : 0;
+  const numericOpenPrice = Number(openPrice);
+  const numericClosePrice = Number(closePrice);
+  const entryPrice = symbol
+    ? (timing === "past" && Number.isFinite(numericOpenPrice) && numericOpenPrice > 0
+      ? numericOpenPrice
+      : side === "BUY" ? symbol.ask : symbol.bid)
+    : 0;
+  const exitPrice = symbol
+    ? (timing === "past" && !pastTradeOpen && Number.isFinite(numericClosePrice) && numericClosePrice > 0
+      ? numericClosePrice
+      : side === "BUY" ? symbol.bid : symbol.ask)
+    : 0;
+  const calculatePnl = (price?: number) => {
+    if (!symbol || !price || !entryPrice) return null;
+    const gross = (price - entryPrice) * (side === "BUY" ? 1 : -1) * lots * symbol.contractSize;
+    const commission = lots * 3.5;
+    return Number((gross - commission).toFixed(2));
+  };
+  const currentPnl = calculatePnl(exitPrice);
+  const slPnl = sl ? calculatePnl(Number(sl)) : null;
+  const tpPnl = tp ? calculatePnl(Number(tp)) : null;
 
   const chooseCategory = (value: string) => {
     setCategory(value);
@@ -122,8 +150,9 @@ export const MarketTradePage: React.FC = () => {
                 <label className="block space-y-1.5">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Client live account</span>
                   <select value={account?.login || ""} onChange={(event) => setSelectedLogin(Number(event.target.value))} className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-800 outline-none focus:border-sky-500">
-                    {clients.map((item) => <option key={item.login} value={item.login}>#{item.login} — {item.name} · Equity ${item.equity.toLocaleString()} · {item.leverage}</option>)}
+                    {liveAccounts.map((item) => <option key={item.login} value={item.login}>#{item.login} — {item.name} · Equity ${item.equity.toLocaleString()} · {item.leverage}</option>)}
                   </select>
+                  <span className="block text-[10px] text-slate-400">Only Live trading accounts are available for manual execution.</span>
                 </label>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -144,6 +173,30 @@ export const MarketTradePage: React.FC = () => {
                   <input type="number" min={symbol.minLot} max={symbol.maxLot} step="0.01" value={lots} onChange={(event) => setLots(Number(event.target.value) || 0.01)} className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 font-mono text-base font-bold outline-none focus:border-sky-500" />
                   <div className="mt-2 flex flex-wrap gap-2">{[0.01, 0.1, 0.5, 1, 2, 5, 10].map((item) => <button key={item} type="button" onClick={() => setLots(item)} className={`rounded px-3 py-1.5 font-mono text-xs ${lots === item ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{item}</button>)}</div>
                 </div>
+
+                <section className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-700">Trade snapshot</h3>
+                      <p className="mt-0.5 text-[10px] text-slate-500">Includes estimated commission of ${(lots * 3.5).toFixed(2)}.</p>
+                    </div>
+                    <span className="font-mono text-[11px] text-slate-500">Entry: {entryPrice.toFixed(symbol.digits)} · Exit: {exitPrice.toFixed(symbol.digits)}</span>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    <div className="rounded-lg border border-slate-200 bg-white p-2.5">
+                      <span className="text-[10px] font-bold uppercase text-slate-500">{timing === "past" && !pastTradeOpen ? "Realized P/L" : "Current estimated P/L"}</span>
+                      <strong className={`mt-1 block font-mono text-base ${currentPnl !== null && currentPnl >= 0 ? "text-emerald-700" : "text-rose-600"}`}>{currentPnl === null ? "—" : `${currentPnl >= 0 ? "+" : ""}$${currentPnl.toFixed(2)}`}</strong>
+                    </div>
+                    <div className="rounded-lg border border-rose-100 bg-white p-2.5">
+                      <span className="text-[10px] font-bold uppercase text-slate-500">At stop loss</span>
+                      <strong className={`mt-1 block font-mono text-base ${slPnl === null ? "text-slate-400" : slPnl >= 0 ? "text-emerald-700" : "text-rose-600"}`}>{slPnl === null ? "Set SL to calculate" : `${slPnl >= 0 ? "+" : ""}$${slPnl.toFixed(2)}`}</strong>
+                    </div>
+                    <div className="rounded-lg border border-emerald-100 bg-white p-2.5">
+                      <span className="text-[10px] font-bold uppercase text-slate-500">At take profit</span>
+                      <strong className={`mt-1 block font-mono text-base ${tpPnl === null ? "text-slate-400" : tpPnl >= 0 ? "text-emerald-700" : "text-rose-600"}`}>{tpPnl === null ? "Set TP to calculate" : `${tpPnl >= 0 ? "+" : ""}$${tpPnl.toFixed(2)}`}</strong>
+                    </div>
+                  </div>
+                </section>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="space-y-1.5"><span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Stop loss</span><input type="number" step="any" value={sl} onChange={(event) => setSl(event.target.value)} placeholder="Optional SL" className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 font-mono text-sm outline-none focus:border-rose-500" /></label>

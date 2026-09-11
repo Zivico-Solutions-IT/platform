@@ -241,8 +241,11 @@ export const DashboardPage: React.FC<{
               GATEWAY LIVE
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="hidden">
             NOVAFXM Master Infrastructure • Real-time broker exposure, client oversight, and clearing monitor
+          </p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {companyConfig.name} Master Infrastructure · Real-time broker exposure, client oversight, and clearing monitor
           </p>
         </div>
 

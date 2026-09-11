@@ -284,9 +284,10 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [addToast]
   );
 
-  // Initial load
+  // Load silently on startup and company changes. Connection notifications are
+  // reserved for a manual refresh or an actual reconnect event.
   useEffect(() => {
-    loadCompanyData(currentCompany, true);
+    loadCompanyData(currentCompany);
   }, [currentCompany, loadCompanyData]);
 
   // Periodic health check (every 10s)
@@ -1021,8 +1022,6 @@ export const PortalProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setCurrentCompany(newCompanyId);
       setSelectedClient(null);
       localStorage.setItem("MT5_PORTAL_ACTIVE_COMPANY", newCompanyId);
-
-      loadCompanyData(newCompanyId);
 
       const targetComp = COMPANIES[newCompanyId];
       addToast(

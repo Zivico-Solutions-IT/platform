@@ -175,9 +175,9 @@ export const ClientsPage: React.FC<{
   return (
     <div className="p-3 sm:p-3.5 space-y-2 animate-fadeIn font-sans select-none bg-[#f8fafc] flex flex-col h-[calc(100vh-65px)]">
       {/* Top Compact Excel Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 shrink-0 bg-white border border-slate-300 p-2 rounded-lg shadow-2xs">
+      <div className="grid grid-cols-1 gap-2.5 shrink-0 bg-white border border-slate-300 p-2 rounded-lg shadow-2xs 2xl:grid-cols-[minmax(0,1fr)_auto_20rem] 2xl:items-center">
         {/* Left: Title + Live/Demo Toggle */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
           <div className="flex items-center gap-1.5">
             <span
               className="w-2.5 h-2.5 rounded-sm"
@@ -251,7 +251,7 @@ export const ClientsPage: React.FC<{
         </div>
 
         {/* Center: Inline Excel Formula / Stats Bar */}
-        <div className="hidden lg:flex items-center gap-3 text-[11px] font-mono bg-slate-50 border border-slate-200 px-3 py-1 rounded-md">
+        <div className="hidden 2xl:flex items-center justify-self-center gap-3 whitespace-nowrap text-[11px] font-mono bg-slate-50 border border-slate-200 px-3 py-1 rounded-md">
           <div className="flex items-center gap-1">
             <span className="text-slate-500 font-sans text-[10.5px]">Balance:</span>
             <strong className="text-slate-900 font-bold">
@@ -275,7 +275,7 @@ export const ClientsPage: React.FC<{
         </div>
 
         {/* Right: Search Box */}
-        <div className="relative w-56 sm:w-64">
+        <div className="relative w-full 2xl:w-80">
           <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"

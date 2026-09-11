@@ -29,73 +29,69 @@ export const PERMISSION_SECTIONS: PermissionSection[] = [
     title: "Workspace Access",
     key: "workspace",
     items: [
-      { id: "dashboard", label: "Dashboard", menuName: "Dashboard Overview" },
-      { id: "markets", label: "Markets", menuName: "Market Watch" },
-      { id: "clients", label: "Clients", menuName: "Clients Directory" },
-      { id: "verification", label: "Verification", menuName: "KYC Verification" },
+      { id: "overview", label: "Dashboard", menuName: "Dashboard Overview" },
+      { id: "users", label: "Clients", menuName: "Clients Directory" },
+      { id: "userManagement", label: "User Management", menuName: "User Management" },
+      { id: "userManagementUsers", label: "User Accounts", menuName: "User Management Users" },
+      { id: "assignUsers", label: "Assign Users", menuName: "Assign Users to Agents" },
+      { id: "verifications", label: "Verification", menuName: "KYC Verification" },
+      { id: "userLevels", label: "User Levels", menuName: "User Levels" },
+      { id: "marginAlerts", label: "Margin Alerts", menuName: "Margin Alerts" },
     ],
   },
   {
     title: "Trading Operations",
     key: "trading",
     items: [
-      { id: "trading_open", label: "Live Open Trades", menuName: "Open Trades" },
-      { id: "trading_history", label: "Closed Orders History", menuName: "Trading History" },
-      { id: "symbol_settings", label: "Symbol Settings", menuName: "Symbol Settings" },
+      { id: "trades", label: "All Trades", menuName: "Trade Management" },
+      { id: "addTrading", label: "Add Trading", menuName: "Manual Trade Execution" },
+      { id: "symbols", label: "Symbol Settings", menuName: "Symbol Settings" },
     ],
   },
   {
     title: "Financial Operations",
     key: "financial",
     items: [
-      { id: "payments", label: "Payments", menuName: "Deposits & Withdrawals" },
-      { id: "deposit_methods", label: "Deposit Addresses", menuName: "Deposit Method Addresses" },
-      { id: "referral_rewards", label: "Referral Rewards", menuName: "Referral Rewards" },
+      { id: "deposits", label: "Deposits", menuName: "Deposit Management" },
+      { id: "depositAddresses", label: "Deposit Addresses", menuName: "Deposit Method Addresses" },
+      { id: "depositsList", label: "Deposit List", menuName: "Deposit Records" },
+      { id: "withdrawals", label: "Withdrawals", menuName: "Withdrawal Management" },
+      { id: "withdrawalsList", label: "Withdrawal List", menuName: "Withdrawal Records" },
+      { id: "withdrawalDetails", label: "Withdrawal Details", menuName: "Withdrawal Details" },
+      { id: "referrals", label: "Referral Rewards", menuName: "Referral Rewards" },
+      { id: "bonusPosts", label: "Bonus Posts", menuName: "Bonus Posts" },
     ],
   },
   {
     title: "Settings & Administration",
     key: "settings",
     items: [
-      { id: "assign_users", label: "Assign Users", menuName: "Assign Users to Agents" },
-      { id: "referral_code", label: "Referral Code", menuName: "Referral Code" },
-      { id: "staff_permissions", label: "Staff & Permissions", menuName: "Staff & Permissions" },
-      { id: "broker_gateway", label: "Broker & Gateway", menuName: "Broker & Gateway Settings" },
+      { id: "agents", label: "Staff & Permissions", menuName: "Staff & Permissions" },
     ],
   },
 ];
 
 const ALL_PERMISSION_IDS = PERMISSION_SECTIONS.flatMap((s) => s.items.map((i) => i.id));
+// The existing CRM master is the authority for staff accounts and their
+// permissions. Keeping this directory central prevents each broker API from
+// showing a partial, divergent staff list.
+const STAFF_DIRECTORY_COMPANY = "novafxm" as const;
 
 // Default role permissions templates strictly using our portal's menus
 const DEFAULT_ROLE_TEMPLATES: Record<string, string[]> = {
-  Manager: [
-    "dashboard",
-    "markets",
-    "clients",
-    "verification",
-    "trading_open",
-    "trading_history",
-    "symbol_settings",
-    "payments",
-    "deposit_methods",
-    "referral_rewards",
-    "assign_users",
-    "referral_code",
-    "staff_permissions",
-    "broker_gateway",
-  ],
+  Manager: ALL_PERMISSION_IDS,
   Agent: [
-    "dashboard",
-    "markets",
-    "clients",
-    "verification",
-    "trading_open",
-    "trading_history",
-    "payments",
-    "deposit_methods",
-    "referral_rewards",
-    "assign_users",
+    "overview",
+    "users",
+    "userManagement",
+    "assignUsers",
+    "verifications",
+    "trades",
+    "deposits",
+    "depositsList",
+    "withdrawals",
+    "withdrawalsList",
+    "referrals",
   ],
 };
 
@@ -107,20 +103,7 @@ const DEFAULT_STAFF: StaffMember[] = [
     phone: "+947746658778",
     role: "MANAGER",
     permissions: [
-      "dashboard",
-      "markets",
-      "clients",
-      "verification",
-      "trading_open",
-      "trading_history",
-      "symbol_settings",
-      "payments",
-      "deposit_methods",
-      "referral_rewards",
-      "assign_users",
-      "referral_code",
-      "staff_permissions",
-      "broker_gateway",
+      ...ALL_PERMISSION_IDS,
     ],
     joinedDate: "Sep 2, 2026, 11:31 AM",
   },
@@ -142,7 +125,7 @@ export const StaffPermissionsTab: React.FC = () => {
   // Role templates stored in state & localStorage
   const [roleTemplates, setRoleTemplates] = useState<Record<string, string[]>>(() => {
     try {
-      const saved = localStorage.getItem("nova_role_templates_v2");
+      const saved = localStorage.getItem("master_staff_role_templates_v3");
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -157,7 +140,7 @@ export const StaffPermissionsTab: React.FC = () => {
   const loadStaffList = async () => {
     setLoading(true);
     try {
-      const dbAgents = await api.getAgents(currentCompany);
+      const dbAgents = await api.getAgents(STAFF_DIRECTORY_COMPANY);
       if (dbAgents && dbAgents.length > 0) {
         setStaffList(dbAgents);
       } else {
@@ -177,7 +160,7 @@ export const StaffPermissionsTab: React.FC = () => {
 
   useEffect(() => {
     try {
-      localStorage.setItem("nova_role_templates_v2", JSON.stringify(roleTemplates));
+      localStorage.setItem("master_staff_role_templates_v3", JSON.stringify(roleTemplates));
     } catch (e) {
       console.error(e);
     }
@@ -261,7 +244,7 @@ export const StaffPermissionsTab: React.FC = () => {
     if (window.confirm(`Are you sure you want to delete staff member "${staff.name}"?`)) {
       setStaffList((prev) => prev.filter((s) => s.id !== id));
       try {
-        await api.deleteAgent(currentCompany, id);
+        await api.deleteAgent(STAFF_DIRECTORY_COMPANY, id);
       } catch (err) {
         console.warn("API delete agent failed:", err);
       }
@@ -279,7 +262,7 @@ export const StaffPermissionsTab: React.FC = () => {
 
     if (editingStaffId) {
       try {
-        const updated = await api.updateAgent(currentCompany, editingStaffId, {
+        const updated = await api.updateAgent(STAFF_DIRECTORY_COMPANY, editingStaffId, {
           name: modalForm.name.trim(),
           email: modalForm.email.trim(),
           phone: modalForm.phone.trim(),
@@ -302,7 +285,7 @@ export const StaffPermissionsTab: React.FC = () => {
       addToast("success", "Staff Updated", `Updated details for ${modalForm.name}.`);
     } else {
       try {
-        const created = await api.createAgent(currentCompany, {
+        const created = await api.createAgent(STAFF_DIRECTORY_COMPANY, {
           name: modalForm.name.trim(),
           email: modalForm.email.trim(),
           phone: modalForm.phone.trim() || "+94770000000",
