@@ -34,18 +34,18 @@ export const MarketTradePage: React.FC = () => {
   const lotPresets = [0.01, 0.1, 0.5, 1.0, 2.0, 5.0, 10.0];
 
   return (
-    <div className="p-6 space-y-6 animate-fadeIn font-sans select-none">
+    <div className="p-3 sm:p-4 space-y-3 animate-fadeIn font-sans select-none bg-[#f8fafc] min-h-[calc(100vh-65px)] text-slate-800">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-black tracking-wide text-white flex items-center gap-2">
-            <span>MANAGER TRADING TERMINAL</span>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              DIRECT EXECUTION
+          <h1 className="text-sm font-black tracking-wider text-slate-900 font-mono flex items-center gap-2">
+            <span>ADD TRADING</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-300">
+              {"DIRECT EXECUTION"}
             </span>
           </h1>
-          <p className="text-xs text-slate-400">
-            Execute manual trades, institutional hedges, and position overrides on behalf of client accounts
+          <p className="text-xs text-slate-500">
+            Place live manual trades for the active broker company.
           </p>
         </div>
       </div>
@@ -55,15 +55,15 @@ export const MarketTradePage: React.FC = () => {
         {/* Left 2 Cols: Interactive Order Form & Instrument Depth */}
         <div className="lg:col-span-2 space-y-6">
           {/* Quick Instrument Picker Bar */}
-          <div className="bg-[#0b101f] border border-[#1a263f] p-3 rounded-xl flex items-center gap-2 overflow-x-auto">
+          <div className="bg-white border border-slate-300 p-2 rounded-lg shadow-2xs flex items-center gap-2 overflow-x-auto">
             {symbols.map((s) => (
               <button
                 key={s.id}
                 onClick={() => setSelectedSymbol(s.symbol)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold shrink-0 transition-all ${
                   selectedSymbol === s.symbol
-                    ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
-                    : "bg-[#0e1628] text-slate-300 hover:bg-[#141f36] border border-[#1b2742]"
+                    ? "bg-amber-500 text-slate-950 shadow-2xs"
+                    : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-300"
                 }`}
               >
                 {s.symbol}

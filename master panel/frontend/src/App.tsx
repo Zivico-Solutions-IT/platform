@@ -10,6 +10,7 @@ import { VerificationPage } from "./pages/VerificationPage";
 import { TradingOpenPage } from "./pages/TradingOpenPage";
 import { TradingHistoryPage } from "./pages/TradingHistoryPage";
 import { TradingPage } from "./pages/TradingPage";
+import { MarketTradePage } from "./pages/MarketTradePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { BalanceModal } from "./components/modals/BalanceModal";
@@ -122,6 +123,8 @@ const PortalContent: React.FC = () => {
           {(activeTab === "trading" ||
             activeTab === "trading-open" ||
             activeTab === "trading-history") && <TradingPage />}
+
+          {activeTab === "trading-add" && <MarketTradePage />}
 
           {(activeTab === "settings" || activeTab.startsWith("settings-")) && (
             <SettingsPage />

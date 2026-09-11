@@ -173,6 +173,7 @@ export type ActiveNavTab =
   | "trading"
   | "trading-open"
   | "trading-history"
+  | "trading-add"
   | "settings"
   | "settings-assign-users"
   | "settings-deposit-methods"
