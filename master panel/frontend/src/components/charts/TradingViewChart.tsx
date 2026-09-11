@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { usePortal } from "../../context/PortalContext";
+import { getCompanyApiUrl } from "../../services/api";
 
 export function getTradingViewSymbol(symbol: string, category?: string): string {
   const clean = symbol.replace("/", "").trim().toUpperCase();
@@ -198,13 +199,17 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
       const cleanSym = symbol.replace("/", "").toUpperCase();
       const slashSym = symbol.includes("/") ? symbol : `${symbol.slice(0, 3)}/${symbol.slice(3)}`;
 
+      // Build candle URLs using dynamic getCompanyApiUrl() — works in dev (proxy) and production (server.novafxm.com/api)
+      const novafxmBase = getCompanyApiUrl("novafxm");
+      const currentBase = getCompanyApiUrl(currentCompany);
+
       const urls = [
+        `${novafxmBase}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
+        `${novafxmBase}/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
+        `${currentBase}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
+        `${currentBase}/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
         `/api/novafxm/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
-        `/api/novafxm/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
         `/api/${currentCompany}/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
-        `/api/${currentCompany}/market/candles/${encodeURIComponent(slashSym)}?timeframe=${timeframe}&limit=500`,
-        `/api/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
-        `http://localhost:5000/api/market/candles/${cleanSym}?timeframe=${timeframe}&limit=500`,
       ];
 
       let fetchedCandles: CandleBar[] = [];

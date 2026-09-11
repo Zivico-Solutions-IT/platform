@@ -34,9 +34,15 @@ export const AssignUsersTab: React.FC = () => {
     loadAgents();
   }, [currentCompany]);
 
-  // All clients in system (matching old master console)
+  // Only Live accounts (login 1000000-1999999) — exclude Demo accounts
   const allClients = useMemo(() => {
-    return clients;
+    return clients.filter((c) => {
+      // Live accounts: login in 1000000–1999999 range, or accountType === "Live"
+      const isLive =
+        (c.login >= 1000000 && c.login < 2000000) ||
+        c.accountType === "Live";
+      return isLive;
+    });
   }, [clients]);
 
   // Stats
@@ -175,7 +181,7 @@ export const AssignUsersTab: React.FC = () => {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                All Users ({totalCount})
+                Live Users ({totalCount})
               </button>
 
               <button
@@ -205,7 +211,7 @@ export const AssignUsersTab: React.FC = () => {
           {/* Right: Inline Excel Formula / Stats Bar */}
           <div className="hidden xl:flex items-center gap-2.5 text-[11px] font-mono bg-slate-50 border border-slate-200 px-3 py-1 rounded-md">
             <div className="flex items-center gap-1">
-              <span className="text-slate-500 font-sans text-[10.5px]">Total Users:</span>
+              <span className="text-slate-500 font-sans text-[10.5px]">Live Users:</span>
               <strong className="text-slate-800 font-bold">{totalCount}</strong>
             </div>
             <span className="text-slate-300 select-none">|</span>

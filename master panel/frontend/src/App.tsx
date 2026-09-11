@@ -24,6 +24,7 @@ const PortalContent: React.FC = () => {
     activeTab,
     selectedClient,
     setSelectedClient,
+    clients,
     toasts,
     removeToast,
   } = usePortal();
@@ -31,10 +32,22 @@ const PortalContent: React.FC = () => {
   // Modals state
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
   const [clientDrawerOpen, setClientDrawerOpen] = useState(false);
+  const [clientDrawerInitialTab, setClientDrawerInitialTab] = useState<"info" | "open" | "closed" | "deposit-withdraw">("info");
   const [selectedKycForInspection, setSelectedKycForInspection] = useState<KycVerification | null>(null);
 
   const handleSelectClient = (client: Client) => {
     setSelectedClient(client);
+    setClientDrawerInitialTab("info");
+    setClientDrawerOpen(true);
+  };
+
+  const handleOpenManualPayment = () => {
+    // Keep the account selected elsewhere in the portal; otherwise mirror the
+    // previous manual-payment default (the first available account).
+    if (!selectedClient && clients[0]) {
+      setSelectedClient(clients[0]);
+    }
+    setClientDrawerInitialTab("deposit-withdraw");
     setClientDrawerOpen(true);
   };
 
@@ -98,7 +111,7 @@ const PortalContent: React.FC = () => {
             activeTab === "payments-deposits" ||
             activeTab === "payments-withdrawals") && (
             <PaymentsPage
-              onOpenBalanceModal={() => setBalanceModalOpen(true)}
+              onOpenManualPayment={handleOpenManualPayment}
             />
           )}
 
@@ -124,7 +137,11 @@ const PortalContent: React.FC = () => {
 
       <ClientDetailsDrawer
         isOpen={clientDrawerOpen}
-        onClose={() => setClientDrawerOpen(false)}
+        onClose={() => {
+          setClientDrawerOpen(false);
+          setClientDrawerInitialTab("info");
+        }}
+        initialTab={clientDrawerInitialTab}
         onOpenBalanceModal={() => setBalanceModalOpen(true)}
       />
 

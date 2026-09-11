@@ -27,7 +27,7 @@ export const ClientsPage: React.FC<{
 }> = ({ filterMode = "all", onSelectClient, onOpenBalanceModal }) => {
   const { clients, companyConfig, openTrades } = usePortal();
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [accountTypeFilter, setAccountTypeFilter] = useState<"Live" | "Demo" | "All">("All");
+  const [accountTypeFilter, setAccountTypeFilter] = useState<"Live" | "Demo" | "All">("Live");
   const [selectedRowLogin, setSelectedRowLogin] = useState<number | null>(null);
 
   // Client Comments State with LocalStorage persistence

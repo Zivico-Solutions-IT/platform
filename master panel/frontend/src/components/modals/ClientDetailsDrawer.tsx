@@ -25,8 +25,9 @@ type DrawerTab = "info" | "open" | "closed" | "deposit-withdraw";
 export const ClientDetailsDrawer: React.FC<{
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: DrawerTab;
   onOpenBalanceModal?: () => void;
-}> = ({ isOpen, onClose }) => {
+}> = ({ isOpen, onClose, initialTab = "info" }) => {
   const {
     selectedClient,
     openTrades,
@@ -55,9 +56,9 @@ export const ClientDetailsDrawer: React.FC<{
   useEffect(() => {
     if (isOpen) {
       setPosition({ x: 0, y: 0 });
-      setActiveDrawerTab("info");
+      setActiveDrawerTab(initialTab);
     }
-  }, [isOpen, selectedClient?.login]);
+  }, [isOpen, selectedClient?.login, initialTab]);
 
   // Window drag listeners
   useEffect(() => {

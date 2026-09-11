@@ -326,7 +326,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* MySQL Workbench Database Connection Status */}
-        <button
+        {/* <button
           type="button"
           onClick={() => refreshDbData()}
           className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs transition-all shadow-2xs cursor-pointer ${
@@ -352,7 +352,7 @@ export const Header: React.FC = () => {
             />
           </div>
           {isDbLoading && <RefreshCw className="w-3 h-3 animate-spin text-slate-500 ml-0.5" />}
-        </button>
+        </button> */}
 
         {/* Notification Bell with Admin Notifications Dropdown */}
         <div className="relative" ref={notifDropdownRef}>

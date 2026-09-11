@@ -34,8 +34,8 @@ export interface UnifiedPaymentItem {
   rawWithdrawal?: Withdrawal;
 }
 
-export const PaymentsPage: React.FC<{ onOpenBalanceModal: () => void }> = ({
-  onOpenBalanceModal,
+export const PaymentsPage: React.FC<{ onOpenManualPayment: () => void }> = ({
+  onOpenManualPayment,
 }) => {
   const {
     deposits,
@@ -327,7 +327,7 @@ export const PaymentsPage: React.FC<{ onOpenBalanceModal: () => void }> = ({
         {/* Right: Manual Payment + Search */}
         <div className="flex items-center gap-2">
           <button
-            onClick={onOpenBalanceModal}
+            onClick={onOpenManualPayment}
             className="px-2.5 py-1 rounded text-[10.5px] font-bold text-white shadow-2xs transition-all flex items-center gap-1 hover:brightness-105 active:scale-95 cursor-pointer"
             style={{ backgroundColor: brandPrimary }}
             title="Manual deposit / payment adjustment"
